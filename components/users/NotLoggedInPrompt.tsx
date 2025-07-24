@@ -31,7 +31,7 @@ export function NotLoggedInPrompt() {
     <div className="flex flex-col items-center gap-4 text-center">
       <p className="text-2xl font-bold text-primary">Hey,</p>
       <p className="text-base text-muted-foreground">
-        Noticed you're not a member yet.
+        Noticed youre not a member yet.
       </p>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button
