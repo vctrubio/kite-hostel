@@ -49,6 +49,7 @@ export function SignUpForm({
       });
       if (error) throw error;
       router.push("/user");
+      router.refresh();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -63,7 +64,7 @@ export function SignUpForm({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/confirm` : `http://localhost:3000/auth/confirm`,
+          redirectTo: `${window.location.origin}/auth/confirm`,
         },
       });
       if (error) throw error;

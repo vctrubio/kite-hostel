@@ -12,6 +12,11 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
+  console.log(
+    "dev:prod: testing where is the error in auth confirm route, redirect is wrong:",
+    next,
+  );
+
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
