@@ -1,19 +1,16 @@
+import { createClient } from "@/lib/supabase/server";
 import React from "react";
 
-export function UserWallet() {
+export async function UserWallet() {
   // Placeholder for user info, replace with real user data as needed
-  const user = {
-    name: "John Doe",
-    email: "john@example.com",
-    balance: 100,
-  };
+
+  const supabase = createClient();
+  const user = await supabase.auth.getUser();
+  console.log("dev:debug : user in UserWallet:", user);
 
   return (
     <div className="p-4 rounded border flex flex-col gap-1">
       <div className="font-bold">Who am I?</div>
-      <div>Name: {user.name}</div>
-      <div>Email: {user.email}</div>
-      <div>Wallet Balance: ${user.balance}</div>
     </div>
   );
 }
