@@ -63,7 +63,7 @@ export function SignUpForm({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: 'https://kite-hostel.vercel.app/auth/confirm',
+          redirectTo: process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/confirm` : `http://localhost:3000/auth/confirm`,
         },
       });
       if (error) throw error;
