@@ -63,7 +63,7 @@ export function SignUpForm({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/confirm`,
+          redirectTo: process.env.NODE_ENV === 'production' ? 'https://kite-hostel.vercel.app/auth/confirm' : `${window.location.origin}/auth/confirm`,
         },
       });
       if (error) throw error;
