@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "sonner";
 
 import "./globals.css";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
         >
           <Analytics />
           {children}
+          <Toaster position="top-left" />
         </ThemeProvider>
       </body>
     </html>

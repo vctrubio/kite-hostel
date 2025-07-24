@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function LogoutButtonUserWallet() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export function LogoutButtonUserWallet() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    toast.success("You have been logged out.");
     router.refresh();
   };
 
