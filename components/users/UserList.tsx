@@ -1,16 +1,49 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+"use client";
 
-export async function UserList() {
-  const supabaseAdmin = createAdminClient();
+import { useEffect, useState } from "react";
+import { getUsers } from "@/actions/getters";
+import type { User } from "@supabase/supabase-js";
 
-  const {
-    data: { users },
-    error,
-  } = await supabaseAdmin.auth.admin.listUsers();
+export function UserList() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const usersData = await getUsers();
+        setUsers(usersData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch users");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUsers();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="mt-6 w-full">
+        <h2 className="text-xl font-bold mb-4 text-foreground">Community Members</h2>
+        <div className="rounded-lg overflow-hidden">
+          <p className="text-muted-foreground p-4">Loading users...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
-    console.error("Error fetching users:", error);
-    return <p className="text-red-500">Error fetching users.</p>;
+    return (
+      <div className="mt-6 w-full">
+        <h2 className="text-xl font-bold mb-4 text-foreground">Community Members</h2>
+        <div className="rounded-lg overflow-hidden">
+          <p className="text-red-500 p-4">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   return (

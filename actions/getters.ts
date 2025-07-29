@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Fetches all rows from a specified Supabase table.
@@ -20,4 +21,20 @@ export async function getTableData(tableName: string) {
   }
 
   return { len: count ?? 0, data: data || [], error: null };
+}
+
+export async function getUsers() {
+  const supabaseAdmin = createAdminClient();
+
+  const {
+    data: { users },
+    error,
+  } = await supabaseAdmin.auth.admin.listUsers();
+
+  if (error) {
+    console.error("Error fetching users:", error);
+    throw new Error("Failed to fetch users");
+  }
+
+  return users;
 }

@@ -3,8 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { useUserWallet } from "@/provider/UserWalletProvider";
 
 export function NotLoggedInPrompt() {
+  const { user, loading } = useUserWallet();
+  if (loading) return null;
+  if (user) return null;
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();

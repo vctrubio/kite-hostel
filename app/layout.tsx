@@ -3,6 +3,8 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
+import { UserWalletProvider } from "@/provider/UserWalletProvider";
+import { createClient } from "@/lib/supabase/server";
 
 import "./globals.css";
 
@@ -22,24 +24,29 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Analytics />
-          {children}
-          <Toaster position="top-left" />
-        </ThemeProvider>
+        <UserWalletProvider initialUser={user}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Analytics />
+            {children}
+            <Toaster position="top-left" />
+          </ThemeProvider>
+        </UserWalletProvider>
       </body>
     </html>
   );
