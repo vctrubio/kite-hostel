@@ -29,7 +29,7 @@ export async function getUsers() {
   const {
     data: { users },
     error,
-  } = await supabaseAdmin.auth.admin.listUsers();
+  } = await supabaseAdmin.auth.admin.listUsers();ge
 
   if (error) {
     console.error("Error fetching users:", error);

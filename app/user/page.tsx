@@ -1,24 +1,29 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+"use client";
+
+import { useUserWallet } from "@/provider/UserWalletProvider";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default async function UserPage() {
-  const supabase = await createClient();
+export default function UserPage() {
+  const { user, loading } = useUserWallet();
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="bg-card p-8 rounded-lg shadow-lg text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-4">
+            Loading...
+          </h1>
+        </div>
+      </div>
+    );
+  }
 
-  if (error || !user) {
+  if (!user) {
     redirect("/auth/login");
   }
 
-  const userName =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    user.email ||
-    "User";
+  const userName = user.userAuth.name || user.userAuth.email || "User";
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -28,6 +33,9 @@ export default async function UserPage() {
         </h1>
         <p className="text-muted-foreground mb-6">
           Thank you for sigining up, you are free to leave
+        </p>
+        <p className="text-muted-foreground mb-6">
+          Your role is: {user.role}
         </p>
         <nav className="text-sm">
           <Link href="/" className="text-primary hover:underline">
