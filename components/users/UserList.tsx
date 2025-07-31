@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { getUsers } from "@/actions/getters";
 import type { User } from "@supabase/supabase-js";
 
@@ -68,9 +69,11 @@ export function UserList() {
                 className="flex items-center py-3 px-2 gap-4 hover:bg-primary/5 transition-colors duration-200 rounded-md"
               >
                 {user.user_metadata?.avatar_url ? (
-                  <img
+                  <Image
                     src={user.user_metadata.avatar_url}
                     alt={`${user.email}'s avatar`}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full object-cover border border-primary/20"
                   />
                 ) : (
