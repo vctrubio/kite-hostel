@@ -1,1 +1,0 @@
-1. create schema, 2. link user_walelt to user AUTH on login, role = guest, 3. manage users role and linking

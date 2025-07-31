@@ -1,3 +1,4 @@
+
 import {
   pgTable,
   foreignKey,
@@ -18,6 +19,7 @@ export const users = authSchema.table("users", {
   // We don't need to define all columns, just the one we're referencing
 });
 
+// ENUMS
 export const languagesEnum = pgEnum("languages", [
   "Spanish",
   "French",
@@ -27,17 +29,18 @@ export const languagesEnum = pgEnum("languages", [
 ]);
 
 export const lessonStatusEnum = pgEnum("lesson_status", [
-  "active",
+  "planned",
   "rest",
   "delegated", //lesson delegated means another lesson can be created. else acts as a mutex
   "completed", //will self appear to tick by admin to confimr lesson ahs been completed if hours have been met
   "cancelled", //cancel and remove from teh whiteboard
 ]);
 
-export const kiteEventStatusEnum = pgEnum("kite_event_status", [
-  "active",
+export const EventStatusEnum = pgEnum("kite_event_status", [
+  "planned",
   "completed",
   "tbc",
+  "cancelled",
 ]);
 
 export const locationEnum = pgEnum("location", [
@@ -53,37 +56,14 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 ]);
 
 export const userRole = pgEnum("user_role", [
-  "guest",
-  "teacher",
   "admin",
+  "teacher",
   "teacherAdmin",
+  "locked",
+  "reference",
 ]);
 
-export const user_wallet = pgTable(
-  "user_wallet",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    role: userRole().notNull(),
-    email: text().notNull().unique(),
-    sk: uuid().unique(),
-    pk: uuid().unique(), // Polymorphic reference teacher.id (can be null for guests or admin)
-    created_at: timestamp({ mode: "string" }).defaultNow(),
-    updated_at: timestamp({ mode: "string" }).defaultNow(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.sk],
-      foreignColumns: [users.id],
-      name: "user_wallet_sk_users_id_fk",
-    }),
-    foreignKey({
-      columns: [table.pk],
-      foreignColumns: [Teacher.id],
-      name: "user_wallet_pk_teacher_id_fk",
-    }),
-  ],
-);
-
+// MAIN TABLES
 export const Student = pgTable(
   "student",
   {
@@ -110,12 +90,30 @@ export const Teacher = pgTable(
     passport_number: text(),
     country: text(),
     phone: text(),
-    commission_a: integer().notNull(), // price per hour per kite_event
-    commission_b: integer(), // price per hour per kite_event
     created_at: timestamp({ mode: "string" }).defaultNow(),
     deleted_at: timestamp({ mode: "string" }),
   },
   (table) => [index("teacher_id_idx").on(table.id)],
+);
+
+export const Commission = pgTable(
+  "commission",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    teacher_id: uuid().notNull(),
+    price_per_hour: integer().notNull(),
+    desc: text(),
+    deleted_at: timestamp({ mode: "string" }),
+    created_at: timestamp({ mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.teacher_id],
+      foreignColumns: [Teacher.id],
+      name: "commission_teacher_id_fk",
+    }),
+    index("commission_teacher_id_idx").on(table.teacher_id),
+  ]
 );
 
 export const TeacherKite = pgTable(
@@ -124,6 +122,7 @@ export const TeacherKite = pgTable(
     id: uuid().defaultRandom().primaryKey().notNull(),
     teacher_id: uuid().notNull(),
     kite_id: uuid().notNull(),
+    created_at: timestamp({ mode: "string" }).defaultNow(),
   },
   (table) => [
     foreignKey({
@@ -139,9 +138,96 @@ export const TeacherKite = pgTable(
     unique("teacher_kite_unique").on(table.teacher_id, table.kite_id),
     index("teacher_kite_teacher_id_idx").on(table.teacher_id),
     index("teacher_kite_kite_id_idx").on(table.kite_id),
+  ]
+);
+
+export const Event = pgTable(
+  "event",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    lesson_id: uuid().notNull(),
+    date: timestamp({ mode: "string" }).notNull(), // when
+    duration: integer().notNull(),  // Duration in minutes
+    location: locationEnum().notNull(), 
+    status: EventStatusEnum().default("planned").notNull(), 
+    created_at: timestamp({ mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.lesson_id],
+      foreignColumns: [Lesson.id],
+      name: "event_lesson_id_fk",
+    }),
+    index("event_lesson_id_idx").on(table.lesson_id),
+  ]
+);
+
+export const Kite = pgTable(
+  "kite",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    serial_id: text().notNull().unique(),
+    model: text().notNull(),
+    size: integer().notNull(),
+    created_at: timestamp({ mode: "string" }).defaultNow(),
+    updated_at: timestamp({ mode: "string" }).defaultNow(),
+  },
+  (table) => [index("equipment_serial_id_idx").on(table.serial_id)],
+);
+
+// A kite that was used in an event
+export const KiveEvent = pgTable(
+  "kive_event",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    event_id: uuid().notNull(),
+    kite_id: uuid().notNull(),
+    created_at: timestamp({ mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.event_id],
+      foreignColumns: [Event.id],
+      name: "kive_event_event_id_fk",
+    }),
+    foreignKey({
+      columns: [table.kite_id],
+      foreignColumns: [Kite.id],
+      name: "kive_event_kite_id_fk",
+    }),
+    index("kive_event_event_id_idx").on(table.event_id),
+    index("kive_event_kite_id_idx").on(table.kite_id),
+
+  ]
+);
+
+// USER WALLET -- for user (admin and teacher app management)
+export const user_wallet = pgTable(
+  "user_wallet",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    role: userRole().notNull(),
+    sk: uuid().unique(), // Now nullable
+    pk: uuid().unique(), // Now nullable
+    note: text(),
+    created_at: timestamp({ mode: "string" }).defaultNow(),
+    updated_at: timestamp({ mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.sk],
+      foreignColumns: [users.id],
+      name: "user_wallet_sk_users_id_fk",
+    }),
+    foreignKey({
+      columns: [table.pk],
+      foreignColumns: [Teacher.id],
+      name: "user_wallet_pk_teacher_id_fk",
+    }),
   ],
 );
 
+//////////////////////////////////////
 export const PackageStudent = pgTable("package_student", {
   id: uuid().defaultRandom().primaryKey().notNull(),
   duration: integer().notNull(), // In minutes
@@ -160,7 +246,8 @@ export const Booking = pgTable(
     date_start: timestamp({ mode: "string" }).notNull(),
     date_end: timestamp({ mode: "string" }).notNull(),
     status: bookingStatusEnum().default("active").notNull(),
-    reference: text(), //from who did it come
+    reference_id: uuid(), // FK to user_wallet
+    commission_id: uuid().notNull(), // FK to commission (teacher) (locked at booking time)
     created_at: timestamp({ mode: "string" }).defaultNow(),
     deleted_at: timestamp({ mode: "string" }),
   },
@@ -170,13 +257,23 @@ export const Booking = pgTable(
       foreignColumns: [PackageStudent.id],
       name: "booking_package_id_fk",
     }),
+    foreignKey({
+      columns: [table.reference_id],
+      foreignColumns: [user_wallet.id],
+      name: "booking_reference_id_fk",
+    }),
+    foreignKey({
+      columns: [table.commission_id],
+      foreignColumns: [Commission.id],
+      name: "booking_commission_id_fk",
+    }),
   ],
 );
 
 export const BookingStudent = pgTable(
   "booking_student",
   {
-    id: uuid().defaultRandom().primaryKey().notNull(), // Added primary key
+    id: uuid().defaultRandom().primaryKey().notNull(), 
     booking_id: uuid().notNull(),
     student_id: uuid().notNull(),
   },
@@ -225,27 +322,6 @@ export const Lesson = pgTable(
   ],
 );
 
-export const KiteEvent = pgTable(
-  "kite_event",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    lesson_id: uuid().notNull(),
-    date: timestamp({ mode: "string" }).notNull(),
-    duration: integer().notNull(), // in minutes
-    location: locationEnum().notNull(),
-    status: kiteEventStatusEnum().notNull(), // Updated default to 'planned'
-    created_at: timestamp({ mode: "string" }).defaultNow(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.lesson_id],
-      foreignColumns: [Lesson.id],
-      name: "kite_event_lesson_id_fk",
-    }),
-    index("kite_event_lesson_id_idx").on(table.lesson_id),
-  ],
-);
-
 export const Payment = pgTable(
   "payment",
   {
@@ -265,42 +341,3 @@ export const Payment = pgTable(
   ],
 );
 
-export const Kite = pgTable(
-  "kite",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    serial_id: text().notNull().unique(),
-    model: text().notNull(),
-    size: integer().notNull(),
-    created_at: timestamp({ mode: "string" }).defaultNow(),
-    updated_at: timestamp({ mode: "string" }).defaultNow(),
-  },
-  (table) => [index("equipment_serial_id_idx").on(table.serial_id)],
-);
-
-export const KiteEventEquipment = pgTable(
-  "kite_event_equipment",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(), // Added primary key
-    kite_event_id: uuid().notNull(),
-    kite_id: uuid().notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.kite_event_id],
-      foreignColumns: [KiteEvent.id],
-      name: "kite_event_equipment_kite_event_id_fk",
-    }),
-    foreignKey({
-      columns: [table.kite_id],
-      foreignColumns: [Kite.id],
-      name: "kite_event_equipment_kite_id_fk",
-    }),
-    unique("kite_event_equipment_unique").on(
-      table.kite_event_id,
-      table.kite_id,
-    ),
-    index("kite_event_equipment_kite_event_id_idx").on(table.kite_event_id),
-    index("kite_event_equipment_kite_id_idx").on(table.kite_id),
-  ],
-);
