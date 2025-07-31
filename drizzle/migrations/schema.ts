@@ -1,4 +1,3 @@
-
 import {
   pgTable,
   foreignKey,
@@ -113,7 +112,7 @@ export const Commission = pgTable(
       name: "commission_teacher_id_fk",
     }),
     index("commission_teacher_id_idx").on(table.teacher_id),
-  ]
+  ],
 );
 
 export const Kite = pgTable(
@@ -151,7 +150,7 @@ export const TeacherKite = pgTable(
     unique("teacher_kite_unique").on(table.teacher_id, table.kite_id),
     index("teacher_kite_teacher_id_idx").on(table.teacher_id),
     index("teacher_kite_kite_id_idx").on(table.kite_id),
-  ]
+  ],
 );
 
 // USER WALLET -- for user (admin and teacher app management)
@@ -198,7 +197,7 @@ export const Booking = pgTable(
     package_id: uuid().notNull(),
     date_start: timestamp({ mode: "string" }).notNull(),
     date_end: timestamp({ mode: "string" }).notNull(),
-    status: bookingStatusEnum().default("active").notNull(),
+    status: bookingStatusEnum().notNull(),
     reference_id: uuid(), // FK to user_wallet
     commission_id: uuid().notNull(), // FK to commission (teacher) (locked at booking time)
     created_at: timestamp({ mode: "string" }).defaultNow(),
@@ -226,7 +225,7 @@ export const Booking = pgTable(
 export const BookingStudent = pgTable(
   "booking_student",
   {
-    id: uuid().defaultRandom().primaryKey().notNull(), 
+    id: uuid().defaultRandom().primaryKey().notNull(),
     booking_id: uuid().notNull(),
     student_id: uuid().notNull(),
   },
@@ -281,9 +280,9 @@ export const Event = pgTable(
     id: uuid().defaultRandom().primaryKey().notNull(),
     lesson_id: uuid().notNull(),
     date: timestamp({ mode: "string" }).notNull(), // when
-    duration: integer().notNull(),  // Duration in minutes
-    location: locationEnum().notNull(), 
-    status: EventStatusEnum().default("planned").notNull(), 
+    duration: integer().notNull(), // Duration in minutes
+    location: locationEnum().notNull(),
+    status: EventStatusEnum().notNull(),
     created_at: timestamp({ mode: "string" }).defaultNow(),
   },
   (table) => [
@@ -293,7 +292,7 @@ export const Event = pgTable(
       name: "event_lesson_id_fk",
     }),
     index("event_lesson_id_idx").on(table.lesson_id),
-  ]
+  ],
 );
 
 // A kite that was used in an event
@@ -318,8 +317,7 @@ export const KiteEvent = pgTable(
     }),
     index("kite_event_event_id_idx").on(table.event_id),
     index("kite_event_kite_id_idx").on(table.kite_id),
-
-  ]
+  ],
 );
 
 export const Payment = pgTable(
@@ -340,4 +338,3 @@ export const Payment = pgTable(
     index("payment_teacher_id_idx").on(table.teacher_id),
   ],
 );
-
