@@ -7,7 +7,7 @@ import {
   TeacherKite,
   Kite,
   Event,
-  KiveEvent,
+  KiteEvent,
   user_wallet,
   PackageStudent,
   Booking,
@@ -70,7 +70,7 @@ export const teacherKiteRelations = relations(TeacherKite, ({ one }) => ({
 // Kite relations
 export const kiteRelations = relations(Kite, ({ many }) => ({
   teachers: many(TeacherKite),
-  events: many(KiveEvent),
+  events: many(KiteEvent),
 }));
 
 // Event relations
@@ -79,17 +79,17 @@ export const eventRelations = relations(Event, ({ one, many }) => ({
     fields: [Event.lesson_id],
     references: [Lesson.id],
   }),
-  kites: many(KiveEvent),
+  kites: many(KiteEvent),
 }));
 
-// KiveEvent relations (join table for event <-> kite)
-export const kiveEventRelations = relations(KiveEvent, ({ one }) => ({
+// KiteEvent relations (join table for event <-> kite)
+export const kiteEventRelations = relations(KiteEvent, ({ one }) => ({
   event: one(Event, {
-    fields: [KiveEvent.event_id],
+    fields: [KiteEvent.event_id],
     references: [Event.id],
   }),
   kite: one(Kite, {
-    fields: [KiveEvent.kite_id],
+    fields: [KiteEvent.kite_id],
     references: [Kite.id],
   }),
 }));

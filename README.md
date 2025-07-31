@@ -22,14 +22,14 @@ One booking can have many students (booking.package.capacity_students), accessed
 - Links auth users to the system via `sk` (auth user id), but `sk` and `pk` are now optional (nullable)
 - Has role: guest, teacher, admin, teacherAdmin, reference (for including references in bookings)
   One teacher has many kites for lessons, ownership controlled by admin (many-to-many relationship via TeacherKite, accessed as `kite.teachers`)
-  Each kite can be associated with many events (via KiveEvent, accessed as `kite.events`)
+  Each kite can be associated with many events (via KiteEvent, accessed as `kite.events`)
 - `note` field can be used for extra info about the user
 - Optional `pk` field links to Teacher.id (for teachers)
   Represents a general event (not tied to a lesson)
   Has name, description, date, location
   Used for organizing school-wide or public events
   Each event is linked to a lesson (accessed as `event.lesson`)
-  Each event can have many kites (via KiveEvent, accessed as `event.kites`)
+  Each event can have many kites (via KiteEvent, accessed as `event.kites`)
 
 - A student profile (name, size, languages, country, passport_number, phone, desc)
   Links an Event to a Kite (many-to-many relationship)
@@ -95,7 +95,7 @@ This allows you to display package info for each event in the frontend.
 - Has name, description, date, location
 - Used for organizing school-wide or public events
 
-### KiveEvent
+### KiteEvent
 
 - Links an Event to a Kite (many-to-many relationship)
 - Has notes and created_at

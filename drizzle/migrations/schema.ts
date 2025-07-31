@@ -116,6 +116,19 @@ export const Commission = pgTable(
   ]
 );
 
+export const Kite = pgTable(
+  "kite",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    serial_id: text().notNull().unique(),
+    model: text().notNull(),
+    size: integer().notNull(),
+    created_at: timestamp({ mode: "string" }).defaultNow(),
+    updated_at: timestamp({ mode: "string" }).defaultNow(),
+  },
+  (table) => [index("equipment_serial_id_idx").on(table.serial_id)],
+);
+
 export const TeacherKite = pgTable(
   "teacher_kite",
   {
@@ -138,66 +151,6 @@ export const TeacherKite = pgTable(
     unique("teacher_kite_unique").on(table.teacher_id, table.kite_id),
     index("teacher_kite_teacher_id_idx").on(table.teacher_id),
     index("teacher_kite_kite_id_idx").on(table.kite_id),
-  ]
-);
-
-export const Event = pgTable(
-  "event",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    lesson_id: uuid().notNull(),
-    date: timestamp({ mode: "string" }).notNull(), // when
-    duration: integer().notNull(),  // Duration in minutes
-    location: locationEnum().notNull(), 
-    status: EventStatusEnum().default("planned").notNull(), 
-    created_at: timestamp({ mode: "string" }).defaultNow(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.lesson_id],
-      foreignColumns: [Lesson.id],
-      name: "event_lesson_id_fk",
-    }),
-    index("event_lesson_id_idx").on(table.lesson_id),
-  ]
-);
-
-export const Kite = pgTable(
-  "kite",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    serial_id: text().notNull().unique(),
-    model: text().notNull(),
-    size: integer().notNull(),
-    created_at: timestamp({ mode: "string" }).defaultNow(),
-    updated_at: timestamp({ mode: "string" }).defaultNow(),
-  },
-  (table) => [index("equipment_serial_id_idx").on(table.serial_id)],
-);
-
-// A kite that was used in an event
-export const KiveEvent = pgTable(
-  "kive_event",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    event_id: uuid().notNull(),
-    kite_id: uuid().notNull(),
-    created_at: timestamp({ mode: "string" }).defaultNow(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.event_id],
-      foreignColumns: [Event.id],
-      name: "kive_event_event_id_fk",
-    }),
-    foreignKey({
-      columns: [table.kite_id],
-      foreignColumns: [Kite.id],
-      name: "kive_event_kite_id_fk",
-    }),
-    index("kive_event_event_id_idx").on(table.event_id),
-    index("kive_event_kite_id_idx").on(table.kite_id),
-
   ]
 );
 
@@ -320,6 +273,53 @@ export const Lesson = pgTable(
       table.booking_id,
     ),
   ],
+);
+
+export const Event = pgTable(
+  "event",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    lesson_id: uuid().notNull(),
+    date: timestamp({ mode: "string" }).notNull(), // when
+    duration: integer().notNull(),  // Duration in minutes
+    location: locationEnum().notNull(), 
+    status: EventStatusEnum().default("planned").notNull(), 
+    created_at: timestamp({ mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.lesson_id],
+      foreignColumns: [Lesson.id],
+      name: "event_lesson_id_fk",
+    }),
+    index("event_lesson_id_idx").on(table.lesson_id),
+  ]
+);
+
+// A kite that was used in an event
+export const KiteEvent = pgTable(
+  "kite_event",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    event_id: uuid().notNull(),
+    kite_id: uuid().notNull(),
+    created_at: timestamp({ mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.event_id],
+      foreignColumns: [Event.id],
+      name: "kite_event_event_id_fk",
+    }),
+    foreignKey({
+      columns: [table.kite_id],
+      foreignColumns: [Kite.id],
+      name: "kite_event_kite_id_fk",
+    }),
+    index("kite_event_event_id_idx").on(table.event_id),
+    index("kite_event_kite_id_idx").on(table.kite_id),
+
+  ]
 );
 
 export const Payment = pgTable(
