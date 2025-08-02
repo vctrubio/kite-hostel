@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ThemeSwitcher } from '@/components/supabase-init/theme-switcher'
 
 const links = [
   { href: '/', label: 'Home' },
@@ -31,6 +32,7 @@ export function Navbar() {
               {label}
             </Link>
           ))}
+          <ThemeSwitcher />
         </div>
       </div>
     </nav>
