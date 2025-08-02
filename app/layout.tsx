@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { UserWalletProvider } from "@/provider/UserWalletProvider";
 import { createClient } from "@/lib/supabase/server";
+import { Navbar } from "@/components/navbar";
 
 import "./globals.css";
 
@@ -43,6 +44,7 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Analytics />
+            <Navbar />
             {children}
             <Toaster position="top-left" />
           </ThemeProvider>

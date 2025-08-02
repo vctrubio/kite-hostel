@@ -3,25 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-/**
- * Fetches all rows from a specified Supabase table.
- * @param tableName The name of the table to query.
- * @returns A promise that resolves to an object containing the length, data, and any potential error.
- */
-export async function getTableData(tableName: string) {
-  const supabase = await createClient();
 
-  const { data, error, count } = await supabase
-    .from(tableName)
-    .select("*", { count: "exact" });
-
-  if (error) {
-    console.error(`Error fetching table ${tableName}:`, error);
-    return { len: 0, data: [], error: error.message };
-  }
-
-  return { len: count ?? 0, data: data || [], error: null };
-}
 
 export async function getUsers() {
   const supabaseAdmin = createAdminClient();
@@ -38,3 +20,68 @@ export async function getUsers() {
 
   return users;
 }
+
+export async function getStudentById(id: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("student")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching student with ID ${id}:`, error);
+    return { data: null, error: error.message };
+  }
+
+  return { data, error: null };
+}
+
+export async function getStudents() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("student")
+    .select("*");
+
+  if (error) {
+    console.error("Error fetching students:", error);
+    return { data: [], error: error.message };
+  }
+
+  return { data: data || [], error: null };
+}
+
+export async function getTeachers() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("teacher")
+    .select("*");
+
+  if (error) {
+    console.error("Error fetching teachers:", error);
+    return { data: [], error: error.message };
+  }
+
+  return { data: data || [], error: null };
+}
+
+export async function getTeacherById(id: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("teacher")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching teacher with ID ${id}:`, error);
+    return { data: null, error: error.message };
+  }
+
+  return { data, error: null };
+}
+
