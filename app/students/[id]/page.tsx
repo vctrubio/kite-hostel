@@ -1,4 +1,4 @@
-import { getStudentById } from "@/actions/getters";
+import { getStudentById } from "@/actions/student-actions";
 import { StudentDetails } from "./StudentDetails";
 import { languagesEnum } from "@/drizzle/migrations/schema";
 

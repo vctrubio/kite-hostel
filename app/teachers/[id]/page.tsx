@@ -1,4 +1,4 @@
-import { getTeacherById } from "@/actions/getters";
+import { getTeacherById } from "@/actions/teacher-actions";
 import { TeacherDetails } from "./TeacherDetails";
 
 export default async function TeacherPage({ params }: { params: { id: string } }) {

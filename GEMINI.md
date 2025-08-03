@@ -28,3 +28,6 @@ teachers track their hours, while admin set lesson schedule.
 ## Structure
 
 - inside @components/formatters we have all the formating we should need for date, time ect.
+- inside @components/links we have ui components that tamper api calls
+- inside @actions we have the api calls, WE USE DRIZZLE
+- @actiosn/seed is for test and fast developed of populating the db

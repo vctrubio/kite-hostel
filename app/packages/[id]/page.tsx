@@ -1,5 +1,5 @@
 
-import { getPackageById } from "@/actions/getters";
+import { getPackageById } from "@/actions/package-actions";
 import { PackageDetails } from "./PackageDetails";
 
 export default async function PackagePage({ params }: { params: { id: string } }) {

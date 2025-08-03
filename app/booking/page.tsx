@@ -1,5 +1,7 @@
 import BookingForm from "@/components/forms/BookingForm";
-import { getPackages, getStudents, getUserWallets } from "@/actions/getters";
+import { getPackages } from "@/actions/package-actions";
+import { getStudents } from "@/actions/student-actions";
+import { getUserWallets } from "@/actions/user-actions";
 
 export default async function BookingPage() {
   const { data: packages, error: packagesError } = await getPackages();

@@ -1,4 +1,4 @@
-import { getTeachers } from "@/actions/getters";
+import { getTeachers } from "@/actions/teacher-actions";
 import { TeachersTable } from "./TeachersTable";
 
 export default async function TeachersPage() {

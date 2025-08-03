@@ -1,7 +1,7 @@
 
 'use client'
 
-import { createPackages } from '@/actions/setters'
+import { seedCreatePackages } from '@/actions/seed-actions'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -11,7 +11,7 @@ export function SeedPackageForm() {
 
   const handleClick = async () => {
     setLoading(true)
-    const result = await createPackages()
+    const result = await seedCreatePackages()
     if (result.success) {
       toast.success(`10 packages created successfully!`)
     } else {

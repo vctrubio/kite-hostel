@@ -1,5 +1,5 @@
 
-import { getPackages } from "@/actions/getters";
+import { getPackages } from "@/actions/package-actions";
 import { PackagesTable } from "./PackagesTable";
 
 export default async function PackagesPage() {

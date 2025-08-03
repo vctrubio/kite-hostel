@@ -1,8 +1,9 @@
-import { getUserWallets, getUsers } from "@/actions/getters";
+import { getUserWallets } from "@/actions/user-actions";
+import { getUsers } from "@/actions/auth-actions";
 
 export default async function UsersPage() {
   const { data: userWallets, error: userWalletsError } = await getUserWallets();
-  const usersData = await getUsers(); // getUsers returns raw user data, not { data, error }
+  const usersData = await getUsers();
 
   if (userWalletsError) {
     return <div>Error loading user wallets: {userWalletsError}</div>;

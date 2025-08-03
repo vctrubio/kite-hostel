@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { updateStudent } from "@/actions/setters";
+import { updateStudent } from "@/actions/student-actions";
 import { toast } from "sonner";
 
 interface StudentDetailsProps {

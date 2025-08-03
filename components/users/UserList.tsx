@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { getUsers } from "@/actions/getters";
+import { getUsers } from "@/actions/auth-actions";
 import type { User } from "@supabase/supabase-js";
 
 export function UserList() {

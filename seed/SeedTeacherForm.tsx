@@ -1,6 +1,6 @@
 'use client'
 
-import { createTeacher } from '@/actions/setters'
+import { seedCreateTeacher } from '@/actions/seed-actions'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -10,7 +10,7 @@ export function SeedTeacherForm() {
 
   const handleClick = async () => {
     setLoading(true)
-    const result = await createTeacher()
+    const result = await seedCreateTeacher()
     if (result.success) {
       toast.success(`Teacher ${result.teacher?.name} created successfully!`)
     } else {

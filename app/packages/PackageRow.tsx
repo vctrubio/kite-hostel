@@ -7,8 +7,6 @@ import { DateSince } from "@/components/formatters/DateSince";
 
 import { Duration } from "@/components/formatters/Duration";
 
-import { getBookingCountByPackageId } from "@/actions/getters";
-
 interface PackageRowProps {
   pkg: {
     id: string;
@@ -17,6 +15,7 @@ interface PackageRowProps {
     price_per_student: number;
     description: string;
     capacity_kites: number;
+    bookingCount: number;
   };
   expandedRow: string | null;
   setExpandedRow: (id: string | null) => void;
@@ -25,15 +24,12 @@ interface PackageRowProps {
 export function PackageRow({ pkg, expandedRow, setExpandedRow }: PackageRowProps) {
   const isExpanded = expandedRow === pkg.id;
   const router = useRouter();
-  const [bookingCount, setBookingCount] = useState<number | null>(null);
 
   const toggleExpand = async () => {
     if (isExpanded) {
       setExpandedRow(null);
     } else {
       setExpandedRow(pkg.id);
-      const { count } = await getBookingCountByPackageId(pkg.id);
-      setBookingCount(count);
     }
   };
 
@@ -64,7 +60,7 @@ export function PackageRow({ pkg, expandedRow, setExpandedRow }: PackageRowProps
               </div>
               <div>
                 <p className="font-semibold">Bookings:</p>
-                <p>{bookingCount}</p>
+                <p>{pkg.bookingCount}</p>
               </div>
             </div>
           </td>
