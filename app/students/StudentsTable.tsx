@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { StudentRow } from "./StudentRow";
 import { SeedStudentForm } from "@/seed/SeedStudentForm";
 
 interface StudentsTableProps {
@@ -10,15 +11,12 @@ interface StudentsTableProps {
 export function StudentsTable({ initialStudents }: StudentsTableProps) {
   const [students, setStudents] = useState(initialStudents);
   const router = useRouter();
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   // Update students state when initialStudents prop changes (due to revalidation)
   useEffect(() => {
     setStudents(initialStudents);
   }, [initialStudents]);
-
-  const handleRowClick = (id: string) => {
-    router.push(`/students/${id}`);
-  };
 
   return (
     <div className="container mx-auto p-4">
@@ -28,34 +26,20 @@ export function StudentsTable({ initialStudents }: StudentsTableProps) {
         <table className="min-w-full">
           <thead>
             <tr>
-              <th className="py-2 px-4">Name</th>
-              <th className="py-2 px-4">Languages</th>
-              <th className="py-2 px-4">Passport Number</th>
-              <th className="py-2 px-4">Country</th>
-              <th className="py-2 px-4">Phone</th>
-              <th className="py-2 px-4">Size</th>
-              <th className="py-2 px-4">Description</th>
+              <th className="py-2 px-4 text-left">Created At</th>
+              <th className="py-2 px-4 text-left">Name</th>
+              <th className="py-2 px-4 text-left">Description</th>
+              <th className="py-2 px-4"></th>
             </tr>
           </thead>
           <tbody>
             {students.map((student) => (
-              <tr
+              <StudentRow
                 key={student.id}
-                onClick={() => handleRowClick(student.id)}
-                className="cursor-pointer"
-              >
-                <td className="py-2 px-4">{student.name}</td>
-                <td className="py-2 px-4">
-                  {student.languages.join(", ")}
-                </td>
-                <td className="py-2 px-4">
-                  {student.passport_number}
-                </td>
-                <td className="py-2 px-4">{student.country}</td>
-                <td className="py-2 px-4">{student.phone}</td>
-                <td className="py-2 px-4">{student.size}</td>
-                <td className="py-2 px-4">{student.desc}</td>
-              </tr>
+                student={student}
+                expandedRow={expandedRow}
+                setExpandedRow={setExpandedRow}
+              />
             ))}
           </tbody>
         </table>

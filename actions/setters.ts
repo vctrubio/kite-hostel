@@ -4,7 +4,7 @@ import db from "@/drizzle";
 import { Student, Teacher, user_wallet } from "@/drizzle/migrations/schema";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, and, set } from "drizzle-orm";
 
 export async function createTeacher() {
   try {
@@ -82,5 +82,27 @@ export async function createStudent() {
   } catch (error) {
     console.error("Error creating student:", error);
     return { success: false, error: "Failed to create student." };
+  }
+}
+
+export async function updateStudent(id: string, updatedFields: Partial<typeof Student.$inferInsert>) {
+  try {
+    const result = await db
+      .update(Student)
+      .set(updatedFields)
+      .where(eq(Student.id, id))
+      .returning();
+
+    revalidatePath(`/students/${id}`);
+    revalidatePath("/students"); // Revalidate the list page as well
+
+    if (result.length === 0) {
+      return { success: false, error: "Student not found." };
+    }
+
+    return { success: true, student: result[0] };
+  } catch (error) {
+    console.error(`Error updating student ${id}:`, error);
+    return { success: false, error: "Failed to update student." };
   }
 }

@@ -1,5 +1,6 @@
 import { getStudentById } from "@/actions/getters";
 import { StudentDetails } from "./StudentDetails";
+import { languagesEnum } from "@/drizzle/migrations/schema";
 
 export default async function StudentPage({ params }: { params: { id: string } }) {
   const { data: student } = await getStudentById(params.id);
@@ -9,6 +10,6 @@ export default async function StudentPage({ params }: { params: { id: string } }
   }
 
   return (
-    <StudentDetails student={student} />
+    <StudentDetails student={student} availableLanguages={languagesEnum.enumValues} />
   );
 }
