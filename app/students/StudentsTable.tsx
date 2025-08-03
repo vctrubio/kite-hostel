@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StudentRow } from "./StudentRow";
 import { SeedStudentForm } from "@/seed/SeedStudentForm";
+import { StatsBar } from "@/components/StatsBar";
 
 interface StudentsTableProps {
   initialStudents: any[];
@@ -18,10 +19,23 @@ export function StudentsTable({ initialStudents }: StudentsTableProps) {
     setStudents(initialStudents);
   }, [initialStudents]);
 
+  const totalStudents = students.length;
+  const localStudents = students.filter(s => s.country === "Spain").length;
+  const foreignStudents = totalStudents - localStudents;
+
+  const studentStats = [
+    { value: totalStudents, description: "Total Students" },
+    { value: localStudents, description: "Local Students (Spain)" },
+    { value: foreignStudents, description: "Foreign Students" },
+  ];
+
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Students</h1>
-      <SeedStudentForm />
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Students</h1>
+        <SeedStudentForm />
+      </div>
+      <StatsBar stats={studentStats} />
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>

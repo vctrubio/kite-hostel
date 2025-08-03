@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SeedTeacherForm } from "@/seed/SeedTeacherForm";
+import { StatsBar } from "@/components/StatsBar";
+import { TeacherRow } from "./TeacherRow";
 
 interface TeachersTableProps {
   initialTeachers: any[];
@@ -10,47 +12,47 @@ interface TeachersTableProps {
 export function TeachersTable({ initialTeachers }: TeachersTableProps) {
   const [teachers, setTeachers] = useState(initialTeachers);
   const router = useRouter();
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   useEffect(() => {
     setTeachers(initialTeachers);
   }, [initialTeachers]);
 
-  const handleRowClick = (id: string) => {
-    router.push(`/teachers/${id}`);
-  };
+  const totalTeachers = teachers.length;
+  const localTeachers = teachers.filter(t => t.country === "Spain").length;
+  const foreignTeachers = totalTeachers - localTeachers;
+
+  const teacherStats = [
+    { value: totalTeachers, description: "Total Teachers" },
+    { value: localTeachers, description: "Local Teachers (Spain)" },
+    { value: foreignTeachers, description: "Foreign Teachers" },
+  ];
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Teachers</h1>
-      <SeedTeacherForm />
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Teachers</h1>
+        <SeedTeacherForm />
+      </div>
+      <StatsBar stats={teacherStats} />
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr>
-              <th className="py-2 px-4">Name</th>
-              <th className="py-2 px-4">Languages</th>
-              <th className="py-2 px-4">Passport Number</th>
-              <th className="py-2 px-4">Country</th>
-              <th className="py-2 px-4">Phone</th>
+              <th className="py-2 px-4 text-left">Created At</th>
+              <th className="py-2 px-4 text-left">Name</th>
+              <th className="py-2 px-4 text-left">Phone</th>
+              <th className="py-2 px-4"></th>
             </tr>
           </thead>
           <tbody>
             {teachers.map((teacher) => (
-              <tr
+              <TeacherRow
                 key={teacher.id}
-                onClick={() => handleRowClick(teacher.id)}
-                className="cursor-pointer"
-              >
-                <td className="py-2 px-4">{teacher.name}</td>
-                <td className="py-2 px-4">
-                  {teacher.languages.join(", ")}
-                </td>
-                <td className="py-2 px-4">
-                  {teacher.passport_number}
-                </td>
-                <td className="py-2 px-4">{teacher.country}</td>
-                <td className="py-2 px-4">{teacher.phone}</td>
-              </tr>
+                teacher={teacher}
+                expandedRow={expandedRow}
+                setExpandedRow={setExpandedRow}
+              />
             ))}
           </tbody>
         </table>
