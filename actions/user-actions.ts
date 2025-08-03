@@ -52,6 +52,7 @@ export async function getUserWallets() {
       id: wallet.id,
       role: wallet.role,
       pk: wallet.pk,
+      note: wallet.note, // Include the note column
       teacher_name: wallet.teacher?.name || null,
     }));
 

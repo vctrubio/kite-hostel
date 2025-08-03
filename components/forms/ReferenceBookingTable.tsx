@@ -31,6 +31,9 @@ export function ReferenceBookingTable({
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               PK (Teacher Name)
             </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Note
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -38,13 +41,16 @@ export function ReferenceBookingTable({
             <tr
               key={wallet.id}
               className={`cursor-pointer hover:bg-gray-100 ${selectedReferenceId === wallet.id ? 'bg-blue-100' : ''}`}
-              onClick={() => onSelectReference(wallet.id)}
+              onClick={() => onSelectReference(selectedReferenceId === wallet.id ? null : wallet.id)}
             >
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {wallet.role}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {wallet.teacher_name || "N/A"}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {wallet.note || "N/A"}
               </td>
             </tr>
           ))}

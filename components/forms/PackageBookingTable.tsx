@@ -46,7 +46,7 @@ export function PackageBookingTable({ packages, onSelectPackage, selectedPackage
             <tr
               key={pkg.id}
               className={`cursor-pointer hover:bg-gray-100 ${selectedPackageId === pkg.id ? 'bg-blue-100' : ''}`}
-              onClick={() => onSelectPackage(pkg.id)}
+              onClick={() => onSelectPackage(selectedPackageId === pkg.id ? "" : pkg.id)}
             >
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {pkg.description}

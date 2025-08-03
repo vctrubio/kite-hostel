@@ -5,6 +5,8 @@ import { DatePicker, DateRange } from "@/components/pickers/date-picker";
 import { PackageBookingTable } from "@/components/forms/PackageBookingTable";
 import { StudentBookingTable } from "@/components/forms/StudentBookingTable";
 import { ReferenceBookingTable } from "@/components/forms/ReferenceBookingTable";
+import { createBooking } from "@/actions/booking-actions";
+import { toast } from "sonner";
 
 export default function BookingForm({ packages, students, userWallets }) {
   const [selectedPackageId, setSelectedPackageId] = useState("");
@@ -12,6 +14,7 @@ export default function BookingForm({ packages, students, userWallets }) {
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: "", endDate: "" });
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (selectedPackageId) {
@@ -39,24 +42,54 @@ export default function BookingForm({ packages, students, userWallets }) {
         if (prevSelected.length < selectedPackageCapacity) {
           return [...prevSelected, studentId];
         } else {
-          alert(`You can only select up to ${selectedPackageCapacity} students for this package.`);
+          toast.error(`You can only select up to ${selectedPackageCapacity} students for this package.`);
           return prevSelected;
         }
       }
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log({
-      selectedPackageId,
-      startDate: dateRange.startDate,
-      endDate: dateRange.endDate,
-      selectedStudentIds,
-      selectedReferenceId,
+    setLoading(true);
+
+    if (!selectedPackageId) {
+      toast.error("Please select a package.");
+      setLoading(false);
+      return;
+    }
+
+    if (!dateRange.startDate || !dateRange.endDate) {
+      toast.error("Please select booking dates.");
+      setLoading(false);
+      return;
+    }
+
+    if (selectedStudentIds.length === 0) {
+      toast.error("Please select at least one student.");
+      setLoading(false);
+      return;
+    }
+
+    const result = await createBooking({
+      package_id: selectedPackageId,
+      date_start: dateRange.startDate,
+      date_end: dateRange.endDate,
+      student_ids: selectedStudentIds,
+      reference_id: selectedReferenceId,
     });
-    alert("Booking submitted! Check console for data.");
+
+    if (result.success) {
+      toast.success("Booking created successfully!");
+      // Optionally reset form
+      setSelectedPackageId("");
+      setDateRange({ startDate: "", endDate: "" });
+      setSelectedStudentIds([]);
+      setSelectedReferenceId(null);
+    } else {
+      toast.error(result.error || "Failed to create booking.");
+    }
+    setLoading(false);
   };
 
   return (
