@@ -85,3 +85,53 @@ export async function getTeacherById(id: string) {
   return { data, error: null };
 }
 
+export async function getPackages() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("package_student")
+    .select("*");
+
+  if (error) {
+    console.error("Error fetching packages:", error);
+    return { data: [], error: error.message };
+  }
+
+  return { data: data || [], error: null };
+}
+
+export async function getPackageById(id: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("package_student")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching package with ID ${id}:`, error);
+    return { data: null, error: error.message };
+  }
+
+  return { data, error: null };
+}
+
+export async function getBookingCountByPackageId(packageId: string) {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from("booking")
+    .select("", { count: "exact" })
+    .eq("package_id", packageId);
+
+  if (error) {
+    console.error(
+      `Error fetching booking count for package with ID ${packageId}:`,
+      error
+    );
+    return { count: 0, error: error.message };
+  }
+
+  return { count: count || 0, error: null };
+}

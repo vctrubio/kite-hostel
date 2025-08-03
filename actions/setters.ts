@@ -1,7 +1,7 @@
 "use server";
 
 import db from "@/drizzle";
-import { Student, Teacher, user_wallet } from "@/drizzle/migrations/schema";
+import { Student, Teacher, user_wallet, PackageStudent } from "@/drizzle/migrations/schema";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { eq, and, set } from "drizzle-orm";
@@ -136,5 +136,28 @@ export async function updateStudent(id: string, updatedFields: Partial<typeof St
   } catch (error) {
     console.error(`Error updating student ${id}:`, error);
     return { success: false, error: "Failed to update student." };
+  }
+}
+
+export async function createPackages() {
+  try {
+    const packages = [];
+    for (let i = 0; i < 10; i++) {
+      packages.push({
+        duration: (Math.floor(Math.random() * 10) + 1) * 60,
+        description: `Package ${Math.floor(Math.random() * 10000)}`,
+        price_per_student: Math.floor(Math.random() * 100) + 50,
+        capacity_students: Math.floor(Math.random() * 4) + 1,
+        capacity_kites: Math.floor(Math.random() * 3) + 1,
+      });
+    }
+
+    await db.insert(PackageStudent).values(packages);
+
+    revalidatePath("/packages");
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating packages:", error);
+    return { success: false, error: "Failed to create packages." };
   }
 }
