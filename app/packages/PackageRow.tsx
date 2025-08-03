@@ -10,7 +10,14 @@ import { Duration } from "@/components/formatters/Duration";
 import { getBookingCountByPackageId } from "@/actions/getters";
 
 interface PackageRowProps {
-  pkg: any;
+  pkg: {
+    id: string;
+    duration: number;
+    capacity_students: number;
+    price_per_student: number;
+    description: string;
+    capacity_kites: number;
+  };
   expandedRow: string | null;
   setExpandedRow: (id: string | null) => void;
 }
@@ -37,6 +44,7 @@ export function PackageRow({ pkg, expandedRow, setExpandedRow }: PackageRowProps
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.capacity_students}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.price_per_student}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.description}</td>
+        <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.capacity_kites}</td>
         <td className="py-2 px-4 text-right">
           <Button onClick={(e) => {
             e.stopPropagation(); // Prevent row from expanding/collapsing

@@ -5,12 +5,11 @@ import { usePathname } from 'next/navigation'
 import { ThemeSwitcher } from '@/components/supabase-init/theme-switcher'
 
 const links = [
-  { href: '/', label: 'Home' },
+  // Schema-related links
   { href: '/students', label: 'Students' },
-  
   { href: '/teachers', label: 'Teachers' },
   { href: '/packages', label: 'Packages' },
-  
+  { href: '/booking', label: 'Booking' },
 ]
 
 export function Navbar() {
@@ -18,12 +17,18 @@ export function Navbar() {
 
   return (
     <nav className="p-4">
-      <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center">
-          <Link href="/" className="font-bold text-xl">
-            Kite Hostel
-          </Link>
+      <div className="container mx-auto">
+        {/* Top row: Home and Theme Switcher */}
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center">
+            <Link href="/" className="font-bold text-xl">
+              Kite Hostel
+            </Link>
+          </div>
+          <ThemeSwitcher />
         </div>
+
+        {/* Bottom row: Schema-related links */}
         <div className="flex items-center space-x-4">
           {links.map(({ href, label }) => (
             <Link
@@ -33,7 +38,6 @@ export function Navbar() {
               {label}
             </Link>
           ))}
-          <ThemeSwitcher />
         </div>
       </div>
     </nav>

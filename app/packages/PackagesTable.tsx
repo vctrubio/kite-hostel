@@ -34,6 +34,7 @@ export function PackagesTable({ initialPackages }: PackagesTableProps) {
               <th className="py-2 px-4 text-left">Capacity</th>
               <th className="py-2 px-4 text-left">Price</th>
               <th className="py-2 px-4 text-left">Description</th>
+              <th className="py-2 px-4 text-left">Kites</th>
             </tr>
           </thead>
           <tbody>

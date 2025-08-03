@@ -24,3 +24,7 @@ teachers track their hours, while admin set lesson schedule.
 - we want to use the server as much as posible, then pass into client compoenents if needed.
 - all logic is best declared at the top of the document/function, where the parent componentn renders children, most readibility
 - look at the README to yunderstand how each model works, and its intented functionality (marked as ### after entity)
+
+## Structure
+
+- inside @components/formatters we have all the formating we should need for date, time ect.
