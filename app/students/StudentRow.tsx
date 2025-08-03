@@ -5,7 +5,17 @@ import { Button } from "@/components/ui/button";
 import { DateSince } from "@/components/formatters/DateSince";
 
 interface StudentRowProps {
-  student: any;
+  student: {
+    id: string;
+    created_at: string;
+    name: string;
+    desc: string;
+    languages: string[];
+    passport_number: string | null;
+    country: string | null;
+    phone: string | null;
+    totalBookings: number;
+  };
   expandedRow: string | null;
   setExpandedRow: (id: string | null) => void;
 }
@@ -28,6 +38,7 @@ export function StudentRow({ student, expandedRow, setExpandedRow }: StudentRowP
         <td onClick={toggleExpand} className="py-2 px-4 text-left"><DateSince dateString={student.created_at} /></td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.name}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.desc}</td>
+        <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.totalBookings}</td>
         <td className="py-2 px-4 text-right">
           <Button onClick={(e) => {
             e.stopPropagation(); // Prevent row from expanding/collapsing

@@ -1,11 +1,16 @@
 "use server";
 
 import db from "@/drizzle";
-import { PackageStudent } from "@/drizzle/migrations/schema";
+import { InferSelectModel } from "drizzle-orm";
+import { PackageStudent, Booking } from "@/drizzle/migrations/schema";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function getPackages() {
+type PackageWithRelations = InferSelectModel<typeof PackageStudent> & {
+  bookingCount: number;
+};
+
+export async function getPackages(): Promise<{ data: PackageWithRelations[]; error: string | null }> {
   try {
     const packages = await db.query.PackageStudent.findMany({
       with: {
@@ -15,12 +20,12 @@ export async function getPackages() {
       },
     });
 
-    const packagesWithBookingCount = packages.map((pkg) => ({
+    const packagesWithRelations = packages.map((pkg) => ({
       ...pkg,
       bookingCount: pkg.bookings?.length ?? 0,
     }));
 
-    return { data: packagesWithBookingCount, error: null };
+    return { data: packagesWithRelations, error: null };
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error fetching packages with Drizzle:", error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
@@ -28,14 +33,30 @@ export async function getPackages() {
   }
 }
 
-export async function getPackageById(id: string) {
+export async function getPackageById(id: string): Promise<{ data: PackageWithRelations | null; error: string | null }> {
   try {
     const pkg = await db.query.PackageStudent.findFirst({
       where: eq(PackageStudent.id, id),
+      with: {
+        bookings: {
+          columns: { id: true },
+        },
+      },
     });
-    return { data: pkg, error: null };
+
+    if (!pkg) {
+      return { data: null, error: "Package not found." };
+    }
+
+    const packageWithRelations: PackageWithRelations = {
+      ...pkg,
+      bookingCount: pkg.bookings?.length ?? 0,
+    };
+
+    return { data: packageWithRelations, error: null };
   } catch (error: any) {
-    console.error(`Error fetching package with ID ${id} with Drizzle:`, error);
-    return { data: null, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(`Error fetching package with ID ${id} with Drizzle:`, error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    return { data: null, error: errorMessage };
   }
 }

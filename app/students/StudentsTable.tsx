@@ -43,6 +43,7 @@ export function StudentsTable({ initialStudents }: StudentsTableProps) {
               <th className="py-2 px-4 text-left">Created At</th>
               <th className="py-2 px-4 text-left">Name</th>
               <th className="py-2 px-4 text-left">Description</th>
+              <th className="py-2 px-4 text-left">Total Bookings</th>
               <th className="py-2 px-4"></th>
             </tr>
           </thead>
