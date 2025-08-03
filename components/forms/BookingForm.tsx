@@ -4,12 +4,14 @@ import React, { useState, useEffect } from "react";
 import { DatePicker, DateRange } from "@/components/pickers/date-picker";
 import { PackageBookingTable } from "@/components/forms/PackageBookingTable";
 import { StudentBookingTable } from "@/components/forms/StudentBookingTable";
+import { ReferenceBookingTable } from "@/components/forms/ReferenceBookingTable";
 
-export default function BookingForm({ packages, students }) {
+export default function BookingForm({ packages, students, userWallets }) {
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [selectedPackageCapacity, setSelectedPackageCapacity] = useState(0);
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: "", endDate: "" });
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedPackageId) {
@@ -52,6 +54,7 @@ export default function BookingForm({ packages, students }) {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
       selectedStudentIds,
+      selectedReferenceId,
     });
     alert("Booking submitted! Check console for data.");
   };
@@ -66,6 +69,15 @@ export default function BookingForm({ packages, students }) {
             packages={packages}
             onSelectPackage={handlePackageChange}
             selectedPackageId={selectedPackageId}
+          />
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold mb-2">Select Reference</h2>
+          <ReferenceBookingTable
+            userWallets={userWallets}
+            onSelectReference={setSelectedReferenceId}
+            selectedReferenceId={selectedReferenceId}
           />
         </div>
         <div>

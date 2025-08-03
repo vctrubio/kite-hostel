@@ -135,3 +135,24 @@ export async function getBookingCountByPackageId(packageId: string) {
 
   return { count: count || 0, error: null };
 }
+
+export async function getUserWallets() {
+  const supabase = await createClient();
+
+  const { data: userWallets, error: userWalletsError } = await supabase
+    .from("user_wallet")
+    .select("*, teacher(name)"); // Select user_wallet fields and join teacher name
+
+  if (userWalletsError) {
+    console.error("Error fetching user wallets:", userWalletsError);
+    return { data: [], error: userWalletsError.message };
+  }
+
+  // Map the data to include teacher name directly if pk exists
+  const formattedUserWallets = userWallets.map((wallet) => ({
+    ...wallet,
+    teacher_name: wallet.pk ? wallet.teacher?.name : null, // Access teacher.name if teacher exists
+  }));
+
+  return { data: formattedUserWallets, error: null };
+}

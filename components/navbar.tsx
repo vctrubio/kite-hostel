@@ -10,6 +10,7 @@ const links = [
   { href: '/teachers', label: 'Teachers' },
   { href: '/packages', label: 'Packages' },
   { href: '/booking', label: 'Booking' },
+  { href: '/users', label: 'Users' },
 ]
 
 export function Navbar() {
