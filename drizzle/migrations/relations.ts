@@ -105,10 +105,7 @@ export const bookingRelations = relations(Booking, ({ one, many }) => ({
     fields: [Booking.package_id],
     references: [PackageStudent.id],
   }),
-  commission: one(Commission, {
-    fields: [Booking.commission_id],
-    references: [Commission.id],
-  }),
+  
   reference: one(user_wallet, {
     fields: [Booking.reference_id],
     references: [user_wallet.id],
@@ -138,6 +135,10 @@ export const lessonRelations = relations(Lesson, ({ one, many }) => ({
   booking: one(Booking, {
     fields: [Lesson.booking_id],
     references: [Booking.id],
+  }),
+  commission: one(Commission, {
+    fields: [Lesson.commission_id],
+    references: [Commission.id],
   }),
   events: many(Event),
 }));

@@ -1,5 +1,5 @@
 {
-  "id": "450ff385-4b0b-4faf-b54c-86889aa7cb93",
+  "id": "35ae6355-1271-46e1-83d3-46ba8bedfe20",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -46,12 +46,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "commission_id": {
-          "name": "commission_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -87,19 +81,6 @@
           "tableTo": "user_wallet",
           "columnsFrom": [
             "reference_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "booking_commission_id_fk": {
-          "name": "booking_commission_id_fk",
-          "tableFrom": "booking",
-          "tableTo": "commission",
-          "columnsFrom": [
-            "commission_id"
           ],
           "columnsTo": [
             "id"
@@ -579,6 +560,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "commission_id": {
+          "name": "commission_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "status": {
           "name": "status",
           "type": "lesson_status",
@@ -643,6 +630,19 @@
           "tableTo": "booking",
           "columnsFrom": [
             "booking_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "lesson_commission_id_fk": {
+          "name": "lesson_commission_id_fk",
+          "tableFrom": "lesson",
+          "tableTo": "commission",
+          "columnsFrom": [
+            "commission_id"
           ],
           "columnsTo": [
             "id"

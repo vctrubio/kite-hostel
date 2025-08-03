@@ -199,7 +199,6 @@ export const Booking = pgTable(
     date_end: timestamp({ mode: "string" }).notNull(),
     status: bookingStatusEnum().notNull(),
     reference_id: uuid(), // FK to user_wallet
-    commission_id: uuid().notNull(), // FK to commission (teacher) (locked at booking time)
     created_at: timestamp({ mode: "string" }).defaultNow(),
     deleted_at: timestamp({ mode: "string" }),
   },
@@ -213,11 +212,6 @@ export const Booking = pgTable(
       columns: [table.reference_id],
       foreignColumns: [user_wallet.id],
       name: "booking_reference_id_fk",
-    }),
-    foreignKey({
-      columns: [table.commission_id],
-      foreignColumns: [Commission.id],
-      name: "booking_commission_id_fk",
     }),
   ],
 );
@@ -252,6 +246,7 @@ export const Lesson = pgTable(
     id: uuid().defaultRandom().primaryKey().notNull(),
     teacher_id: uuid().notNull(),
     booking_id: uuid().notNull(),
+    commission_id: uuid().notNull(), // FK to commission (teacher) (locked at booking time)
     status: lessonStatusEnum().notNull(),
     created_at: timestamp({ mode: "string" }).defaultNow(),
     deleted_at: timestamp({ mode: "string" }),
@@ -266,6 +261,11 @@ export const Lesson = pgTable(
       columns: [table.booking_id],
       foreignColumns: [Booking.id],
       name: "lesson_booking_id_fk",
+    }),
+    foreignKey({
+      columns: [table.commission_id],
+      foreignColumns: [Commission.id],
+      name: "lesson_commission_id_fk",
     }),
     index("lesson_teacher_booking_id_idx").on(
       table.teacher_id,
