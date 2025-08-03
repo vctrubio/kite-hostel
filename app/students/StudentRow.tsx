@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { DateSince } from "@/components/formatters/DateSince";
 
 interface StudentRowProps {
   student: any;
@@ -24,7 +25,7 @@ export function StudentRow({ student, expandedRow, setExpandedRow }: StudentRowP
   return (
     <>
       <tr className="cursor-pointer">
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">{new Date(student.created_at).toLocaleDateString()}</td>
+        <td onClick={toggleExpand} className="py-2 px-4 text-left"><DateSince dateString={student.created_at} /></td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.name}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.desc}</td>
         <td className="py-2 px-4 text-right">
