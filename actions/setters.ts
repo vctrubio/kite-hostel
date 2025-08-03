@@ -11,6 +11,22 @@ export async function createTeacher() {
     const randomName = `Teacher ${Math.floor(Math.random() * 10000)}`;
     const languages = ["English", "Spanish", "French"];
     const randomLanguage = languages[Math.floor(Math.random() * languages.length)];
+    const countries = {
+      Spain: "+34",
+      France: "+33",
+      Germany: "+49",
+      Italy: "+39",
+      UK: "+44",
+      USA: "+1",
+      Canada: "+1",
+      Mexico: "+52",
+      Argentina: "+54",
+      Brazil: "+55",
+    };
+    const randomCountry = Object.keys(countries)[
+      Math.floor(Math.random() * Object.keys(countries).length)
+    ];
+    const phonePrefix = countries[randomCountry as keyof typeof countries];
 
     const newTeacher = await db
       .insert(Teacher)
@@ -18,8 +34,8 @@ export async function createTeacher() {
         name: randomName,
         languages: [randomLanguage],
         passport_number: `PN${Math.floor(Math.random() * 1000000)}`,
-        country: "Spain",
-        phone: `6${Math.floor(Math.random() * 100000000)}`,
+        country: randomCountry,
+        phone: `${phonePrefix}${Math.floor(Math.random() * 1000000000)}`,
       })
       .returning();
     revalidatePath("/teachers");
@@ -64,6 +80,22 @@ export async function createStudent() {
     const randomName = `Student ${Math.floor(Math.random() * 10000)}`;
     const languages = ["English", "Spanish", "French"];
     const randomLanguage = languages[Math.floor(Math.random() * languages.length)];
+    const countries = {
+      Spain: "+34",
+      France: "+33",
+      Germany: "+49",
+      Italy: "+39",
+      UK: "+44",
+      USA: "+1",
+      Canada: "+1",
+      Mexico: "+52",
+      Argentina: "+54",
+      Brazil: "+55",
+    };
+    const randomCountry = Object.keys(countries)[
+      Math.floor(Math.random() * Object.keys(countries).length)
+    ];
+    const phonePrefix = countries[randomCountry as keyof typeof countries];
 
     const newStudent = await db
       .insert(Student)
@@ -71,8 +103,8 @@ export async function createStudent() {
         name: randomName,
         languages: [randomLanguage],
         passport_number: `PN${Math.floor(Math.random() * 1000000)}`,
-        country: "Spain",
-        phone: `6${Math.floor(Math.random() * 100000000)}`,
+        country: randomCountry,
+        phone: `${phonePrefix}${Math.floor(Math.random() * 1000000000)}`,
         size: "M",
         desc: "Fake student for testing",
       })
