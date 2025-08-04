@@ -13,9 +13,12 @@ import {
 
 // Reference to Supabase's auth schema users table
 const authSchema = pgSchema("auth");
+import { jsonb } from "drizzle-orm/pg-core";
+
 export const users = authSchema.table("users", {
   id: uuid("id").primaryKey(),
-  // We don't need to define all columns, just the one we're referencing
+  email: text(),
+  user_metadata: jsonb(),
 });
 
 // ENUMS

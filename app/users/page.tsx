@@ -1,31 +1,30 @@
-import { getUserWallets } from "@/actions/user-actions";
+import { getUserWallets, getAvailableSk, getAvailablePks } from "@/actions/user-actions";
 import { getUsers } from "@/actions/auth-actions";
+import { getTeachers } from "@/actions/teacher-actions";
+import { UserManagementDebug } from "./UserManagementDebug";
 
 export default async function UsersPage() {
   const { data: userWallets, error: userWalletsError } = await getUserWallets();
   const usersData = await getUsers();
+  const { data: allTeachers, error: allTeachersError } = await getTeachers(); // This will be replaced by availablePks
+  const { data: availableSks, error: availableSksError } = await getAvailableSk();
+  const { data: availablePks, error: availablePksError } = await getAvailablePks();
 
   if (userWalletsError) {
     return <div>Error loading user wallets: {userWalletsError}</div>;
   }
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">User Management</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h2 className="text-xl font-bold mb-2">User Wallets</h2>
-          <pre className="bg-muted p-2 rounded-md overflow-auto text-sm text-foreground">
-            {JSON.stringify(userWallets, null, 2)}
-          </pre>
-        </div>
-        <div>
-          <h2 className="text-xl font-bold mb-2">Auth Users</h2>
-          <pre className="bg-muted p-2 rounded-md overflow-auto text-sm text-foreground">
-            {JSON.stringify(usersData, null, 2)}
-          </pre>
-        </div>
-      </div>
-    </div>
-  );
+  if (allTeachersError) {
+    return <div>Error loading teachers: {allTeachersError}</div>;
+  }
+
+  if (availableSksError) {
+    return <div>Error loading available users: {availableSksError}</div>;
+  }
+
+  if (availablePksError) {
+    return <div>Error loading available PKs: {availablePksError}</div>;
+  }
+
+  return <UserManagementDebug userWallets={userWallets} usersData={usersData} allTeachers={allTeachers} availableSks={availableSks} availablePks={availablePks} />;
 }
