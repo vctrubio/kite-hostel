@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,18 +10,32 @@ import { createUserWallet } from "@/actions/user-actions";
 interface CreateUserWalletFormProps {
   availablePks: { id: string; name: string }[];
   availableSks: { id: string; email: string; full_name?: string }[];
+  initialSk?: string | null; // New prop
 }
 
-export function CreateUserWalletForm({ availablePks, availableSks }: CreateUserWalletFormProps) {
+export function CreateUserWalletForm({
+  availablePks,
+  availableSks,
+  initialSk,
+}: CreateUserWalletFormProps) {
   const [formData, setFormData] = useState({
-    role: "guest",
+    role: "reference",
     note: "",
     pk: "",
-    sk: "",
+    sk: initialSk || "", // Initialize sk with initialSk
   });
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      sk: initialSk || "",
+    }));
+  }, [initialSk]);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const newFormData = {
@@ -29,7 +43,10 @@ export function CreateUserWalletForm({ availablePks, availableSks }: CreateUserW
         [name]: value,
       };
 
-      if (name === "role" && (value === "admin" || value === "locked" || value === "reference")) {
+      if (
+        name === "role" &&
+        (value === "admin" || value === "locked" || value === "reference")
+      ) {
         newFormData.pk = ""; // Set PK to empty string, which will be converted to null on save
       }
       return newFormData;
@@ -67,7 +84,12 @@ export function CreateUserWalletForm({ availablePks, availableSks }: CreateUserW
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Role Field */}
         <div>
-          <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role:</label>
+          <label
+            htmlFor="role"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Role:
+          </label>
           <select
             id="role"
             name="role"
@@ -86,7 +108,12 @@ export function CreateUserWalletForm({ availablePks, availableSks }: CreateUserW
         {/* PK Field */}
         {(formData.role === "teacher" || formData.role === "teacherAdmin") && (
           <div>
-            <label htmlFor="pk" className="block text-sm font-medium text-gray-700">PK (Teacher):</label>
+            <label
+              htmlFor="pk"
+              className="block text-sm font-medium text-gray-700"
+            >
+              PK (Teacher):
+            </label>
             <select
               id="pk"
               name="pk"
@@ -106,7 +133,12 @@ export function CreateUserWalletForm({ availablePks, availableSks }: CreateUserW
 
         {/* SK Field */}
         <div>
-          <label htmlFor="sk" className="block text-sm font-medium text-gray-700">SK (User):</label>
+          <label
+            htmlFor="sk"
+            className="block text-sm font-medium text-gray-700"
+          >
+            SK (User):
+          </label>
           <select
             id="sk"
             name="sk"
@@ -117,7 +149,9 @@ export function CreateUserWalletForm({ availablePks, availableSks }: CreateUserW
             <option value="">Select User</option>
             {availableSks.map((user: any) => (
               <option key={user.id} value={user.id}>
-                {user.full_name ? `${user.full_name}: ${user.email}` : user.email}
+                {user.full_name
+                  ? `${user.full_name}: ${user.email}`
+                  : user.email}
               </option>
             ))}
           </select>
@@ -125,7 +159,12 @@ export function CreateUserWalletForm({ availablePks, availableSks }: CreateUserW
 
         {/* Note Field */}
         <div>
-          <label htmlFor="note" className="block text-sm font-medium text-gray-700">Note:</label>
+          <label
+            htmlFor="note"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Note:
+          </label>
           <Input
             type="text"
             id="note"

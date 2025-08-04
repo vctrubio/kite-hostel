@@ -1,17 +1,21 @@
 import { getUserWallets, getAvailableSk, getAvailablePks } from "@/actions/user-actions";
 import { getUsers } from "@/actions/auth-actions";
 import { getTeachers } from "@/actions/teacher-actions";
-import { UserManagementDebug } from "./UserManagementDebug";
+import { UserOverview } from "./UserOverview";
 
 export default async function UsersPage() {
   const { data: userWallets, error: userWalletsError } = await getUserWallets();
-  const usersData = await getUsers();
+  const { data: usersData, error: usersDataError } = await getUsers();
   const { data: allTeachers, error: allTeachersError } = await getTeachers(); // This will be replaced by availablePks
   const { data: availableSks, error: availableSksError } = await getAvailableSk();
   const { data: availablePks, error: availablePksError } = await getAvailablePks();
 
   if (userWalletsError) {
     return <div>Error loading user wallets: {userWalletsError}</div>;
+  }
+
+  if (usersDataError) {
+    return <div>Error loading auth users: {usersDataError}</div>;
   }
 
   if (allTeachersError) {
@@ -26,5 +30,5 @@ export default async function UsersPage() {
     return <div>Error loading available PKs: {availablePksError}</div>;
   }
 
-  return <UserManagementDebug userWallets={userWallets} usersData={usersData} allTeachers={allTeachers} availableSks={availableSks} availablePks={availablePks} />;
+  return <UserOverview userWallets={userWallets} usersData={usersData || []} allTeachers={allTeachers} availableSks={availableSks} availablePks={availablePks} />;
 }
