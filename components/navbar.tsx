@@ -4,13 +4,20 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ThemeSwitcher } from '@/components/supabase-init/theme-switcher'
 
-const links = [
-  // Schema-related links
+const primaryLinks = [
   { href: '/students', label: 'Students' },
   { href: '/teachers', label: 'Teachers' },
   { href: '/packages', label: 'Packages' },
-  { href: '/booking', label: 'Booking' },
+  { href: '/bookings', label: 'Bookings' },
+  { href: '/lessons', label: 'Lessons' },
+  { href: '/events', label: 'Events' },
+  { href: '/kites', label: 'Kites' },
+]
+
+const secondaryLinks = [
   { href: '/users', label: 'Users' },
+  { href: '/references', label: 'References' },
+  { href: '/payments', label: 'Payments' },
 ]
 
 export function Navbar() {
@@ -31,7 +38,16 @@ export function Navbar() {
 
         {/* Bottom row: Schema-related links */}
         <div className="flex items-center space-x-4">
-          {links.map(({ href, label }) => (
+          {primaryLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`${pathname === href ? 'font-bold' : ''}`}>
+              {label}
+            </Link>
+          ))}
+          <span className="text-muted-foreground">|</span>
+          {secondaryLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
