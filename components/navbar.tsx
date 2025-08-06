@@ -39,7 +39,15 @@ export function Navbar() {
               Whiteboard
             </Link>
           </div>
-          <ThemeSwitcher />
+          <div className="flex items-center space-x-4">
+            <Link
+              href="/docs"
+              className={`text-lg ${pathname === "/docs" ? "font-bold" : ""}`}
+            >
+              Docs
+            </Link>
+            <ThemeSwitcher />
+          </div>
         </div>
 
         {/* Bottom row: Schema-related links */}
