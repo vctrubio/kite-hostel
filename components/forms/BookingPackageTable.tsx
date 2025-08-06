@@ -16,9 +16,11 @@ interface PackageBookingTableProps {
   packages: Package[];
   onSelectPackage: (packageId: string) => void;
   selectedPackageId: string;
+  viaStudentParams?: boolean;
+  selectedStudentIds?: string[];
 }
 
-export function BookingPackageTable({ packages, onSelectPackage, selectedPackageId }: PackageBookingTableProps) {
+export function BookingPackageTable({ packages, onSelectPackage, selectedPackageId, viaStudentParams, selectedStudentIds }: PackageBookingTableProps) {
   const [sortBy, setSortBy] = useState<'duration' | 'price' | 'capacity' | 'kites' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -31,7 +33,11 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
     }
   };
 
-  const sortedPackages = [...packages].sort((a, b) => {
+  const filteredPackages = viaStudentParams && selectedStudentIds && selectedStudentIds.length > 0
+    ? packages.filter(pkg => pkg.capacity_students === selectedStudentIds.length)
+    : packages;
+
+  const sortedPackages = [...filteredPackages].sort((a, b) => {
     if (!sortBy) return 0;
     
     let valueA: number, valueB: number;

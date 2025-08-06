@@ -165,7 +165,9 @@ export async function createBooking({
       await db.insert(BookingStudent).values(bookingStudents);
     }
 
-    revalidatePath("/booking");
+    revalidatePath("/bookings");
+    revalidatePath("/bookings/form");
+    revalidatePath("/students");
     return { success: true, error: null };
   } catch (error: any) {
     const errorMessage =

@@ -19,7 +19,6 @@ const client =
   globalForDb.client ??
   postgres(process.env.DATABASE_URL, {
     prepare: false,
-    max: 1, // optional: limit connections per client
   });
 
 const db =

@@ -3,7 +3,7 @@
 import db from "@/drizzle";
 import { InferSelectModel } from "drizzle-orm";
 import { Student, BookingStudent, Booking } from "@/drizzle/migrations/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 type StudentWithRelations = InferSelectModel<typeof Student> & {
@@ -31,19 +31,25 @@ export async function updateStudent(
 
     return { success: true, student: result[0] };
   } catch (error) {
-    console.error(`Error updating student ${id}:`, error);
     return { success: false, error: "Failed to update student." };
   }
 }
 
 export async function getStudents(): Promise<{ data: StudentWithRelations[]; error: string | null }> {
   try {
-    const students = await db.query.Student.findMany({
-      with: {
-        bookings: {
-          columns: { id: true },
-        },
-      },
+    const students = await db.query.Student.findMany();
+
+    const studentBookingCounts = await db
+      .select({
+        studentId: BookingStudent.student_id,
+        count: count(BookingStudent.id),
+      })
+      .from(BookingStudent)
+      .groupBy(BookingStudent.student_id);
+
+    const bookingCountsMap = new Map<string, number>();
+    studentBookingCounts.forEach((row) => {
+      bookingCountsMap.set(row.studentId, row.count);
     });
 
     const activeBookings = await db.query.Booking.findMany({
@@ -66,14 +72,13 @@ export async function getStudents(): Promise<{ data: StudentWithRelations[]; err
 
     const studentsWithRelations = students.map((student) => ({
       ...student,
-      totalBookings: student.bookings?.length ?? 0,
+      totalBookings: bookingCountsMap.get(student.id) ?? 0,
       isAvailable: !unavailableStudentIds.has(student.id),
     }));
 
     return { data: studentsWithRelations, error: null };
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error("Error fetching students with Drizzle:", error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return { data: [], error: errorMessage };
   }
 }
@@ -121,7 +126,6 @@ export async function getStudentById(id: string): Promise<{ data: StudentWithRel
     return { data: studentWithRelations, error: null };
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error(`Error fetching student with ID ${id} with Drizzle:`, error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return { data: null, error: errorMessage };
   }
 }

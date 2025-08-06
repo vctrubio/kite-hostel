@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DateSince } from "@/components/formatters/DateSince";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface StudentRowProps {
   student: {
@@ -19,9 +20,11 @@ interface StudentRowProps {
   expandedRow: string | null;
   setExpandedRow: (id: string | null) => void;
   isAvailable: boolean;
+  isSelected: boolean;
+  onSelectStudent: (id: string) => void;
 }
 
-export function StudentRow({ student, expandedRow, setExpandedRow, isAvailable }: StudentRowProps) {
+export function StudentRow({ student, expandedRow, setExpandedRow, isAvailable, isSelected, onSelectStudent }: StudentRowProps) {
   const isExpanded = expandedRow === student.id;
   const router = useRouter();
 
@@ -35,23 +38,19 @@ export function StudentRow({ student, expandedRow, setExpandedRow, isAvailable }
 
   return (
     <>
-      <tr className="cursor-pointer">
+      <tr className={`cursor-pointer ${isSelected ? 'bg-blue-100' : ''}`}>
+        <td className="py-2 px-4 text-left">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onSelectStudent(student.id)}
+            disabled={!isAvailable}
+          />
+        </td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left"><DateSince dateString={student.created_at} /></td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.name}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.desc}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.totalBookings}</td>
         <td className="py-2 px-4 text-right">
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/bookings/form?studentId=${student.id}`);
-            }}
-            disabled={!isAvailable}
-            variant={isAvailable ? "default" : "secondary"}
-            className="mr-2"
-          >
-            Book
-          </Button>
           <Button onClick={(e) => {
             e.stopPropagation(); // Prevent row from expanding/collapsing
             router.push(`/students/${student.id}`);
@@ -62,7 +61,7 @@ export function StudentRow({ student, expandedRow, setExpandedRow, isAvailable }
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={5} className="py-2 px-4">
+          <td colSpan={6} className="py-2 px-4">
             <div className="grid grid-cols-2 gap-2 p-2">
               <div>
                 <p className="font-semibold">Languages:</p>

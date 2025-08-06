@@ -12,6 +12,7 @@ interface BookingSummaryProps {
   onReset: () => void;
   loading: boolean;
   onEditSection: (section: string) => void;
+  viaStudentParams?: boolean;
 }
 
 export function BookingSummary({
@@ -23,6 +24,7 @@ export function BookingSummary({
   onReset,
   loading,
   onEditSection,
+  viaStudentParams,
 }: BookingSummaryProps) {
   const getDaysDifference = (startDate: string, endDate: string) => {
     if (!startDate || !endDate) return 0;
@@ -44,6 +46,9 @@ export function BookingSummary({
     <div className="bg-card border border-border rounded-lg shadow-sm sticky top-4 z-10">
       <div className="px-4 py-3 border-b border-border">
         <h2 className="text-lg font-semibold text-foreground">Booking Summary</h2>
+        {viaStudentParams && (
+          <p className="text-xs text-muted-foreground">{selectedStudents.length} student(s) pre-selected. Please reset if not accorded.</p>
+        )}
       </div>
       
       <div className="p-4 space-y-4">

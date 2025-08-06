@@ -2,45 +2,88 @@
 
 import React, { useState, useEffect } from "react";
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from "next/navigation";
+import { useRouter } from 'next/navigation';
 import { DatePicker, DateRange } from "@/components/pickers/date-picker";
 import { BookingPackageTable } from "@/components/forms/BookingPackageTable";
 import { BookingStudentTable } from "@/components/forms/BookingStudentTable";
 import { BookingReferenceTable } from "@/components/forms/BookingReferenceTable";
 import { BookingSummary } from "@/components/forms/BookingSummary";
-import { createBooking, availableStudent4Booking } from "@/actions/booking-actions";
+import { createBooking } from "@/actions/booking-actions";
+import { getStudents } from "@/actions/student-actions";
 import { toast } from "sonner";
-
-
 
 export default function BookingForm({ packages, students, userWallets }) {
   const searchParams = useSearchParams();
-  const studentId = searchParams.get('studentId');
+  const router = useRouter();
+  const studentIdsParam = searchParams.get("studentIds");
+  const studentIds = studentIdsParam ? studentIdsParam.split(",") : [];
+  const packageIdParam = searchParams.get("packageId");
 
-  const [selectedPackageId, setSelectedPackageId] = useState("");
-  const [selectedPackageCapacity, setSelectedPackageCapacity] = useState(0);
-  const [dateRange, setDateRange] = useState<DateRange>({ startDate: "", endDate: "" });
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(studentId ? [studentId] : []);
-  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(null);
+  const [selectedPackageId, setSelectedPackageId] = useState(
+    packageIdParam || "",
+  );
+  const [selectedPackageCapacity, setSelectedPackageCapacity] = useState(
+    studentIds.length > 0 ? studentIds.length : 0,
+  );
+  const [dateRange, setDateRange] = useState<DateRange>({
+    startDate: "",
+    endDate: "",
+  });
+  const [selectedStudentIds, setSelectedStudentIds] =
+    useState<string[]>(studentIds);
+  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
-  const [availableStudents, setAvailableStudents] = useState<Set<string>>(new Set(students.filter(s => s.isAvailable).map(s => s.id)));
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['dates-section', 'package-section', 'students-section', 'reference-section'])
+  const [availableStudents, setAvailableStudents] = useState<Set<string>>(
+    new Set(),
+  );
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
+    if (studentIds.length > 0 || packageIdParam) {
+      return new Set(["dates-section", "reference-section"]);
+    } else {
+      return new Set([
+        "dates-section",
+        "package-section",
+        "students-section",
+        "reference-section",
+      ]);
+    }
+  });
+  const [viaStudentParams, setViaStudentParams] = useState(
+    studentIds.length > 0,
   );
 
   useEffect(() => {
+    const updateAvailableStudents = () => {
+      setAvailableStudents(
+        new Set(students.filter((s) => s.isAvailable).map((s) => s.id)),
+      );
+    };
+    updateAvailableStudents();
+  }, [students]);
+
+  useEffect(() => {
     if (selectedPackageId) {
-      const selectedPkg = packages.find((pkg: any) => pkg.id === selectedPackageId);
+      const selectedPkg = packages.find(
+        (pkg: any) => pkg.id === selectedPackageId,
+      );
       if (selectedPkg) {
         setSelectedPackageCapacity(selectedPkg.capacity_students);
-        setSelectedStudentIds([]);
+        if (
+          viaStudentParams &&
+          selectedStudentIds.length > selectedPkg.capacity_students
+        ) {
+          toast.warn(
+            `The selected package capacity (${selectedPkg.capacity_students}) is less than the number of pre-selected students (${selectedStudentIds.length}). Please adjust student selection.`,
+          );
+        }
       }
-    } else {
+    } else if (!viaStudentParams) {
       setSelectedPackageCapacity(0);
-      setSelectedStudentIds([]);
     }
-  }, [selectedPackageId, packages]);
-
+  }, [selectedPackageId, packages, viaStudentParams, selectedStudentIds]);
 
   const handleStudentChange = (studentId: string) => {
     setSelectedStudentIds((prevSelected) => {
@@ -51,15 +94,17 @@ export default function BookingForm({ packages, students, userWallets }) {
         if (prevSelected.length < selectedPackageCapacity) {
           newSelectedIds = [...prevSelected, studentId];
         } else {
-          toast.error(`You can only select up to ${selectedPackageCapacity} students for this package.`);
+          toast.error(
+            `You can only select up to ${selectedPackageCapacity} students for this package.`,
+          );
           newSelectedIds = prevSelected;
         }
       }
 
       if (newSelectedIds.length >= selectedPackageCapacity) {
-        setExpandedSections(prev => {
+        setExpandedSections((prev) => {
           const newSet = new Set(prev);
-          newSet.delete('students-section');
+          newSet.delete("students-section");
           return newSet;
         });
       }
@@ -69,7 +114,7 @@ export default function BookingForm({ packages, students, userWallets }) {
   };
 
   const handleEditSection = (sectionId: string) => {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
@@ -83,9 +128,9 @@ export default function BookingForm({ packages, students, userWallets }) {
   const handlePackageChange = (packageId: string) => {
     setSelectedPackageId(packageId);
     if (packageId) {
-      setExpandedSections(prev => {
+      setExpandedSections((prev) => {
         const newSet = new Set(prev);
-        newSet.delete('package-section');
+        newSet.delete("package-section");
         return newSet;
       });
     }
@@ -98,9 +143,9 @@ export default function BookingForm({ packages, students, userWallets }) {
   const handleReferenceChange = (referenceId: string | null) => {
     setSelectedReferenceId(referenceId);
     if (referenceId) {
-      setExpandedSections(prev => {
+      setExpandedSections((prev) => {
         const newSet = new Set(prev);
-        newSet.delete('reference-section');
+        newSet.delete("reference-section");
         return newSet;
       });
     }
@@ -109,44 +154,58 @@ export default function BookingForm({ packages, students, userWallets }) {
   const handleSubmit = async () => {
     setLoading(true);
 
-    if (!selectedPackageId) {
-      toast.error("Please select a package.");
-      setLoading(false);
-      return;
-    }
+    try {
+      if (!selectedPackageId) {
+        toast.error("Please select a package.");
+        return;
+      }
 
-    if (!dateRange.startDate || !dateRange.endDate) {
-      toast.error("Please select booking dates.");
-      setLoading(false);
-      return;
-    }
+      if (!dateRange.startDate || !dateRange.endDate) {
+        toast.error("Please select booking dates.");
+        return;
+      }
 
-    if (selectedStudentIds.length === 0) {
-      toast.error("Please select at least one student.");
-      setLoading(false);
-      return;
-    }
+      if (selectedStudentIds.length === 0) {
+        toast.error("Please select at least one student.");
+        return;
+      }
 
-    const result = await createBooking({
-      package_id: selectedPackageId,
-      date_start: dateRange.startDate,
-      date_end: dateRange.endDate,
-      student_ids: selectedStudentIds,
-      reference_id: selectedReferenceId,
-    });
+      const result = await createBooking({
+        package_id: selectedPackageId,
+        date_start: dateRange.startDate,
+        date_end: dateRange.endDate,
+        student_ids: selectedStudentIds,
+        reference_id: selectedReferenceId,
+      });
 
-    if (result.success) {
-      toast.success("Booking created successfully!");
-      // Reset form and reopen sections
-      setSelectedPackageId("");
-      setDateRange({ startDate: "", endDate: "" });
-      setSelectedStudentIds([]);
-      setSelectedReferenceId(null);
-      setExpandedSections(new Set(['dates-section', 'package-section', 'students-section', 'reference-section']));
-    } else {
-      toast.error(result.error || "Failed to create booking.");
+      if (result.success) {
+        toast.success("Booking created successfully!");
+        // Reset form and reopen sections
+        setSelectedPackageId("");
+        setDateRange({ startDate: "", endDate: "" });
+        setSelectedStudentIds([]);
+        setSelectedReferenceId(null);
+        setExpandedSections(new Set(['dates-section', 'package-section', 'students-section', 'reference-section']));
+        // Re-fetch students to update availability
+        const { data: updatedStudents, error: studentsError } = await getStudents();
+        if (updatedStudents) {
+          setAvailableStudents(new Set(updatedStudents.filter(s => s.isAvailable).map(s => s.id)));
+        } else if (studentsError) {
+          console.error("Error re-fetching students:", studentsError);
+        }
+        setLoading(false); // Reset loading state here
+        router.refresh(); // Refresh the current route to revalidate data and re-render
+      } else {
+        toast.error(result.error || "Failed to create booking.");
+        setLoading(false); // Reset loading state on error too
+      }
+    } catch (error) {
+      console.error("Error during booking submission:", error);
+      toast.error("An unexpected error occurred during booking.");
+      setLoading(false); // Reset loading state on unexpected error
+    } finally {
+      // Removed window.history.replaceState from here
     }
-    setLoading(false);
   };
 
   const handleReset = () => {
@@ -154,12 +213,28 @@ export default function BookingForm({ packages, students, userWallets }) {
     setDateRange({ startDate: "", endDate: "" });
     setSelectedStudentIds([]);
     setSelectedReferenceId(null);
-    setExpandedSections(new Set(['dates-section', 'package-section', 'students-section', 'reference-section']));
+    setExpandedSections(
+      new Set([
+        "dates-section",
+        "package-section",
+        "students-section",
+        "reference-section",
+      ]),
+    );
+    setViaStudentParams(false);
+    // Clear URL parameters
+    window.history.replaceState({}, document.title, window.location.pathname);
   };
 
-  const selectedPackage = packages.find((pkg: any) => pkg.id === selectedPackageId);
-  const selectedStudentsList = students.filter((student: any) => selectedStudentIds.includes(student.id));
-  const selectedReference = userWallets.find((wallet: any) => wallet.id === selectedReferenceId);
+  const selectedPackage = packages.find(
+    (pkg: any) => pkg.id === selectedPackageId,
+  );
+  const selectedStudentsList = students.filter((student: any) =>
+    selectedStudentIds.includes(student.id),
+  );
+  const selectedReference = userWallets.find(
+    (wallet: any) => wallet.id === selectedReferenceId,
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -176,6 +251,7 @@ export default function BookingForm({ packages, students, userWallets }) {
               onReset={handleReset}
               loading={loading}
               onEditSection={handleEditSection}
+              viaStudentParams={viaStudentParams}
             />
           </div>
         </div>
@@ -184,45 +260,56 @@ export default function BookingForm({ packages, students, userWallets }) {
         <div className="lg:col-span-3 order-1 lg:order-2">
           <div className="bg-card">
             <div className="px-4 py-6 border-b border-border">
-              <h1 className="text-2xl font-semibold text-foreground">Create New Booking</h1>
+              <h1 className="text-2xl font-semibold text-foreground">
+                Create New Booking
+              </h1>
             </div>
-            
+
             <div className="p-4 space-y-6">
               {/* Dates Section - First */}
               <div id="dates-section" className="scroll-mt-4">
-                <div 
+                <div
                   className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection('dates-section')}
+                  onClick={() => handleEditSection("dates-section")}
                 >
-                  <h2 className="text-lg font-semibold text-foreground">Booking Dates</h2>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Booking Dates
+                  </h2>
                   <span className="text-sm text-muted-foreground">
-                    {expandedSections.has('dates-section') ? '−' : '+'}
+                    {expandedSections.has("dates-section") ? "−" : "+"}
                   </span>
                 </div>
-                {expandedSections.has('dates-section') && (
+                {expandedSections.has("dates-section") && (
                   <div className="mt-3">
-                    <DatePicker dateRange={dateRange} setDateRange={handleDatesChange} />
+                    <DatePicker
+                      dateRange={dateRange}
+                      setDateRange={handleDatesChange}
+                    />
                   </div>
                 )}
               </div>
 
               {/* Package Section - Second */}
               <div id="package-section" className="scroll-mt-4">
-                <div 
+                <div
                   className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection('package-section')}
+                  onClick={() => handleEditSection("package-section")}
                 >
-                  <h2 className="text-lg font-semibold text-foreground">Select Package</h2>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Select Package
+                  </h2>
                   <span className="text-sm text-muted-foreground">
-                    {expandedSections.has('package-section') ? '−' : '+'}
+                    {expandedSections.has("package-section") ? "−" : "+"}
                   </span>
                 </div>
-                {expandedSections.has('package-section') && (
+                {expandedSections.has("package-section") && (
                   <div className="mt-3">
                     <BookingPackageTable
                       packages={packages}
                       onSelectPackage={handlePackageChange}
                       selectedPackageId={selectedPackageId}
+                      viaStudentParams={viaStudentParams}
+                      selectedStudentIds={selectedStudentIds}
                     />
                   </div>
                 )}
@@ -230,18 +317,21 @@ export default function BookingForm({ packages, students, userWallets }) {
 
               {/* Students Section - Third */}
               <div id="students-section" className="scroll-mt-4">
-                <div 
+                <div
                   className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection('students-section')}
+                  onClick={() => handleEditSection("students-section")}
                 >
                   <h2 className="text-lg font-semibold text-foreground">
-                    Select Students <span className="text-sm font-normal text-muted-foreground">(Max: {selectedPackageCapacity})</span>
+                    Select Students{" "}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      (Max: {selectedPackageCapacity})
+                    </span>
                   </h2>
                   <span className="text-sm text-muted-foreground">
-                    {expandedSections.has('students-section') ? '−' : '+'}
+                    {expandedSections.has("students-section") ? "−" : "+"}
                   </span>
                 </div>
-                {expandedSections.has('students-section') && (
+                {expandedSections.has("students-section") && (
                   <div className="mt-3">
                     <BookingStudentTable
                       students={students}
@@ -256,16 +346,18 @@ export default function BookingForm({ packages, students, userWallets }) {
 
               {/* Reference Section - Fourth */}
               <div id="reference-section" className="scroll-mt-4">
-                <div 
+                <div
                   className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection('reference-section')}
+                  onClick={() => handleEditSection("reference-section")}
                 >
-                  <h2 className="text-lg font-semibold text-foreground">Select Reference</h2>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Select Reference
+                  </h2>
                   <span className="text-sm text-muted-foreground">
-                    {expandedSections.has('reference-section') ? '−' : '+'}
+                    {expandedSections.has("reference-section") ? "−" : "+"}
                   </span>
                 </div>
-                {expandedSections.has('reference-section') && (
+                {expandedSections.has("reference-section") && (
                   <div className="mt-3">
                     <BookingReferenceTable
                       userWallets={userWallets}
