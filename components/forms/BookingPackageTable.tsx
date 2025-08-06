@@ -82,6 +82,20 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
             <th 
               scope="col" 
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              onClick={() => handleSort('kites')}
+            >
+              Kites {getSortIcon('kites')}
+            </th>
+            <th 
+              scope="col" 
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              onClick={() => handleSort('capacity')}
+            >
+              Capacity {getSortIcon('capacity')}
+            </th>
+            <th 
+              scope="col" 
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               onClick={() => handleSort('duration')}
             >
               Duration (hours) {getSortIcon('duration')}
@@ -95,17 +109,9 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
             </th>
             <th 
               scope="col" 
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort('capacity')}
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              Capacity {getSortIcon('capacity')}
-            </th>
-            <th 
-              scope="col" 
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort('kites')}
-            >
-              Kites {getSortIcon('kites')}
+              Price/hour (€)
             </th>
           </tr>
         </thead>
@@ -120,16 +126,19 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
                 {pkg.description}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <Duration minutes={pkg.duration} />
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                €{pkg.price_per_student} / €{(pkg.price_per_student / (pkg.duration / 60)).toFixed(2)}h
+                {pkg.capacity_kites}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {pkg.capacity_students}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {pkg.capacity_kites}
+                <Duration minutes={pkg.duration} />
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                €{pkg.price_per_student}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                €{(pkg.price_per_student / (pkg.duration / 60)).toFixed(2)}/h
               </td>
             </tr>
           ))}

@@ -8,12 +8,14 @@ import { DatePicker, DateRange } from "@/components/pickers/date-picker";
 import { BookingPackageTable } from "@/components/forms/BookingPackageTable";
 import { BookingStudentTable } from "@/components/forms/BookingStudentTable";
 import { BookingReferenceTable } from "@/components/forms/BookingReferenceTable";
+import { BookingLessonTeacherTable } from "@/components/forms/BookingLessonTeacherTable";
 import { BookingSummary } from "@/components/forms/BookingSummary";
 import { createBooking } from "@/actions/booking-actions";
 import { getStudents } from "@/actions/student-actions";
+import { createLesson } from "@/actions/lesson-actions";
 import { toast } from "sonner";
 
-export default function BookingForm({ packages, students, userWallets }) {
+export default function BookingForm({ packages, students, userWallets, teachers }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const studentIdsParam = searchParams.get("studentIds");
@@ -32,9 +34,9 @@ export default function BookingForm({ packages, students, userWallets }) {
   });
   const [selectedStudentIds, setSelectedStudentIds] =
     useState<string[]>(studentIds);
-  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(
-    null,
-  );
+  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(null);
+  const [selectedLessonTeacherId, setSelectedLessonTeacherId] = useState<string | null>(null);
+  const [selectedLessonCommissionId, setSelectedLessonCommissionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [availableStudents, setAvailableStudents] = useState<Set<string>>(
     new Set(),
@@ -148,6 +150,32 @@ export default function BookingForm({ packages, students, userWallets }) {
         newSet.delete("reference-section");
         return newSet;
       });
+      const selectedWallet = userWallets.find(wallet => wallet.id === referenceId);
+      if (selectedWallet && selectedWallet.pk) {
+        const teacher = teachers.find(t => t.id === selectedWallet.pk);
+        if (teacher) {
+          setSelectedLessonTeacherId(teacher.id);
+          setExpandedSections(prev => {
+            const newSet = new Set(prev);
+            newSet.add("lesson-section");
+            return newSet;
+          });
+        } else {
+          setSelectedLessonTeacherId(null);
+          setSelectedLessonCommissionId(null);
+        }
+      } else {
+        setSelectedLessonTeacherId(null);
+        setSelectedLessonCommissionId(null);
+      }
+    } else {
+      setSelectedLessonTeacherId(null);
+      setSelectedLessonCommissionId(null);
+      setExpandedSections((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete("reference-section");
+        return newSet;
+      });
     }
   };
 
@@ -179,12 +207,27 @@ export default function BookingForm({ packages, students, userWallets }) {
       });
 
       if (result.success) {
-        toast.success("Booking created successfully!");
+        let toastMessage = "Booking created successfully!";
+        if (selectedLessonTeacherId && selectedLessonCommissionId) {
+          const lessonResult = await createLesson({
+            booking_id: result.bookingId as string,
+            teacher_id: selectedLessonTeacherId,
+            commission_id: selectedLessonCommissionId,
+          });
+          if (lessonResult.success) {
+            toastMessage = "Booking and Lesson created successfully!";
+          } else {
+            toastMessage = `Booking created, but failed to create lesson: ${lessonResult.error}`;
+          }
+        }
+        toast.success(toastMessage);
         // Reset form and reopen sections
         setSelectedPackageId("");
         setDateRange({ startDate: "", endDate: "" });
         setSelectedStudentIds([]);
         setSelectedReferenceId(null);
+        setSelectedLessonTeacherId(null);
+        setSelectedLessonCommissionId(null);
         setExpandedSections(new Set(['dates-section', 'package-section', 'students-section', 'reference-section']));
         // Re-fetch students to update availability
         const { data: updatedStudents, error: studentsError } = await getStudents();
@@ -213,6 +256,8 @@ export default function BookingForm({ packages, students, userWallets }) {
     setDateRange({ startDate: "", endDate: "" });
     setSelectedStudentIds([]);
     setSelectedReferenceId(null);
+    setSelectedLessonTeacherId(null);
+    setSelectedLessonCommissionId(null);
     setExpandedSections(
       new Set([
         "dates-section",
@@ -252,6 +297,9 @@ export default function BookingForm({ packages, students, userWallets }) {
               loading={loading}
               onEditSection={handleEditSection}
               viaStudentParams={viaStudentParams}
+              selectedLessonTeacherId={selectedLessonTeacherId}
+              selectedLessonCommissionId={selectedLessonCommissionId}
+              teachers={teachers}
             />
           </div>
         </div>
@@ -346,23 +394,45 @@ export default function BookingForm({ packages, students, userWallets }) {
 
               {/* Reference Section - Fourth */}
               <div id="reference-section" className="scroll-mt-4">
-                <div
+                <div 
                   className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection("reference-section")}
+                  onClick={() => handleEditSection('reference-section')}
                 >
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Select Reference
-                  </h2>
+                  <h2 className="text-lg font-semibold text-foreground">Select Reference</h2>
                   <span className="text-sm text-muted-foreground">
-                    {expandedSections.has("reference-section") ? "−" : "+"}
+                    {expandedSections.has('reference-section') ? '−' : '+'}
                   </span>
                 </div>
-                {expandedSections.has("reference-section") && (
+                {expandedSections.has('reference-section') && (
                   <div className="mt-3">
                     <BookingReferenceTable
                       userWallets={userWallets}
                       onSelectReference={handleReferenceChange}
                       selectedReferenceId={selectedReferenceId}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Lesson Details Section - Fifth */}
+              <div id="lesson-section" className="scroll-mt-4">
+                <div 
+                  className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
+                  onClick={() => handleEditSection('lesson-section')}
+                >
+                  <h2 className="text-lg font-semibold text-foreground">Lesson Details (Optional)</h2>
+                  <span className="text-sm text-muted-foreground">
+                    {expandedSections.has('lesson-section') ? '−' : '+'}
+                  </span>
+                </div>
+                {expandedSections.has('lesson-section') && (
+                  <div className="mt-3">
+                    <BookingLessonTeacherTable
+                      teachers={teachers}
+                      selectedTeacherId={selectedLessonTeacherId}
+                      selectedCommissionId={selectedLessonCommissionId}
+                      onSelectTeacher={setSelectedLessonTeacherId}
+                      onSelectCommission={setSelectedLessonCommissionId}
                     />
                   </div>
                 )}

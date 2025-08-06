@@ -138,7 +138,7 @@ export async function createBooking({
   date_end,
   student_ids,
   reference_id,
-}: CreateBookingParams): Promise<{ success: boolean; error: string | null }> {
+}: CreateBookingParams): Promise<{ success: boolean; error: string | null; bookingId?: string }> {
   try {
     const newBooking = await db
       .insert(Booking)
@@ -168,7 +168,7 @@ export async function createBooking({
     revalidatePath("/bookings");
     revalidatePath("/bookings/form");
     revalidatePath("/students");
-    return { success: true, error: null };
+    return { success: true, bookingId, error: null };
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to create booking.";

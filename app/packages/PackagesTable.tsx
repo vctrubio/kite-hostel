@@ -30,11 +30,12 @@ export function PackagesTable({ initialPackages }: PackagesTableProps) {
         <table className="min-w-full">
           <thead>
             <tr>
-              <th className="py-2 px-4 text-left">Hours</th>
-              <th className="py-2 px-4 text-left">Capacity</th>
-              <th className="py-2 px-4 text-left">Price</th>
               <th className="py-2 px-4 text-left">Description</th>
               <th className="py-2 px-4 text-left">Kites</th>
+              <th className="py-2 px-4 text-left">Capacity</th>
+              <th className="py-2 px-4 text-left">Hours</th>
+              <th className="py-2 px-4 text-left">Price</th>
+              <th className="py-2 px-4 text-left">Price/hour</th>
             </tr>
           </thead>
           <tbody>

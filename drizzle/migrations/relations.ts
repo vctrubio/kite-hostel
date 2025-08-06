@@ -25,6 +25,7 @@ export const userWalletRelations = relations(user_wallet, ({ one }) => ({
   teacher: one(Teacher, {
     fields: [user_wallet.pk],
     references: [Teacher.id],
+    relationName: 'teacher_to_wallet',
   }),
 }));
 
@@ -43,7 +44,12 @@ export const teacherRelations = relations(Teacher, ({ many, one }) => ({
   commissions: many(Commission),
   kites: many(TeacherKite),
   payments: many(Payment),
-  wallet: many(user_wallet),
+  user_wallet: one(user_wallet, {
+    fields: [Teacher.id],
+    references: [user_wallet.pk],
+    relationName: 'teacher_to_wallet',
+  }),
+  lessons: many(Lesson),
 }));
 
 // Commission relations

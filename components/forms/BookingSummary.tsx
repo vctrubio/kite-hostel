@@ -13,6 +13,9 @@ interface BookingSummaryProps {
   loading: boolean;
   onEditSection: (section: string) => void;
   viaStudentParams?: boolean;
+  selectedLessonTeacherId: string | null;
+  selectedLessonCommissionId: string | null;
+  teachers: any[];
 }
 
 export function BookingSummary({
@@ -25,7 +28,24 @@ export function BookingSummary({
   loading,
   onEditSection,
   viaStudentParams,
+  selectedLessonTeacherId,
+  selectedLessonCommissionId,
+  teachers,
 }: BookingSummaryProps) {
+  const selectedTeacher = teachers.find(t => t.id === selectedLessonTeacherId);
+  const selectedCommission = selectedTeacher?.commissions.find(c => c.id === selectedLessonCommissionId);
+  
+  interface Commission {
+    id: string;
+    price_per_hour: number;
+    description: string | null;
+  }
+
+  interface Teacher {
+    id: string;
+    name: string;
+    commissions: Commission[];
+  }
   const getDaysDifference = (startDate: string, endDate: string) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
@@ -135,6 +155,25 @@ export function BookingSummary({
             <p className="text-sm text-muted-foreground italic">No reference selected</p>
           )}
         </div>
+
+        {/* Lesson Section - Optional */}
+        <div 
+          className="cursor-pointer hover:bg-muted rounded-lg p-3 border border-border transition-colors"
+          onClick={() => scrollToSection('lesson-section')}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-medium text-foreground">Lesson (Optional)</h3>
+            <span className="text-xs text-muted-foreground">Click to edit</span>
+          </div>
+          {selectedTeacher && selectedCommission ? (
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p><span className="font-medium">Teacher:</span> {selectedTeacher.name}</p>
+              <p><span className="font-medium">Commission:</span> €{selectedCommission.price_per_hour.toFixed(0)}/h {selectedCommission.description && `(${selectedCommission.description})`}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No lesson selected</p>
+          )}
+        </div>
       </div>
 
       <div className="p-4 border-t border-border space-y-3">
@@ -144,7 +183,7 @@ export function BookingSummary({
           disabled={loading || !selectedPackage || selectedStudents.length !== selectedPackage.capacity_students || !dateRange.startDate}
           className="w-full py-3 px-4 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? 'Creating Booking...' : 'Create Booking'}
+          {loading ? 'Creating Booking...' : (selectedTeacher && selectedCommission ? 'Create Booking & Lesson' : 'Create Booking')}
         </button>
         <button
           type="button"

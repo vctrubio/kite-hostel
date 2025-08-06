@@ -37,7 +37,9 @@ export async function updateStudent(
 
 export async function getStudents(): Promise<{ data: StudentWithRelations[]; error: string | null }> {
   try {
-    const students = await db.query.Student.findMany();
+    const students = await db.query.Student.findMany({
+      orderBy: (student, { desc }) => [desc(student.created_at)],
+    });
 
     const studentBookingCounts = await db
       .select({

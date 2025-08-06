@@ -25,7 +25,7 @@ export function DateSince({ dateString }: DateSinceProps) {
     bgColorClass = "bg-green-500"; // Today
     relativeTime = "Today";
   } else if (daysDiff < 0) {
-    bgColorClass = "bg-gray-500"; // Past
+    bgColorClass = "bg-gray-200 text-gray-800"; // Past - Light grey-green
     const absDaysDiff = Math.abs(daysDiff);
     if (absDaysDiff < 30) {
       relativeTime = `-${absDaysDiff}d`;

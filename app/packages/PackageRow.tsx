@@ -36,11 +36,12 @@ export function PackageRow({ pkg, expandedRow, setExpandedRow }: PackageRowProps
   return (
     <>
       <tr className="cursor-pointer">
-        <td onClick={toggleExpand} className="py-2 px-4 text-left"><Duration minutes={pkg.duration} /></td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.capacity_students}</td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.price_per_student}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.description}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.capacity_kites}</td>
+        <td onClick={toggleExpand} className="py-2 px-4 text-left">{pkg.capacity_students}</td>
+        <td onClick={toggleExpand} className="py-2 px-4 text-left"><Duration minutes={pkg.duration} /></td>
+        <td onClick={toggleExpand} className="py-2 px-4 text-left">€{pkg.price_per_student}</td>
+        <td onClick={toggleExpand} className="py-2 px-4 text-left">€{(pkg.price_per_student / (pkg.duration / 60)).toFixed(2)}/h</td>
         <td className="py-2 px-4 text-right">
           <Button onClick={(e) => {
             e.stopPropagation(); // Prevent row from expanding/collapsing
@@ -52,12 +53,8 @@ export function PackageRow({ pkg, expandedRow, setExpandedRow }: PackageRowProps
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={4} className="py-2 px-4">
+          <td colSpan={7} className="py-2 px-4">
             <div className="grid grid-cols-2 gap-2 p-2">
-              <div>
-                <p className="font-semibold">Price per hour:</p>
-                <p>€{(pkg.price_per_student / (pkg.duration / 60)).toFixed(2)}</p>
-              </div>
               <div>
                 <p className="font-semibold">Bookings:</p>
                 <p>{pkg.bookingCount}</p>

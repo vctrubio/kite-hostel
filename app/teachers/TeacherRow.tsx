@@ -39,7 +39,7 @@ export function TeacherRow({ teacher, expandedRow, setExpandedRow }: TeacherRowP
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={4} className="py-2 px-4">
+          <td colSpan={5} className="py-2 px-4">
             <div className="grid grid-cols-2 gap-2 p-2">
               <div>
                 <p className="font-semibold">Languages:</p>
@@ -52,6 +52,18 @@ export function TeacherRow({ teacher, expandedRow, setExpandedRow }: TeacherRowP
               <div>
                 <p className="font-semibold">Country:</p>
                 <p>{teacher.country || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="font-semibold">Commissions ({teacher.commissions.length}):</p>
+                {teacher.commissions.length > 0 ? (
+                  <ul className="list-disc list-inside">
+                    {teacher.commissions.map((commission: any) => (
+                      <li key={commission.id}>€{commission.price_per_hour.toFixed(0)}/h {commission.desc && `- ${commission.desc}`}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No commissions available.</p>
+                )}
               </div>
             </div>
           </td>
