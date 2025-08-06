@@ -7,11 +7,11 @@ import { useUserWallet } from "@/provider/UserWalletProvider";
 
 export function NotLoggedInPrompt() {
   const { user, loading } = useUserWallet();
-  if (loading) return null;
-  if (user) return null;
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (loading) return null;
+  if (user) return null;
   const supabase = createClient();
 
   const handleGoogleSignIn = async () => {
