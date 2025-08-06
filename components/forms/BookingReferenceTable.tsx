@@ -15,7 +15,7 @@ interface ReferenceBookingTableProps {
   selectedReferenceId: string | null;
 }
 
-export function ReferenceBookingTable({
+export function BookingReferenceTable({
   userWallets,
   onSelectReference,
   selectedReferenceId,

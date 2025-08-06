@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { StudentRow } from "./StudentRow";
 import { SeedStudentForm } from "@/seed/SeedStudentForm";
 import { StatsBar } from "@/components/StatsBar";
+import { availableStudent4Booking } from "@/actions/booking-actions";
 
 interface StudentsTableProps {
   initialStudents: any[];
@@ -13,10 +14,26 @@ export function StudentsTable({ initialStudents }: StudentsTableProps) {
   const [students, setStudents] = useState(initialStudents);
   const router = useRouter();
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [availableStudents, setAvailableStudents] = useState<Set<string>>(new Set());
 
-  // Update students state when initialStudents prop changes (due to revalidation)
   useEffect(() => {
     setStudents(initialStudents);
+    const checkStudentAvailability = async () => {
+      const availabilityChecks = await Promise.all(
+        initialStudents.map(async (student: any) => ({
+          id: student.id,
+          available: await availableStudent4Booking(student.id),
+        }))
+      );
+      
+      const available = new Set(
+        availabilityChecks.filter(check => check.available).map(check => check.id)
+      );
+      
+      setAvailableStudents(available);
+    };
+
+    checkStudentAvailability();
   }, [initialStudents]);
 
   const totalStudents = students.length;
@@ -54,6 +71,7 @@ export function StudentsTable({ initialStudents }: StudentsTableProps) {
                 student={student}
                 expandedRow={expandedRow}
                 setExpandedRow={setExpandedRow}
+                isAvailable={availableStudents.has(student.id)}
               />
             ))}
           </tbody>

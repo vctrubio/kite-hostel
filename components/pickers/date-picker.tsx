@@ -129,6 +129,26 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
     updateParent(startDate, newEndDate);
   };
 
+  const incrementStartDate = () => {
+    if (disabled) return;
+    const newStartDate = new Date(startDate);
+    newStartDate.setDate(newStartDate.getDate() + 1);
+    let newEndDate = new Date(endDate);
+    if (newStartDate >= newEndDate) {
+      newEndDate = new Date(newStartDate);
+      newEndDate.setDate(newEndDate.getDate() + 1);
+    }
+    updateParent(newStartDate, newEndDate);
+  };
+
+  const decrementStartDate = () => {
+    if (disabled) return;
+    const newStartDate = new Date(startDate);
+    newStartDate.setDate(newStartDate.getDate() - 1);
+    if (isBeforeToday(newStartDate.toISOString())) return;
+    updateParent(newStartDate, endDate);
+  };
+
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
     const dateString = e.target.value;
@@ -185,6 +205,10 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
                 {startRelativeLabel}
               </span>
             )}
+            <div className="flex items-center gap-1 ml-auto">
+              <button type="button" onClick={decrementStartDate} className="btn-icon-round-sm">-</button>
+              <button type="button" onClick={incrementStartDate} className="btn-icon-round-sm">+</button>
+            </div>
           </label>
           <input
             type="date"

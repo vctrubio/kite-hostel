@@ -18,9 +18,10 @@ interface StudentRowProps {
   };
   expandedRow: string | null;
   setExpandedRow: (id: string | null) => void;
+  isAvailable: boolean;
 }
 
-export function StudentRow({ student, expandedRow, setExpandedRow }: StudentRowProps) {
+export function StudentRow({ student, expandedRow, setExpandedRow, isAvailable }: StudentRowProps) {
   const isExpanded = expandedRow === student.id;
   const router = useRouter();
 
@@ -40,6 +41,17 @@ export function StudentRow({ student, expandedRow, setExpandedRow }: StudentRowP
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.desc}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.totalBookings}</td>
         <td className="py-2 px-4 text-right">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/bookings/form?studentId=${student.id}`);
+            }}
+            disabled={!isAvailable}
+            variant={isAvailable ? "default" : "secondary"}
+            className="mr-2"
+          >
+            Book
+          </Button>
           <Button onClick={(e) => {
             e.stopPropagation(); // Prevent row from expanding/collapsing
             router.push(`/students/${student.id}`);
@@ -50,7 +62,7 @@ export function StudentRow({ student, expandedRow, setExpandedRow }: StudentRowP
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={4} className="py-2 px-4">
+          <td colSpan={5} className="py-2 px-4">
             <div className="grid grid-cols-2 gap-2 p-2">
               <div>
                 <p className="font-semibold">Languages:</p>
