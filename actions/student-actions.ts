@@ -2,12 +2,13 @@
 
 import db from "@/drizzle";
 import { InferSelectModel } from "drizzle-orm";
-import { Student, BookingStudent } from "@/drizzle/migrations/schema";
-import { eq } from "drizzle-orm";
+import { Student, BookingStudent, Booking } from "@/drizzle/migrations/schema";
+import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 type StudentWithRelations = InferSelectModel<typeof Student> & {
   totalBookings: number;
+  isAvailable: boolean;
 };
 
 export async function updateStudent(
@@ -45,9 +46,28 @@ export async function getStudents(): Promise<{ data: StudentWithRelations[]; err
       },
     });
 
+    const activeBookings = await db.query.Booking.findMany({
+      where: eq(Booking.status, "active"),
+      columns: { id: true },
+    });
+
+    let unavailableStudentIds = new Set<string>();
+
+    if (activeBookings.length > 0) {
+      const activeBookingIds = activeBookings.map((b) => b.id);
+      const studentsWithActiveBookings = await db.query.BookingStudent.findMany({
+        where: inArray(BookingStudent.booking_id, activeBookingIds),
+        columns: { student_id: true },
+      });
+      unavailableStudentIds = new Set(
+        studentsWithActiveBookings.map((bs) => bs.student_id),
+      );
+    }
+
     const studentsWithRelations = students.map((student) => ({
       ...student,
       totalBookings: student.bookings?.length ?? 0,
+      isAvailable: !unavailableStudentIds.has(student.id),
     }));
 
     return { data: studentsWithRelations, error: null };
@@ -64,7 +84,14 @@ export async function getStudentById(id: string): Promise<{ data: StudentWithRel
       where: eq(Student.id, id),
       with: {
         bookings: {
-          columns: { id: true },
+          with: {
+            booking: {
+              columns: {
+                status: true,
+                created_at: true,
+              },
+            },
+          },
         },
       },
     });
@@ -73,9 +100,22 @@ export async function getStudentById(id: string): Promise<{ data: StudentWithRel
       return { data: null, error: "Student not found." };
     }
 
+    let isAvailable = true;
+    if (student.bookings.length > 0) {
+      const latestBooking = student.bookings.sort(
+        (a, b) =>
+          new Date(b.booking.created_at).getTime() -
+          new Date(a.booking.created_at).getTime(),
+      )[0];
+      if (latestBooking) {
+        isAvailable = latestBooking.booking.status !== "active";
+      }
+    }
+
     const studentWithRelations: StudentWithRelations = {
       ...student,
       totalBookings: student.bookings?.length ?? 0,
+      isAvailable,
     };
 
     return { data: studentWithRelations, error: null };

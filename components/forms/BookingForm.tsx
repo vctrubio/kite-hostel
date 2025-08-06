@@ -23,29 +23,10 @@ export default function BookingForm({ packages, students, userWallets }) {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(studentId ? [studentId] : []);
   const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [availableStudents, setAvailableStudents] = useState<Set<string>>(new Set());
+  const [availableStudents, setAvailableStudents] = useState<Set<string>>(new Set(students.filter(s => s.isAvailable).map(s => s.id)));
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['dates-section', 'package-section', 'students-section', 'reference-section'])
   );
-
-  useEffect(() => {
-    const checkStudentAvailability = async () => {
-      const availabilityChecks = await Promise.all(
-        students.map(async (student: any) => ({
-          id: student.id,
-          available: await availableStudent4Booking(student.id),
-        }))
-      );
-      
-      const available = new Set(
-        availabilityChecks.filter(check => check.available).map(check => check.id)
-      );
-      
-      setAvailableStudents(available);
-    };
-
-    checkStudentAvailability();
-  }, [students]);
 
   useEffect(() => {
     if (selectedPackageId) {

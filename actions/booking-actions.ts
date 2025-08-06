@@ -132,29 +132,6 @@ interface CreateBookingParams {
   reference_id: string | null;
 }
 
-export async function availableStudent4Booking(studentId: string): Promise<boolean> {
-  try {
-    const studentBookings = await db.query.BookingStudent.findMany({
-      where: eq(BookingStudent.student_id, studentId),
-      with: {
-        booking: true,
-      },
-    });
-
-    if (studentBookings.length === 0) {
-      return true;
-    }
-
-    const latestBooking = studentBookings
-      .sort((a, b) => new Date(b.booking.created_at).getTime() - new Date(a.booking.created_at).getTime())[0];
-
-    return latestBooking.booking.status !== "active";
-  } catch (error) {
-    console.error("Error checking student availability:", error);
-    return false;
-  }
-}
-
 export async function createBooking({
   package_id,
   date_start,
