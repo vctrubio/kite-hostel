@@ -1,8 +1,65 @@
 "use server";
 
-import db from "@/drizzle";
-import { Lesson } from "@/drizzle/migrations/schema";
+import { InferSelectModel } from "drizzle-orm";
+import { Lesson, Teacher, Event, Booking, PackageStudent } from "@/drizzle/migrations/schema";
 import { revalidatePath } from "next/cache";
+import { eq, desc } from "drizzle-orm";
+
+type LessonStatus = typeof Lesson._.columns.status.enumValues[number];
+
+export async function updateLessonStatus(lessonId: string, newStatus: LessonStatus) {
+  try {
+    await db.update(Lesson).set({ status: newStatus }).where(eq(Lesson.id, lessonId));
+    revalidatePath("/lessons");
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to update lesson status.";
+    console.error("Error updating lesson status:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+
+type LessonWithDetails = InferSelectModel<typeof Lesson> & {
+  teacher: InferSelectModel<typeof Teacher>;
+  events: InferSelectModel<typeof Event>[];
+  totalEventHours: number;
+  packageCapacity: number | null;
+  packageDuration: number | null;
+};
+
+export async function getLessonsWithDetails(): Promise<{ data: LessonWithDetails[]; error: string | null }> {
+  try {
+    const lessons = await db.query.Lesson.findMany({
+      orderBy: [desc(Lesson.created_at)],
+      with: {
+        teacher: true,
+        events: true,
+        booking: {
+          with: {
+            package: true,
+          },
+        },
+      },
+    });
+
+    const lessonsWithDetails = lessons.map((lesson) => {
+      const totalEventHours =
+        lesson.events.reduce((sum, event) => sum + event.duration, 0) / 60; // Convert minutes to hours
+      return {
+        ...lesson,
+        totalEventHours,
+        packageCapacity: lesson.booking?.package?.capacity_students || null,
+        packageDuration: lesson.booking?.package?.duration || null,
+      };
+    });
+
+    return { data: lessonsWithDetails as LessonWithDetails[], error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error fetching lessons with details:", error);
+    return { data: [], error: errorMessage };
+  }
+}
 
 interface CreateLessonParams {
   booking_id: string;

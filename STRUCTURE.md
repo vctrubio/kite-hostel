@@ -11,6 +11,8 @@ This document outlines the directory structure of the project in a tree format.
 │    ├─── cards/ # Components for displaying entity information in a card format.
 │    ├─── forms/ # Form components used for creating and editing entities.
 │    ├─── formatters/ # Components to format data for display (e.g., dates, durations).
+│    ├─── label/ # Components that make api calls
+│    ├─── modals/ # Pop up, to create
 │    ├─── pickers/ # Date and time picker components.
 │    ├─── supabase-init/ # UI components related to Supabase authentication.
 │    ├─── ui/ # Generic, low-level UI elements (Button, Card, etc.).
