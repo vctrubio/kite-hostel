@@ -36,7 +36,7 @@ export function BookingRow({ booking, expandedRow, setExpandedRow }: BookingRowP
         <td className="py-2 px-4 text-right">
           <Button onClick={(e) => {
             e.stopPropagation(); // Prevent row from expanding/collapsing
-            // router.push(`/bookings/${booking.id}`); // Uncomment if you have a booking details page
+            router.push(`/bookings/${booking.id}`);
           }}>
             View Details
           </Button>

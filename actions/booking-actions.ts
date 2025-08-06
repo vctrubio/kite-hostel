@@ -53,6 +53,8 @@ export async function getBookingById(id: string): Promise<{ data: BookingWithRel
       with: {
         lessons: {
           with: {
+            teacher: true,
+            commission: true,
             events: {
               with: {
                 kites: {
