@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { DateSince } from "@/components/formatters/DateSince";
 import { Checkbox } from "@/components/ui/checkbox";
 
+import { InferSelectModel } from "drizzle-orm";
+import { Booking } from "@/drizzle/migrations/schema";
+import { BookingView } from "@/components/views/BookingView";
+
 interface StudentRowProps {
   student: {
     id: string;
@@ -16,6 +20,7 @@ interface StudentRowProps {
     country: string | null;
     phone: string | null;
     totalBookings: number;
+    bookings: InferSelectModel<typeof Booking>[];
   };
   expandedRow: string | null;
   setExpandedRow: (id: string | null) => void;
@@ -50,6 +55,13 @@ export function StudentRow({ student, expandedRow, setExpandedRow, isAvailable, 
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.name}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.desc}</td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">{student.totalBookings}</td>
+        <td className="py-2 px-4 text-left">
+          {student.bookings.length > 0 ? (
+            <BookingView booking={student.bookings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]} />
+          ) : (
+            "N/A"
+          )}
+        </td>
         <td className="py-2 px-4 text-right">
           <Button onClick={(e) => {
             e.stopPropagation(); // Prevent row from expanding/collapsing

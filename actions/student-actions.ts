@@ -1,14 +1,12 @@
 "use server";
 
 import db from "@/drizzle";
-import { InferSelectModel } from "drizzle-orm";
-import { Student, BookingStudent, Booking } from "@/drizzle/migrations/schema";
-import { eq, inArray, count } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { BookingWithRelations } from "@/backend/types";
 
 type StudentWithRelations = InferSelectModel<typeof Student> & {
   totalBookings: number;
   isAvailable: boolean;
+  bookings: BookingWithRelations[];
 };
 
 export async function updateStudent(
@@ -39,44 +37,58 @@ export async function getStudents(): Promise<{ data: StudentWithRelations[]; err
   try {
     const students = await db.query.Student.findMany({
       orderBy: (student, { desc }) => [desc(student.created_at)],
+      with: {
+        bookings: {
+          with: {
+            booking: {
+              with: {
+                lessons: {
+                  with: {
+                    teacher: true,
+                    commission: true,
+                    events: {
+                      with: {
+                        kites: {
+                          with: {
+                            kite: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                package: true,
+                reference: {
+                  with: {
+                    teacher: true,
+                  },
+                },
+                students: {
+                  with: {
+                    student: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
-    const studentBookingCounts = await db
-      .select({
-        studentId: BookingStudent.student_id,
-        count: count(BookingStudent.id),
-      })
-      .from(BookingStudent)
-      .groupBy(BookingStudent.student_id);
-
-    const bookingCountsMap = new Map<string, number>();
-    studentBookingCounts.forEach((row) => {
-      bookingCountsMap.set(row.studentId, row.count);
-    });
-
-    const activeBookings = await db.query.Booking.findMany({
-      where: eq(Booking.status, "active"),
-      columns: { id: true },
-    });
-
-    let unavailableStudentIds = new Set<string>();
-
-    if (activeBookings.length > 0) {
-      const activeBookingIds = activeBookings.map((b) => b.id);
-      const studentsWithActiveBookings = await db.query.BookingStudent.findMany({
-        where: inArray(BookingStudent.booking_id, activeBookingIds),
-        columns: { student_id: true },
-      });
-      unavailableStudentIds = new Set(
-        studentsWithActiveBookings.map((bs) => bs.student_id),
+    const studentsWithRelations = students.map((student) => {
+      const totalBookings = student.bookings.length;
+      const activeBooking = student.bookings.find(
+        (bs) => bs.booking.status === "active",
       );
-    }
+      const isAvailable = !activeBooking; // If there's an active booking, the student is not available
 
-    const studentsWithRelations = students.map((student) => ({
-      ...student,
-      totalBookings: bookingCountsMap.get(student.id) ?? 0,
-      isAvailable: !unavailableStudentIds.has(student.id),
-    }));
+      return {
+        ...student,
+        totalBookings,
+        isAvailable,
+        bookings: student.bookings.map((bs) => bs.booking), // Extract the actual booking objects
+      };
+    });
 
     return { data: studentsWithRelations, error: null };
   } catch (error: any) {
@@ -93,9 +105,33 @@ export async function getStudentById(id: string): Promise<{ data: StudentWithRel
         bookings: {
           with: {
             booking: {
-              columns: {
-                status: true,
-                created_at: true,
+              with: {
+                lessons: {
+                  with: {
+                    teacher: true,
+                    commission: true,
+                    events: {
+                      with: {
+                        kites: {
+                          with: {
+                            kite: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                package: true,
+                reference: {
+                  with: {
+                    teacher: true,
+                  },
+                },
+                students: {
+                  with: {
+                    student: true,
+                  },
+                },
               },
             },
           },
@@ -107,22 +143,17 @@ export async function getStudentById(id: string): Promise<{ data: StudentWithRel
       return { data: null, error: "Student not found." };
     }
 
-    let isAvailable = true;
-    if (student.bookings.length > 0) {
-      const latestBooking = student.bookings.sort(
-        (a, b) =>
-          (b.booking.created_at ? new Date(b.booking.created_at).getTime() : 0) -
-          (a.booking.created_at ? new Date(a.booking.created_at).getTime() : 0),
-      )[0];
-      if (latestBooking) {
-        isAvailable = latestBooking.booking.status !== "active";
-      }
-    }
+    const totalBookings = student.bookings.length;
+    const activeBooking = student.bookings.find(
+      (bs) => bs.booking.status === "active",
+    );
+    const isAvailable = !activeBooking;
 
     const studentWithRelations: StudentWithRelations = {
       ...student,
-      totalBookings: student.bookings?.length ?? 0,
+      totalBookings,
       isAvailable,
+      bookings: student.bookings.map((bs) => bs.booking),
     };
 
     return { data: studentWithRelations, error: null };

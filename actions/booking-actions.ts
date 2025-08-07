@@ -17,17 +17,7 @@ import {
 import { eq, count, and, desc, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-type BookingWithRelations = InferSelectModel<typeof Booking> & {
-  lessons: (InferSelectModel<typeof Lesson> & {
-    events: (InferSelectModel<typeof Event> & {
-      kites: (InferSelectModel<typeof KiteEvent> & { kite: InferSelectModel<typeof Kite> })[];
-    })[];
-  })[];
-  package: InferSelectModel<typeof PackageStudent>;
-  reference: (InferSelectModel<typeof user_wallet> & { teacher: InferSelectModel<typeof Teacher> | null }) | null;
-  students: (InferSelectModel<typeof BookingStudent> & { student: InferSelectModel<typeof Student> })[];
-  lessonCount: number;
-};
+import { BookingWithRelations } from "@/backend/types";
 
 export async function getBookingCountByPackageId(packageId: string) {
   try {
