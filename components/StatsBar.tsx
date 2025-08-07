@@ -8,7 +8,7 @@ interface StatItem {
 }
 
 interface StatsBarProps {
-  stats: [StatItem, StatItem, StatItem];
+  stats: StatItem[];
 }
 
 export function StatsBar({ stats }: StatsBarProps) {

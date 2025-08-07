@@ -84,7 +84,12 @@ export async function getBookingById(id: string): Promise<{ data: BookingWithRel
       return { data: null, error: "Booking not found." };
     }
 
-    return { data: booking as BookingWithRelations, error: null };
+    const bookingWithLessonCount = {
+      ...booking,
+      lessonCount: booking.lessons?.length ?? 0,
+    };
+
+    return { data: bookingWithLessonCount as BookingWithRelations, error: null };
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error(`Error fetching booking with ID ${id} with Drizzle:`, error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));

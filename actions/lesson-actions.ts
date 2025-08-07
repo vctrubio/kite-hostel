@@ -1,5 +1,6 @@
 "use server";
 
+import db from "@/drizzle";
 import { InferSelectModel } from "drizzle-orm";
 import { Lesson, Teacher, Event, Booking, PackageStudent } from "@/drizzle/migrations/schema";
 import { revalidatePath } from "next/cache";
@@ -23,8 +24,8 @@ type LessonWithDetails = InferSelectModel<typeof Lesson> & {
   teacher: InferSelectModel<typeof Teacher>;
   events: InferSelectModel<typeof Event>[];
   totalEventHours: number;
-  packageCapacity: number | null;
-  packageDuration: number | null;
+  packageCapacity: number;
+  packageDuration: number;
 };
 
 export async function getLessonsWithDetails(): Promise<{ data: LessonWithDetails[]; error: string | null }> {
@@ -45,11 +46,16 @@ export async function getLessonsWithDetails(): Promise<{ data: LessonWithDetails
     const lessonsWithDetails = lessons.map((lesson) => {
       const totalEventHours =
         lesson.events.reduce((sum, event) => sum + event.duration, 0) / 60; // Convert minutes to hours
+
+      if (!lesson.booking?.package) {
+        throw new Error(`Lesson ${lesson.id} has no associated package`);
+      }
+      
       return {
         ...lesson,
         totalEventHours,
-        packageCapacity: lesson.booking?.package?.capacity_students || null,
-        packageDuration: lesson.booking?.package?.duration || null,
+        packageCapacity: lesson.booking.package.capacity_students,
+        packageDuration: lesson.booking.package.duration,
       };
     });
 

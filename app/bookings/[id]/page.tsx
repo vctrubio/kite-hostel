@@ -2,12 +2,10 @@ import { getBookingById } from "@/actions/booking-actions";
 import { format } from "date-fns";
 import { notFound } from "next/navigation";
 
-interface BookingDetailsPageProps {
-  params: { id: string };
-}
-
-export default async function BookingDetailsPage({ params }: BookingDetailsPageProps) {
-  const { id } = params;
+export default async function BookingDetailsPage(props: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await props.params;
   const { data: booking, error } = await getBookingById(id);
 
   if (error) {
@@ -27,9 +25,9 @@ export default async function BookingDetailsPage({ params }: BookingDetailsPageP
         <div>
           <h2 className="text-xl font-semibold mb-2">General Information</h2>
           <p><strong>Status:</strong> {booking.status}</p>
-          <p><strong>Created At:</strong> {format(new Date(booking.created_at), "PPP p")}</p>
-          <p><strong>Start Date:</strong> {format(new Date(booking.date_start), "PPP p")}</p>
-          <p><strong>End Date:</strong> {format(new Date(booking.date_end), "PPP p")}</p>
+          <p><strong>Created At:</strong> {booking.created_at ? format(new Date(booking.created_at), "PPP p") : "N/A"}</p>
+          <p><strong>Start Date:</strong> {booking.date_start ? format(new Date(booking.date_start), "PPP p") : "N/A"}</p>
+          <p><strong>End Date:</strong> {booking.date_end ? format(new Date(booking.date_end), "PPP p") : "N/A"}</p>
         </div>
 
         {booking.package && (
@@ -75,8 +73,6 @@ export default async function BookingDetailsPage({ params }: BookingDetailsPageP
               {booking.lessons.map((lesson) => (
                 <li key={lesson.id}>
                   Lesson ID: {lesson.id}, Status: {lesson.status}
-                  {lesson.teacher && <p className="ml-4">Teacher: {lesson.teacher.name}</p>}
-                  {lesson.commission && <p className="ml-4">Commission: €{lesson.commission.price_per_hour} per hour</p>}
                   {lesson.events && lesson.events.length > 0 && (
                     <ul className="ml-4">
                       {lesson.events.map((event) => (

@@ -8,7 +8,7 @@ import { createKite, assignKiteToTeacher } from "@/actions/kite-actions";
 export async function seedCreateStudent() {
   try {
     const randomName = `Student ${Math.floor(Math.random() * 10000)}`;
-    const languages = ["English", "Spanish", "French"];
+    const languages = ["English", "Spanish", "French", "German", "Italian"] as const;
     const randomLanguage = languages[Math.floor(Math.random() * languages.length)];
     const countries = {
       Spain: "+34",
@@ -23,7 +23,7 @@ export async function seedCreateStudent() {
       Brazil: "+55",
     };
     const randomCountry = Object.keys(countries)[
-      Math.floor(Math.random() * countries.length)
+      Math.floor(Math.random() * Object.keys(countries).length)
     ];
     const phonePrefix = countries[randomCountry as keyof typeof countries];
 
@@ -50,7 +50,7 @@ export async function seedCreateStudent() {
 export async function seedCreateTeacher() {
   try {
     const randomName = `Teacher ${Math.floor(Math.random() * 10000)}`;
-    const languages = ["English", "Spanish", "French"];
+    const languages = ["English", "Spanish", "French", "German", "Italian"] as const;
     const randomLanguage = languages[Math.floor(Math.random() * languages.length)];
     const countries = {
       Spain: "+34",

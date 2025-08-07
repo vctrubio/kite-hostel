@@ -23,7 +23,7 @@ export async function createKite(kiteData: {
 export async function assignKiteToTeacher(teacherIds: string[], kiteId: string) {
   try {
     const assignmentsToCreate = [];
-    const errors = [];
+    const errors: string[] = [];
 
     for (const teacherId of teacherIds) {
       // Check if the assignment already exists

@@ -5,14 +5,14 @@ import { ReferenceBookingCard } from "@/components/cards/ReferenceBookingCard";
 import { userRole } from "@/drizzle/migrations/schema";
 
 interface ReferencedBooking {
-  bookingCreatedAt: string;
+  bookingCreatedAt: string | null;
   bookingStartDate: string;
   packageCapacity: number;
   packagePrice: number;
   teacherName: string | null;
   note: string | null;
   referenceId: string | null;
-  role: typeof userRole._.enumValues[number];
+  role: (typeof userRole.enumValues)[number];
 }
 
 interface ReferenceBookingTableProps {

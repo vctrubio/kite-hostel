@@ -2,8 +2,11 @@ import { getUserWalletById, getAvailableSk } from "@/actions/user-actions";
 import { getTeachers } from "@/actions/teacher-actions";
 import { UserWalletForm } from "@/components/forms/UserWalletForm";
 
-export default async function UserDetailsPage({ params }: { params: { id: string } }) {
-  const { data: userWallet, error: userWalletError } = await getUserWalletById(params.id);
+export default async function UserDetailsPage(props: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await props.params;
+  const { data: userWallet, error: userWalletError } = await getUserWalletById(id);
   const { data: allTeachers, error: allTeachersError } = await getTeachers();
   const { data: availableSks, error: availableSksError } = await getAvailableSk();
 

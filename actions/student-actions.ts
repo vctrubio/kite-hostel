@@ -111,8 +111,8 @@ export async function getStudentById(id: string): Promise<{ data: StudentWithRel
     if (student.bookings.length > 0) {
       const latestBooking = student.bookings.sort(
         (a, b) =>
-          new Date(b.booking.created_at).getTime() -
-          new Date(a.booking.created_at).getTime(),
+          (b.booking.created_at ? new Date(b.booking.created_at).getTime() : 0) -
+          (a.booking.created_at ? new Date(a.booking.created_at).getTime() : 0),
       )[0];
       if (latestBooking) {
         isAvailable = latestBooking.booking.status !== "active";

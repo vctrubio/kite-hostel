@@ -43,8 +43,8 @@ type TeacherWithRelations = InferSelectModel<typeof Teacher> & {
     sk: string | null;
     pk: string | null;
     note: string | null;
-    created_at: string;
-    updated_at: string;
+    created_at: string | null;
+    updated_at: string | null;
     sk_email: string | null;
     sk_full_name: string | null;
   } | null;
@@ -76,9 +76,7 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
           },
         },
         payments: true,
-        lessons: {
-          columns: { id: true, booking_id: true, commission_id: true, status: true },
-        },
+        lessons: true,
       },
     });
 
@@ -111,7 +109,11 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
 
     const teacherWithRelations: TeacherWithRelations = {
       ...teacher,
-      user_wallet: userWalletData ? { ...userWalletData, sk_email, sk_full_name } : null,
+      user_wallet: userWalletData ? { 
+        ...userWalletData, 
+        sk_email, 
+        sk_full_name,
+      } : null,
     };
     return { data: teacherWithRelations, error: null };
   } catch (error: any) {

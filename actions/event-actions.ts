@@ -36,25 +36,28 @@ export async function getEventCsv() {
     .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
 
     const formattedEvents = events.map((event) => {
+      if (!event.packagePricePerStudent || !event.packageDuration || !event.teacher || 
+          !event.eventLocation || !event.commissionPerHour) {
+        throw new Error(`Missing required data for event ${event.eventId}`);
+      }
+
       const eventDate = new Date(event.eventDate);
       const formattedDate = format(eventDate, "dd-MM-yy | HH:mm");
-      const studentsList = event.students ? event.students.join(", ") : "N/A";
-      const kiteInfo = event.kiteModel && event.kiteSerialId ? `${event.kiteModel} (${event.kiteSerialId})` : "N/A";
+      const studentsList = Array.isArray(event.students) ? event.students.join(", ") : "";
+      const kiteInfo = event.kiteModel && event.kiteSerialId ? `${event.kiteModel} (${event.kiteSerialId})` : "No kite assigned";
       
       // Calculate price per hour from package
-      const pricePerHour = event.packagePricePerStudent && event.packageDuration
-        ? (event.packagePricePerStudent / (event.packageDuration / 60)).toFixed(2)
-        : "N/A";
+      const pricePerHour = (event.packagePricePerStudent / (event.packageDuration / 60)).toFixed(2);
 
       return {
         date: formattedDate,
         duration: `${event.eventDuration} min`,
-        teacher: event.teacher || "N/A",
+        teacher: event.teacher,
         students: studentsList,
-        location: event.eventLocation || "N/A",
+        location: event.eventLocation,
         kite: kiteInfo,
-        pricePerHour: pricePerHour,
-        commissionPerHour: event.commissionPerHour ? `${event.commissionPerHour}€` : "N/A",
+        pricePerHour: `${pricePerHour}€`,
+        commissionPerHour: `${event.commissionPerHour}€`,
       };
     });
 

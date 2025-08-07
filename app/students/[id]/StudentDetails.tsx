@@ -90,7 +90,7 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
                           ...prev,
                           languages: checked
                             ? [...prev.languages, value]
-                            : prev.languages.filter((l) => l !== value),
+                            : prev.languages.filter((l: string) => l !== value),
                         }));
                       }}
                       className="h-4 w-4 border-gray-300 rounded"
