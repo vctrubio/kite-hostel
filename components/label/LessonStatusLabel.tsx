@@ -9,13 +9,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LESSON_STATUS_ENUM_VALUES } from "@/lib/constants";
+import { LESSON_STATUS_ENUM_VALUES, type LessonStatus } from "@/lib/constants";
 
 import { updateLessonStatus } from "@/actions/lesson-actions";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 
-type LessonStatus = typeof LESSON_STATUS_ENUM_VALUES[number];
+
 
 interface LessonStatusLabelProps {
   lessonId: string;

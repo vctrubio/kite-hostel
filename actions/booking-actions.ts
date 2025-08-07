@@ -188,3 +188,27 @@ export async function createBooking({
     return { success: false, error: errorMessage };
   }
 }
+
+export async function updateBookingStatus(
+  bookingId: string,
+  status: "active" | "cancelled" | "completed",
+): Promise<{ success: boolean; error: string | null }> {
+  try {
+    await db
+      .update(Booking)
+      .set({ status })
+      .where(eq(Booking.id, bookingId));
+    revalidatePath("/bookings");
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to update booking status.";
+    console.error(
+      `Error updating booking status for booking ${bookingId}:`,
+      error,
+      "Full error object:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    );
+    return { success: false, error: errorMessage };
+  }
+}

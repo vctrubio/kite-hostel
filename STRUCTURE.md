@@ -9,6 +9,7 @@ This document outlines the directory structure of the project in a tree format.
 ├─── whiteboard/ # Core application feature for admins to manage daily kite lessons and events. (INSIDE THE APP DIR/ROUTE)
 ├─── components/
 │    ├─── cards/ # Components for displaying entity information in a card format.
+│    ├─── views/ # Components for displaying entity
 │    ├─── forms/ # Form components used for creating and editing entities.
 │    ├─── formatters/ # Components to format data for display (e.g., dates, durations).
 │    ├─── label/ # Components that make api calls

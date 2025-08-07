@@ -10,7 +10,7 @@ interface PackageLabelProps {
   duration: number | null;
 }
 
-export function PackageLabel({ capacity, duration }: PackageLabelProps) {
+export function PackageView({ capacity, duration }: PackageLabelProps) {
   return (
     <Label className="flex items-center space-x-3">
       {capacity !== null && capacity > 0 && (

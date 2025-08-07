@@ -4,9 +4,9 @@ import { format } from "date-fns";
 import { InferSelectModel } from "drizzle-orm";
 import { Lesson, Teacher, Event } from "@/drizzle/migrations/schema";
 import { Duration } from "@/components/formatters/Duration";
-import { PackageLabel } from "@/components/label/PackageLabel";
+import { PackageView } from "@/components/views/PackageView";
 
-import { LessonStatusLabel } from "@/components/ui/LessonStatusLabel";
+import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 
 interface LessonRowProps {
   lesson: InferSelectModel<typeof Lesson> & {
@@ -40,7 +40,7 @@ export function LessonRow({ lesson }: LessonRowProps) {
       </td>
       <td className="py-2 px-4 text-left border-b border-r border-border text-foreground"><Duration minutes={lesson.totalEventHours * 60} /></td>
       <td className="py-2 px-4 text-left border-b border-r border-border text-foreground">
-        <PackageLabel capacity={lesson.packageCapacity} duration={lesson.packageDuration} />
+        <PackageView capacity={lesson.packageCapacity} duration={lesson.packageDuration} />
       </td>
     </tr>
   );
