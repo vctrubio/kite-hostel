@@ -6,6 +6,10 @@ interface DurationProps {
 }
 
 export function Duration({ minutes }: DurationProps) {
+  if (minutes === 0) {
+    return <span>0</span>;
+  }
+
   if (minutes < 60) {
     return <span>{minutes}m</span>;
   }

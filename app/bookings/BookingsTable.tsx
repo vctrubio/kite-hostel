@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { BookingRow } from "./BookingRow";
+import { BookingWithRelations } from "@/backend/types";
 
 interface BookingsTableProps {
-  initialBookings: any[];
+  initialBookings: BookingWithRelations[];
 }
 
 export function BookingsTable({ initialBookings }: BookingsTableProps) {
@@ -23,6 +24,7 @@ export function BookingsTable({ initialBookings }: BookingsTableProps) {
             <th className="py-2 px-4 text-left">Start Date</th>
             <th className="py-2 px-4 text-left">Status</th>
             <th className="py-2 px-4 text-left">Reference</th>
+            <th className="py-2 px-4 text-left">Students</th>
             <th className="py-2 px-4 text-left">Lessons</th>
             <th className="py-2 px-4"></th>
           </tr>

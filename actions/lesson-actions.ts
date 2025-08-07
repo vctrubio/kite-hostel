@@ -24,6 +24,7 @@ type LessonWithDetails = InferSelectModel<typeof Lesson> & {
   teacher: InferSelectModel<typeof Teacher>;
   events: InferSelectModel<typeof Event>[];
   totalEventHours: number;
+  totalKiteEventDuration: number;
   packageCapacity: number;
   packageDuration: number;
 };
@@ -47,6 +48,8 @@ export async function getLessonsWithDetails(): Promise<{ data: LessonWithDetails
       const totalEventHours =
         lesson.events.reduce((sum, event) => sum + event.duration, 0) / 60; // Convert minutes to hours
 
+      const totalKiteEventDuration = lesson.events.reduce((sum, event) => sum + event.duration, 0);
+
       if (!lesson.booking?.package) {
         throw new Error(`Lesson ${lesson.id} has no associated package`);
       }
@@ -54,6 +57,7 @@ export async function getLessonsWithDetails(): Promise<{ data: LessonWithDetails
       return {
         ...lesson,
         totalEventHours,
+        totalKiteEventDuration,
         packageCapacity: lesson.booking.package.capacity_students,
         packageDuration: lesson.booking.package.duration,
       };

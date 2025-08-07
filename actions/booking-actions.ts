@@ -44,16 +44,7 @@ export async function getBookingById(id: string): Promise<{ data: BookingWithRel
         lessons: {
           with: {
             teacher: true,
-            commission: true,
-            events: {
-              with: {
-                kites: {
-                  with: {
-                    kite: true,
-                  },
-                },
-              },
-            },
+            events: true,
           },
         },
         package: true,
@@ -103,7 +94,14 @@ export async function getBookings(): Promise<{ data: BookingWithRelations[]; err
           },
         },
         lessons: {
-          columns: { id: true }, // Select at least one column to count lessons
+          with: {
+            teacher: true,
+            events: {
+              with: {
+                kites: true,
+              },
+            },
+          },
         },
       },
     });
