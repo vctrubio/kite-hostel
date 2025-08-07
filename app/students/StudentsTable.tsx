@@ -56,11 +56,13 @@ export function StudentsTable({ initialStudents }: StudentsTableProps) {
   };
 
   const handlePackageSelected = (packageId: string) => {
-    router.push(`/bookings/form?studentIds=${selectedStudentIds.join(',')}&packageId=${packageId}`);
+    router.push(
+      `/bookings/form?studentIds=${selectedStudentIds.join(",")}&packageId=${packageId}`,
+    );
   };
 
   const totalStudents = students.length;
-  const localStudents = students.filter(s => s.country === "Spain").length;
+  const localStudents = students.filter((s) => s.country === "Spain").length;
   const foreignStudents = totalStudents - localStudents;
 
   const studentStats = [
@@ -89,10 +91,10 @@ export function StudentsTable({ initialStudents }: StudentsTableProps) {
           <thead>
             <tr>
               <th className="py-2 px-4 text-left"></th>
-              <th className="py-2 px-4 text-left">Created At</th>
+              <th className="py-2 px-4 text-left">Date</th>
               <th className="py-2 px-4 text-left">Name</th>
               <th className="py-2 px-4 text-left">Description</th>
-              <th className="py-2 px-4 text-left">Total Bookings</th>
+              <th className="py-2 px-4 text-left">Bookings</th>
               <th className="py-2 px-4 text-left">Active Booking</th>
               <th className="py-2 px-4"></th>
             </tr>
