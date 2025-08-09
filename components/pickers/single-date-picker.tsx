@@ -5,15 +5,22 @@ import { useState } from 'react';
 
 interface SingleDatePickerProps {
   selectedDate?: string;
+  onDateChange?: (date: string) => void;
 }
 
-export function SingleDatePicker({ selectedDate }: SingleDatePickerProps) {
+export function SingleDatePicker({ selectedDate, onDateChange }: SingleDatePickerProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [tempDate, setTempDate] = useState(selectedDate || '');
 
   const updateDate = (newDate: string) => {
     setTempDate(newDate);
+    
+    // If callback is provided, use it instead of URL params
+    if (onDateChange) {
+      onDateChange(newDate);
+      return;
+    }
     
     // Get current search params and preserve existing ones
     const currentParams = new URLSearchParams(window.location.search);
@@ -88,24 +95,31 @@ export function SingleDatePicker({ selectedDate }: SingleDatePickerProps) {
   };
 
   const relativeLabel = getRelativeDateLabel(selectedDate || '');
+  const isToday = selectedDate === new Date().toISOString().split('T')[0];
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-        Filter by Date
-        {relativeLabel && (
+      <label className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          Filter by Date
+          {isToday ? (
+            <span className="text-xs bg-green-100 px-2 py-1 rounded-md text-green-700">
+              Today
+            </span>
+          ) : (
+            <button
+              onClick={() => updateDate(new Date().toISOString().split('T')[0])}
+              className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded-md text-blue-700 transition-colors"
+              title="Go to today"
+            >
+              Go to Today
+            </button>
+          )}
+        </div>
+        {relativeLabel && !isToday && (
           <span className="text-xs bg-muted px-2 py-1 rounded-md text-muted-foreground">
             {relativeLabel}
           </span>
-        )}
-        {selectedDate && selectedDate !== new Date().toISOString().split('T')[0] && (
-          <button
-            onClick={() => updateDate(new Date().toISOString().split('T')[0])}
-            className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded-md text-blue-700 transition-colors"
-            title="Go to today"
-          >
-            Go to Today
-          </button>
         )}
       </label>
       <div className="flex items-center gap-1">

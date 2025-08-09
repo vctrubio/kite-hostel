@@ -44,7 +44,12 @@ export async function getBookingById(id: string): Promise<{ data: BookingWithRel
         lessons: {
           with: {
             teacher: true,
-            events: true,
+            commission: true,
+            events: {
+              with: {
+                kites: true,
+              },
+            },
           },
         },
         package: true,
@@ -96,6 +101,7 @@ export async function getBookings(): Promise<{ data: BookingWithRelations[]; err
         lessons: {
           with: {
             teacher: true,
+            commission: true,
             events: {
               with: {
                 kites: true,

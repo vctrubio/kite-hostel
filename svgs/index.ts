@@ -12,3 +12,7 @@ export { PackageIcon } from './PackageIcon';
 export { PaymentIcon } from './PaymentIcon';
 export { ClockIcon } from './ClockIcon';
 export { LocationIcon } from './LocationIcon';
+export { EventIcon } from './EventIcon';
+export { LessonIcon } from './LessonIcon';
+export { TeacherIcon } from './TeacherIcon';
+export { ProgressIcon } from './ProgressIcon';
