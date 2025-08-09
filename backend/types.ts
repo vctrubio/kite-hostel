@@ -11,6 +11,7 @@ import {
   BookingStudent,
   Teacher,
 } from "@/drizzle/migrations/schema";
+import { WhiteboardClass, type LessonData } from '@/backend/WhiteboardClass';
 
 export type PackageStudent = InferSelectModel<typeof PackageStudent>;
 
@@ -27,3 +28,23 @@ export type BookingWithRelations = InferSelectModel<typeof Booking> & {
   students: (InferSelectModel<typeof BookingStudent> & { student: InferSelectModel<typeof Student> })[];
   lessonCount: number;
 };
+
+// Teacher grouping types
+export interface TeacherLessons {
+  teacherId: string;
+  teacherName: string;
+  lessons: Array<{
+    lesson: LessonData;
+    bookingClass: WhiteboardClass;
+  }>;
+}
+
+export interface TeacherEvents {
+  teacherId: string;
+  teacherName: string;
+  events: Array<{
+    event: any;
+    lesson: LessonData;
+    booking: any;
+  }>;
+}

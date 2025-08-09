@@ -9,49 +9,56 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LESSON_STATUS_ENUM_VALUES, type LessonStatus } from "@/lib/constants";
+import { LESSON_STATUS_ENUM_VALUES, type LessonStatus, getStatusColors } from "@/lib/constants";
 
 import { updateLessonStatus } from "@/actions/lesson-actions";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
-
-
+import { toast } from "sonner";
 
 interface LessonStatusLabelProps {
   lessonId: string;
   currentStatus: LessonStatus;
+  lessonEvents?: Array<{ status: string; id: string }>;
 }
 
-export function LessonStatusLabel({ lessonId, currentStatus }: LessonStatusLabelProps) {
+export function LessonStatusLabel({ lessonId, currentStatus, lessonEvents = [] }: LessonStatusLabelProps) {
   const [status, setStatus] = useState<LessonStatus>(currentStatus);
   const [isPending, startTransition] = useTransition();
 
-  const getStatusColors = (s: LessonStatus) => {
-    switch (s) {
-      case "planned":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"; // Light green
-      case "rest":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"; // Orange
-      case "completed":
-        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200"; // Dark green
-      case "cancelled":
-      case "delegated":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"; // Blue
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+  const validateStatusChange = (newStatus: LessonStatus): boolean => {
+    // Check if changing to 'delegated' or 'rest'
+    if (newStatus === 'delegated' || newStatus === 'rest') {
+      // Validate that all events are completed or TBC
+      const hasUnconfirmedEvents = lessonEvents.some(event => 
+        event.status !== 'completed' && event.status !== 'tbc'
+      );
+      
+      if (hasUnconfirmedEvents) {
+        toast.error("Lesson status cannot be changed until all events are completed or TBC");
+        return false;
+      }
     }
+    
+    return true;
   };
 
   const handleStatusChange = (newStatus: LessonStatus) => {
     if (newStatus === status) return;
 
+    // Validate the status change
+    if (!validateStatusChange(newStatus)) {
+      return;
+    }
+
     startTransition(async () => {
       const { success, error } = await updateLessonStatus(lessonId, newStatus);
       if (success) {
         setStatus(newStatus);
+        toast.success(`Lesson status updated to ${newStatus}`);
       } else {
         console.error("Failed to update status:", error);
-        // Optionally revert UI or show error message
+        toast.error(`Failed to update lesson status: ${error}`);
       }
     });
   };
