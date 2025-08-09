@@ -2,17 +2,18 @@
 
 import React, { useState } from 'react';
 import { BookingIcon, HelmetIcon, HeadsetIcon, PackageIcon, KiteIcon, ProgressIcon } from '@/svgs';
+import { Plus } from 'lucide-react';
 import { FormatDateRange } from '@/components/formatters/DateRange';
 import { BookingStatusLabel } from '@/components/label/BookingStatusLabel';
 import { LessonStatusLabel } from '@/components/label/LessonStatusLabel';
-import { BookingProgressBar } from '@/components/formatters/BookingProgressBar';
 import { Duration } from '@/components/formatters/Duration';
 import { DateSince } from '@/components/formatters/DateSince';
 import { BookingToLessonModal } from '@/components/modals/BookingToLessonModal';
+import { WhiteboardClass, type BookingData } from '@/backend/WhiteboardClass';
 import { useRouter } from 'next/navigation';
 
 interface BookingCardProps {
-  booking: any;
+  booking: BookingData; // Now expects raw data instead of any
 }
 
 export default function BookingCard({ booking }: BookingCardProps) {
@@ -21,48 +22,48 @@ export default function BookingCard({ booking }: BookingCardProps) {
   const [isCompleting, setIsCompleting] = useState(false);
   const router = useRouter();
 
-  const lessonsCount = booking.lessons?.length || 0;
-  const allEvents = booking.lessons?.flatMap((lesson: any) => lesson.events || []) || [];
-  
-  // Filter events by status
-  const completedEvents = allEvents.filter((event: any) => event.status === 'completed');
-  const plannedOrTbcEvents = allEvents.filter((event: any) => event.status === 'planned' || event.status === 'tbc');
-  
-  // Calculate total used minutes from completed events only
-  const usedMinutes = completedEvents.reduce((total: number, event: any) => 
-    total + (event.duration || 0), 0);
-  
-  // Calculate planned/tbc minutes for orange indicator
-  const plannedMinutes = plannedOrTbcEvents.reduce((total: number, event: any) => 
-    total + (event.duration || 0), 0);
-  
-  // Get package total duration
-  const packageDuration = booking.package?.duration || 0;
+  // Create WhiteboardClass instance from raw data
+  const bookingClass = new WhiteboardClass(booking);
 
-  // Check if booking is ready to be completed
-  const isReadyForCompletion = usedMinutes >= packageDuration && packageDuration > 0 && booking.status !== 'completed';
-
-  // Find first lesson that is rest or planned
-  const firstActiveLesson = booking.lessons?.find((lesson: any) => 
-    lesson.status === 'rest' || lesson.status === 'planned');
+  // Use class methods instead of manual calculations
+  const dateRange = bookingClass.getDateRange();
+  const students = bookingClass.getStudents();
+  const packageInfo = bookingClass.getPackage();
+  const activeLesson = bookingClass.getActiveLesson();
+  const completedEvents = bookingClass.getCompletedEvents();
+  const allEvents = bookingClass.getAllEvents();
+  const lessonsCount = bookingClass.getLessons().length;
+  
+  // Check if there are any non-delegated active lessons
+  const hasNonDelegatedActiveLessons = bookingClass.getLessons().some(
+    lesson => (lesson.status === 'planned' || lesson.status === 'rest')
+  );
+  
+  // Progress data from class methods
+  const usedMinutes = bookingClass.getUsedMinutes();
+  const plannedMinutes = bookingClass.getPlannedMinutes();
+  const packageDuration = bookingClass.getTotalMinutes();
+  const isReadyForCompletion = bookingClass.isReadyForCompletion();
 
   const handleStudentClick = (studentId: string) => {
     router.push(`/students/${studentId}`);
   };
 
   const handleCompleteBooking = async () => {
+    // Use class validation
+    const validation = bookingClass.canCompleteBooking();
+    if (!validation.isValid) {
+      alert(validation.message);
+      return;
+    }
+
     setIsCompleting(true);
     try {
-      // TODO: Implement action to complete booking and lessons
-      // await completeBookingAndLessons(booking.id);
-      console.log('Completing booking:', booking.id);
-      // For now, just simulate the action
-      setTimeout(() => {
-        setIsCompleting(false);
-        // In real implementation, this would trigger a refresh/revalidation
-      }, 1000);
+      await bookingClass.completeBookingAndLessons();
+      // TODO: Add revalidation and success notification
     } catch (error) {
       console.error('Error completing booking:', error);
+    } finally {
       setIsCompleting(false);
     }
   };
@@ -71,7 +72,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
     <div className="p-4 bg-card border border-border rounded-lg hover:shadow-md transition-shadow">
       {/* First line: Booking and Status */}
       <div className="flex items-center gap-2 mb-3">
-        <BookingIcon className="w-5 h-5 text-primary" />
+        <BookingIcon className="w-6 h-5 text-primary" />
         <FormatDateRange 
           startDate={booking.date_start} 
           endDate={booking.date_end}
@@ -113,7 +114,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
             </>
           ) : (
             <>
-              <HelmetIcon className="w-6 h-6 text-gray-400" />
+              <HelmetIcon className="w-6 h-6 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">No students assigned</span>
             </>
           )}
@@ -121,7 +122,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
 
         {/* Package */}
         {booking.package && (
-          <div className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-sm bg-amber-50">
+          <div className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-sm bg-amber-50 dark:bg-amber-950/30">
             <PackageIcon className="w-4 h-4" />
             <span className="text-sm font-medium">
               €{Math.round((booking.package.price_per_student / (booking.package.duration / 60)) * 100) / 100}/h
@@ -139,11 +140,11 @@ export default function BookingCard({ booking }: BookingCardProps) {
       {/* Third line: Progress */}
       {packageDuration > 0 && (
         <div className="mb-4">
-          <div className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-sm bg-green-50">
+          <div className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-sm bg-green-50 dark:bg-green-950/30">
             <ProgressIcon className="w-4 h-4" />
             <div className="flex items-center gap-1">
               <div
-                className="h-2 rounded-full overflow-hidden border border-gray-200 bg-gray-100"
+                className="h-2 rounded-full overflow-hidden border border-border bg-muted"
                 style={{ width: "60px" }}
               >
                 {/* Green bar for completed */}
@@ -177,28 +178,28 @@ export default function BookingCard({ booking }: BookingCardProps) {
 
       {/* Completion Notification */}
       {isReadyForCompletion && (
-        <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+        <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <h4 className="text-sm font-semibold text-green-800">Booking Complete</h4>
+                <h4 className="text-sm font-semibold text-green-800 dark:text-green-200">Booking Complete</h4>
               </div>
-              <p className="text-xs text-green-700 mb-3">
+              <p className="text-xs text-green-700 dark:text-green-300 mb-3">
                 All package hours have been completed. Please change status to completed.
               </p>
               
               {/* Students Summary */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs text-green-600 font-medium">Students:</span>
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium">Students:</span>
                 <div className="flex items-center gap-1">
                   {booking.students?.map((studentRelation: any, index: number) => (
                     <span key={studentRelation.student.id} className="inline-flex items-center">
-                      <span className="text-xs text-green-700 font-medium">
+                      <span className="text-xs text-green-700 dark:text-green-300 font-medium">
                         {studentRelation.student.name}
                       </span>
                       {index < booking.students.length - 1 && (
-                        <span className="text-xs text-green-600 mx-1">•</span>
+                        <span className="text-xs text-green-600 dark:text-green-400 mx-1">•</span>
                       )}
                     </span>
                   ))}
@@ -209,7 +210,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
             <button
               onClick={handleCompleteBooking}
               disabled={isCompleting}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 dark:bg-green-700 dark:hover:bg-green-600 dark:disabled:bg-green-800 text-white text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-background"
             >
               {isCompleting ? (
                 <>
@@ -231,34 +232,10 @@ export default function BookingCard({ booking }: BookingCardProps) {
 
       {/* Fourth line: Teacher */}
       <div className="mb-4">
-        {lessonsCount > 0 && firstActiveLesson ? (
+        {lessonsCount > 0 ? (
           <div className="space-y-2">
-            {/* Check if first lesson is delegated */}
-            {firstActiveLesson.status === 'delegated' ? (
-              <div className="space-y-2">
-                {/* Show delegated lesson */}
-                <div className="flex items-center gap-2">
-                  <HeadsetIcon className="w-6 h-6 text-gray-400" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">Teacher: </span>
-                    <span className="font-medium">{firstActiveLesson.teacher?.name || 'Unassigned'}</span>
-                  </span>
-                  <LessonStatusLabel 
-                    lessonId={firstActiveLesson.id}
-                    currentStatus={firstActiveLesson.status}
-                  />
-                </div>
-                {/* Add new lesson button */}
-                <button
-                  onClick={() => setShowLessonModal(true)}
-                  className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors p-2 border border-dashed border-primary rounded hover:bg-primary/5"
-                >
-                  <HeadsetIcon className="w-4 h-4" />
-                  <span>Add new lesson</span>
-                </button>
-              </div>
-            ) : (
-              /* Normal lesson display */
+            {/* Show active lesson if exists (planned/rest) */}
+            {activeLesson ? (
               <div className="flex items-center gap-2">
                 {/* Multiple Headset Icons based on lesson count */}
                 <div className="flex items-center gap-1">
@@ -267,22 +244,48 @@ export default function BookingCard({ booking }: BookingCardProps) {
                   ))}
                 </div>
                 <span className="text-sm">
-                  <span className="text-muted-foreground">Teacher: </span>
-                  <span className="font-medium">{firstActiveLesson.teacher?.name || 'Unassigned'}</span>
+                  <span className="font-medium">{activeLesson.teacher?.name || 'Unassigned'}</span>
                 </span>
                 <LessonStatusLabel 
-                  lessonId={firstActiveLesson.id}
-                  currentStatus={firstActiveLesson.status}
+                  lessonId={activeLesson.id}
+                  currentStatus={activeLesson.status}
                 />
               </div>
+            ) : (
+              /* Show delegated lessons when no active lessons */
+              bookingClass.getLessons().filter(lesson => lesson.status === 'delegated').map((delegatedLesson) => (
+                <div key={delegatedLesson.id} className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <HeadsetIcon className="w-6 h-6 text-orange-500" />
+                  </div>
+                  <span className="text-sm">
+                    <span className="font-medium">{delegatedLesson.teacher?.name || 'Unassigned'}</span>
+                  </span>
+                  <LessonStatusLabel 
+                    lessonId={delegatedLesson.id}
+                    currentStatus={delegatedLesson.status}
+                  />
+                </div>
+              ))
+            )}
+            
+            {/* Show "Assign New Lesson" button if no active lessons (only delegated) */}
+            {!hasNonDelegatedActiveLessons && (
+              <button
+                onClick={() => setShowLessonModal(true)}
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-2 border border-dashed border-blue-300 dark:border-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-400 dark:hover:border-blue-500"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Assign New Lesson</span>
+              </button>
             )}
           </div>
         ) : (
           <button
             onClick={() => setShowLessonModal(true)}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors p-2 border border-dashed border-muted-foreground rounded hover:border-primary"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors p-2 border border-dashed border-muted-foreground rounded hover:border-primary dark:hover:bg-primary/10"
           >
-            <HeadsetIcon className="w-6 h-6" />
+            <Plus className="w-5 h-5" />
             <span>No lessons - Click to add lesson</span>
           </button>
         )}
@@ -301,7 +304,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
           {showCompletedEvents && (
             <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
               {completedEvents.map((event: any) => (
-                <div key={event.id} className="flex items-center gap-2 text-xs px-3 py-2 border border-gray-200 rounded">
+                <div key={event.id} className="flex items-center gap-2 text-xs px-3 py-2 border border-border rounded bg-muted/50">
                   <KiteIcon className="w-4 h-4" />
                   <DateSince dateString={event.date} />
                   <Duration minutes={event.duration || 0} />
@@ -339,7 +342,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
             <div className="flex flex-wrap gap-1 mt-1">
               {booking.lessons.map((lesson: any, index: number) => (
                 <span key={lesson.id} className="inline-flex items-center">
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                  <span className="bg-muted px-2 py-1 rounded text-xs">
                     {lesson.id.slice(-8)}
                   </span>
                   {index < booking.lessons.length - 1 && <span className="mx-1">,</span>}
@@ -356,7 +359,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
             <div className="flex flex-wrap gap-1 mt-1">
               {allEvents.map((event: any, index: number) => (
                 <span key={event.id} className="inline-flex items-center">
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                  <span className="bg-muted px-2 py-1 rounded text-xs">
                     {event.id.slice(-8)}
                   </span>
                   {index < allEvents.length - 1 && <span className="mx-1">,</span>}

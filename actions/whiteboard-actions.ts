@@ -1,9 +1,11 @@
 "use server";
 
 import { getBookings } from "./booking-actions";
+import { WhiteboardClass, createBookingClasses, type BookingData } from "@/backend/WhiteboardClass";
 
 export interface WhiteboardData {
-  bookings: any[];
+  // Remove bookingClasses from server response - can't serialize classes
+  rawBookings: BookingData[]; // Main data for client-side class creation
   lessons: any[];
   events: any[];
   kites: any[];
@@ -12,9 +14,14 @@ export interface WhiteboardData {
     totalLessons: number;
     totalEvents: number;
     activeBookings: number;
+    completableBookings: number; // New: bookings ready for completion
   };
 }
 
+/**
+ * Enhanced whiteboard data fetcher that returns serializable data
+ * Client components will create WhiteboardClass instances from this data
+ */
 export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null; error: string | null }> {
   try {
     // Get all bookings with full relations
@@ -25,10 +32,14 @@ export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null
       return { data: null, error: `Bookings error: ${bookingsResult.error}` };
     }
 
-    const bookings = bookingsResult.data || [];
+    const rawBookings = bookingsResult.data || [];
+    
+    // Create WhiteboardClass instances for analysis (server-side only)
+    // We can't pass these to client, but we can use them for calculations
+    const bookingClasses = createBookingClasses(rawBookings);
     
     // Extract kites from events in lessons (already included in booking relations)
-    const kites = bookings.flatMap(booking => 
+    const kites = rawBookings.flatMap(booking => 
       booking.lessons?.flatMap(lesson => 
         lesson.events?.flatMap(event => 
           event.kites?.map(kiteEvent => kiteEvent.kite) || []
@@ -42,7 +53,7 @@ export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null
     );
     
     // Extract lessons from all bookings
-    const lessons = bookings.flatMap(booking => 
+    const lessons = rawBookings.flatMap(booking => 
       booking.lessons?.map(lesson => ({
         ...lesson,
         booking: {
@@ -69,19 +80,22 @@ export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null
       })) || []
     );
 
-    // Calculate status data
-    const activeBookings = bookings.filter(booking => booking.status === 'active').length;
+    // Calculate enhanced status data using business logic
+    const activeBookings = bookingClasses.filter(booking => booking.getStatus() === 'active').length;
+    const completableBookings = bookingClasses.filter(booking => booking.isReadyForCompletion()).length;
 
+    // Return only serializable data
     const whiteboardData: WhiteboardData = {
-      bookings,
+      rawBookings, // Client will create classes from this
       lessons,
       events,
       kites: uniqueKites,
       status: {
-        totalBookings: bookings.length,
+        totalBookings: rawBookings.length,
         totalLessons: lessons.length,
         totalEvents: events.length,
         activeBookings,
+        completableBookings, // Calculated server-side
       },
     };
 
@@ -89,6 +103,29 @@ export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error fetching whiteboard data:", error);
+    return { data: null, error: errorMessage };
+  }
+}
+
+/**
+ * Get a specific booking's raw data by ID
+ * Client will create WhiteboardClass instance from this
+ */
+export async function getBookingData(bookingId: string): Promise<{ data: BookingData | null; error: string | null }> {
+  try {
+    const result = await getWhiteboardData();
+    if (result.error || !result.data) {
+      return { data: null, error: result.error };
+    }
+
+    const bookingData = result.data.rawBookings.find(booking => booking.id === bookingId);
+    if (!bookingData) {
+      return { data: null, error: 'Booking not found' };
+    }
+
+    return { data: bookingData, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return { data: null, error: errorMessage };
   }
 }

@@ -2,6 +2,8 @@
 
 import db from "@/drizzle";
 import { BookingWithRelations } from "@/backend/types";
+import { Student } from "@/drizzle/migrations/schema";
+import { eq, InferSelectModel } from "drizzle-orm";
 
 type StudentWithRelations = InferSelectModel<typeof Student> & {
   totalBookings: number;
@@ -162,3 +164,7 @@ export async function getStudentById(id: string): Promise<{ data: StudentWithRel
     return { data: null, error: errorMessage };
   }
 }
+function revalidatePath(arg0: string) {
+  throw new Error("Function not implemented.");
+}
+

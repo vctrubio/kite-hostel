@@ -55,7 +55,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     nextDay.setDate(nextDay.getDate() + 1);
 
     // Filter bookings by date - check if the selected date falls within booking date range
-    const filteredBookings = data.bookings.filter(booking => {
+    const filteredBookings = data.rawBookings.filter(booking => {
       const bookingStart = new Date(booking.date_start);
       const bookingEnd = new Date(booking.date_end);
       bookingStart.setHours(0, 0, 0, 0);
@@ -143,14 +143,8 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         </div>
 
         {/* Content */}
-        <div className="xl:col-span-3 2xl:col-span-4 order-1 xl:order-2">
+        <div className="xl:col-span-3 2xl:col-span-4 order-1 xl:order-2 pt-4">
           <div className="bg-card">
-            <div className="px-4 py-6 border-b border-border">
-              <h1 className="text-2xl font-semibold text-foreground">
-                Whiteboard - {activeSectionData?.name}
-              </h1>
-            </div>
-
             <div className="p-4">
               <div className="w-full">
                 {activeSection === 'bookings' && (

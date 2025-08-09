@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BookingIcon, LessonIcon, EventIcon, TeacherIcon, KiteIcon } from '@/svgs';
+import { createBookingClasses, calculateEnhancedStats } from '@/backend/WhiteboardClass';
 import BookingDetailModal from '@/components/modals/BookingDetailModal';
 import LessonDetailModal from '@/components/modals/LessonDetailModal';
 import EventDetailModal from '@/components/modals/EventDetailModal';
@@ -23,6 +24,10 @@ interface TeacherSummary {
 }
 
 export default function WhiteboardStatus({ bookings, lessons, events, kites }: WhiteboardStatusProps) {
+  // Create WhiteboardClass instances for enhanced business logic
+  const bookingClasses = useMemo(() => createBookingClasses(bookings), [bookings]);
+  const enhancedStats = useMemo(() => calculateEnhancedStats(bookingClasses), [bookingClasses]);
+
   // Helper function to calculate commission from lesson events
   const getCommissionFromLessonEvent = (lessonId: string, events: any[]): number => {
     // Find all events for this lesson
@@ -47,6 +52,7 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
 
   const [modals, setModals] = useState({
     bookingActive: false,
+    bookingCompletable: false,
     bookingCompleted: false,
     lessonPlanned: false,
     lessonRest: false,
@@ -63,9 +69,10 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
     setModals(prev => ({ ...prev, [modalName]: true }));
   };
 
-  // Calculate booking statistics
-  const activeBookings = bookings.filter(b => b.status === 'active').length;
-  const completedBookings = bookings.filter(b => b.status === 'completed').length;
+  // Calculate booking statistics using enhanced business logic
+  const activeBookings = enhancedStats.activeBookings;
+  const completedBookings = enhancedStats.completedBookings;
+  const completableBookings = enhancedStats.completableBookings; // New: ready for completion
 
   // Calculate lesson statistics
   const plannedLessons = lessons.filter(l => l.status === 'planned').length;
@@ -124,19 +131,26 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
           <BookingIcon className="w-5 h-5" />
           Bookings
         </h4>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div 
-            className="text-center p-4 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+            className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors"
             onClick={() => openModal('bookingActive')}
           >
-            <div className="text-2xl font-bold text-green-600">{activeBookings}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{activeBookings}</div>
             <div className="text-sm text-muted-foreground">Active</div>
           </div>
           <div 
-            className="text-center p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+            className="text-center p-4 bg-orange-50 dark:bg-orange-950/30 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-950/50 transition-colors"
+            onClick={() => openModal('bookingCompletable')}
+          >
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{completableBookings}</div>
+            <div className="text-sm text-muted-foreground">Ready to Complete</div>
+          </div>
+          <div 
+            className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors"
             onClick={() => openModal('bookingCompleted')}
           >
-            <div className="text-2xl font-bold text-blue-600">{completedBookings}</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{completedBookings}</div>
             <div className="text-sm text-muted-foreground">Completed</div>
           </div>
         </div>
@@ -144,23 +158,23 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
 
       {/* Lessons Section */}
       <div className="bg-card border border-border rounded-lg p-6">
-        <h4 className="text-lg font-medium mb-4 text-blue-600 flex items-center gap-2">
+        <h4 className="text-lg font-medium mb-4 text-blue-600 dark:text-blue-400 flex items-center gap-2">
           <LessonIcon className="w-5 h-5" />
           Lessons
         </h4>
         <div className="grid grid-cols-2 gap-4">
           <div 
-            className="text-center p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+            className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors"
             onClick={() => openModal('lessonPlanned')}
           >
-            <div className="text-2xl font-bold text-blue-600">{plannedLessons}</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{plannedLessons}</div>
             <div className="text-sm text-muted-foreground">Planned</div>
           </div>
           <div 
-            className="text-center p-4 bg-yellow-50 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors"
+            className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-950/50 transition-colors"
             onClick={() => openModal('lessonRest')}
           >
-            <div className="text-2xl font-bold text-yellow-600">{restLessons}</div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{restLessons}</div>
             <div className="text-sm text-muted-foreground">Rest</div>
           </div>
         </div>
@@ -168,24 +182,24 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
 
       {/* Events Section */}
       <div className="bg-card border border-border rounded-lg p-6">
-        <h4 className="text-lg font-medium mb-4 text-purple-600 flex items-center gap-2">
+        <h4 className="text-lg font-medium mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
           <EventIcon className="w-5 h-5" />
           Events
         </h4>
         <div className="grid grid-cols-3 gap-4">
           <div 
-            className="text-center p-4 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+            className="text-center p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-950/50 transition-colors"
             onClick={() => openModal('events')}
           >
-            <div className="text-2xl font-bold text-purple-600">{totalEvents}</div>
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{totalEvents}</div>
             <div className="text-sm text-muted-foreground">Total Events</div>
           </div>
-          <div className="text-center p-4 bg-indigo-50 rounded-lg">
-            <div className="text-2xl font-bold text-indigo-600">{Math.round(totalDuration / 60 * 10) / 10}h</div>
+          <div className="text-center p-4 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg">
+            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{Math.round(totalDuration / 60 * 10) / 10}h</div>
             <div className="text-sm text-muted-foreground">Total Duration</div>
           </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">€{totalRevenue}</div>
+          <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">€{totalRevenue}</div>
             <div className="text-sm text-muted-foreground">Total Revenue</div>
           </div>
         </div>
@@ -193,7 +207,7 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
 
       {/* Teachers Section */}
       <div className="bg-card border border-border rounded-lg p-6">
-        <h4 className="text-lg font-medium mb-4 text-green-600 flex items-center gap-2">
+        <h4 className="text-lg font-medium mb-4 text-green-600 dark:text-green-400 flex items-center gap-2">
           <TeacherIcon className="w-5 h-5" />
           Teachers
         </h4>
@@ -212,15 +226,15 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
                 <div className="font-medium">{teacher.name}</div>
                 <div className="flex gap-6 text-sm">
                   <div className="text-center">
-                    <div className="font-semibold text-blue-600">{Math.round(teacher.totalHours * 10) / 10}h</div>
+                    <div className="font-semibold text-blue-600 dark:text-blue-400">{Math.round(teacher.totalHours * 10) / 10}h</div>
                     <div className="text-xs text-muted-foreground">Hours</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-semibold text-purple-600">{teacher.totalEvents}</div>
+                    <div className="font-semibold text-purple-600 dark:text-purple-400">{teacher.totalEvents}</div>
                     <div className="text-xs text-muted-foreground">Events</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-semibold text-green-600">€{Math.round(teacher.totalEarnings)}</div>
+                    <div className="font-semibold text-green-600 dark:text-green-400">€{Math.round(teacher.totalEarnings)}</div>
                     <div className="text-xs text-muted-foreground">Earnings</div>
                   </div>
                 </div>
@@ -232,7 +246,7 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
 
       {/* Kites Section */}
       <div className="bg-card border border-border rounded-lg p-6">
-        <h4 className="text-lg font-medium mb-4 text-orange-600 flex items-center gap-2">
+        <h4 className="text-lg font-medium mb-4 text-orange-600 dark:text-orange-400 flex items-center gap-2">
           <KiteIcon className="w-5 h-5" />
           Kites
         </h4>
@@ -251,15 +265,15 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
                 <div className="font-medium">{kite.model} - {kite.size}m</div>
                 <div className="flex gap-6 text-sm">
                   <div className="text-center">
-                    <div className="font-semibold text-blue-600">{kite.serial_id}</div>
+                    <div className="font-semibold text-blue-600 dark:text-blue-400">{kite.serial_id}</div>
                     <div className="text-xs text-muted-foreground">Serial</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-semibold text-purple-600">{kite.events?.length || 0}</div>
+                    <div className="font-semibold text-purple-600 dark:text-purple-400">{kite.events?.length || 0}</div>
                     <div className="text-xs text-muted-foreground">Events</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-semibold text-green-600">{kite.assignedTeachers?.length || 0}</div>
+                    <div className="font-semibold text-green-600 dark:text-green-400">{kite.assignedTeachers?.length || 0}</div>
                     <div className="text-xs text-muted-foreground">Teachers</div>
                   </div>
                 </div>
