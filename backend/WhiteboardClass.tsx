@@ -19,7 +19,17 @@
  * Event: planned → tbc → completed → cancelled
  */
 
-import { BookingStatus, LessonStatus, EventStatus } from '@/lib/constants';
+import { 
+  BookingStatus, 
+  LessonStatus, 
+  EventStatus, 
+  getBookingStatusColor,
+  PROGRESS_BAR_DEFAULTS,
+  ACTIVE_LESSON_STATUSES,
+  COMPLETED_EVENT_STATUSES,
+  PLANNED_EVENT_STATUSES
+} from '@/lib/constants';
+import { type TeacherLessons, type TeacherEvents } from '@/backend/types';
 
 export interface BookingData {
   id: string;
@@ -40,6 +50,17 @@ export interface BookingData {
     };
   }>;
   lessons?: LessonData[];
+  reference?: {
+    id: string;
+    teacher: {
+      id: string;
+      name: string;
+    } | null;
+    amount?: number;
+    status?: string;
+    role?: string;
+    note?: string;
+  } | null;
 }
 
 export interface LessonData {
@@ -141,7 +162,7 @@ export class WhiteboardClass {
    */
   getActiveLesson(): LessonData | null {
     const activeLessons = this.getLessons().filter(
-      lesson => lesson.status === 'planned' || lesson.status === 'rest'
+      lesson => ACTIVE_LESSON_STATUSES.includes(lesson.status)
     );
     
     // Return first active lesson (there should only be one)
@@ -159,7 +180,7 @@ export class WhiteboardClass {
    * Get only completed events (for progress calculation)
    */
   getCompletedEvents(): EventData[] {
-    return this.getAllEvents().filter(event => event.status === 'completed');
+    return this.getAllEvents().filter(event => COMPLETED_EVENT_STATUSES.includes(event.status));
   }
 
   /**
@@ -167,7 +188,7 @@ export class WhiteboardClass {
    */
   getPlannedEvents(): EventData[] {
     return this.getAllEvents().filter(
-      event => event.status === 'planned' || event.status === 'tbc'
+      event => PLANNED_EVENT_STATUSES.includes(event.status)
     );
   }
 
@@ -295,7 +316,7 @@ export class WhiteboardClass {
       };
     }
 
-    if (lesson.status !== 'planned' && lesson.status !== 'rest') {
+    if (!ACTIVE_LESSON_STATUSES.includes(lesson.status)) {
       return {
         isValid: false,
         message: `Cannot add event: lesson is ${lesson.status}`,
@@ -516,13 +537,7 @@ export class WhiteboardClass {
     const planned = this.getPlannedMinutes();
     
     if (total === 0) {
-      return {
-        usedPercentage: 0,
-        plannedPercentage: 0,
-        remainingPercentage: 100,
-        isOverBooked: false,
-        overBookedPercentage: 0
-      };
+      return PROGRESS_BAR_DEFAULTS;
     }
 
     const usedPercentage = Math.min((used / total) * 100, 100);
@@ -555,12 +570,7 @@ export class WhiteboardClass {
    * Get status color based on booking state
    */
   getStatusColor(): string {
-    switch (this.booking.status) {
-      case 'active': return 'green';
-      case 'completed': return 'blue';
-      case 'cancelled': return 'red';
-      default: return 'gray';
-    }
+    return getBookingStatusColor(this.booking.status);
   }
 
   /**
@@ -609,6 +619,102 @@ export class WhiteboardClass {
    */
   static fromBookingData(data: BookingData): WhiteboardClass {
     return new WhiteboardClass(data);
+  }
+
+  // ================================
+  // STATIC TEACHER GROUPING METHODS
+  // ================================
+
+  /**
+   * Group lessons by teacher
+   */
+  static groupLessonsByTeacher(lessons: any[]): TeacherLessons[] {
+    return lessons.reduce((acc: TeacherLessons[], lesson: any) => {
+      const teacherId = lesson.teacher?.id || 'unassigned';
+      const teacherName = lesson.teacher?.name || 'Unassigned';
+      
+      // Create WhiteboardClass instance from booking data
+      const bookingClass = lesson.booking ? new WhiteboardClass(lesson.booking) : null;
+      
+      let teacherGroup = acc.find(group => group.teacherId === teacherId);
+      
+      if (!teacherGroup) {
+        teacherGroup = {
+          teacherId,
+          teacherName,
+          lessons: []
+        };
+        acc.push(teacherGroup);
+      }
+      
+      if (bookingClass) {
+        teacherGroup.lessons.push({
+          lesson,
+          bookingClass
+        });
+      }
+      
+      return acc;
+    }, []);
+  }
+
+  /**
+   * Group events by teacher
+   */
+  static groupEventsByTeacher(events: any[]): TeacherEvents[] {
+    return events.reduce((acc: TeacherEvents[], event: any) => {
+      const teacherId = event.lesson?.teacher?.id || 'unassigned';
+      const teacherName = event.lesson?.teacher?.name || 'Unassigned';
+      
+      let teacherGroup = acc.find(group => group.teacherId === teacherId);
+      
+      if (!teacherGroup) {
+        teacherGroup = {
+          teacherId,
+          teacherName,
+          events: []
+        };
+        acc.push(teacherGroup);
+      }
+      
+      teacherGroup.events.push({
+        event,
+        lesson: event.lesson,
+        booking: event.booking
+      });
+      
+      return acc;
+    }, []);
+  }
+
+  /**
+   * Calculate lesson statistics for a teacher group
+   */
+  static calculateLessonStats(teacherGroup: TeacherLessons) {
+    const availableLessons = teacherGroup.lessons.filter(({ lesson }) => lesson.status === 'planned').length;
+    const lessonsWithEvents = teacherGroup.lessons.filter(({ lesson }) => 
+      lesson.status === 'planned' && lesson.events && lesson.events.length > 0
+    ).length;
+    
+    return {
+      availableLessons,
+      lessonsWithEvents
+    };
+  }
+
+  /**
+   * Calculate event statistics for a teacher group
+   */
+  static calculateEventStats(teacherGroup: TeacherEvents) {
+    const totalEvents = teacherGroup.events.length;
+    const completedEvents = teacherGroup.events.filter(({ event }) => COMPLETED_EVENT_STATUSES.includes(event.status)).length;
+    const plannedEvents = teacherGroup.events.filter(({ event }) => PLANNED_EVENT_STATUSES.includes(event.status)).length;
+    
+    return {
+      totalEvents,
+      completedEvents,
+      plannedEvents
+    };
   }
 }
 

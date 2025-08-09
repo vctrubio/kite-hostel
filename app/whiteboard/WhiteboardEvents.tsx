@@ -1,6 +1,6 @@
 import EventCard from '@/components/cards/EventCard';
 import { HeadsetIcon, FlagIcon } from '@/svgs';
-import { groupEventsByTeacher, calculateEventStats } from '@/backend/teacher-grouping';
+import { WhiteboardClass } from '@/backend/WhiteboardClass';
 import { type TeacherEvents } from '@/backend/types';
 
 interface WhiteboardEventsProps {
@@ -79,7 +79,7 @@ function TeacherEventsGroup({ teacherGroup }: { teacherGroup: TeacherEvents }) {
 
 export default function WhiteboardEvents({ events }: WhiteboardEventsProps) {
   // Group events by teacher
-  const groupedEvents = groupEventsByTeacher(events);
+  const groupedEvents = WhiteboardClass.groupEventsByTeacher(events);
 
   return (
     <div className="space-y-6">

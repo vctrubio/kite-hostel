@@ -374,6 +374,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
       {showLessonModal && (
         <BookingToLessonModal
           bookingId={booking.id}
+          bookingReference={booking.reference}
           onClose={() => setShowLessonModal(false)}
         />
       )}

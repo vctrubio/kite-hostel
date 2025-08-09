@@ -6,7 +6,6 @@ import { HelmetIcon, HeadsetIcon } from '@/svgs';
 import { LessonStatusLabel } from '@/components/label/LessonStatusLabel';
 import { Duration } from '@/components/formatters/Duration';
 import { LESSON_STATUS_FILTERS, type LessonStatusFilter } from '@/lib/constants';
-import { groupLessonsByTeacher, calculateLessonStats } from '@/backend/teacher-grouping';
 import { type TeacherLessons } from '@/backend/types';
 
 interface WhiteboardLessonsProps {
@@ -122,7 +121,7 @@ function LessonCard({
 
 // Sub-component: Teacher Group
 function TeacherGroup({ teacherGroup }: { teacherGroup: TeacherLessons }) {
-  const { availableLessons, lessonsWithEvents } = calculateLessonStats(teacherGroup);
+  const { availableLessons, lessonsWithEvents } = WhiteboardClass.calculateLessonStats(teacherGroup);
   
   return (
     <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg">
@@ -186,7 +185,7 @@ export default function WhiteboardLessons({ lessons }: WhiteboardLessonsProps) {
   };
 
   // Group filtered lessons by teacher
-  const groupedLessons = groupLessonsByTeacher(filteredLessons);
+  const groupedLessons = WhiteboardClass.groupLessonsByTeacher(filteredLessons);
 
   return (
     <div className="space-y-6">

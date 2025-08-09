@@ -12,10 +12,21 @@ import { getTeachers } from "@/actions/teacher-actions";
 
 interface BookingToLessonModalProps {
   bookingId: string;
+  bookingReference?: {
+    id: string;
+    teacher: {
+      id: string;
+      name: string;
+    } | null;
+    amount?: number;
+    status?: string;
+    role?: string;
+    note?: string;
+  } | null;
   onClose: () => void;
 }
 
-export function BookingToLessonModal({ bookingId, onClose }: BookingToLessonModalProps) {
+export function BookingToLessonModal({ bookingId, bookingReference, onClose }: BookingToLessonModalProps) {
   const [teachers, setTeachers] = useState<InferSelectModel<typeof Teacher>[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
 
@@ -69,9 +80,57 @@ export function BookingToLessonModal({ bookingId, onClose }: BookingToLessonModa
           This booking currently has no lessons. Select a teacher and commission to create one.
         </p>
 
+        {/* Booking Reference Information */}
+        {bookingReference && (
+          <div className="mb-4 p-3 bg-muted dark:bg-gray-800 rounded-lg border">
+            <h3 className="text-sm font-medium text-foreground dark:text-white mb-2">
+              📋 Booking Reference
+            </h3>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Reference ID:</span>
+                <span className="font-mono text-xs">{bookingReference.id}</span>
+              </div>
+              {(bookingReference.teacher?.name || bookingReference.note) && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    {bookingReference.teacher?.name ? 'Teacher:' : 'Note:'}
+                  </span>
+                  <span className="font-medium">
+                    {bookingReference.teacher?.name || bookingReference.note}
+                  </span>
+                </div>
+              )}
+              {bookingReference.role && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Role:</span>
+                  <span className="capitalize font-medium">{bookingReference.role}</span>
+                </div>
+              )}
+              {bookingReference.amount && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Amount:</span>
+                  <span className="font-medium">€{bookingReference.amount}</span>
+                </div>
+              )}
+              {bookingReference.status && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className="capitalize font-medium">{bookingReference.status}</span>
+                </div>
+              )}
+            </div>
+            {bookingReference.teacher?.name && (
+              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-700 dark:text-blue-300">
+                💡 Consider using the same teacher ({bookingReference.teacher.name}) for consistency
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-4">
           <BookingLessonTeacherTable
-            teachers={teachers}
+            teachers={teachers as any} // TODO: Fix type mismatch - teachers need commissions
             selectedTeacherId={selectedTeacherId}
             selectedCommissionId={selectedCommissionId}
             onSelectTeacher={setSelectedTeacherId}

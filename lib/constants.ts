@@ -54,3 +54,33 @@ export const getStatusColors = (status: LessonStatus): string => {
       return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300";
   }
 };
+
+// Booking status colors for components
+export const getBookingStatusColor = (status: BookingStatus): string => {
+  switch (status) {
+    case 'active': 
+      return 'green';
+    case 'completed': 
+      return 'blue';
+    case 'cancelled': 
+      return 'red';
+    default: 
+      return 'gray';
+  }
+};
+
+// Progress bar default configuration
+export const PROGRESS_BAR_DEFAULTS = {
+  usedPercentage: 0,
+  plannedPercentage: 0,
+  remainingPercentage: 100,
+  isOverBooked: false,
+  overBookedPercentage: 0
+} as const;
+
+// Active lesson status values (for business logic)
+export const ACTIVE_LESSON_STATUSES: LessonStatus[] = ['planned', 'rest'];
+
+// Event status values for progress calculation
+export const COMPLETED_EVENT_STATUSES: EventStatus[] = ['completed'];
+export const PLANNED_EVENT_STATUSES: EventStatus[] = ['planned', 'tbc'];
