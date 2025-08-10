@@ -2,6 +2,9 @@
  * TeacherSchedule - Simple linked list for teacher daily schedules
  */
 
+import { addMinutesToTime, timeToMinutes, minutesToTime } from '@/components/formatters/TimeZone';
+import { format } from 'date-fns';
+
 export type ScheduleItemType = 'event' | 'gap';
 
 export interface ScheduleNode {
@@ -16,6 +19,7 @@ export interface ScheduleNode {
     lessonId: string;
     location: string;
     studentCount: number;
+    studentNames?: string[]; // Add student names for conflict display
   };
 }
 
@@ -78,12 +82,34 @@ export class TeacherSchedule {
       teacherLessons.forEach(lesson => {
         lesson.events?.forEach((event: any) => {
           if (event.date && TeacherSchedule.isSameDate(event.date, date)) {
+            // Convert UTC timestamp to local time using the same method as EventCard
+            const localTime = format(new Date(event.date), 'HH:mm');
+            
+            // Debug: Check the lesson structure
+            console.log('🔍 DEBUG lesson structure:', {
+              hasBooking: !!lesson.booking,
+              hasBookingStudents: !!lesson.booking?.students,
+              bookingStudentsLength: lesson.booking?.students?.length,
+              firstBookingStudent: lesson.booking?.students?.[0]
+            });
+            
+            // Extract student names from booking.students (BookingStudent relations)
+            let studentNames: string[] = [];
+            if (lesson.booking?.students && Array.isArray(lesson.booking.students)) {
+              studentNames = lesson.booking.students.map((bookingStudent: any) => 
+                bookingStudent.student?.name || bookingStudent.student?.first_name || 'Unknown'
+              );
+            }
+            
+            console.log('🔍 DEBUG extracted studentNames:', studentNames);
+            
             schedule.addEvent(
-              TeacherSchedule.extractTimeFromDate(event.date),
+              localTime,
               event.duration || 120,
               lesson.id,
               event.location || 'Los Lances',
-              lesson.students?.length || 1
+              lesson.booking?.students?.length || 1,
+              studentNames.length > 0 ? studentNames : undefined
             );
           }
         });
@@ -98,7 +124,7 @@ export class TeacherSchedule {
   /**
    * Add an event to the linked list (sorted by start time)
    */
-  addEvent(startTime: string, duration: number, lessonId: string, location: string, studentCount: number): ScheduleNode {
+  addEvent(startTime: string, duration: number, lessonId: string, location: string, studentCount: number, studentNames?: string[]): ScheduleNode {
     const node: ScheduleNode = {
       id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'event',
@@ -108,7 +134,8 @@ export class TeacherSchedule {
       eventData: {
         lessonId,
         location,
-        studentCount
+        studentCount,
+        studentNames
       }
     };
 
@@ -156,29 +183,10 @@ export class TeacherSchedule {
    */
   getAvailableSlots(minimumDuration: number = 60): AvailableSlot[] {
     const slots: AvailableSlot[] = [];
-    const workingStart = '09:00';
-    const workingEnd = '18:00';
 
     if (!this.schedule.head) {
-      // No events scheduled, entire day available
-      slots.push({
-        startTime: workingStart,
-        endTime: workingEnd,
-        duration: this.timeToMinutes(workingEnd) - this.timeToMinutes(workingStart)
-      });
+      // No events scheduled, return empty slots (let UI handle time constraints)
       return slots;
-    }
-
-    // Check slot before first event
-    const firstEventStart = this.timeToMinutes(this.schedule.head.startTime);
-    const workingStartMinutes = this.timeToMinutes(workingStart);
-    
-    if (firstEventStart - workingStartMinutes >= minimumDuration) {
-      slots.push({
-        startTime: workingStart,
-        endTime: this.schedule.head.startTime,
-        duration: firstEventStart - workingStartMinutes
-      });
     }
 
     // Check gaps between events
@@ -199,24 +207,45 @@ export class TeacherSchedule {
       current = current.next;
     }
 
-    // Check slot after last event
-    let lastNode = this.schedule.head;
-    while (lastNode.next) {
-      lastNode = lastNode.next;
-    }
-
-    const lastEventEnd = this.timeToMinutes(lastNode.startTime) + lastNode.duration;
-    const workingEndMinutes = this.timeToMinutes(workingEnd);
-
-    if (workingEndMinutes - lastEventEnd >= minimumDuration) {
-      slots.push({
-        startTime: this.minutesToTime(lastEventEnd),
-        endTime: workingEnd,
-        duration: workingEndMinutes - lastEventEnd
-      });
-    }
-
     return slots;
+  }
+
+  /**
+   * Calculate the next possible slot after existing events
+   */
+  calculatePossibleSlot(requestedDuration: number): AvailableSlot | null {
+    // If no events scheduled, suggest starting at a reasonable time
+    if (!this.schedule.head) {
+      return {
+        startTime: '10:00',
+        endTime: this.minutesToTime(this.timeToMinutes('10:00') + requestedDuration),
+        duration: requestedDuration
+      };
+    }
+
+    // Find the latest end time among all events
+    let latestEndTime = 0;
+    let current = this.schedule.head;
+    
+    while (current) {
+      const eventStartMinutes = this.timeToMinutes(current.startTime);
+      const eventEndMinutes = eventStartMinutes + current.duration;
+      
+      if (eventEndMinutes > latestEndTime) {
+        latestEndTime = eventEndMinutes;
+      }
+      current = current.next;
+    }
+
+    // Calculate next possible start time (after the latest event ends)
+    const nextPossibleStart = latestEndTime;
+    const nextPossibleEnd = nextPossibleStart + requestedDuration;
+
+    return {
+      startTime: this.minutesToTime(nextPossibleStart),
+      endTime: this.minutesToTime(nextPossibleEnd),
+      duration: requestedDuration
+    };
   }
 
   /**
@@ -241,7 +270,15 @@ export class TeacherSchedule {
     }
 
     const hasConflict = conflictingNodes.length > 0;
-    const suggestedAlternatives = hasConflict ? this.getAvailableSlots(duration) : [];
+    let suggestedAlternatives: AvailableSlot[] = [];
+    
+    if (hasConflict) {
+      // Use the more accurate calculatePossibleSlot method
+      const nextSlot = this.calculatePossibleSlot(duration);
+      if (nextSlot) {
+        suggestedAlternatives = [nextSlot];
+      }
+    }
 
     return {
       hasConflict,
@@ -298,14 +335,11 @@ export class TeacherSchedule {
 
   // Utility methods
   private timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
+    return timeToMinutes(time);
   }
 
   private minutesToTime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    return minutesToTime(minutes);
   }
 
   static isSameDate(date1: string, date2: string): boolean {
@@ -313,7 +347,7 @@ export class TeacherSchedule {
   }
 
   static extractTimeFromDate(dateString: string): string {
-    const date = new Date(dateString);
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    // Convert UTC timestamp to local time using the same method as EventCard
+    return format(new Date(dateString), 'HH:mm');
   }
 }

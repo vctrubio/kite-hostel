@@ -2,6 +2,8 @@ import { SingleDatePicker } from '@/components/pickers/single-date-picker';
 import { Share2, Stethoscope, FileText, Printer, ChevronUp, ChevronDown } from 'lucide-react';
 import { FlagIcon } from '@/svgs';
 import { type EventController } from '@/backend/types';
+import { addMinutesToTime } from '@/components/formatters/TimeZone';
+import { format } from 'date-fns';
 
 interface WhiteboardNavProps {
   activeSection: string;
@@ -61,26 +63,22 @@ export default function WhiteboardNav({
     
     const eventTimes = events
       .filter(event => event.date)
-      .map(event => new Date(event.date))
-      .sort((a, b) => a.getTime() - b.getTime());
+      .map(event => {
+        const date = new Date(event.date);
+        return format(date, 'HH:mm'); // This converts UTC to local time automatically
+      })
+      .sort();
     
     if (eventTimes.length === 0) return null;
     
-    return eventTimes[0].toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
+    return eventTimes[0];
   };
 
   // Time adjustment function
   const adjustTime = (hours: number, minutes: number) => {
-    const [h, m] = controller.submitTime.split(':').map(Number);
-    const totalMinutes = h * 60 + m + hours * 60 + minutes;
-    const newHours = Math.floor(totalMinutes / 60) % 24;
-    const newMins = totalMinutes % 60;
-    const timeString = `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`;
-    onControllerChange({ ...controller, submitTime: timeString });
+    const totalMinutesToAdd = hours * 60 + minutes;
+    const newTime = addMinutesToTime(controller.submitTime, totalMinutesToAdd);
+    onControllerChange({ ...controller, submitTime: newTime });
   };
 
   const earliestTime = getEarliestEventTime();

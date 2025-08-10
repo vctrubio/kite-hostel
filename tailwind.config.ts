@@ -8,6 +8,16 @@ export default {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    // Ensure status colors are always included
+    'bg-yellow-100', 'bg-yellow-900/30', 'text-stone-800', 'text-stone-200',
+    'hover:bg-yellow-200', 'hover:bg-yellow-900/50',
+    'bg-blue-100', 'bg-blue-900/30', 'text-blue-800', 'text-blue-300',
+    'bg-green-100', 'bg-green-900/30', 'text-green-800', 'text-green-300',
+    'bg-orange-100', 'bg-orange-900/30', 'text-orange-800', 'text-orange-300',
+    'bg-red-100', 'bg-red-900/30', 'text-red-800', 'text-red-300',
+    'bg-gray-100', 'bg-gray-800', 'text-gray-800', 'text-gray-200',
+  ],
   theme: {
     extend: {
       colors: {

@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { getCurrentUTCDate, extractDateFromUTC } from '@/components/formatters/TimeZone';
 
 interface SingleDatePickerProps {
   selectedDate?: string;
@@ -20,7 +21,7 @@ export function SingleDatePicker({ selectedDate, onDateChange }: SingleDatePicke
   useEffect(() => {
     setIsMounted(true);
     
-    const today = new Date().toISOString().split('T')[0];
+    const today = getCurrentUTCDate();
     const todayCheck = selectedDate === today;
     setIsToday(todayCheck);
     
@@ -76,7 +77,7 @@ export function SingleDatePicker({ selectedDate, onDateChange }: SingleDatePicke
       newDate.setDate(currentDate.getDate() + 1);
     }
     
-    const dateString = newDate.toISOString().split('T')[0];
+    const dateString = extractDateFromUTC(newDate.toISOString());
     updateDate(dateString);
   };
 
@@ -84,7 +85,7 @@ export function SingleDatePicker({ selectedDate, onDateChange }: SingleDatePicke
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      return date.toISOString().split('T')[0];
+      return extractDateFromUTC(date.toISOString());
     } catch {
       return '';
     }
@@ -125,7 +126,7 @@ export function SingleDatePicker({ selectedDate, onDateChange }: SingleDatePicke
             </span>
           ) : isMounted && !isToday ? (
             <button
-              onClick={() => updateDate(new Date().toISOString().split('T')[0])}
+              onClick={() => updateDate(getCurrentUTCDate())}
               className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded-md text-blue-700 transition-colors"
               title="Go to today"
             >

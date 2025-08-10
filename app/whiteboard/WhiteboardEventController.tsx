@@ -3,6 +3,7 @@
 import { Clock, Timer, MapPin, ChevronUp, ChevronDown, Settings } from 'lucide-react';
 import { type EventController } from '@/backend/types';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
+import { deleteEvent } from '@/actions/event-actions';
 
 interface WhiteboardEventControllerProps {
   controller: EventController;
@@ -50,6 +51,38 @@ export default function WhiteboardEventController({
 
   const hasEvents = events.length > 0;
 
+  const handleNoWind = async () => {
+    if (!hasEvents) return;
+    
+    if (confirm(`Are you sure you want to delete all ${events.length} events for today? This action cannot be undone.`)) {
+      try {
+        // Delete only events that are planned
+        let deletedCount = 0;
+        for (const event of events) {
+          console.log(`🗑️ Deleting event ${event.id}`);
+          const result = await deleteEvent(event.id);
+          if (result.success) {
+            deletedCount++;
+          } else {
+            console.error(`❌ Failed to delete event ${event.id}:`, result.error);
+          }
+        }
+        console.log(`✅ ${deletedCount}/${events.length} events deleted due to NO WIND conditions`);
+        
+        if (deletedCount === events.length) {
+          alert(`All ${deletedCount} events have been successfully deleted due to NO WIND conditions.`);
+        } else {
+          alert(`${deletedCount} out of ${events.length} events were deleted. Some deletions failed - please check the console for details.`);
+        }
+        
+        // The revalidatePath in deleteEvent should refresh the page data
+      } catch (error) {
+        console.error('❌ Error deleting events:', error);
+        alert('Failed to delete events. Please try again.');
+      }
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="flex items-center gap-2 mb-6">
@@ -61,6 +94,24 @@ export default function WhiteboardEventController({
       </div>
 
       <div className="bg-card border border-border rounded-lg p-6 space-y-6">
+        {/* NO WIND Button - Emergency Cancel All Events */}
+        {hasEvents && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-red-800 mb-1">Weather Emergency</h4>
+                <p className="text-xs text-red-600">Cancel all events due to unsafe wind conditions</p>
+              </div>
+              <button
+                onClick={handleNoWind}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded transition-colors"
+              >
+                NO WIND
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Current Events Summary - Only show if there are events */}
         {hasEvents && (
           <div className="bg-muted/50 rounded-lg p-4">

@@ -4,6 +4,7 @@ import db from "@/drizzle";
 import { Payment, Teacher } from "@/drizzle/migrations/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { toUTCString } from '@/components/formatters/TimeZone';
 
 export async function getPaymentsWithTeacher() {
   try {
@@ -37,7 +38,7 @@ export async function createPayment(paymentData: {
 export async function updatePaymentAmount(paymentId: string, newAmount: number) {
   try {
     const [updatedPayment] = await db.update(Payment)
-      .set({ amount: newAmount, updated_at: new Date().toISOString() })
+      .set({ amount: newAmount, updated_at: toUTCString(new Date()) })
       .where(eq(Payment.id, paymentId))
       .returning();
 

@@ -11,6 +11,7 @@ import { WhiteboardData } from '@/actions/whiteboard-actions';
 import { getStoredDate, setStoredDate, getTodayDateString } from '@/components/formatters/DateTime';
 import { type EventController } from '@/backend/types';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
+import { getCurrentUTCDate, getCurrentUTCTime, addMinutesToTime, extractDateFromUTC } from '@/components/formatters/TimeZone';
 export type { EventController };
 
 const STORAGE_KEY = 'whiteboard-selected-date';
@@ -54,12 +55,11 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
   // Initialize controller with current time if today is selected
   useEffect(() => {
-    const now = new Date();
-    const isToday = selectedDate === getTodayDateString();
+    const isToday = selectedDate === getCurrentUTCDate();
     
     if (isToday) {
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
+      const currentTime = getCurrentUTCTime();
+      const [currentHour, currentMinute] = currentTime.split(':').map(Number);
       
       // Round up to next 30-minute interval
       let roundedMinute = currentMinute <= 30 ? 30 : 60;

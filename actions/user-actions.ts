@@ -5,6 +5,7 @@ import { user_wallet } from "@/drizzle/migrations/schema";
 import { InferInsertModel, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { toUTCString } from '@/components/formatters/TimeZone';
 
 const formatUserWallet = (wallet: any) => ({
   id: wallet.id,
@@ -110,7 +111,7 @@ export async function updateUserWallet(id: string, data: UserWalletUpdate) {
   try {
     const updatedWallet = await db
       .update(user_wallet)
-      .set({ ...data, updated_at: new Date().toISOString() })
+      .set({ ...data, updated_at: toUTCString(new Date()) })
       .where(eq(user_wallet.id, id))
       .returning();
 

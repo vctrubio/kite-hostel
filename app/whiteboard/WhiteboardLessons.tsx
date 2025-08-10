@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { WhiteboardClass, type BookingData, type LessonData } from '@/backend/WhiteboardClass';
 import { TeacherSchedule } from '@/backend/TeacherSchedule';
 import { HelmetIcon, HeadsetIcon } from '@/svgs';
@@ -53,7 +54,7 @@ function LessonCard({
 }: {
   lesson: LessonData;
   bookingClass: WhiteboardClass;
-  onAddEvent: (lesson: any, students: any[]) => void;
+  onAddEvent: (lesson: any, students: any[], remainingMinutes: number) => void;
 }) {
   const students = bookingClass.getStudents();
   const totalMinutes = bookingClass.getTotalMinutes();
@@ -93,7 +94,7 @@ function LessonCard({
       onClick={() => {
         // Only open modal if lesson is planned and has no event for selected date
         if (lesson.status === 'planned' && !hasEventForSelectedDate) {
-          onAddEvent(lesson, students);
+          onAddEvent(lesson, students, remainingMinutes);
         }
       }}
     >
@@ -146,7 +147,7 @@ function TeacherGroup({
   onAddEvent 
 }: { 
   teacherGroup: TeacherLessons;
-  onAddEvent: (lesson: any, students: any[]) => void;
+  onAddEvent: (lesson: any, students: any[], remainingMinutes: number) => void;
 }) {
   const { availableLessons, lessonsWithEvents } = WhiteboardClass.calculateLessonStats(teacherGroup);
   
@@ -195,6 +196,7 @@ function EmptyState({ activeFilter }: { activeFilter: LessonStatusFilter }) {
 
 // Main component
 export default function WhiteboardLessons({ lessons, controller, selectedDate }: WhiteboardLessonsProps) {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<LessonStatusFilter>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
@@ -204,13 +206,14 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate }:
     return TeacherSchedule.createSchedulesFromLessons(selectedDate, lessons);
   }, [lessons, selectedDate]);
 
-    // Handle adding event to lesson
-  const handleAddEvent = (lesson: any, students: any[]) => {
+  // Handle adding event to lesson
+  const handleAddEvent = (lesson: any, students: any[], remainingMinutes: number) => {
     // Add students to lesson object for modal
     const lessonWithStudents = {
       ...lesson,
       students: students,
-      studentCount: students.length
+      studentCount: students.length,
+      remainingMinutes: remainingMinutes
     };
     
     setSelectedLesson(lessonWithStudents);
@@ -320,6 +323,8 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate }:
           controller={controller}
           selectedDate={selectedDate}
           onConfirm={handleConfirmEvent}
+          remainingMinutes={selectedLesson.remainingMinutes}
+          allLessons={lessons}
         />
       )}
     </div>

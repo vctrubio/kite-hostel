@@ -55,7 +55,6 @@ export function LessonStatusLabel({ lessonId, currentStatus, lessonEvents = [] }
       const { success, error } = await updateLessonStatus(lessonId, newStatus);
       if (success) {
         setStatus(newStatus);
-        toast.success(`Lesson status updated to ${newStatus}`);
       } else {
         console.error("Failed to update status:", error);
         toast.error(`Failed to update lesson status: ${error}`);

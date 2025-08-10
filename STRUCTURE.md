@@ -12,6 +12,8 @@ This document outlines the directory structure of the project in a tree format.
 │    ├─── views/ # Components for displaying entity
 │    ├─── forms/ # Form components used for creating and editing entities.
 │    ├─── formatters/ # Components to format data for display (e.g., dates, durations).
+│    │    ├─── DateTime.tsx # Legacy date/time formatting utilities (being phased out)
+│    │    └─── TimeZone.ts # **NEW**: UTC-based timezone-safe date/time utilities
 │    ├─── label/ # Components that make api calls
 │    ├─── modals/ # Pop up, to create
 │    ├─── pickers/ # Date and time picker components.
@@ -19,6 +21,9 @@ This document outlines the directory structure of the project in a tree format.
 │    ├─── ui/ # Generic, low-level UI elements (Button, Card, etc.).
 │    └─── users/ # Components specifically for user information and management.
 ├─── drizzle/ # Holds Drizzle ORM configuration, schema, and migration files.
+├─── backend/ # **NEW**: Backend utilities and business logic classes
+│    ├─── types.ts # TypeScript interfaces for backend entities
+│    └─── TeacherSchedule.ts # Linked list implementation for teacher daily schedules
 ├─── lib/ # Utility functions and library configurations, including Supabase clients.
 ├─── provider/ # React Context providers for managing global state (e.g., UserWalletProvider).
 ├─── public/ # Static assets like images and logos that are served directly.
@@ -42,3 +47,40 @@ Each primary entity (e.g., Students, Teachers, Bookings) follows a consistent ar
 - **`components/tables`**: This convention is for components that define the headers and columns for data tables.
 - **`components/rows`**: This is for components that render the individual rows of data within the tables.
 - **`components/links`**: This is for UI components like dropdowns that trigger API interactions.
+
+## Core Architecture Components
+
+### TimeZone Utilities (`components/formatters/TimeZone.ts`)
+
+A comprehensive timezone-safe utility module that prevents timezone conversion issues across the application:
+
+- **`createUTCDateTime(date, time)`**: Creates UTC Date from date/time strings
+- **`toUTCString(date)`**: Converts Date to UTC ISO string  
+- **`extractTimeFromUTC(isoString)`**: Extracts HH:MM from UTC ISO string
+- **`addMinutesToTime(time, minutes)`**: Adds minutes to time string
+- **`timeToMinutes()` / `minutesToTime()`**: Converts between time formats
+- **`getCurrentUTCDate()` / `getCurrentUTCTime()`**: Gets current UTC values
+
+**Usage**: Import specific functions instead of using native Date operations to ensure consistent timezone handling.
+
+### Teacher Schedule System (`backend/TeacherSchedule.ts`)
+
+A linked list implementation for managing teacher daily schedules:
+
+- **Linked List Structure**: Each schedule node contains time, duration, and type (event/gap)
+- **Static Utilities**: Helper methods for time manipulation and schedule creation
+- **Conflict Detection**: Identifies scheduling conflicts and suggests alternatives
+- **Gap Analysis**: Finds available time slots between events
+
+**Architecture**: Pure linked list with no external dependencies, using TimeZone utilities for all time operations.
+
+### Whiteboard Application (`app/whiteboard/`)
+
+The core admin interface for managing daily kite lessons and events:
+
+- **WhiteboardClient.tsx**: Main container component that renders sub-components based on active section
+- **Section Components**: Bookings, Lessons, Events, Controller, Status - each handling specific data views
+- **Real-time Filtering**: Filters all data by selected date with live updates
+- **Event Controller**: Manages event creation settings and real-time schedule coordination
+
+**Data Flow**: Server-side data fetching → Client filtering → Component rendering → User interactions

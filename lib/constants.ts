@@ -29,9 +29,9 @@ export type UserRole = (typeof USER_ROLE_ENUM_VALUES)[number];
 export const LESSON_STATUS_FILTERS = [
   { value: 'all' as const, label: 'All', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700' },
   { value: 'planned' as const, label: 'Planned', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50' },
-  { value: 'rest' as const, label: 'Rest', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/50' },
-  { value: 'delegated' as const, label: 'Delegated', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50' },
+  { value: 'rest' as const, label: 'Rest', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-stone-800 dark:text-stone-200 hover:bg-yellow-200 dark:hover:bg-yellow-900/50' },
   { value: 'completed' as const, label: 'Completed', color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50' },
+  { value: 'delegated' as const, label: 'Delegated', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50' },
   { value: 'cancelled' as const, label: 'Cancelled', color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50' },
 ] as const;
 
@@ -53,7 +53,7 @@ export const getStatusColors = (status: LessonStatus): string => {
     case "planned":
       return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300";
     case "rest":
-      return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300";
+      return "bg-yellow-100 dark:bg-yellow-900/30 text-stone-800 dark:text-stone-200";
     case "delegated":
       return "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300";
     case "completed":
