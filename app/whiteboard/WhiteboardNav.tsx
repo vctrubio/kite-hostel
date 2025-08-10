@@ -275,35 +275,54 @@ export default function WhiteboardNav({
       
       {/* Navigation Sections */}
       <div className="space-y-2 mb-6">
-        {sections.map((section) => (
-          <button
-            key={section.id}
-            onClick={() => onSectionClick(section.id)}
-            className={`w-full text-left p-3 rounded-lg transition-colors relative ${
-              activeSection === section.id
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-muted text-foreground'
-            }`}
-          >
-            <div className="font-medium">{section.name}</div>
-            <div className="text-sm opacity-70">{section.description}</div>
-            
-            {/* Enhanced indicators for later maybe */}
-            {/* {analyticsData && (
-              <>
-                {section.id === 'bookings' && analyticsData.readyForCompletion > 0 && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full"></div>
+        {sections.map((section) => {
+          // Calculate totals for specific sections
+          let total = null;
+          if (section.id === 'bookings') {
+            total = bookings.length;
+          } else if (section.id === 'lessons') {
+            // Count unique lessons from events
+            const uniqueLessons = new Set(events.map(event => event.lesson?.id).filter(Boolean));
+            total = uniqueLessons.size;
+          } else if (section.id === 'events') {
+            total = events.length;
+          }
+          
+          return (
+            <button
+              key={section.id}
+              onClick={() => onSectionClick(section.id)}
+              className={`w-full text-left p-3 rounded-lg transition-colors relative ${
+                activeSection === section.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              <div className="font-medium flex items-center justify-between">
+                <span>{section.name}</span>
+                {total !== null && (
+                  <span className="text-xs opacity-70 font-mono">{total}</span>
                 )}
-                {section.id === 'events' && analyticsData.eventsWithIssues > 0 && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
-                )}
-                {section.id === 'status' && analyticsData.needingAttention > 0 && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
-                )}
-              </>
-            )} */}
-          </button>
-        ))}
+              </div>
+              <div className="text-sm opacity-70">{section.description}</div>
+              
+              {/* Enhanced indicators for later maybe */}
+              {/* {analyticsData && (
+                <>
+                  {section.id === 'bookings' && analyticsData.readyForCompletion > 0 && (
+                    <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full"></div>
+                  )}
+                  {section.id === 'events' && analyticsData.eventsWithIssues > 0 && (
+                    <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+                  )}
+                  {section.id === 'status' && analyticsData.needingAttention > 0 && (
+                    <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+                  )}
+                </>
+              )} */}
+            </button>
+          );
+        })}
       </div>
 
       {/* Enhanced Status Alerts */}
