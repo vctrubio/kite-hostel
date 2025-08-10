@@ -37,6 +37,16 @@ export const LESSON_STATUS_FILTERS = [
 
 export type LessonStatusFilter = typeof LESSON_STATUS_FILTERS[number]['value'];
 
+// Booking status filter configuration for UI components
+export const BOOKING_STATUS_FILTERS = [
+  { value: 'all' as const, label: 'All', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700' },
+  { value: 'active' as const, label: 'Active', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50' },
+  { value: 'completed' as const, label: 'Completed', color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50' },
+  { value: 'cancelled' as const, label: 'Cancelled', color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50' },
+] as const;
+
+export type BookingStatusFilter = typeof BOOKING_STATUS_FILTERS[number]['value'];
+
 // Lesson status colors for components (matches the filter colors)
 export const getStatusColors = (status: LessonStatus): string => {
   switch (status) {
@@ -55,17 +65,17 @@ export const getStatusColors = (status: LessonStatus): string => {
   }
 };
 
-// Booking status colors for components
+// Booking status colors for components (matches the filter colors)
 export const getBookingStatusColor = (status: BookingStatus): string => {
   switch (status) {
     case 'active': 
-      return 'green';
+      return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
     case 'completed': 
-      return 'blue';
+      return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
     case 'cancelled': 
-      return 'red';
+      return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
     default: 
-      return 'gray';
+      return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
   }
 };
 

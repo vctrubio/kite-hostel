@@ -2,15 +2,7 @@
 
 import { useState } from 'react';
 import BookingCard from '@/components/cards/BookingCard';
-
-const BOOKING_STATUS_FILTERS = [
-  { value: 'all', label: 'All', color: 'bg-gray-100 text-gray-800 hover:bg-gray-200' },
-  { value: 'active', label: 'Active', color: 'bg-green-100 text-green-800 hover:bg-green-200' },
-  { value: 'completed', label: 'Completed', color: 'bg-blue-100 text-blue-800 hover:bg-blue-200' },
-  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800 hover:bg-red-200' },
-] as const;
-
-type BookingStatusFilter = typeof BOOKING_STATUS_FILTERS[number]['value'];
+import { BOOKING_STATUS_FILTERS, type BookingStatusFilter } from '@/lib/constants';
 
 interface WhiteboardBookingsProps {
   bookings: any[];
