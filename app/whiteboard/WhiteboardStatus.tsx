@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { BookingIcon, LessonIcon, EventIcon, TeacherIcon, KiteIcon } from '@/svgs';
-import { createBookingClasses, calculateEnhancedStats } from '@/backend/WhiteboardClass';
+import { BookingIcon, FlagIcon, EventIcon, HeadsetIcon, KiteIcon } from '@/svgs';
+import { createBookingClasses } from '@/backend/WhiteboardClass';
 import BookingDetailModal from '@/components/modals/BookingDetailModal';
 import LessonDetailModal from '@/components/modals/LessonDetailModal';
 import EventDetailModal from '@/components/modals/EventDetailModal';
@@ -21,12 +21,26 @@ interface TeacherSummary {
   totalHours: number;
   totalEvents: number;
   totalEarnings: number;
+  schoolRevenue: number;
 }
 
 export default function WhiteboardStatus({ bookings, lessons, events, kites }: WhiteboardStatusProps) {
   // Create WhiteboardClass instances for enhanced business logic
   const bookingClasses = useMemo(() => createBookingClasses(bookings), [bookings]);
-  const enhancedStats = useMemo(() => calculateEnhancedStats(bookingClasses), [bookingClasses]);
+
+  // Enhanced business logic calculations
+  const businessMetrics = useMemo(() => {
+    const readyForCompletion = bookingClasses.filter(bc => bc.isReadyForCompletion());
+    const overBookedBookings = bookingClasses.filter(bc => {
+      const totalScheduled = bc.getUsedMinutes() + bc.getPlannedMinutes();
+      return totalScheduled > bc.getTotalMinutes();
+    });
+
+    return {
+      readyForCompletion,
+      overBookedBookings,
+    };
+  }, [bookingClasses]);
 
   // Helper function to calculate commission from lesson events
   const getCommissionFromLessonEvent = (lessonId: string, events: any[]): number => {
@@ -70,9 +84,9 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
   };
 
   // Calculate booking statistics using enhanced business logic
-  const activeBookings = enhancedStats.activeBookings;
-  const completedBookings = enhancedStats.completedBookings;
-  const completableBookings = enhancedStats.completableBookings; // New: ready for completion
+  const activeBookings = bookingClasses.filter(bc => bc.getStatus() === 'active').length;
+  const completedBookings = bookingClasses.filter(bc => bc.getStatus() === 'completed').length;
+  const completableBookings = businessMetrics.readyForCompletion.length;
 
   // Calculate lesson statistics
   const plannedLessons = lessons.filter(l => l.status === 'planned').length;
@@ -99,6 +113,7 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
         totalHours: 0,
         totalEvents: 0,
         totalEarnings: 0,
+        schoolRevenue: 0,
       };
     }
 
@@ -115,6 +130,14 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
     // Calculate earnings using the new commission function
     const earnings = getCommissionFromLessonEvent(lesson.id, events);
     acc[teacherName].totalEarnings += earnings;
+
+    // Calculate school revenue from this teacher's events
+    const schoolRevenue = lessonEvents.reduce((sum, event) => {
+      const packagePrice = event.booking?.package?.price_per_student || 0;
+      const studentCount = event.booking?.students?.length || 0;
+      return sum + (packagePrice * studentCount);
+    }, 0);
+    acc[teacherName].schoolRevenue += schoolRevenue;
 
     return acc;
   }, {});
@@ -159,7 +182,7 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
       {/* Lessons Section */}
       <div className="bg-card border border-border rounded-lg p-6">
         <h4 className="text-lg font-medium mb-4 text-blue-600 dark:text-blue-400 flex items-center gap-2">
-          <LessonIcon className="w-5 h-5" />
+          <FlagIcon className="w-5 h-5" />
           Lessons
         </h4>
         <div className="grid grid-cols-2 gap-4">
@@ -208,7 +231,7 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
       {/* Teachers Section */}
       <div className="bg-card border border-border rounded-lg p-6">
         <h4 className="text-lg font-medium mb-4 text-green-600 dark:text-green-400 flex items-center gap-2">
-          <TeacherIcon className="w-5 h-5" />
+          <HeadsetIcon className="w-5 h-5" />
           Teachers
         </h4>
         {teacherSummaries.length === 0 ? (
@@ -224,7 +247,7 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
                 onClick={() => openModal('teachers')}
               >
                 <div className="font-medium">{teacher.name}</div>
-                <div className="flex gap-6 text-sm">
+                <div className="flex gap-4 text-sm">
                   <div className="text-center">
                     <div className="font-semibold text-blue-600 dark:text-blue-400">{Math.round(teacher.totalHours * 10) / 10}h</div>
                     <div className="text-xs text-muted-foreground">Hours</div>
@@ -235,7 +258,11 @@ export default function WhiteboardStatus({ bookings, lessons, events, kites }: W
                   </div>
                   <div className="text-center">
                     <div className="font-semibold text-green-600 dark:text-green-400">€{Math.round(teacher.totalEarnings)}</div>
-                    <div className="text-xs text-muted-foreground">Earnings</div>
+                    <div className="text-xs text-muted-foreground">Teacher</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-semibold text-indigo-600 dark:text-indigo-400">€{Math.round(teacher.schoolRevenue)}</div>
+                    <div className="text-xs text-muted-foreground">School</div>
                   </div>
                 </div>
               </div>

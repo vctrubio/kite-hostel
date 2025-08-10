@@ -11,7 +11,6 @@ import {
   BookingStudent,
   Teacher,
 } from "@/drizzle/migrations/schema";
-import { WhiteboardClass, type LessonData } from '@/backend/WhiteboardClass';
 import { type Location } from '@/lib/constants';
 
 export type PackageStudent = InferSelectModel<typeof PackageStudent>;
@@ -26,28 +25,14 @@ export interface EventController {
   submitTime: string; // Start time for events (HH:MM format)
 }
 
-// Re-export teacher schedule types
-export type {
-  ScheduleItemType,
-  BaseScheduleItem,
-  EventScheduleItem,
-  GapScheduleItem,
-  ScheduleItem,
-  TeacherDaySchedule,
-  AvailableSlot,
-  ConflictInfo
-} from './TeacherSchedule';
-
-export { TeacherSchedule } from './TeacherSchedule';
-export { TeacherScheduleManager } from './TeacherScheduleManager';
-
+// Database relation types
 export type BookingWithRelations = InferSelectModel<typeof Booking> & {
   lessons: (InferSelectModel<typeof Lesson> & {
     events: (InferSelectModel<typeof Event> & {
       kites: (InferSelectModel<typeof KiteEvent> & { kite: InferSelectModel<typeof Kite> })[];
     })[];
     teacher: InferSelectModel<typeof Teacher>;
-    totalKiteEventDuration?: number; // Add this line
+    totalKiteEventDuration?: number;
   })[];
   package: InferSelectModel<typeof PackageStudent>;
   reference: (InferSelectModel<typeof user_wallet> & { teacher: InferSelectModel<typeof Teacher> | null }) | null;
@@ -55,22 +40,26 @@ export type BookingWithRelations = InferSelectModel<typeof Booking> & {
   lessonCount: number;
 };
 
-// Teacher grouping types
-export interface TeacherLessons {
-  teacherId: string;
-  teacherName: string;
-  lessons: Array<{
-    lesson: LessonData;
-    bookingClass: WhiteboardClass;
-  }>;
-}
-
+// Simple teacher grouping types (UI display only)
 export interface TeacherEvents {
   teacherId: string;
   teacherName: string;
   events: Array<{
     event: any;
-    lesson: LessonData;
+    lesson: any;
     booking: any;
   }>;
+}
+
+// WhiteboardClass types - cleaner data structures
+export type BookingData = BookingWithRelations;
+export type LessonData = BookingData['lessons'][0];
+export type EventData = LessonData['events'][0];
+export type StudentData = BookingData['students'][0]['student'];
+export type TeacherData = LessonData['teacher'];
+
+export interface ValidationResult {
+  isValid: boolean;
+  message: string;
+  code?: string;
 }

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import BookingCard from '@/components/cards/BookingCard';
 import { BOOKING_STATUS_FILTERS, type BookingStatusFilter } from '@/lib/constants';
+import { WhiteboardClass, createBookingClasses } from '@/backend/WhiteboardClass';
+import { CheckCircle } from 'lucide-react';
 
 interface WhiteboardBookingsProps {
   bookings: any[];
@@ -11,18 +13,30 @@ interface WhiteboardBookingsProps {
 export default function WhiteboardBookings({ bookings }: WhiteboardBookingsProps) {
   const [activeFilter, setActiveFilter] = useState<BookingStatusFilter>('all');
 
-  // Filter bookings based on selected status
-  const filteredBookings = activeFilter === 'all' 
-    ? bookings 
-    : bookings.filter(booking => booking.status === activeFilter);
+  // Create WhiteboardClass instances for enhanced business logic
+  const bookingClasses = useMemo(() => createBookingClasses(bookings), [bookings]);
 
-  // Count bookings by status for button labels
+  // Enhanced filtering using WhiteboardClass business logic
+  const filteredBookings = useMemo(() => {
+    let filtered = bookingClasses;
+    
+    if (activeFilter !== 'all') {
+      filtered = bookingClasses.filter(bookingClass => bookingClass.getStatus() === activeFilter);
+    }
+    
+    return filtered;
+  }, [bookingClasses, activeFilter]);
+
+  // Enhanced status counts using business logic
   const statusCounts = {
-    all: bookings.length,
-    active: bookings.filter(b => b.status === 'active').length,
-    completed: bookings.filter(b => b.status === 'completed').length,
-    cancelled: bookings.filter(b => b.status === 'cancelled').length,
+    all: bookingClasses.length,
+    active: bookingClasses.filter(bc => bc.getStatus() === 'active').length,
+    completed: bookingClasses.filter(bc => bc.getStatus() === 'completed').length,
+    cancelled: bookingClasses.filter(bc => bc.getStatus() === 'cancelled').length,
   };
+
+  // Get bookings ready for completion using business logic
+  const completableBookings = bookingClasses.filter(bc => bc.isReadyForCompletion());
 
   return (
     <div>
@@ -47,6 +61,18 @@ export default function WhiteboardBookings({ bookings }: WhiteboardBookingsProps
         </div>
       </div>
 
+      {/* Enhanced Status Alerts */}
+      {completableBookings.length > 0 && (
+        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+            <span className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              {completableBookings.length} booking{completableBookings.length > 1 ? 's' : ''} ready for completion
+            </span>
+          </div>
+        </div>
+      )}
+
       {filteredBookings.length === 0 ? (
         <div className="p-8 bg-muted rounded-lg text-center">
           <p className="text-muted-foreground">
@@ -57,8 +83,11 @@ export default function WhiteboardBookings({ bookings }: WhiteboardBookingsProps
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-          {filteredBookings.map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
+          {filteredBookings.map((bookingClass) => (
+            <BookingCard 
+              key={bookingClass.getId()} 
+              booking={bookingClass.toJSON()}
+            />
           ))}
         </div>
       )}

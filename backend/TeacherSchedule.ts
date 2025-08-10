@@ -2,12 +2,13 @@
  * TeacherSchedule - Simple linked list for teacher daily schedules
  */
 
-import { addMinutesToTime, timeToMinutes, minutesToTime } from '@/components/formatters/TimeZone';
+import { addMinutesToTime, timeToMinutes, minutesToTime, createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
 import { format } from 'date-fns';
+import { detectScheduleGaps, hasScheduleGaps, compactSchedule, findNextAvailableSlot, type ScheduleItem } from './ScheduleUtils';
 
 export type ScheduleItemType = 'event' | 'gap';
 
-export interface ScheduleNode {
+export interface ScheduleNode extends ScheduleItem {
   id: string;
   type: ScheduleItemType;
   startTime: string; // HH:MM format
@@ -42,6 +43,17 @@ export interface ConflictInfo {
   suggestedAlternatives: AvailableSlot[];
 }
 
+export interface ReorganizationOption {
+  type: 'shift_next' | 'compact_schedule';
+  description: string;
+  nodeToMove?: ScheduleNode;
+  nodesToMove?: ScheduleNode[];
+  newStartTime?: string;
+  timeSaved?: number;
+  feasible: boolean;
+  deletedEventTime?: string; // Time slot of the deleted event for reference
+}
+
 export class TeacherSchedule {
   private schedule: TeacherDaySchedule;
 
@@ -63,15 +75,17 @@ export class TeacherSchedule {
     // Group lessons by teacher
     const teacherLessonsMap = new Map<string, any[]>();
     
-    lessons.forEach(lesson => {
-      if (lesson.teacher?.id) {
-        const teacherId = lesson.teacher.id;
-        if (!teacherLessonsMap.has(teacherId)) {
-          teacherLessonsMap.set(teacherId, []);
+    lessons
+      .filter(lesson => lesson != null) // Filter out null/undefined lessons
+      .forEach(lesson => {
+        if (lesson.teacher?.id) {
+          const teacherId = lesson.teacher.id;
+          if (!teacherLessonsMap.has(teacherId)) {
+            teacherLessonsMap.set(teacherId, []);
+          }
+          teacherLessonsMap.get(teacherId)!.push(lesson);
         }
-        teacherLessonsMap.get(teacherId)!.push(lesson);
-      }
-    });
+      });
 
     // Create schedule for each teacher
     teacherLessonsMap.forEach((teacherLessons, teacherId) => {
@@ -80,39 +94,35 @@ export class TeacherSchedule {
       
       // Add existing events from lessons
       teacherLessons.forEach(lesson => {
-        lesson.events?.forEach((event: any) => {
-          if (event.date && TeacherSchedule.isSameDate(event.date, date)) {
-            // Convert UTC timestamp to local time using the same method as EventCard
-            const localTime = format(new Date(event.date), 'HH:mm');
-            
-            // Debug: Check the lesson structure
-            console.log('🔍 DEBUG lesson structure:', {
-              hasBooking: !!lesson.booking,
-              hasBookingStudents: !!lesson.booking?.students,
-              bookingStudentsLength: lesson.booking?.students?.length,
-              firstBookingStudent: lesson.booking?.students?.[0]
-            });
-            
-            // Extract student names from booking.students (BookingStudent relations)
-            let studentNames: string[] = [];
-            if (lesson.booking?.students && Array.isArray(lesson.booking.students)) {
-              studentNames = lesson.booking.students.map((bookingStudent: any) => 
-                bookingStudent.student?.name || bookingStudent.student?.first_name || 'Unknown'
+        // Add safety check for lesson existence
+        if (!lesson || !lesson.events) return;
+        
+        lesson.events
+          .filter((event: any) => event != null) // Filter out null/undefined events
+          .forEach((event: any) => {
+            // Add proper null/undefined checks
+            if (event && event.date && TeacherSchedule.isSameDate(event.date, date)) {
+              // Convert UTC timestamp to local time using the same method as EventCard
+              const localTime = format(new Date(event.date), 'HH:mm');
+              
+              // Extract student names from booking.students (BookingStudent relations)
+              let studentNames: string[] = [];
+              if (lesson.booking?.students && Array.isArray(lesson.booking.students)) {
+                studentNames = lesson.booking.students.map((bookingStudent: any) => 
+                  bookingStudent.student?.name || bookingStudent.student?.first_name || 'Unknown'
+                );
+              }
+              
+              schedule.addEvent(
+                localTime,
+                event.duration || 120,
+                lesson.id,
+                event.location || 'Los Lances',
+                lesson.booking?.students?.length || 1,
+                studentNames.length > 0 ? studentNames : undefined
               );
             }
-            
-            console.log('🔍 DEBUG extracted studentNames:', studentNames);
-            
-            schedule.addEvent(
-              localTime,
-              event.duration || 120,
-              lesson.id,
-              event.location || 'Los Lances',
-              lesson.booking?.students?.length || 1,
-              studentNames.length > 0 ? studentNames : undefined
-            );
-          }
-        });
+          });
       });
       
       schedules.set(teacherId, schedule);
@@ -144,22 +154,6 @@ export class TeacherSchedule {
   }
 
   /**
-   * Add a gap to the linked list (sorted by start time)
-   */
-  addGap(startTime: string, duration: number): ScheduleNode {
-    const node: ScheduleNode = {
-      id: `gap_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'gap',
-      startTime,
-      duration,
-      next: null
-    };
-
-    this.insertNode(node);
-    return node;
-  }
-
-  /**
    * Insert node in chronological order
    */
   private insertNode(newNode: ScheduleNode): void {
@@ -179,73 +173,53 @@ export class TeacherSchedule {
   }
 
   /**
-   * Get available time slots
+   * Calculate the next possible slot after existing events
+   */
+  calculatePossibleSlot(requestedDuration: number): AvailableSlot | null {
+    const storedNodes = this.getStoredNodes();
+    const eventNodes = storedNodes.filter(node => node.type === 'event');
+    
+    // Use the utility function to find next available slot
+    return findNextAvailableSlot(eventNodes, requestedDuration);
+  }
+
+  /**
+   * Get available time slots between events
    */
   getAvailableSlots(minimumDuration: number = 60): AvailableSlot[] {
-    const slots: AvailableSlot[] = [];
-
-    if (!this.schedule.head) {
-      // No events scheduled, return empty slots (let UI handle time constraints)
-      return slots;
+    const storedNodes = this.getStoredNodes();
+    const eventNodes = storedNodes.filter(node => node.type === 'event');
+    
+    if (eventNodes.length === 0) {
+      return []; // No events scheduled, return empty slots
     }
 
+    const slots: AvailableSlot[] = [];
+    
+    // Sort events by start time
+    const sortedEvents = [...eventNodes].sort((a, b) => 
+      this.timeToMinutes(a.startTime) - this.timeToMinutes(b.startTime)
+    );
+
     // Check gaps between events
-    let current = this.schedule.head;
-    while (current.next) {
-      const currentEnd = this.timeToMinutes(current.startTime) + current.duration;
-      const nextStart = this.timeToMinutes(current.next.startTime);
+    for (let i = 0; i < sortedEvents.length - 1; i++) {
+      const currentEvent = sortedEvents[i];
+      const nextEvent = sortedEvents[i + 1];
+      
+      const currentEnd = this.timeToMinutes(currentEvent.startTime) + currentEvent.duration;
+      const nextStart = this.timeToMinutes(nextEvent.startTime);
       const gapDuration = nextStart - currentEnd;
 
       if (gapDuration >= minimumDuration) {
         slots.push({
           startTime: this.minutesToTime(currentEnd),
-          endTime: current.next.startTime,
+          endTime: nextEvent.startTime,
           duration: gapDuration
         });
       }
-
-      current = current.next;
     }
 
     return slots;
-  }
-
-  /**
-   * Calculate the next possible slot after existing events
-   */
-  calculatePossibleSlot(requestedDuration: number): AvailableSlot | null {
-    // If no events scheduled, suggest starting at a reasonable time
-    if (!this.schedule.head) {
-      return {
-        startTime: '10:00',
-        endTime: this.minutesToTime(this.timeToMinutes('10:00') + requestedDuration),
-        duration: requestedDuration
-      };
-    }
-
-    // Find the latest end time among all events
-    let latestEndTime = 0;
-    let current = this.schedule.head;
-    
-    while (current) {
-      const eventStartMinutes = this.timeToMinutes(current.startTime);
-      const eventEndMinutes = eventStartMinutes + current.duration;
-      
-      if (eventEndMinutes > latestEndTime) {
-        latestEndTime = eventEndMinutes;
-      }
-      current = current.next;
-    }
-
-    // Calculate next possible start time (after the latest event ends)
-    const nextPossibleStart = latestEndTime;
-    const nextPossibleEnd = nextPossibleStart + requestedDuration;
-
-    return {
-      startTime: this.minutesToTime(nextPossibleStart),
-      endTime: this.minutesToTime(nextPossibleEnd),
-      duration: requestedDuration
-    };
   }
 
   /**
@@ -273,7 +247,6 @@ export class TeacherSchedule {
     let suggestedAlternatives: AvailableSlot[] = [];
     
     if (hasConflict) {
-      // Use the more accurate calculatePossibleSlot method
       const nextSlot = this.calculatePossibleSlot(duration);
       if (nextSlot) {
         suggestedAlternatives = [nextSlot];
@@ -295,9 +268,20 @@ export class TeacherSchedule {
   }
 
   /**
-   * Get all nodes as array
+   * Get all nodes as array, including automatically detected gaps
    */
   getNodes(): ScheduleNode[] {
+    const storedNodes = this.getStoredNodes();
+    const eventNodes = storedNodes.filter(node => node.type === 'event');
+    
+    // Use the utility function to detect gaps
+    return detectScheduleGaps(eventNodes) as ScheduleNode[];
+  }
+
+  /**
+   * Get only the actual stored nodes (without auto-detected gaps)
+   */
+  getStoredNodes(): ScheduleNode[] {
     const nodes: ScheduleNode[] = [];
     let current = this.schedule.head;
     
@@ -333,6 +317,361 @@ export class TeacherSchedule {
     return false;
   }
 
+  /**
+   * Get reorganization options when removing a node
+   */
+  getReorganizationOptions(nodeIdToRemove: string): ReorganizationOption[] {
+    const nodeToRemove = this.findNodeById(nodeIdToRemove);
+    if (!nodeToRemove) return [];
+
+    const options: ReorganizationOption[] = [];
+    const removedDuration = nodeToRemove.duration;
+
+    // Only offer compact schedule option if there are subsequent nodes
+    const subsequentNodes = this.getNodesAfter(nodeIdToRemove);
+    if (subsequentNodes.length > 0) {
+      options.push({
+        type: 'compact_schedule',
+        description: `Compact schedule by moving ${subsequentNodes.length} events earlier`,
+        nodesToMove: subsequentNodes,
+        timeSaved: removedDuration,
+        feasible: true
+      });
+    }
+
+    return options;
+  }
+
+  /**
+   * Check if reorganization is possible for this teacher's schedule
+   */
+  canReorganizeSchedule(): boolean {
+    const nodes = this.getStoredNodes();
+    const eventNodes = nodes.filter(node => node.type === 'event');
+    
+    // Use the utility function to check for gaps
+    return hasScheduleGaps(eventNodes, 15); // 15+ minute gaps
+  }
+
+  /**
+   * Perform automatic compact reorganization of entire schedule
+   */
+  performCompactReorganization(): boolean {
+    try {
+      const nodes = this.getStoredNodes();
+      const eventNodes = nodes.filter(node => node.type === 'event');
+      
+      if (eventNodes.length < 2) return false;
+
+      // Use the utility function to compact the schedule
+      const compactedEvents = compactSchedule(eventNodes);
+      
+      // Update the actual nodes with the compacted times
+      compactedEvents.forEach((compactedEvent, index) => {
+        eventNodes[index].startTime = compactedEvent.startTime;
+      });
+      
+      // Resort the schedule to maintain order
+      this.resortSchedule();
+      return true;
+    } catch (error) {
+      console.error('Error performing compact reorganization:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get database updates for full schedule compaction
+   */
+  getDatabaseUpdatesForCompactReorganization(selectedDate: string, eventIdMap: Map<string, string>): Array<{
+    eventId: string;
+    newDateTime: string;
+  }> {
+    const updates: Array<{ eventId: string; newDateTime: string }> = [];
+    
+    try {
+      const nodes = this.getStoredNodes();
+      const eventNodes = nodes.filter(node => node.type === 'event');
+      
+      // Update all events except the first one (which stays in place)
+      for (let i = 1; i < eventNodes.length; i++) {
+        const node = eventNodes[i];
+        const lessonId = node.eventData?.lessonId;
+        const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
+        
+        if (eventId && lessonId) {
+          const newDateTime = this.combineDateTime(selectedDate, node.startTime);
+          updates.push({
+            eventId,
+            newDateTime
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error generating compact reorganization updates:', error);
+    }
+    
+    return updates;
+  }
+
+  /**
+   * Execute reorganization based on selected option
+   */
+  reorganizeTeacherEvents(option: ReorganizationOption): boolean {
+    try {
+      switch (option.type) {
+        case 'shift_next':
+          if (option.nodeToMove && option.newStartTime) {
+            // Find next available slot for the node to move
+            const nextSlot = this.calculatePossibleSlot(option.nodeToMove.duration);
+            if (nextSlot) {
+              option.nodeToMove.startTime = nextSlot.startTime;
+              this.resortSchedule();
+              return true;
+            }
+          }
+          break;
+
+        case 'compact_schedule':
+          if (option.nodesToMove) {
+            // For reorganization after deletion, we want to use the deleted node's time slot
+            // The first node to move should start at the time the deleted node was at
+            const firstNodeToMove = option.nodesToMove[0];
+            
+            // If we have timeSaved, it means we removed a node and want to shift everything up
+            let nextStartTime: number;
+            if (option.timeSaved) {
+              // Calculate the earliest time any of the nodes to move currently has
+              const earliestTime = Math.min(...option.nodesToMove.map(node => 
+                this.timeToMinutes(node.startTime)
+              ));
+              
+              // Move everything back by the time saved (which is the duration of deleted node)
+              nextStartTime = earliestTime - option.timeSaved;
+            } else {
+              // Normal compacting - just start after the previous node
+              const nodeBeforeFirst = this.findNodeBefore(firstNodeToMove.id);
+              if (nodeBeforeFirst) {
+                nextStartTime = this.timeToMinutes(nodeBeforeFirst.startTime) + nodeBeforeFirst.duration;
+              } else {
+                nextStartTime = this.timeToMinutes(firstNodeToMove.startTime);
+              }
+            }
+            
+            // Compact all nodes to move sequentially
+            option.nodesToMove.forEach(node => {
+              node.startTime = this.minutesToTime(Math.max(0, nextStartTime));
+              nextStartTime += node.duration; // Next event starts after this one ends
+            });
+            
+            this.resortSchedule();
+            return true;
+          }
+          break;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error reorganizing schedule:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get database updates for reorganization after removing a specific node
+   * This simulates the reorganization without actually modifying the schedule
+   */
+  getDatabaseUpdatesAfterNodeRemoval(
+    nodeIdToRemove: string, 
+    option: ReorganizationOption, 
+    selectedDate: string, 
+    eventIdMap: Map<string, string>
+  ): Array<{ eventId: string; newDateTime: string; }> {
+    const updates: Array<{ eventId: string; newDateTime: string }> = [];
+    
+    try {
+      // Get the nodes that would remain after removal
+      const allNodes = this.getStoredNodes();
+      const nodeToRemove = allNodes.find(n => n.id === nodeIdToRemove);
+      if (!nodeToRemove) return updates;
+      
+      if (option.type === 'compact_schedule' && option.nodesToMove) {
+        // Start from the deleted event's time slot
+        let nextStartTime = this.timeToMinutes(nodeToRemove.startTime);
+        
+        // Generate updates for each node that needs to move
+        option.nodesToMove.forEach(node => {
+          // Skip if this is the node being removed
+          if (node.id === nodeIdToRemove) return;
+          
+          const lessonId = node.eventData?.lessonId;
+          const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
+          
+          if (eventId && lessonId) {
+            const newStartTime = this.minutesToTime(nextStartTime);
+            const newDateTime = this.combineDateTime(selectedDate, newStartTime);
+            
+            updates.push({
+              eventId,
+              newDateTime
+            });
+          }
+          
+          // Next event starts after this one ends (account for duration)
+          nextStartTime += node.duration;
+        });
+      }
+    } catch (error) {
+      console.error('Error generating updates after node removal:', error);
+    }
+    
+    return updates;
+  }
+
+  /**
+   * Get database update information for reorganization
+   */
+  getDatabaseUpdatesForReorganization(option: ReorganizationOption, selectedDate: string, eventIdMap: Map<string, string>): Array<{
+    eventId: string;
+    newDateTime: string;
+  }> {
+    const updates: Array<{ eventId: string; newDateTime: string }> = [];
+    
+    try {
+      switch (option.type) {
+        case 'shift_next':
+          if (option.nodeToMove && option.newStartTime) {
+            const lessonId = option.nodeToMove.eventData?.lessonId;
+            const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
+            
+            if (eventId && lessonId) {
+              const newDateTime = this.combineDateTime(selectedDate, option.newStartTime);
+              updates.push({
+                eventId,
+                newDateTime
+              });
+            }
+          }
+          break;
+
+        case 'compact_schedule':
+          if (option.nodesToMove && option.timeSaved) {
+            // Find the node that comes before the nodes to move
+            const firstNodeToMove = option.nodesToMove[0];
+            const nodeBeforeFirst = this.findNodeBefore(firstNodeToMove.id);
+            
+            let nextStartTime: number;
+            if (nodeBeforeFirst) {
+              // Start right after the previous node ends
+              nextStartTime = this.timeToMinutes(nodeBeforeFirst.startTime) + nodeBeforeFirst.duration;
+            } else {
+              // If no previous node, keep the original start time of first node to move
+              nextStartTime = this.timeToMinutes(firstNodeToMove.startTime);
+            }
+            
+            // Generate updates for each node, placing them sequentially
+            option.nodesToMove.forEach(node => {
+              const lessonId = node.eventData?.lessonId;
+              const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
+              
+              if (eventId && lessonId) {
+                const newStartTime = this.minutesToTime(nextStartTime);
+                const newDateTime = this.combineDateTime(selectedDate, newStartTime);
+                
+                updates.push({
+                  eventId,
+                  newDateTime
+                });
+              }
+              
+              // Next event starts after this one ends (account for duration)
+              nextStartTime += node.duration;
+            });
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Error generating database updates:', error);
+    }
+    
+    return updates;
+  }
+
+  /**
+   * Combine date and time into a proper timestamp string
+   */
+  private combineDateTime(dateString: string, timeString: string): string {
+    // Use the UTC utilities to ensure correct timezone handling
+    const utcDateTime = createUTCDateTime(dateString, timeString);
+    return toUTCString(utcDateTime);
+  }
+
+  /**
+   * Find a node by its ID
+   */
+  private findNodeById(nodeId: string): ScheduleNode | null {
+    let current = this.schedule.head;
+    while (current) {
+      if (current.id === nodeId) return current;
+      current = current.next;
+    }
+    return null;
+  }
+
+  /**
+   * Find the node that comes before a specific node ID
+   */
+  private findNodeBefore(nodeId: string): ScheduleNode | null {
+    if (!this.schedule.head || this.schedule.head.id === nodeId) {
+      return null;
+    }
+
+    let current = this.schedule.head;
+    while (current.next && current.next.id !== nodeId) {
+      current = current.next;
+    }
+
+    return current.next ? current : null;
+  }
+
+  /**
+   * Get all nodes that come after a specific node
+   */
+  private getNodesAfter(nodeId: string): ScheduleNode[] {
+    const nodes: ScheduleNode[] = [];
+    let current = this.schedule.head;
+    let foundTarget = false;
+
+    while (current) {
+      if (foundTarget) {
+        nodes.push(current);
+      }
+      if (current.id === nodeId) {
+        foundTarget = true;
+      }
+      current = current.next;
+    }
+
+    return nodes;
+  }
+
+  /**
+   * Resort the linked list to maintain chronological order
+   */
+  private resortSchedule(): void {
+    if (!this.schedule.head) return;
+
+    // Convert to array, sort, and rebuild linked list
+    const nodes = this.getStoredNodes();
+    nodes.sort((a, b) => this.timeToMinutes(a.startTime) - this.timeToMinutes(b.startTime));
+
+    // Rebuild the linked list
+    this.schedule.head = null;
+    nodes.forEach(node => {
+      node.next = null; // Reset next pointer
+      this.insertNode(node);
+    });
+  }
+
   // Utility methods
   private timeToMinutes(time: string): number {
     return timeToMinutes(time);
@@ -349,5 +688,69 @@ export class TeacherSchedule {
   static extractTimeFromDate(dateString: string): string {
     // Convert UTC timestamp to local time using the same method as EventCard
     return format(new Date(dateString), 'HH:mm');
+  }
+
+  /**
+   * Shift the first event's start time and reorganize all subsequent events
+   */
+  shiftFirstEventAndReorganize(minutesOffset: number): boolean {
+    if (!this.schedule.head || this.schedule.head.type !== 'event') {
+      return false; // No events to shift
+    }
+
+    const firstNode = this.schedule.head;
+    const currentStartMinutes = timeToMinutes(firstNode.startTime);
+    const newStartMinutes = currentStartMinutes + minutesOffset;
+    
+    // Check if new time is valid (not negative)
+    if (newStartMinutes < 0) {
+      return false; // Cannot shift to negative time
+    }
+
+    const newStartTime = minutesToTime(newStartMinutes);
+    
+    // Update the first event's time
+    firstNode.startTime = newStartTime;
+    
+    // Reorganize all subsequent events to remove gaps
+    let currentNode = firstNode;
+    let nextEventStartTime = newStartMinutes + firstNode.duration;
+    
+    while (currentNode.next) {
+      const nextNode = currentNode.next;
+      
+      if (nextNode.type === 'event') {
+        nextNode.startTime = minutesToTime(nextEventStartTime);
+        nextEventStartTime += nextNode.duration;
+      }
+      
+      currentNode = nextNode;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Get database updates for shifted first event and reorganized schedule
+   */
+  getDatabaseUpdatesForShiftedSchedule(selectedDate: string, eventIdMap: Map<string, string>): Array<{ eventId: string; newDateTime: string }> {
+    const updates: Array<{ eventId: string; newDateTime: string }> = [];
+    
+    let current = this.schedule.head;
+    while (current) {
+      if (current.type === 'event' && current.eventData?.lessonId) {
+        const eventId = eventIdMap.get(current.eventData.lessonId);
+        if (eventId) {
+          const newDateTime = toUTCString(createUTCDateTime(selectedDate, current.startTime));
+          updates.push({
+            eventId,
+            newDateTime
+          });
+        }
+      }
+      current = current.next;
+    }
+    
+    return updates;
   }
 }

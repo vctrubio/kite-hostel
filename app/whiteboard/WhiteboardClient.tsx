@@ -8,8 +8,10 @@ import WhiteboardEvents from './WhiteboardEvents';
 import WhiteboardEventController from './WhiteboardEventController';
 import WhiteboardStatus from './WhiteboardStatus';
 import { WhiteboardData } from '@/actions/whiteboard-actions';
+import { WhiteboardClass } from '@/backend/WhiteboardClass';
+import { TeacherSchedule } from '@/backend/TeacherSchedule';
 import { getStoredDate, setStoredDate, getTodayDateString } from '@/components/formatters/DateTime';
-import { type EventController } from '@/backend/types';
+import { type EventController, type BookingData } from '@/backend/types';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
 import { getCurrentUTCDate, getCurrentUTCTime, addMinutesToTime, extractDateFromUTC } from '@/components/formatters/TimeZone';
 export type { EventController };
@@ -101,12 +103,10 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Filter data based on selected date
+  // Filter data based on selected date and create WhiteboardClass instances
   const filteredData = useMemo(() => {
     const filterDate = new Date(selectedDate);
     filterDate.setHours(0, 0, 0, 0);
-    const nextDay = new Date(filterDate);
-    nextDay.setDate(nextDay.getDate() + 1);
 
     // Filter bookings by date - check if the selected date falls within booking date range
     const filteredBookings = data.rawBookings.filter(booking => {
@@ -119,7 +119,14 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       return filterDate >= bookingStart && filterDate <= bookingEnd;
     });
 
-    // Filter lessons from filtered bookings - keep original events and filter events for selected date
+    // Create WhiteboardClass instances for enhanced business logic
+    const bookingClasses = filteredBookings.map(booking => new WhiteboardClass(booking));
+
+    // Enhanced filtering using business logic
+    const activeBookingClasses = bookingClasses.filter(bc => bc.getStatus() === 'active');
+    const completableBookingClasses = bookingClasses.filter(bc => bc.isReadyForCompletion());
+
+    // Extract lessons with proper date filtering (keeping original structure for compatibility)
     const filteredLessons = filteredBookings.flatMap(booking => 
       booking.lessons?.map((lesson: any) => {
         // Keep all original events for border logic
@@ -128,9 +135,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         // Filter events for the selected date (for the Events section)
         const eventsForSelectedDate = lesson.events?.filter((event: any) => {
           // If event has no date, include it (it's part of the lesson/booking period)
-          if (!event.date) {
-            return true;
-          }
+          if (!event.date) return true;
           
           // If event has a date, check if it matches the selected date
           const eventDate = new Date(event.date);
@@ -140,25 +145,15 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
         return {
           ...lesson,
-          // Keep original events for checking if lesson has events for selected date
           originalEvents: originalEvents,
-          // Filtered events for the selected date (used in Events section)
           events: eventsForSelectedDate,
-          // Pass the selected date for border logic
           selectedDate: selectedDate,
-          booking: {
-            id: booking.id,
-            package: booking.package,
-            students: booking.students,
-            date_start: booking.date_start,
-            date_end: booking.date_end,
-            status: booking.status,
-          }
+          booking: booking // Direct reference to booking with all relations
         };
       }) || []
     );
 
-    // Create events array from filtered lessons (events are already filtered by selected date in filteredLessons)
+    // Create events array from filtered lessons
     const filteredEvents = filteredLessons.flatMap(lesson => 
       lesson.events?.map((event: any) => ({
         ...event,
@@ -171,19 +166,33 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       })) || []
     );
 
-    // Calculate status data for filtered results
-    const activeBookings = filteredBookings.filter(booking => booking.status === 'active').length;
+    // Enhanced statistics using business logic
+    const enhancedStats = {
+      totalBookings: filteredBookings.length,
+      totalLessons: filteredLessons.length,
+      totalEvents: filteredEvents.length,
+      activeBookings: activeBookingClasses.length,
+      completableBookings: completableBookingClasses.length,
+      // Calculate total progress across all bookings
+      averageProgress: Math.round(
+        bookingClasses.reduce((sum, bc) => sum + bc.getCompletionPercentage(), 0) / 
+        (bookingClasses.length || 1)
+      ),
+      // Calculate utilization rates
+      totalUsedMinutes: bookingClasses.reduce((sum, bc) => sum + bc.getUsedMinutes(), 0),
+      totalAvailableMinutes: bookingClasses.reduce((sum, bc) => sum + bc.getTotalMinutes(), 0),
+    };
+
+    // Create unified TeacherSchedule instances for both lessons and events
+    const teacherSchedules = TeacherSchedule.createSchedulesFromLessons(selectedDate, filteredLessons);
 
     return {
       bookings: filteredBookings,
+      bookingClasses, // Enhanced WhiteboardClass instances for business logic
       lessons: filteredLessons,
       events: filteredEvents,
-      status: {
-        totalBookings: filteredBookings.length,
-        totalLessons: filteredLessons.length,
-        totalEvents: filteredEvents.length,
-        activeBookings,
-      },
+      teacherSchedules, // Unified TeacherSchedule instances
+      status: enhancedStats,
     };
   }, [data, selectedDate]);
 
@@ -216,6 +225,8 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
               controller={controller}
               onControllerChange={setController}
               events={filteredData.events}
+              bookings={filteredData.bookings} // Pass bookings for enhanced analytics
+              teacherSchedules={filteredData.teacherSchedules} // Pass teacher schedules for actions
             />
           </div>
         </div>
@@ -234,11 +245,17 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                     lessons={filteredData.lessons} 
                     controller={controller}
                     selectedDate={selectedDate}
+                    teacherSchedules={filteredData.teacherSchedules}
                   />
                 )}
 
                 {activeSection === 'events' && (
-                  <WhiteboardEvents events={filteredData.events} />
+                  <WhiteboardEvents 
+                    events={filteredData.events} 
+                    selectedDate={selectedDate}
+                    teacherSchedules={filteredData.teacherSchedules}
+                    viewAs="admin"
+                  />
                 )}
 
                 {activeSection === 'controller' && (

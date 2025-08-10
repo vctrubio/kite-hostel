@@ -1,7 +1,8 @@
 "use server";
 
 import { getBookings } from "./booking-actions";
-import { WhiteboardClass, createBookingClasses, type BookingData } from "@/backend/WhiteboardClass";
+import { WhiteboardClass, createBookingClasses } from "@/backend/WhiteboardClass";
+import { type BookingData } from "@/backend/types";
 
 export interface WhiteboardData {
   // Remove bookingClasses from server response - can't serialize classes

@@ -2,19 +2,24 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { WhiteboardClass, type BookingData, type LessonData } from '@/backend/WhiteboardClass';
 import { TeacherSchedule } from '@/backend/TeacherSchedule';
-import { HelmetIcon, HeadsetIcon } from '@/svgs';
-import { LessonStatusLabel } from '@/components/label/LessonStatusLabel';
-import { Duration } from '@/components/formatters/Duration';
+import { HeadsetIcon } from '@/svgs';
 import { LESSON_STATUS_FILTERS, type LessonStatusFilter } from '@/lib/constants';
-import { type TeacherLessons } from '@/backend/types';
 import EventToTeacherModal from '@/components/modals/EventToTeacherModal';
+import LessonCard from '@/components/cards/LessonCard';
+import { 
+  groupLessonsByTeacher, 
+  calculateLessonStats,
+  extractStudents,
+  extractStudentNames,
+  WhiteboardClass
+} from '@/backend/WhiteboardClass';
 
 interface WhiteboardLessonsProps {
   lessons: any[];
   controller: any;
   selectedDate: string;
+  teacherSchedules: Map<string, TeacherSchedule>;
 }
 
 // Sub-component: Filter Buttons
@@ -46,134 +51,73 @@ function LessonStatusFilters({
   );
 }
 
-// Sub-component: Individual Lesson Card
-function LessonCard({ 
-  lesson, 
-  bookingClass,
-  onAddEvent 
-}: {
-  lesson: LessonData;
-  bookingClass: WhiteboardClass;
-  onAddEvent: (lesson: any, students: any[], remainingMinutes: number) => void;
-}) {
-  const students = bookingClass.getStudents();
-  const totalMinutes = bookingClass.getTotalMinutes();
-  const usedMinutes = bookingClass.getUsedMinutes();
-
-  // Check if lesson has events for the selected date (from whiteboard date picker)
-  const selectedDate = (lesson as any).selectedDate;
-  const selectedDateObj = new Date(selectedDate);
-  selectedDateObj.setHours(0, 0, 0, 0);
-  
-  const originalEvents = (lesson as any).originalEvents || [];
-  const hasEventForSelectedDate = originalEvents.some((event: any) => {
-    // If event has no date, include it (it's part of the lesson/booking period)
-    if (!event.date) {
-      return true;
-    }
-    
-    // Check if event date matches the selected date
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    return eventDate.getTime() === selectedDateObj.getTime();
-  });
-  
-  // Calculate minutes for selected date's events (events are already filtered by selected date in WhiteboardClient)
-  const selectedDateEventMinutes = lesson.events?.reduce((total: number, event: any) => {
-    return total + (event.duration || 0);
-  }, 0) || 0;
-
-  // Calculate remaining minutes accounting for selected date's scheduled events
-  const remainingMinutes = totalMinutes - usedMinutes - selectedDateEventMinutes;
-
-  return (
-    <div 
-      className={`flex items-center justify-between p-3 bg-muted dark:bg-gray-700 rounded-lg transition-colors cursor-pointer hover:bg-muted/80 dark:hover:bg-gray-600 ${
-        hasEventForSelectedDate ? 'border-2 border-green-500 dark:border-green-400' : ''
-      }`}
-      onClick={() => {
-        // Only open modal if lesson is planned and has no event for selected date
-        if (lesson.status === 'planned' && !hasEventForSelectedDate) {
-          onAddEvent(lesson, students, remainingMinutes);
-        }
-      }}
-    >
-      {/* Left side: Students */}
-      <div className="flex items-center gap-3">
-        {/* Helmet icons for students */}
-        <div className="flex gap-1">
-          {students.map((_, index) => (
-            <HelmetIcon 
-              key={index} 
-              className="w-5 h-5 text-yellow-500"
-            />
-          ))}
-        </div>
-        
-        {/* Student names */}
-        <div className="flex flex-wrap gap-1">
-          {students.map((student, index) => (
-            <span key={student.id} className="text-sm text-foreground dark:text-white">
-              {student.name}
-              {index < students.length - 1 && ','}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Right side: Status and Duration */}
-      <div className="flex items-center gap-2">
-        <LessonStatusLabel 
-          lessonId={lesson.id} 
-          currentStatus={lesson.status}
-          lessonEvents={lesson.events || []}
-        />
-        <div className="text-sm text-muted-foreground dark:text-gray-400">
-          <Duration minutes={remainingMinutes} /> remaining
-          {selectedDateEventMinutes > 0 && (
-            <span className="ml-1 text-xs text-blue-500 dark:text-blue-400">
-              (-<Duration minutes={selectedDateEventMinutes} /> scheduled)
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Sub-component: Teacher Group
 function TeacherGroup({ 
   teacherGroup, 
-  onAddEvent 
+  onLessonClick,
+  teacherSchedule,
+  selectedDate
 }: { 
-  teacherGroup: TeacherLessons;
-  onAddEvent: (lesson: any, students: any[], remainingMinutes: number) => void;
+  teacherGroup: any;
+  onLessonClick: (lesson: any) => void;
+  teacherSchedule?: TeacherSchedule;
+  selectedDate: string;
 }) {
-  const { availableLessons, lessonsWithEvents } = WhiteboardClass.calculateLessonStats(teacherGroup);
+  const { availableLessons, lessonsWithEvents } = calculateLessonStats(teacherGroup.lessons);
+  
+  // Calculate teacher utilization using TeacherSchedule methods
+  const scheduleNodes = teacherSchedule ? teacherSchedule.getNodes() : [];
+  const eventNodes = scheduleNodes.filter(node => node.type === 'event');
+  const gapNodes = scheduleNodes.filter(node => node.type === 'gap');
+  
+  // Get detailed schedule metrics using TeacherSchedule
+  const totalScheduledMinutes = eventNodes.reduce((sum, node) => sum + node.duration, 0);
+  const totalGapMinutes = gapNodes.reduce((sum, node) => sum + node.duration, 0);
+  const canReorganize = teacherSchedule ? teacherSchedule.canReorganizeSchedule() : false;
   
   return (
     <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg">
-      {/* Teacher Header */}
+      {/* Enhanced Teacher Header */}
       <div className="flex justify-between items-center p-4 border-b border-border dark:border-gray-700">
         <div className="flex items-center gap-2">
           <HeadsetIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
           <h4 className="text-lg font-medium text-foreground dark:text-white">
             {teacherGroup.teacherName}
           </h4>
+          {canReorganize && (
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border">
+              Can optimize
+            </span>
+          )}
         </div>
-        <span className="text-sm text-muted-foreground dark:text-gray-400">
-          {lessonsWithEvents}/{availableLessons} available lesson{availableLessons !== 1 ? 's' : ''}
-        </span>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <span>
+            {lessonsWithEvents}/{availableLessons} available lesson{availableLessons !== 1 ? 's' : ''}
+          </span>
+          {teacherSchedule && eventNodes.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-blue-600 dark:text-blue-400">
+                {eventNodes.length} event{eventNodes.length > 1 ? 's' : ''} • {Math.round(totalScheduledMinutes / 60 * 10) / 10}h scheduled
+              </span>
+              {totalGapMinutes > 0 && (
+                <span className="text-orange-600 dark:text-orange-400">
+                  • {Math.round(totalGapMinutes / 60 * 10) / 10}h gaps
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Lessons List */}
       <div className="p-4 space-y-3">
-        {teacherGroup.lessons.map(({ lesson, bookingClass }) => (
+        {teacherGroup.lessons.map((lesson: any) => (
           <LessonCard 
             key={lesson.id}
             lesson={lesson}
-            bookingClass={bookingClass}
-            onAddEvent={onAddEvent}
+            onLessonClick={onLessonClick}
+            selectedDate={selectedDate}
+            teacherSchedule={teacherSchedule} // Pass schedule for availability info
           />
         ))}
       </div>
@@ -195,19 +139,19 @@ function EmptyState({ activeFilter }: { activeFilter: LessonStatusFilter }) {
 }
 
 // Main component
-export default function WhiteboardLessons({ lessons, controller, selectedDate }: WhiteboardLessonsProps) {
+export default function WhiteboardLessons({ lessons, controller, selectedDate, teacherSchedules }: WhiteboardLessonsProps) {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<LessonStatusFilter>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
 
-  // Create teacher schedules
-  const teacherSchedules = useMemo(() => {
-    return TeacherSchedule.createSchedulesFromLessons(selectedDate, lessons);
-  }, [lessons, selectedDate]);
-
-  // Handle adding event to lesson
-  const handleAddEvent = (lesson: any, students: any[], remainingMinutes: number) => {
+  // Handle lesson click for event creation
+  const handleLessonClick = (lesson: any) => {
+    // Create WhiteboardClass instance for booking calculations
+    const bookingClass = new WhiteboardClass(lesson.booking);
+    const students = extractStudents(lesson.booking);
+    const remainingMinutes = bookingClass.getRemainingMinutes();
+    
     // Add students to lesson object for modal
     const lessonWithStudents = {
       ...lesson,
@@ -238,23 +182,36 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate }:
         teacherSchedules.set(selectedLesson.teacher.id, teacherSchedule);
       }
       
-      // Check for conflicts
+      // Check for conflicts using TeacherSchedule method
       const conflict = teacherSchedule.checkConflict(eventData.startTime, eventData.duration);
       if (conflict.hasConflict) {
         console.log('Failed to add event: conflict detected', conflict);
+        
+        // Show available alternatives if any
+        if (conflict.suggestedAlternatives.length > 0) {
+          const alternative = conflict.suggestedAlternatives[0];
+          console.log(`Suggested alternative: ${alternative.startTime} for ${alternative.duration} minutes`);
+        }
         return;
       }
       
-      // Add the event
-      teacherSchedule.addEvent(
+      // Add the event using TeacherSchedule method
+      const addedNode = teacherSchedule.addEvent(
         eventData.startTime,
         eventData.duration,
         eventData.lessonId,
         eventData.location,
-        eventData.studentCount
+        eventData.studentCount,
+        selectedLesson.students?.map((s: any) => s.name) // Pass student names
       );
       
-      console.log('Event added to teacher schedule successfully');
+      console.log('Event added to teacher schedule successfully:', addedNode);
+      
+      // Get available slots for next event
+      const availableSlots = teacherSchedule.getAvailableSlots(60); // 1 hour minimum
+      if (availableSlots.length > 0) {
+        console.log('Available slots for next events:', availableSlots);
+      }
     }
   };
 
@@ -274,7 +231,7 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate }:
   };
 
   // Group filtered lessons by teacher
-  const groupedLessons = WhiteboardClass.groupLessonsByTeacher(filteredLessons);
+  const groupedLessons = groupLessonsByTeacher(filteredLessons);
 
   return (
     <div className="space-y-6">
@@ -298,7 +255,9 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate }:
             <TeacherGroup 
               key={teacherGroup.teacherId}
               teacherGroup={teacherGroup}
-              onAddEvent={handleAddEvent}
+              onLessonClick={handleLessonClick}
+              selectedDate={selectedDate}
+              teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)} // Pass teacher schedule
             />
           ))}
         </div>

@@ -1,4 +1,6 @@
 
+"use client";
+
 import React, { useState, useEffect } from "react";
 
 import { useSearchParams } from "next/navigation";
@@ -76,7 +78,7 @@ export default function BookingForm({ packages, students, userWallets, teachers 
           viaStudentParams &&
           selectedStudentIds.length > selectedPkg.capacity_students
         ) {
-          toast.warn(
+          toast.error(
             `The selected package capacity (${selectedPkg.capacity_students}) is less than the number of pre-selected students (${selectedStudentIds.length}). Please adjust student selection.`,
           );
         }

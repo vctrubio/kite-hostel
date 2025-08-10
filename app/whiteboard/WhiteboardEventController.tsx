@@ -4,6 +4,7 @@ import { Clock, Timer, MapPin, ChevronUp, ChevronDown, Settings } from 'lucide-r
 import { type EventController } from '@/backend/types';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
 import { deleteEvent } from '@/actions/event-actions';
+import { addMinutesToTime } from '@/components/formatters/TimeZone';
 
 interface WhiteboardEventControllerProps {
   controller: EventController;
@@ -28,12 +29,9 @@ export default function WhiteboardEventController({
   };
 
   const adjustTime = (hours: number, minutes: number) => {
-    const [h, m] = controller.submitTime.split(':').map(Number);
-    const totalMinutes = h * 60 + m + hours * 60 + minutes;
-    const newHours = Math.floor(totalMinutes / 60) % 24;
-    const newMins = totalMinutes % 60;
-    const timeString = `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`;
-    updateController({ submitTime: timeString });
+    const totalMinutesToAdd = hours * 60 + minutes;
+    const newTime = addMinutesToTime(controller.submitTime, totalMinutesToAdd);
+    updateController({ submitTime: newTime });
   };
 
   const timePresets = ['11:00', '13:00', '16:00'];
