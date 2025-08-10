@@ -12,8 +12,19 @@ import {
   Teacher,
 } from "@/drizzle/migrations/schema";
 import { WhiteboardClass, type LessonData } from '@/backend/WhiteboardClass';
+import { type Location } from '@/lib/constants';
 
 export type PackageStudent = InferSelectModel<typeof PackageStudent>;
+
+// Event Controller for whiteboard management
+export interface EventController {
+  flag: boolean;
+  location: Location;
+  durationCapOne: number;
+  durationCapTwo: number;
+  durationCapThree: number;
+  submitTime: string;
+}
 
 export type BookingWithRelations = InferSelectModel<typeof Booking> & {
   lessons: (InferSelectModel<typeof Lesson> & {
