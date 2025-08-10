@@ -52,27 +52,37 @@ function LessonCard({
   const students = bookingClass.getStudents();
   const totalMinutes = bookingClass.getTotalMinutes();
   const usedMinutes = bookingClass.getUsedMinutes();
-  const hasEvents = lesson.events && lesson.events.length > 0;
 
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
+  // Check if lesson has events for the selected date (from whiteboard date picker)
+  const selectedDate = (lesson as any).selectedDate;
+  const selectedDateObj = new Date(selectedDate);
+  selectedDateObj.setHours(0, 0, 0, 0);
   
-  // Calculate minutes for today's events (whiteboard events for today)
-  const todayEventMinutes = lesson.events?.reduce((total: number, event: any) => {
-    // Check if event has a date and it's today
-    if (event.date && event.date.startsWith(today)) {
-      return total + (event.duration || 0);
+  const originalEvents = (lesson as any).originalEvents || [];
+  const hasEventForSelectedDate = originalEvents.some((event: any) => {
+    // If event has no date, include it (it's part of the lesson/booking period)
+    if (!event.date) {
+      return true;
     }
-    return total;
+    
+    // Check if event date matches the selected date
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate.getTime() === selectedDateObj.getTime();
+  });
+  
+  // Calculate minutes for selected date's events (events are already filtered by selected date in WhiteboardClient)
+  const selectedDateEventMinutes = lesson.events?.reduce((total: number, event: any) => {
+    return total + (event.duration || 0);
   }, 0) || 0;
 
-  // Calculate remaining minutes accounting for today's scheduled events
-  const remainingMinutes = totalMinutes - usedMinutes - todayEventMinutes;
+  // Calculate remaining minutes accounting for selected date's scheduled events
+  const remainingMinutes = totalMinutes - usedMinutes - selectedDateEventMinutes;
 
   return (
     <div 
       className={`flex items-center justify-between p-3 bg-muted dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-muted/80 dark:hover:bg-gray-600 transition-colors ${
-        hasEvents ? 'border-2 border-green-500 dark:border-green-400' : ''
+        hasEventForSelectedDate ? 'border-2 border-green-500 dark:border-green-400' : ''
       }`}
       onClick={() => console.log('Adding event to lesson', lesson.id)}
     >
@@ -108,9 +118,9 @@ function LessonCard({
         />
         <div className="text-sm text-muted-foreground dark:text-gray-400">
           <Duration minutes={remainingMinutes} /> remaining
-          {todayEventMinutes > 0 && (
+          {selectedDateEventMinutes > 0 && (
             <span className="ml-1 text-xs text-blue-500 dark:text-blue-400">
-              (-<Duration minutes={todayEventMinutes} /> today)
+              (-<Duration minutes={selectedDateEventMinutes} /> scheduled)
             </span>
           )}
         </div>

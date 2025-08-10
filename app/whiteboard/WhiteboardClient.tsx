@@ -24,12 +24,18 @@ interface WhiteboardClientProps {
 
 export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   const [activeSection, setActiveSection] = useState('bookings');
-  const [selectedDate, setSelectedDate] = useState(() => getStoredDate(STORAGE_KEY));
+  const [selectedDate, setSelectedDate] = useState(() => getTodayDateString()); // Use consistent default
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
     setStoredDate(STORAGE_KEY, date);
   };
+
+  // Load stored date after mount to avoid hydration issues
+  useEffect(() => {
+    const storedDate = getStoredDate(STORAGE_KEY);
+    setSelectedDate(storedDate);
+  }, []);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -65,34 +71,48 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       return filterDate >= bookingStart && filterDate <= bookingEnd;
     });
 
-    // Filter lessons from filtered bookings
+    // Filter lessons from filtered bookings - keep original events and filter events for selected date
     const filteredLessons = filteredBookings.flatMap(booking => 
-      booking.lessons?.map((lesson: any) => ({
-        ...lesson,
-        booking: {
-          id: booking.id,
-          package: booking.package,
-          students: booking.students,
-          date_start: booking.date_start,
-          date_end: booking.date_end,
-          status: booking.status,
-        }
-      })) || []
+      booking.lessons?.map((lesson: any) => {
+        // Keep all original events for border logic
+        const originalEvents = lesson.events || [];
+        
+        // Filter events for the selected date (for the Events section)
+        const eventsForSelectedDate = lesson.events?.filter((event: any) => {
+          // If event has no date, include it (it's part of the lesson/booking period)
+          if (!event.date) {
+            return true;
+          }
+          
+          // If event has a date, check if it matches the selected date
+          const eventDate = new Date(event.date);
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate.getTime() === filterDate.getTime();
+        }) || [];
+
+        return {
+          ...lesson,
+          // Keep original events for checking if lesson has events for selected date
+          originalEvents: originalEvents,
+          // Filtered events for the selected date (used in Events section)
+          events: eventsForSelectedDate,
+          // Pass the selected date for border logic
+          selectedDate: selectedDate,
+          booking: {
+            id: booking.id,
+            package: booking.package,
+            students: booking.students,
+            date_start: booking.date_start,
+            date_end: booking.date_end,
+            status: booking.status,
+          }
+        };
+      }) || []
     );
 
-    // Filter events from filtered lessons - show events for the selected date or events without specific dates
+    // Create events array from filtered lessons (events are already filtered by selected date in filteredLessons)
     const filteredEvents = filteredLessons.flatMap(lesson => 
-      lesson.events?.filter((event: any) => {
-        // If event has no date, include it (it's part of the lesson/booking period)
-        if (!event.date) {
-          return true;
-        }
-        
-        // If event has a date, check if it matches the selected date
-        const eventDate = new Date(event.date);
-        eventDate.setHours(0, 0, 0, 0);
-        return eventDate.getTime() === filterDate.getTime();
-      }).map((event: any) => ({
+      lesson.events?.map((event: any) => ({
         ...event,
         lesson: {
           id: lesson.id,

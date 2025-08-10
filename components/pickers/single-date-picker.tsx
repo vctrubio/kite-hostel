@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SingleDatePickerProps {
   selectedDate?: string;
@@ -12,6 +12,26 @@ export function SingleDatePicker({ selectedDate, onDateChange }: SingleDatePicke
   const router = useRouter();
   const pathname = usePathname();
   const [tempDate, setTempDate] = useState(selectedDate || '');
+  const [isToday, setIsToday] = useState(false);
+  const [relativeLabel, setRelativeLabel] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Only calculate date-related values on client side after mount
+  useEffect(() => {
+    setIsMounted(true);
+    
+    const today = new Date().toISOString().split('T')[0];
+    const todayCheck = selectedDate === today;
+    setIsToday(todayCheck);
+    
+    // Calculate relative label
+    if (selectedDate && !todayCheck) {
+      const label = getRelativeDateLabel(selectedDate);
+      setRelativeLabel(label);
+    } else {
+      setRelativeLabel('');
+    }
+  }, [selectedDate]);
 
   const updateDate = (newDate: string) => {
     setTempDate(newDate);
@@ -94,19 +114,16 @@ export function SingleDatePicker({ selectedDate, onDateChange }: SingleDatePicke
     return "";
   };
 
-  const relativeLabel = getRelativeDateLabel(selectedDate || '');
-  const isToday = selectedDate === new Date().toISOString().split('T')[0];
-
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-muted-foreground flex items-center justify-between">
         <div className="flex items-center gap-2">
           Filter by Date
-          {isToday ? (
+          {isMounted && isToday ? (
             <span className="text-xs bg-green-100 px-2 py-1 rounded-md text-green-700">
               Today
             </span>
-          ) : (
+          ) : isMounted && !isToday ? (
             <button
               onClick={() => updateDate(new Date().toISOString().split('T')[0])}
               className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded-md text-blue-700 transition-colors"
@@ -114,9 +131,9 @@ export function SingleDatePicker({ selectedDate, onDateChange }: SingleDatePicke
             >
               Go to Today
             </button>
-          )}
+          ) : null}
         </div>
-        {relativeLabel && !isToday && (
+        {isMounted && relativeLabel && !isToday && (
           <span className="text-xs bg-muted px-2 py-1 rounded-md text-muted-foreground">
             {relativeLabel}
           </span>
