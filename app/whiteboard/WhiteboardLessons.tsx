@@ -1,15 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { WhiteboardClass, type BookingData, type LessonData } from '@/backend/WhiteboardClass';
+import { TeacherSchedule } from '@/backend/TeacherSchedule';
 import { HelmetIcon, HeadsetIcon } from '@/svgs';
 import { LessonStatusLabel } from '@/components/label/LessonStatusLabel';
 import { Duration } from '@/components/formatters/Duration';
 import { LESSON_STATUS_FILTERS, type LessonStatusFilter } from '@/lib/constants';
 import { type TeacherLessons } from '@/backend/types';
+import EventToTeacherModal from '@/components/modals/EventToTeacherModal';
 
 interface WhiteboardLessonsProps {
   lessons: any[];
+  controller: any;
+  selectedDate: string;
 }
 
 // Sub-component: Filter Buttons
@@ -44,10 +48,12 @@ function LessonStatusFilters({
 // Sub-component: Individual Lesson Card
 function LessonCard({ 
   lesson, 
-  bookingClass 
+  bookingClass,
+  onAddEvent 
 }: {
   lesson: LessonData;
   bookingClass: WhiteboardClass;
+  onAddEvent: (lesson: any, students: any[]) => void;
 }) {
   const students = bookingClass.getStudents();
   const totalMinutes = bookingClass.getTotalMinutes();
@@ -81,10 +87,15 @@ function LessonCard({
 
   return (
     <div 
-      className={`flex items-center justify-between p-3 bg-muted dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-muted/80 dark:hover:bg-gray-600 transition-colors ${
+      className={`flex items-center justify-between p-3 bg-muted dark:bg-gray-700 rounded-lg transition-colors cursor-pointer hover:bg-muted/80 dark:hover:bg-gray-600 ${
         hasEventForSelectedDate ? 'border-2 border-green-500 dark:border-green-400' : ''
       }`}
-      onClick={() => console.log('Adding event to lesson', lesson.id)}
+      onClick={() => {
+        // Only open modal if lesson is planned and has no event for selected date
+        if (lesson.status === 'planned' && !hasEventForSelectedDate) {
+          onAddEvent(lesson, students);
+        }
+      }}
     >
       {/* Left side: Students */}
       <div className="flex items-center gap-3">
@@ -130,7 +141,13 @@ function LessonCard({
 }
 
 // Sub-component: Teacher Group
-function TeacherGroup({ teacherGroup }: { teacherGroup: TeacherLessons }) {
+function TeacherGroup({ 
+  teacherGroup, 
+  onAddEvent 
+}: { 
+  teacherGroup: TeacherLessons;
+  onAddEvent: (lesson: any, students: any[]) => void;
+}) {
   const { availableLessons, lessonsWithEvents } = WhiteboardClass.calculateLessonStats(teacherGroup);
   
   return (
@@ -155,6 +172,7 @@ function TeacherGroup({ teacherGroup }: { teacherGroup: TeacherLessons }) {
             key={lesson.id}
             lesson={lesson}
             bookingClass={bookingClass}
+            onAddEvent={onAddEvent}
           />
         ))}
       </div>
@@ -176,8 +194,66 @@ function EmptyState({ activeFilter }: { activeFilter: LessonStatusFilter }) {
 }
 
 // Main component
-export default function WhiteboardLessons({ lessons }: WhiteboardLessonsProps) {
+export default function WhiteboardLessons({ lessons, controller, selectedDate }: WhiteboardLessonsProps) {
   const [activeFilter, setActiveFilter] = useState<LessonStatusFilter>('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+
+  // Create teacher schedules
+  const teacherSchedules = useMemo(() => {
+    return TeacherSchedule.createSchedulesFromLessons(selectedDate, lessons);
+  }, [lessons, selectedDate]);
+
+    // Handle adding event to lesson
+  const handleAddEvent = (lesson: any, students: any[]) => {
+    // Add students to lesson object for modal
+    const lessonWithStudents = {
+      ...lesson,
+      students: students,
+      studentCount: students.length
+    };
+    
+    setSelectedLesson(lessonWithStudents);
+    setIsModalOpen(true);
+  };
+
+  // Handle confirming event creation
+  const handleConfirmEvent = (eventData: any) => {
+    console.log('Creating event:', eventData);
+    // Here you would typically make an API call to create the event
+    
+    // Add to teacher schedule
+    if (selectedLesson?.teacher?.id) {
+      let teacherSchedule = teacherSchedules.get(selectedLesson.teacher.id);
+      
+      if (!teacherSchedule) {
+        teacherSchedule = new TeacherSchedule(
+          selectedLesson.teacher.id,
+          selectedLesson.teacher.name,
+          selectedDate
+        );
+        teacherSchedules.set(selectedLesson.teacher.id, teacherSchedule);
+      }
+      
+      // Check for conflicts
+      const conflict = teacherSchedule.checkConflict(eventData.startTime, eventData.duration);
+      if (conflict.hasConflict) {
+        console.log('Failed to add event: conflict detected', conflict);
+        return;
+      }
+      
+      // Add the event
+      teacherSchedule.addEvent(
+        eventData.startTime,
+        eventData.duration,
+        eventData.lessonId,
+        eventData.location,
+        eventData.studentCount
+      );
+      
+      console.log('Event added to teacher schedule successfully');
+    }
+  };
 
   // Filter lessons based on selected status
   const filteredLessons = activeFilter === 'all' 
@@ -219,9 +295,32 @@ export default function WhiteboardLessons({ lessons }: WhiteboardLessonsProps) {
             <TeacherGroup 
               key={teacherGroup.teacherId}
               teacherGroup={teacherGroup}
+              onAddEvent={handleAddEvent}
             />
           ))}
         </div>
+      )}
+
+      {/* Event To Teacher Modal */}
+      {selectedLesson && (
+        <EventToTeacherModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedLesson(null);
+          }}
+          lesson={selectedLesson}
+          teacherSchedule={teacherSchedules.get(selectedLesson.teacher?.id || '') || 
+            new TeacherSchedule(
+              selectedLesson.teacher?.id || '',
+              selectedLesson.teacher?.name || '',
+              selectedDate
+            )
+          }
+          controller={controller}
+          selectedDate={selectedDate}
+          onConfirm={handleConfirmEvent}
+        />
       )}
     </div>
   );

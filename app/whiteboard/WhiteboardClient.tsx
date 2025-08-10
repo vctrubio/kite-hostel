@@ -203,7 +203,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="grid grid-cols-1 xl:grid-cols-4 2xl:grid-cols-5 gap-6 w-full px-4">
+      <div className="grid grid-cols-1 xl:grid-cols-4 2xl:grid-cols-5 w-full px-4">
         {/* Sidebar */}
         <div className="xl:col-span-1 order-2 xl:order-1">
           <div className="xl:sticky xl:top-4 p-4">
@@ -230,7 +230,11 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                 )}
 
                 {activeSection === 'lessons' && (
-                  <WhiteboardLessons lessons={filteredData.lessons} />
+                  <WhiteboardLessons 
+                    lessons={filteredData.lessons} 
+                    controller={controller}
+                    selectedDate={selectedDate}
+                  />
                 )}
 
                 {activeSection === 'events' && (

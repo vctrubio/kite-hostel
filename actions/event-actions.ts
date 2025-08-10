@@ -4,6 +4,55 @@ import db from "@/drizzle";
 import { Event, Lesson, Booking, BookingStudent, Student, Teacher, KiteEvent, Kite, PackageStudent, Commission } from "@/drizzle/migrations/schema";
 import { eq, sql } from "drizzle-orm";
 import { format } from "date-fns";
+import { revalidatePath } from "next/cache";
+import { LOCATION_ENUM_VALUES, type Location } from "@/lib/constants";
+
+export async function createEvent(eventData: {
+  lessonId: string;
+  startTime: string;
+  duration: number;
+  location: string;
+  date: string;
+  studentCount: number;
+}) {
+  try {
+    console.log('🕐 Server Action Debug Info:');
+    console.log('- Received date:', eventData.date);
+    console.log('- Received startTime:', eventData.startTime);
+    console.log('- Server timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+    
+    // Create the datetime string and explicitly parse as UTC to avoid timezone shifts
+    const dateTimeString = `${eventData.date}T${eventData.startTime}:00.000Z`;
+    console.log('- UTC string:', dateTimeString);
+    
+    const eventDateTime = new Date(dateTimeString);
+    console.log('- Date object:', eventDateTime);
+    console.log('- ISO string (stored):', eventDateTime.toISOString());
+    
+    // Validate location is valid enum value
+    const location = eventData.location as Location;
+    if (!LOCATION_ENUM_VALUES.includes(location)) {
+      throw new Error(`Invalid location: ${eventData.location}`);
+    }
+    
+    // Create the event in the database
+    const [newEvent] = await db.insert(Event).values({
+      lesson_id: eventData.lessonId,
+      date: eventDateTime.toISOString(),
+      duration: eventData.duration,
+      location: location,
+      status: 'planned' as const, // Default status
+    }).returning();
+
+    // Revalidate the whiteboard data
+    revalidatePath("/whiteboard");
+    
+    return { success: true, event: newEvent };
+  } catch (error: any) {
+    console.error("Error creating event:", error);
+    return { success: false, error: error.message };
+  }
+}
 
 export async function getEventCsv() {
   try {

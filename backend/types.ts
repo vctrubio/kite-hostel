@@ -16,15 +16,30 @@ import { type Location } from '@/lib/constants';
 
 export type PackageStudent = InferSelectModel<typeof PackageStudent>;
 
-// Event Controller for whiteboard management
+// Event Controller interface for whiteboard event management
 export interface EventController {
-  flag: boolean;
-  location: Location;
-  durationCapOne: number;
-  durationCapTwo: number;
-  durationCapThree: number;
-  submitTime: string;
+  flag: boolean; // Whether controller is enabled/visible  
+  location: Location; // Selected location for events
+  durationCapOne: number; // Duration for single student lessons (minutes)
+  durationCapTwo: number; // Duration for 2+ student lessons (minutes)
+  durationCapThree: number; // Duration for large group lessons (minutes)
+  submitTime: string; // Start time for events (HH:MM format)
 }
+
+// Re-export teacher schedule types
+export type {
+  ScheduleItemType,
+  BaseScheduleItem,
+  EventScheduleItem,
+  GapScheduleItem,
+  ScheduleItem,
+  TeacherDaySchedule,
+  AvailableSlot,
+  ConflictInfo
+} from './TeacherSchedule';
+
+export { TeacherSchedule } from './TeacherSchedule';
+export { TeacherScheduleManager } from './TeacherScheduleManager';
 
 export type BookingWithRelations = InferSelectModel<typeof Booking> & {
   lessons: (InferSelectModel<typeof Lesson> & {
