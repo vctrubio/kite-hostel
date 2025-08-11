@@ -1,25 +1,100 @@
 'use client';
 
-import { Clock, Timer, MapPin, ChevronUp, ChevronDown, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Clock, Timer, MapPin, ChevronUp, ChevronDown, Settings, Wind, CloudRain, AlertTriangle, RefreshCw } from 'lucide-react';
 import { type EventController } from '@/backend/types';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
 import { deleteEvent } from '@/actions/event-actions';
 import { addMinutesToTime } from '@/components/formatters/TimeZone';
+import { getWeatherForDate, type WeatherActionResult } from '@/actions/weather-actions';
+import { formatWind, getWeatherEmoji, isKitingWeather, type WeatherData } from '@/backend/WeatherClass';
 
 interface WhiteboardEventControllerProps {
   controller: EventController;
   onControllerChange: (controller: EventController) => void;
   events: any[];
+  selectedDate?: string;
 }
 
 export default function WhiteboardEventController({ 
   controller, 
   onControllerChange, 
-  events 
+  events,
+  selectedDate 
 }: WhiteboardEventControllerProps) {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
   const updateController = (updates: Partial<EventController>) => {
     onControllerChange({ ...controller, ...updates });
   };
+
+  // Fetch weather data for the selected date
+  useEffect(() => {
+    if (!selectedDate) return;
+    
+    const fetchWeather = async () => {
+      setWeatherLoading(true);
+      setWeatherError(null);
+      
+      try {
+        const result: WeatherActionResult = await getWeatherForDate(
+          selectedDate,
+          36.0128, // Tarifa latitude
+          -5.6081, // Tarifa longitude
+          'Tarifa, Spain'
+        );
+        
+        if (result.success && result.data) {
+          setWeather(result.data);
+        } else {
+          setWeatherError(result.error || 'Failed to load weather');
+        }
+      } catch (error) {
+        setWeatherError('Weather service unavailable');
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+    
+    fetchWeather();
+  }, [selectedDate]);
+
+  // Analyze weather for kiting
+  const kitingAnalysis = weather ? isKitingWeather(weather) : null;
+  
+  // Get weather-based recommendations
+  const getWeatherRecommendations = () => {
+    if (!weather || !kitingAnalysis) return [];
+    
+    const recommendations: string[] = [];
+    
+    if (kitingAnalysis.score >= 8) {
+      recommendations.push('Perfect conditions for all skill levels');
+    } else if (kitingAnalysis.score >= 6) {
+      recommendations.push('Good conditions for lessons');
+    } else if (kitingAnalysis.score < 4) {
+      recommendations.push('Consider postponing lessons');
+    }
+    
+    if (weather.windSpeed > 25) {
+      recommendations.push('Strong winds - beginners only with supervision');
+    } else if (weather.windSpeed < 12) {
+      recommendations.push('Light winds - focus on theory or equipment');
+    }
+    
+    if (weather.precipitationProbability > 60) {
+      recommendations.push('High rain chance - have indoor backup plan');
+    }
+    
+    if (weather.windGust && weather.windGust > 30) {
+      recommendations.push('Gusty conditions - extra safety precautions needed');
+    }
+    
+    return recommendations;
+  };
+  
+  const recommendations = getWeatherRecommendations();
 
   // Helper function to format duration from minutes to hours format
   const formatDuration = (minutes: number): string => {
@@ -109,6 +184,92 @@ export default function WhiteboardEventController({
             </div>
           </div>
         )}
+
+        {/* Weather Information */}
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Wind className="w-4 h-4 text-blue-600" />
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">Weather at 3 PM</h4>
+            </div>
+            {weatherLoading && <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />}
+          </div>
+          
+          {weatherError && (
+            <div className="flex items-center gap-2 text-red-600 text-sm">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Weather unavailable: {weatherError}</span>
+            </div>
+          )}
+          
+          {weather && !weatherLoading && (
+            <div className="space-y-3">
+              {/* Main weather info */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{getWeatherEmoji(weather.icon)}</span>
+                  <div>
+                    <div className="font-medium">{weather.temperature}°C</div>
+                    <div className="text-xs text-blue-700 dark:text-blue-300">{weather.description}</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="font-medium">{formatWind(weather.windSpeed, weather.windDirection)}</div>
+                  <div className="text-xs text-blue-700 dark:text-blue-300">
+                    {weather.windGust ? `Gusts ${weather.windGust} km/h` : 'No gusts'}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="font-medium">{weather.humidity}% humidity</div>
+                  <div className="text-xs text-blue-700 dark:text-blue-300">{weather.visibility} km visibility</div>
+                </div>
+                
+                <div>
+                  {weather.precipitationProbability > 0 && (
+                    <div className="flex items-center gap-1">
+                      <CloudRain className="w-3 h-3" />
+                      <span className="text-xs">{weather.precipitationProbability}% rain</span>
+                    </div>
+                  )}
+                  <div className={`text-xs px-2 py-1 rounded-full ${
+                    kitingAnalysis?.suitable 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                  }`}>
+                    Score: {kitingAnalysis?.score}/10
+                  </div>
+                </div>
+              </div>
+              
+              {/* Weather recommendations */}
+              {recommendations.length > 0 && (
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded p-3 space-y-1">
+                  <div className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Recommendations:</div>
+                  {recommendations.map((rec, index) => (
+                    <div key={index} className="text-xs text-blue-700 dark:text-blue-300">• {rec}</div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Weather-based time suggestions */}
+              {weather && (
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded p-3">
+                  <div className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Optimal Times:</div>
+                  <div className="text-xs text-blue-700 dark:text-blue-300">
+                    {weather.windSpeed >= 12 && weather.windSpeed <= 25 
+                      ? `Current conditions ideal around ${controller.flag ? (controller.submitTime) : controller.submitTime}`
+                      : weather.windSpeed < 12
+                      ? 'Light winds - consider afternoon thermal winds (14:00-17:00)'
+                      : 'Strong winds - morning sessions recommended (11:00-13:00)'
+                    }
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Current Events Summary - Only show if there are events */}
         {hasEvents && (

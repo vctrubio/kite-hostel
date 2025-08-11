@@ -7,6 +7,7 @@ import WhiteboardLessons from './WhiteboardLessons';
 import WhiteboardEvents from './WhiteboardEvents';
 import WhiteboardEventController from './WhiteboardEventController';
 import WhiteboardStatus from './WhiteboardStatus';
+import WhiteboardWeather from './WhiteboardWeather';
 import { WhiteboardData } from '@/actions/whiteboard-actions';
 import { WhiteboardClass } from '@/backend/WhiteboardClass';
 import { TeacherSchedule } from '@/backend/TeacherSchedule';
@@ -22,6 +23,7 @@ const WHITEBOARD_SECTIONS = [
   { id: 'bookings', name: 'Bookings', description: 'See all available bookings' },
   { id: 'lessons', name: 'Lessons', description: 'See all teachers with lessons' },
   { id: 'events', name: 'Events', description: 'See all ongoing lessons' },
+  { id: 'weather', name: 'Weather', description: 'See forecast at 3PM for planning' },
   { id: 'controller', name: 'Controller', description: 'Event creation settings' },
   { id: 'status', name: 'Status', description: 'See all stats & more...' },
 ] as const;
@@ -258,11 +260,21 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                   />
                 )}
 
+                {activeSection === 'weather' && (
+                  <WhiteboardWeather 
+                    selectedDate={selectedDate}
+                    location="Tarifa, Spain"
+                    lat={36.0128}
+                    lon={-5.6081}
+                  />
+                )}
+
                 {activeSection === 'controller' && (
                   <WhiteboardEventController 
                     controller={controller}
                     onControllerChange={setController}
                     events={filteredData.events}
+                    selectedDate={selectedDate}
                   />
                 )}
 
