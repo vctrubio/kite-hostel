@@ -12,7 +12,7 @@ interface EventCardProps {
   status: string;
   viewAs?: 'admin' | 'teacher' | 'student';
   onDelete?: () => void;
-  onStatusChange?: (newStatus: string) => void;
+  onStatusChange?: (newStatus: "planned" | "completed" | "tbc" | "cancelled") => void;
   reorganizationOptions?: ReorganizationOption[];
   onReorganize?: (option: ReorganizationOption) => void;
   onDismissReorganization?: () => void;
@@ -148,7 +148,7 @@ const AdminControls = ({
   onCancelReorganization
 }: { 
   status: string; 
-  onStatusChange?: (status: string) => void; 
+  onStatusChange?: (status: "planned" | "completed" | "tbc" | "cancelled") => void; 
   onDelete?: () => void; 
   reorganizationOptions?: ReorganizationOption[];
   onCancelReorganization?: () => void;
@@ -163,21 +163,44 @@ const AdminControls = ({
         <div className="flex gap-1">
           <button
             onClick={() => onStatusChange?.('planned')}
-            className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${
+              status === 'planned' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+            }`}
             title="Set to Planned"
           >
             Planned
           </button>
           <button
+            onClick={() => onStatusChange?.('tbc')}
+            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${
+              status === 'tbc' 
+                ? 'bg-purple-500 text-white' 
+                : 'bg-purple-100 text-purple-800 hover:bg-purple-200'
+            }`}
+            title="Set to To Be Confirmed"
+          >
+            TBC
+          </button>
+          <button
             onClick={() => onStatusChange?.('completed')}
-            className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200"
+            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${
+              status === 'completed' 
+                ? 'bg-green-500 text-white' 
+                : 'bg-green-100 text-green-800 hover:bg-green-200'
+            }`}
             title="Set to Completed"
           >
             Done
           </button>
           <button
             onClick={() => onStatusChange?.('cancelled')}
-            className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded hover:bg-orange-200"
+            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${
+              status === 'cancelled' 
+                ? 'bg-orange-500 text-white' 
+                : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+            }`}
             title="Cancel Event"
           >
             Cancel

@@ -114,40 +114,6 @@ export async function getKitesWithEvents() {
   }
 }
 
-export async function deleteEvent(eventId: string) {
-  try {
-    // First, delete any KiteEvent associations
-    await db.delete(KiteEvent).where(eq(KiteEvent.event_id, eventId));
-    
-    // Then delete the event itself
-    await db.delete(Event).where(eq(Event.id, eventId));
-    
-    revalidatePath("/whiteboard");
-    revalidatePath("/events");
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error deleting event:", error);
-    return { success: false, error: error.message };
-  }
-}
-
-export async function updateEventTime(eventId: string, newDateTime: string) {
-  try {
-    await db.update(Event)
-      .set({ 
-        date: newDateTime
-      })
-      .where(eq(Event.id, eventId));
-    
-    revalidatePath("/whiteboard");
-    revalidatePath("/events");
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error updating event time:", error);
-    return { success: false, error: error.message };
-  }
-}
-
 export async function reorganizeEventTimes(reorganizationUpdates: Array<{
   eventId: string;
   newDateTime: string;

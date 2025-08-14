@@ -54,7 +54,18 @@ export async function deleteEvent(eventId: string) {
   try {
     const supabase = await createClient();
 
-    // Delete the event
+    // First, delete any KiteEvent associations (cascade should handle this, but let's be explicit)
+    const { error: kiteEventError } = await supabase
+      .from('kite_event')
+      .delete()
+      .eq('event_id', eventId);
+
+    if (kiteEventError) {
+      console.error('❌ KiteEvent deletion failed:', kiteEventError);
+      return { success: false, error: kiteEventError.message };
+    }
+
+    // Then delete the event itself
     const { error: deleteError } = await supabase
       .from('event')
       .delete()
@@ -66,10 +77,50 @@ export async function deleteEvent(eventId: string) {
     }
 
     revalidatePath('/whiteboard');
+    revalidatePath('/events');
     return { success: true };
   } catch (error) {
     console.error('🔥 Error deleting event:', error);
     return { success: false, error: 'Failed to delete event' };
+  }
+}
+
+export async function updateEvent(eventId: string, updates: {
+  date?: string;
+  status?: "planned" | "completed" | "tbc" | "cancelled";
+  location?: "Los Lances" | "Valdevaqueros" | "Palmones";
+  duration?: number;
+}) {
+  try {
+    const supabase = await createClient();
+
+    // Only update fields that are provided
+    const updateData: any = {};
+    if (updates.date !== undefined) updateData.date = updates.date;
+    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.location !== undefined) updateData.location = updates.location;
+    if (updates.duration !== undefined) updateData.duration = updates.duration;
+
+    if (Object.keys(updateData).length === 0) {
+      return { success: false, error: "No fields to update" };
+    }
+
+    const { error: updateError } = await supabase
+      .from('event')
+      .update(updateData)
+      .eq('id', eventId);
+
+    if (updateError) {
+      console.error('❌ Event update failed:', updateError);
+      return { success: false, error: updateError.message };
+    }
+    
+    revalidatePath("/whiteboard");
+    revalidatePath("/events");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating event:", error);
+    return { success: false, error: error.message };
   }
 }
 

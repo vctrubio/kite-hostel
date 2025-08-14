@@ -3,7 +3,8 @@ import EventCard, { GapCard } from '@/components/cards/EventCard';
 import { HeadsetIcon, Clock, Zap, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 import { FlagIcon } from '@/svgs/FlagIcon';
 import { TeacherSchedule, ReorganizationOption } from '@/backend/TeacherSchedule';
-import { deleteEvent, reorganizeEventTimes } from '@/actions/kite-actions';
+import { reorganizeEventTimes } from '@/actions/kite-actions';
+import { updateEvent, deleteEvent } from '@/actions/event-actions';
 import { timeToMinutes, minutesToTime, createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
 import { 
   extractStudentNames,
@@ -331,6 +332,19 @@ function TeacherEventsGroup({
     }
   };
 
+  const handleStatusChange = async (eventId: string, newStatus: "planned" | "completed" | "tbc" | "cancelled") => {
+    try {
+      const result = await updateEvent(eventId, { status: newStatus });
+      if (result.success) {
+        console.log('Event status updated successfully:', eventId, 'to', newStatus);
+      } else {
+        console.error('Failed to update event status:', result.error);
+      }
+    } catch (error) {
+      console.error('Error updating event status:', error);
+    }
+  };
+
   const handleCancelTimeAdjustment = () => {
     setTimeAdjustmentMode(false);
     setProposedTimeOffset(0);
@@ -455,10 +469,7 @@ function TeacherEventsGroup({
                     onReorganize={(option) => handleReorganize(eventData.id, option)}
                     onDismissReorganization={() => handleDismissReorganization(eventData.id)}
                     onCancelReorganization={() => handleCancelReorganization(eventData.id)}
-                    onStatusChange={(newStatus) => {
-                      // TODO: Implement status change functionality
-                      console.log('Change status:', eventData.id, 'to', newStatus);
-                    }}
+                    onStatusChange={(newStatus) => handleStatusChange(eventData.id, newStatus)}
                   />
                 </div>
               );

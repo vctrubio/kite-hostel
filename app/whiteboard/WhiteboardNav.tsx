@@ -5,8 +5,8 @@ import { type EventController } from '@/backend/types';
 import { type Location, LOCATION_ENUM_VALUES } from '@/lib/constants';
 import { addMinutesToTime } from '@/components/formatters/TimeZone';
 import { format } from 'date-fns';
-import { useEffect, useMemo } from 'react';
-import { WhiteboardClass, createBookingClasses } from '@/backend/WhiteboardClass';
+import { useEffect, useMemo, useState } from 'react';
+import { WhiteboardClass, createBookingClasses, extractStudentNames } from '@/backend/WhiteboardClass';
 import { TeacherSchedule } from '@/backend/TeacherSchedule';
 import { ShareUtils } from '@/backend/ShareUtils';
 import {
@@ -42,6 +42,9 @@ export default function WhiteboardNav({
   bookings = [],
   teacherSchedules
 }: WhiteboardNavProps) {
+  
+  // State for collapsible debug info
+  const [showDebugDetails, setShowDebugDetails] = useState(false);
   
   // Action handlers using ShareUtils
   const handleShare = () => {
@@ -143,23 +146,40 @@ export default function WhiteboardNav({
     if (bookings.length === 0) return null;
     
     const bookingClasses = createBookingClasses(bookings);
-    const readyForCompletion = bookingClasses.filter(bc => bc.isReadyForCompletion()).length;
-    const needingAttention = bookingClasses.filter(bc => bc.needsAttention().hasIssues).length;
+    const readyForCompletion = bookingClasses.filter(bc => bc.isReadyForCompletion());
+    const needingAttention = bookingClasses.filter(bc => bc.needsAttention().hasIssues);
     
-    // Event analytics
-    const eventsWithIssues = events.filter(event => {
-      if (event.booking) {
-        const bookingClass = new WhiteboardClass(event.booking);
-        return bookingClass.needsAttention().hasIssues;
-      }
-      return false;
-    }).length;
+    // Event analytics - only TBC events (waiting for teacher confirmation)
+    const eventsWithIssues = events.filter(event => event.status === 'tbc');
+    
+    // Collect detailed issue information
+    const detailedIssues = {
+      bookingsReadyForCompletion: readyForCompletion.map(bc => ({
+        id: bc.getId(),
+        reason: 'All lessons completed, ready to mark as completed'
+      })),
+      bookingsNeedingAttention: needingAttention.map(bc => {
+        const attention = bc.needsAttention();
+        return {
+          id: bc.getId(),
+          issues: attention.issues
+        };
+      }),
+      eventsWithIssues: eventsWithIssues.map(event => ({
+        id: event.id,
+        date: event.date,
+        teacher: event.lesson?.teacher?.name || 'Unknown',
+        students: event.booking ? extractStudentNames(event.booking) : 'No students',
+        reason: 'Waiting for teacher confirmation'
+      }))
+    };
     
     return {
-      readyForCompletion,
-      needingAttention,
-      eventsWithIssues,
-      totalEvents: events.length
+      readyForCompletion: readyForCompletion.length,
+      needingAttention: needingAttention.length,
+      eventsWithIssues: eventsWithIssues.length,
+      totalEvents: events.length,
+      detailedIssues
     };
   }, [bookings, events]);
   
@@ -325,24 +345,89 @@ export default function WhiteboardNav({
         })}
       </div>
 
-      {/* Enhanced Status Alerts */}
+      {/* Enhanced Status Alerts with Debug Info */}
       {analyticsData && (analyticsData.readyForCompletion > 0 || analyticsData.needingAttention > 0) && (
         <div className="mb-6 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4 text-orange-600" />
-            <span className="text-sm font-medium text-orange-800 dark:text-orange-200">Action Required</span>
+          <div 
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => setShowDebugDetails(!showDebugDetails)}
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-orange-600" />
+              <span className="text-sm font-medium text-orange-800 dark:text-orange-200">Action Required</span>
+            </div>
+            <button className="text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-200">
+              {showDebugDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
           </div>
-          <div className="space-y-1 text-xs text-orange-700 dark:text-orange-300">
+          
+          {/* Quick Summary */}
+          <div className="mt-2 space-y-1 text-xs text-orange-700 dark:text-orange-300">
             {analyticsData.readyForCompletion > 0 && (
-              <div>{analyticsData.readyForCompletion} booking{analyticsData.readyForCompletion > 1 ? 's' : ''} ready for completion</div>
+              <div>📋 {analyticsData.readyForCompletion} booking{analyticsData.readyForCompletion > 1 ? 's' : ''} ready for completion</div>
             )}
             {analyticsData.needingAttention > 0 && (
-              <div>{analyticsData.needingAttention} booking{analyticsData.needingAttention > 1 ? 's' : ''} need attention</div>
+              <div>⚠️ {analyticsData.needingAttention} booking{analyticsData.needingAttention > 1 ? 's' : ''} need attention</div>
             )}
             {analyticsData.eventsWithIssues > 0 && (
-              <div>{analyticsData.eventsWithIssues} event{analyticsData.eventsWithIssues > 1 ? 's' : ''} have issues</div>
+              <div>🚨 {analyticsData.eventsWithIssues} event{analyticsData.eventsWithIssues > 1 ? 's' : ''} waiting for teacher confirmation</div>
             )}
           </div>
+          
+          {/* Detailed Debug Info */}
+          {showDebugDetails && (
+            <div className="mt-3 pt-3 border-t border-orange-200 dark:border-orange-700 space-y-3 text-xs">
+              {/* Bookings Ready for Completion */}
+              {analyticsData.readyForCompletion > 0 && (
+                <div className="space-y-1">
+                  <div className="text-orange-700 dark:text-orange-300 font-medium">
+                    📋 Bookings Ready for Completion:
+                  </div>
+                  {analyticsData.detailedIssues.bookingsReadyForCompletion.map((item, index) => (
+                    <div key={index} className="text-orange-600 dark:text-orange-400 ml-4">
+                      • Booking {item.id.slice(0, 8)}... - {item.reason}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Bookings Needing Attention */}
+              {analyticsData.needingAttention > 0 && (
+                <div className="space-y-1">
+                  <div className="text-orange-700 dark:text-orange-300 font-medium">
+                    ⚠️ Bookings Needing Attention:
+                  </div>
+                  {analyticsData.detailedIssues.bookingsNeedingAttention.map((item, index) => (
+                    <div key={index} className="text-orange-600 dark:text-orange-400 ml-4">
+                      <div>• Booking {item.id.slice(0, 8)}...</div>
+                      {item.issues.map((issue, issueIndex) => (
+                        <div key={issueIndex} className="ml-4 text-red-600 dark:text-red-400">
+                          - {issue}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Events with Issues */}
+              {analyticsData.eventsWithIssues > 0 && (
+                <div className="space-y-1">
+                  <div className="text-orange-700 dark:text-orange-300 font-medium">
+                    🚨 Events Waiting for Teacher Confirmation:
+                  </div>
+                  {analyticsData.detailedIssues.eventsWithIssues.map((item, index) => (
+                    <div key={index} className="text-orange-600 dark:text-orange-400 ml-4">
+                      <div>• Event {item.id.slice(0, 8)}... ({item.teacher} - {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})</div>
+                      <div className="ml-4 text-red-600 dark:text-red-400">
+                        - {item.students}: {item.reason}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
