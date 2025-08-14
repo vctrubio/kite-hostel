@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Play, MapPin, Trash2, Send } from 'lucide-react';
 import { TeacherSchedule, type QueuedLesson as TeacherQueuedLesson } from '@/backend/TeacherSchedule';
 import { HelmetIcon, FlagIcon } from '@/svgs';
-import { extractStudents, WhiteboardClass } from '@/backend/WhiteboardClass';
+import { extractStudents, WhiteboardClass, calculateLessonStats, getAvailableLessons } from '@/backend/WhiteboardClass';
+import { timeToMinutes, minutesToTime } from '@/components/formatters/TimeZone';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
 import { type EventController } from '@/backend/types';
-import TeacherLessonQueueCard from '@/components/cards/TeacherLessonQueueCard';
-
+import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
 
 
 interface TeacherLessonQueueProps {
@@ -22,12 +22,6 @@ interface TeacherLessonQueueProps {
   queueUpdateTrigger?: number; // For forcing re-renders when queue changes
   onQueueChange?: () => void; // Callback when queue changes internally
 }
-
-// Helper to format duration in hours (2.5h format)
-const formatDurationHours = (minutes: number): string => {
-  const hours = minutes / 60;
-  return hours % 1 === 0 ? `${hours}h` : `${hours.toFixed(1)}h`;
-};
 
 export default function TeacherLessonQueue({ 
   teacherId, 
@@ -171,22 +165,18 @@ export default function TeacherLessonQueue({
 
   // Get analysis from TeacherSchedule
   const canSchedule = teacherSchedule ? teacherSchedule.canScheduleQueue() : false;
-  const totalDuration = teacherSchedule ? teacherSchedule.getQueueTotalDuration() : 0;
 
-  if (queue.length === 0) {
-    return (
-      <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
-          <FlagIcon className="w-4 h-4" />
-          <span>Click lesson cards to add to {teacherName}&apos;s queue</span>
-          <span className="text-xs text-blue-600 dark:text-blue-400">
-            • Start: {controller.submitTime} • Location: {controller.location}
-          </span>
-        </div>
-      </div>
-    );
+  // Try to get the lessons for this teacher from teacherSchedule or props
+  let teacherLessons: any[] = [];
+  if (teacherSchedule && Array.isArray((teacherSchedule as any).lessons)) {
+    teacherLessons = (teacherSchedule as any).lessons;
+  } else if ((window as any)[`teacherGroup_${teacherId}`]?.lessons) {
+    teacherLessons = (window as any)[`teacherGroup_${teacherId}`].lessons;
   }
 
+  if (queue.length === 0) {
+    return null;
+  }
   // Get earliest queue time for the flag icon
   const earliestTime = queue.length > 0 ? queue[0].scheduledStartTime || controller.submitTime : controller.submitTime;
 

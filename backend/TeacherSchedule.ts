@@ -771,7 +771,11 @@ export class TeacherSchedule {
    */
 
   // Add lesson to queue
-  addLessonToQueue(lessonId: string, duration: number, students: string[], remainingMinutes: number): void {
+  addLessonToQueue(lessonId: string, duration: number, students: string[], remainingMinutes: number, lessonStatus?: string): void {
+    // Only allow adding if lesson is planned
+    if (lessonStatus && lessonStatus !== 'planned') {
+      return;
+    }
     // Check if lesson already in queue
     if (this.lessonQueue.some(q => q.lessonId === lessonId)) {
       return;

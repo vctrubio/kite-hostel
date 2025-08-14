@@ -200,9 +200,9 @@ export default function LessonCard({
           )}
           <div className="text-sm text-muted-foreground dark:text-gray-400">
             <Duration minutes={remainingMinutes} /> remaining
-            {selectedDateEventMinutes > 0 && (
+            {selectedDateEventMinutes > 0 && eventForSelectedDate && (
               <span className="ml-1 text-xs text-blue-500 dark:text-blue-400">
-                (-<Duration minutes={selectedDateEventMinutes} /> scheduled)
+                | {eventForSelectedDate.startTime} + <Duration minutes={eventForSelectedDate.duration} />
               </span>
             )}
           </div>
