@@ -7,11 +7,12 @@ import { HeadsetIcon } from '@/svgs';
 import { LESSON_STATUS_FILTERS, type LessonStatusFilter } from '@/lib/constants';
 import EventToTeacherModal from '@/components/modals/EventToTeacherModal';
 import LessonCard from '@/components/cards/LessonCard';
+import TeacherLessonQueue from '@/components/TeacherLessonQueue';
+import { createTeacherQueueEvents } from '@/actions/event-actions';
 import { 
   groupLessonsByTeacher, 
   calculateLessonStats,
   extractStudents,
-  extractStudentNames,
   WhiteboardClass
 } from '@/backend/WhiteboardClass';
 
@@ -55,13 +56,25 @@ function LessonStatusFilters({
 function TeacherGroup({ 
   teacherGroup, 
   onLessonClick,
+  onOpenModal,
+  onRemoveFromQueue,
+  onBatchEventCreation,
   teacherSchedule,
-  selectedDate
+  selectedDate,
+  controller,
+  queueUpdateTrigger,
+  onQueueChange
 }: { 
   teacherGroup: any;
   onLessonClick: (lesson: any) => void;
+  onOpenModal: (lesson: any) => void;
+  onRemoveFromQueue: (lessonId: string) => void;
+  onBatchEventCreation: (events: any[]) => void;
   teacherSchedule?: TeacherSchedule;
   selectedDate: string;
+  controller: any;
+  queueUpdateTrigger: number;
+  onQueueChange: () => void;
 }) {
   const { availableLessons, lessonsWithEvents } = calculateLessonStats(teacherGroup.lessons);
   
@@ -113,13 +126,35 @@ function TeacherGroup({
       <div className="p-4 space-y-3">
         {teacherGroup.lessons.map((lesson: any) => (
           <LessonCard 
-            key={lesson.id}
+            key={`${lesson.id}-${queueUpdateTrigger}`} // Force re-render when queue changes
             lesson={lesson}
             onLessonClick={onLessonClick}
+            onOpenModal={onOpenModal} // Pass the modal opener
+            onRemoveFromQueue={onRemoveFromQueue} // Pass the remove handler
             selectedDate={selectedDate}
             teacherSchedule={teacherSchedule} // Pass schedule for availability info
           />
         ))}
+        
+        {/* Teacher Queue */}
+        <TeacherLessonQueue
+          teacherId={teacherGroup.teacherId}
+          teacherName={teacherGroup.teacherName}
+          teacherSchedule={teacherSchedule}
+          selectedDate={selectedDate}
+          controller={controller} // Pass controller
+          onCreateEvents={onBatchEventCreation}
+          queueUpdateTrigger={queueUpdateTrigger} // Pass the trigger for re-renders
+          onQueueChange={onQueueChange} // Handle internal queue changes
+          onRef={(ref) => {
+            // Store the queue ref for this teacher
+            if (ref) {
+              // We need to pass this back to the parent somehow
+              // For now, let's use a simple approach
+              (window as any)[`queue_${teacherGroup.teacherId}`] = ref;
+            }
+          }}
+        />
       </div>
     </div>
   );
@@ -144,27 +179,82 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
   const [activeFilter, setActiveFilter] = useState<LessonStatusFilter>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0); // Force re-renders when queue changes
 
-  // Handle lesson click for event creation
-  const handleLessonClick = (lesson: any) => {
-    // Create WhiteboardClass instance for booking calculations
+  // Toggle lesson in queue (add if not present, remove if present)
+  const toggleLessonQueue = (lesson: any) => {
+    const teacherSchedule = teacherSchedules.get(lesson.teacher?.id);
+    if (!teacherSchedule) return;
+
+    const isInQueue = teacherSchedule.getLessonQueue().some(q => q.lessonId === lesson.id);
+    
+    if (isInQueue) {
+      // Remove from queue
+      teacherSchedule.removeLessonFromQueue(lesson.id);
+    } else {
+      // Add to queue using the window global reference
+      const queueRef = (window as any)[`queue_${lesson.teacher?.id}`];
+      if (queueRef && queueRef.addToQueue) {
+        queueRef.addToQueue(lesson);
+      }
+    }
+    
+    // Trigger re-render to update lesson card appearance
+    setQueueUpdateTrigger(prev => prev + 1);
+  };
+
+  // Handle queue changes from TeacherLessonQueue (clear, submit, etc.)
+  const handleQueueChange = () => {
+    setQueueUpdateTrigger(prev => prev + 1);
+  };
+
+  // Helper to remove lesson from queue by ID
+  const handleRemoveFromQueue = (lessonId: string) => {
+    for (const teacherGroup of groupedLessons) {
+      const lesson = teacherGroup.lessons.find((l: any) => l.id === lessonId);
+      if (lesson) {
+        toggleLessonQueue(lesson);
+        break;
+      }
+    }
+  };  // Open lesson modal with calculated student data
+  const openLessonModal = (lesson: any) => {
     const bookingClass = new WhiteboardClass(lesson.booking);
     const students = extractStudents(lesson.booking);
-    const remainingMinutes = bookingClass.getRemainingMinutes();
     
-    // Add students to lesson object for modal
-    const lessonWithStudents = {
+    setSelectedLesson({
       ...lesson,
-      students: students,
+      students,
       studentCount: students.length,
-      remainingMinutes: remainingMinutes
-    };
-    
-    setSelectedLesson(lessonWithStudents);
+      remainingMinutes: bookingClass.getRemainingMinutes()
+    });
     setIsModalOpen(true);
   };
 
-  // Handle confirming event creation
+  // Handle batch event creation from queues
+  const handleBatchEventCreation = async (events: any[]) => {
+    console.log('🚀 Creating teacher queue events:', events.length);
+    
+    try {
+      const result = await createTeacherQueueEvents(events);
+      
+      if (result.success) {
+        console.log('✅ All queue events created successfully');
+      } else {
+        console.error('❌ Some events failed to create:', result);
+        if (result.summary) {
+          console.log(`📊 Summary: ${result.summary.successCount}/${result.summary.total} events created`);
+        }
+      }
+      
+      // Refresh to show new events
+      router.refresh();
+    } catch (error) {
+      console.error('🔥 Error creating queue events:', error);
+    }
+  };
+
+  // Handle confirming single event creation from modal
   const handleConfirmEvent = (eventData: any) => {
     console.log('Creating event:', eventData);
     // Here you would typically make an API call to create the event
@@ -255,9 +345,15 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
             <TeacherGroup 
               key={teacherGroup.teacherId}
               teacherGroup={teacherGroup}
-              onLessonClick={handleLessonClick}
+              onLessonClick={toggleLessonQueue}
+              onOpenModal={openLessonModal}
+              onRemoveFromQueue={handleRemoveFromQueue}
+              onBatchEventCreation={handleBatchEventCreation}
               selectedDate={selectedDate}
+              controller={controller}
               teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)} // Pass teacher schedule
+              queueUpdateTrigger={queueUpdateTrigger}
+              onQueueChange={handleQueueChange}
             />
           ))}
         </div>

@@ -43,8 +43,8 @@ export default function WhiteboardNav({
   teacherSchedules
 }: WhiteboardNavProps) {
   
-  // State for collapsible debug info
-  const [showDebugDetails, setShowDebugDetails] = useState(false);
+  // State for collapsible detailed information
+  const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   
   // Action handlers using ShareUtils
   const handleShare = () => {
@@ -325,39 +325,24 @@ export default function WhiteboardNav({
                 )}
               </div>
               <div className="text-sm opacity-70">{section.description}</div>
-              
-              {/* Enhanced indicators for later maybe */}
-              {/* {analyticsData && (
-                <>
-                  {section.id === 'bookings' && analyticsData.readyForCompletion > 0 && (
-                    <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full"></div>
-                  )}
-                  {section.id === 'events' && analyticsData.eventsWithIssues > 0 && (
-                    <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
-                  )}
-                  {section.id === 'status' && analyticsData.needingAttention > 0 && (
-                    <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
-                  )}
-                </>
-              )} */}
             </button>
           );
         })}
       </div>
 
-      {/* Enhanced Status Alerts with Debug Info */}
-      {analyticsData && (analyticsData.readyForCompletion > 0 || analyticsData.needingAttention > 0) && (
+      {/* Enhanced Status Alerts with Detailed Information */}
+      {analyticsData && (analyticsData.readyForCompletion > 0 || analyticsData.needingAttention > 0 || analyticsData.eventsWithIssues > 0) && (
         <div className="mb-6 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg">
           <div 
             className="flex items-center justify-between cursor-pointer"
-            onClick={() => setShowDebugDetails(!showDebugDetails)}
+            onClick={() => setShowDetailedInfo(!showDetailedInfo)}
           >
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-orange-600" />
               <span className="text-sm font-medium text-orange-800 dark:text-orange-200">Action Required</span>
             </div>
             <button className="text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-200">
-              {showDebugDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {showDetailedInfo ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           </div>
           
@@ -374,8 +359,8 @@ export default function WhiteboardNav({
             )}
           </div>
           
-          {/* Detailed Debug Info */}
-          {showDebugDetails && (
+          {/* Detailed Information */}
+          {showDetailedInfo && (
             <div className="mt-3 pt-3 border-t border-orange-200 dark:border-orange-700 space-y-3 text-xs">
               {/* Bookings Ready for Completion */}
               {analyticsData.readyForCompletion > 0 && (

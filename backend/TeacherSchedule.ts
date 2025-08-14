@@ -8,6 +8,16 @@ import { detectScheduleGaps, hasScheduleGaps, compactSchedule, findNextAvailable
 
 export type ScheduleItemType = 'event' | 'gap';
 
+export interface QueuedLesson {
+  lessonId: string;
+  duration: number;
+  students: string[];
+  remainingMinutes: number;
+  scheduledStartTime?: string; // Calculated start time
+  hasGap?: boolean; // Whether there's a gap before this lesson
+  timeAdjustment?: number; // Manual time adjustment in minutes
+}
+
 export interface ScheduleNode extends ScheduleItem {
   id: string;
   type: ScheduleItemType;
@@ -56,6 +66,8 @@ export interface ReorganizationOption {
 
 export class TeacherSchedule {
   private schedule: TeacherDaySchedule;
+  private lessonQueue: QueuedLesson[] = []; // Add lesson queue
+  private queueStartTime: string | null = null; // Preferred queue start time
 
   constructor(teacherId: string, teacherName: string, date: string) {
     this.schedule = {
@@ -753,4 +765,232 @@ export class TeacherSchedule {
     
     return updates;
   }
+
+  /**
+   * Queue Management Methods
+   */
+
+  // Add lesson to queue
+  addLessonToQueue(lessonId: string, duration: number, students: string[], remainingMinutes: number): void {
+    // Check if lesson already in queue
+    if (this.lessonQueue.some(q => q.lessonId === lessonId)) {
+      return;
+    }
+
+    const queuedLesson: QueuedLesson = {
+      lessonId,
+      duration,
+      students,
+      remainingMinutes
+    };
+
+    this.lessonQueue.push(queuedLesson);
+    this.recalculateQueueSchedule(this.queueStartTime);
+  }
+
+  // Remove lesson from queue
+  removeLessonFromQueue(lessonId: string): void {
+    this.lessonQueue = this.lessonQueue.filter(q => q.lessonId !== lessonId);
+    this.recalculateQueueSchedule(this.queueStartTime);
+  }
+
+  // Update lesson duration in queue
+  updateQueueLessonDuration(lessonId: string, newDuration: number): void {
+    const lesson = this.lessonQueue.find(q => q.lessonId === lessonId);
+    if (lesson) {
+      lesson.duration = Math.min(newDuration, lesson.remainingMinutes);
+      this.recalculateQueueSchedule(this.queueStartTime);
+    }
+  }
+
+  // Update lesson start time adjustment in queue
+  updateQueueLessonStartTime(lessonId: string, timeAdjustmentMinutes: number): void {
+    const lesson = this.lessonQueue.find(q => q.lessonId === lessonId);
+    if (lesson) {
+      // Initialize timeAdjustment if it doesn't exist
+      if (!lesson.timeAdjustment) {
+        lesson.timeAdjustment = 0;
+      }
+      lesson.timeAdjustment += timeAdjustmentMinutes;
+      this.recalculateQueueSchedule(this.queueStartTime);
+    }
+  }
+
+  // Set queue gap - REMOVED: Now hardcoded to 15 minutes
+  // setQueueGap method removed - gap is always 15 minutes
+
+  // Set preferred start time for queue
+  setQueueStartTime(startTime: string): void {
+    this.queueStartTime = startTime;
+    this.recalculateQueueSchedule(this.queueStartTime);
+  }
+
+  // Get current queue
+  getLessonQueue(): QueuedLesson[] {
+    return [...this.lessonQueue];
+  }
+
+  // Get queue gap - REMOVED: Always returns 15
+  // getQueueGap method removed - gap is always 15 minutes
+
+  // Clear entire queue
+  clearQueue(): void {
+    this.lessonQueue = [];
+  }
+
+  // Move lesson up in queue (swap with previous)
+  moveQueueLessonUp(lessonId: string): void {
+    const index = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    if (index > 0) {
+      // Swap with previous lesson
+      [this.lessonQueue[index - 1], this.lessonQueue[index]] = 
+      [this.lessonQueue[index], this.lessonQueue[index - 1]];
+      this.recalculateQueueSchedule(this.queueStartTime);
+    }
+  }
+
+  // Move lesson down in queue (swap with next)
+  moveQueueLessonDown(lessonId: string): void {
+    const index = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    if (index >= 0 && index < this.lessonQueue.length - 1) {
+      // Swap with next lesson
+      [this.lessonQueue[index], this.lessonQueue[index + 1]] = 
+      [this.lessonQueue[index + 1], this.lessonQueue[index]];
+      this.recalculateQueueSchedule(this.queueStartTime);
+    }
+  }
+
+  // Check if lesson can move earlier without overlap
+  canMoveQueueLessonEarlier(lessonId: string): boolean {
+    const index = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    if (index < 0) return false; // Not found
+    if (index === 0) return true; // First lesson can always move earlier - no previous lesson to overlap
+    
+    const currentLesson = this.lessonQueue[index];
+    const previousLesson = this.lessonQueue[index - 1];
+    
+    if (!currentLesson.scheduledStartTime || !previousLesson.scheduledStartTime) {
+      return false;
+    }
+
+    // Calculate if moving 30 minutes earlier would overlap with previous lesson
+    const currentStartMinutes = this.timeToMinutes(currentLesson.scheduledStartTime);
+    const proposedStartMinutes = currentStartMinutes - 30;
+    const previousEndMinutes = this.timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
+    
+    // Check if moving 30 minutes earlier would overlap with previous lesson (no gap required)
+    return proposedStartMinutes >= previousEndMinutes;
+  }
+
+  // Recalculate queue schedule with gap detection
+  private recalculateQueueSchedule(preferredStartTime?: string): void {
+    if (this.lessonQueue.length === 0) return;
+
+    // Use preferredStartTime if provided, otherwise use stored queueStartTime, fallback to finding next available
+    const startTime = preferredStartTime || this.queueStartTime;
+    let currentTime = this.findNextAvailableTime(startTime);
+
+    this.lessonQueue.forEach((queuedLesson, index) => {
+      // Apply time adjustment if specified
+      if (queuedLesson.timeAdjustment) {
+        currentTime += queuedLesson.timeAdjustment;
+      }
+
+      // Check if there's a conflict with existing events
+      const hasConflict = this.hasConflictAtTime(currentTime, queuedLesson.duration);
+      
+      if (hasConflict) {
+        const nextSlot = this.calculatePossibleSlot(queuedLesson.duration);
+        if (nextSlot) {
+          currentTime = this.timeToMinutes(nextSlot.startTime);
+        }
+      }
+
+      // Check for gap (if not starting immediately after previous lesson)
+      const expectedStartTime = index === 0 ? 
+        this.findNextAvailableTime(startTime) : 
+        this.timeToMinutes(this.lessonQueue[index - 1].scheduledStartTime || '09:00') + 
+        this.lessonQueue[index - 1].duration; // No automatic gap
+
+      queuedLesson.scheduledStartTime = this.minutesToTime(currentTime);
+      queuedLesson.hasGap = currentTime > expectedStartTime;
+
+      // Move to next time slot - back-to-back lessons
+      currentTime += queuedLesson.duration;
+    });
+  }
+
+  // Find next available time considering controller submit time
+  private findNextAvailableTime(preferredStartTime?: string): number {
+    const existingEvents = this.getStoredNodes().filter(node => node.type === 'event');
+    
+    if (existingEvents.length === 0) {
+      // No existing events, use preferred time or 9 AM
+      return preferredStartTime ? this.timeToMinutes(preferredStartTime) : 9 * 60;
+    }
+
+    // Find the latest event end time
+    const latestEndTime = Math.max(...existingEvents.map(event => 
+      this.timeToMinutes(event.startTime) + event.duration
+    ));
+
+    const preferredTime = preferredStartTime ? this.timeToMinutes(preferredStartTime) : 9 * 60;
+    
+    // Return the later of preferred time or after latest event (no gap)
+    return Math.max(preferredTime, latestEndTime);
+  }
+
+  // Check if there's a conflict at a specific time
+  private hasConflictAtTime(startTimeMinutes: number, duration: number): boolean {
+    const existingEvents = this.getStoredNodes().filter(node => node.type === 'event');
+    const proposedEnd = startTimeMinutes + duration;
+
+    return existingEvents.some(event => {
+      const eventStart = this.timeToMinutes(event.startTime);
+      const eventEnd = eventStart + event.duration;
+      
+      return startTimeMinutes < eventEnd && proposedEnd > eventStart;
+    });
+  }
+
+  // Get total queue duration
+  getQueueTotalDuration(): number {
+    return this.lessonQueue.reduce((total, lesson) => total + lesson.duration, 0);
+  }
+
+  // Check if queue can be scheduled - always allow scheduling
+  canScheduleQueue(): boolean {
+    // Always return true - let the user schedule and handle conflicts in the actual scheduling
+    return this.lessonQueue.length > 0;
+  }
+
+  // Create events from queue
+  createEventsFromQueue(location: string, selectedDate: string): Array<{
+    lessonId: string;
+    teacherId: string;
+    startTime: string;
+    duration: number;
+    location: string;
+    studentCount: number;
+    students: string[];
+    date: string;
+  }> {
+    if (!this.canScheduleQueue()) {
+      return [];
+    }
+
+    const events = this.lessonQueue.map(queuedLesson => ({
+      lessonId: queuedLesson.lessonId,
+      teacherId: this.schedule.teacherId,
+      startTime: queuedLesson.scheduledStartTime || '09:00',
+      duration: queuedLesson.duration,
+      location,
+      studentCount: queuedLesson.students.length,
+      students: queuedLesson.students,
+      date: selectedDate
+    }));
+
+    return events;
+  }
+
 }

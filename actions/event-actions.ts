@@ -17,6 +17,15 @@ interface EventData {
   location: Location;
 }
 
+interface QueueEventData {
+  lessonId: string;
+  date: string;
+  startTime: string;
+  duration: number; // Queue events use 'duration'
+  location: string;
+  [key: string]: any; // Allow additional properties from queue
+}
+
 export async function createEvent(eventData: EventData) {
   try {
     const supabase = await createClient();
@@ -47,6 +56,59 @@ export async function createEvent(eventData: EventData) {
   } catch (error) {
     console.error('🔥 Error creating event:', error);
     return { success: false, error: 'Failed to create event' };
+  }
+}
+
+export async function createTeacherQueueEvents(events: QueueEventData[]) {
+  try {
+    const supabase = await createClient();
+    const results = [];
+
+    console.log('🚀 Creating teacher queue events:', events.length);
+
+    // Process events sequentially to avoid database conflicts
+    for (const eventData of events) {
+      console.log('📝 Creating event:', eventData);
+      
+      // Create UTC datetime using our timezone utility
+      const eventDateTimeISO = toUTCString(createUTCDateTime(eventData.date, eventData.startTime));
+
+      // Insert the event
+      const { data: eventResult, error: eventError } = await supabase
+        .from('event')
+        .insert({
+          lesson_id: eventData.lessonId,
+          date: eventDateTimeISO,
+          duration: eventData.duration, // Queue events use 'duration' property
+          location: eventData.location,
+          status: 'planned'
+        })
+        .select()
+        .single();
+
+      if (eventError) {
+        console.error('❌ Event creation failed for lesson:', eventData.lessonId, eventError);
+        results.push({ success: false, lessonId: eventData.lessonId, error: eventError.message });
+      } else {
+        console.log('✅ Event created successfully for lesson:', eventData.lessonId);
+        results.push({ success: true, lessonId: eventData.lessonId, data: eventResult });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
+
+    console.log(`📊 Queue creation complete: ${successCount} success, ${failureCount} failures`);
+
+    revalidatePath('/whiteboard');
+    return { 
+      success: failureCount === 0, 
+      results,
+      summary: { successCount, failureCount, total: events.length }
+    };
+  } catch (error) {
+    console.error('🔥 Error creating teacher queue events:', error);
+    return { success: false, error: 'Failed to create queue events' };
   }
 }
 
