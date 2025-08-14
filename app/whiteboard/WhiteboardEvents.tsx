@@ -38,10 +38,6 @@ function TeacherEventsGroup({
   const scheduleNodes = teacherSchedule.getNodes(); // This now includes auto-detected gaps
   const eventNodes = scheduleNodes.filter(node => node.type === 'event');
   
-  // Calculate metrics using TeacherSchedule
-  const totalDuration = eventNodes.reduce((sum, node) => sum + node.duration, 0);
-  const eventCount = eventNodes.length;
-  
   // Get earliest event time from schedule - use first node for controller logic
   const firstEventTime = eventNodes.length > 0 ? eventNodes[0].startTime : null;
   const earliestEventTime = firstEventTime || 'No events';

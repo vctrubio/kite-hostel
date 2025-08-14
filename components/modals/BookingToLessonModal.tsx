@@ -26,8 +26,14 @@ interface BookingToLessonModalProps {
   onClose: () => void;
 }
 
-export function BookingToLessonModal({ bookingId, bookingReference, onClose }: BookingToLessonModalProps) {
-  const [teachers, setTeachers] = useState<InferSelectModel<typeof Teacher>[]>([]);
+export function BookingToLessonModal({
+  bookingId,
+  bookingReference,
+  onClose,
+}: BookingToLessonModalProps) {
+  const [teachers, setTeachers] = useState<InferSelectModel<typeof Teacher>[]>(
+    [],
+  );
   const [loadingTeachers, setLoadingTeachers] = useState(true);
 
   useEffect(() => {
@@ -44,8 +50,12 @@ export function BookingToLessonModal({ bookingId, bookingReference, onClose }: B
     };
     fetchTeachersData();
   }, []);
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
-  const [selectedCommissionId, setSelectedCommissionId] = useState<string | null>(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(
+    null,
+  );
+  const [selectedCommissionId, setSelectedCommissionId] = useState<
+    string | null
+  >(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -77,7 +87,8 @@ export function BookingToLessonModal({ bookingId, bookingReference, onClose }: B
       <div className="bg-card rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Link Booking to Lesson</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          This booking currently has no lessons. Select a teacher and commission to create one.
+          This booking currently has no lessons. Select a teacher and commission
+          to create one.
         </p>
 
         {/* Booking Reference Information */}
@@ -94,7 +105,7 @@ export function BookingToLessonModal({ bookingId, bookingReference, onClose }: B
               {(bookingReference.teacher?.name || bookingReference.note) && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
-                    {bookingReference.teacher?.name ? 'Teacher:' : 'Note:'}
+                    {bookingReference.teacher?.name ? "Teacher:" : "Note:"}
                   </span>
                   <span className="font-medium">
                     {bookingReference.teacher?.name || bookingReference.note}
@@ -104,25 +115,32 @@ export function BookingToLessonModal({ bookingId, bookingReference, onClose }: B
               {bookingReference.role && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Role:</span>
-                  <span className="capitalize font-medium">{bookingReference.role}</span>
+                  <span className="capitalize font-medium">
+                    {bookingReference.role}
+                  </span>
                 </div>
               )}
               {bookingReference.amount && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Amount:</span>
-                  <span className="font-medium">€{bookingReference.amount}</span>
+                  <span className="font-medium">
+                    €{bookingReference.amount}
+                  </span>
                 </div>
               )}
               {bookingReference.status && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
-                  <span className="capitalize font-medium">{bookingReference.status}</span>
+                  <span className="capitalize font-medium">
+                    {bookingReference.status}
+                  </span>
                 </div>
               )}
             </div>
             {bookingReference.teacher?.name && (
               <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-700 dark:text-blue-300">
-                💡 Consider using the same teacher ({bookingReference.teacher.name}) for consistency
+                💡 Consider using the same teacher (
+                {bookingReference.teacher.name}) for consistency
               </div>
             )}
           </div>
@@ -142,7 +160,10 @@ export function BookingToLessonModal({ bookingId, bookingReference, onClose }: B
           <Button variant="outline" onClick={onClose} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={handleCreateLesson} disabled={isPending || !selectedTeacherId || !selectedCommissionId}>
+          <Button
+            onClick={handleCreateLesson}
+            disabled={isPending || !selectedTeacherId || !selectedCommissionId}
+          >
             {isPending ? "Creating..." : "Create Lesson"}
           </Button>
         </div>
