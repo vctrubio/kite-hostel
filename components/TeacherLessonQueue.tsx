@@ -237,7 +237,7 @@ export default function TeacherLessonQueue({
 
       {/* Queue Cards - Wider with more spacing */}
       <div className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="flex flex-wrap gap-3">
           {queue.map((queuedLesson, index) => (
             <TeacherLessonQueueCard
               key={queuedLesson.lessonId}
