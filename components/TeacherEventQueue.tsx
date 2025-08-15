@@ -64,6 +64,18 @@ export default function TeacherEventQueue({
         const isFirst = eventNodeIndex === 0;
         const isLast = eventNodeIndex === eventNodes.length - 1;
 
+        let canMoveEarlier = true;
+        if (!isFirst) {
+          const previousEventNode = eventNodes[eventNodeIndex - 1];
+          if (previousEventNode) {
+            const previousEventEndTime = timeToMinutes(previousEventNode.startTime) + previousEventNode.duration;
+            const newCurrentEventStartTime = timeToMinutes(node.startTime) - 30;
+            if (newCurrentEventStartTime < previousEventEndTime) {
+              canMoveEarlier = false;
+            }
+          }
+        }
+
         return (
           <div key={`queue-${node.id}`}>
             <TeacherLessonQueueCard
@@ -71,7 +83,7 @@ export default function TeacherEventQueue({
               location={eventData.location || 'No location'}
               isFirst={isFirst}
               isLast={isLast}
-              canMoveEarlier={true}
+              canMoveEarlier={canMoveEarlier}
               onRemove={onRemove}
               onAdjustDuration={onAdjustDuration}
               onAdjustTime={onAdjustTime}
