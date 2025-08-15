@@ -68,6 +68,7 @@ export class TeacherSchedule {
   private schedule: TeacherDaySchedule;
   private lessonQueue: QueuedLesson[] = []; // Add lesson queue
   private queueStartTime: string | null = null; // Preferred queue start time
+  public lessons: any[] = [];
 
   constructor(teacherId: string, teacherName: string, date: string) {
     this.schedule = {
@@ -103,6 +104,7 @@ export class TeacherSchedule {
     teacherLessonsMap.forEach((teacherLessons, teacherId) => {
       const teacher = teacherLessons[0].teacher;
       const schedule = new TeacherSchedule(teacherId, teacher.name, date);
+      schedule.lessons = teacherLessons;
       
       // Add existing events from lessons
       teacherLessons.forEach(lesson => {
@@ -997,4 +999,43 @@ export class TeacherSchedule {
     return events;
   }
 
+  calculateTeacherStats(): TeacherStats {
+    let totalHours = 0;
+    let totalEvents = 0;
+    let totalEarnings = 0;
+    let schoolRevenue = 0;
+
+    const plannedLessons = this.lessons.filter(l => l.status === 'planned');
+    const totalLessons = plannedLessons.length;
+
+    plannedLessons.forEach(lesson => {
+      const lessonEvents = lesson.events || [];
+      
+      const totalMinutes = lessonEvents.reduce((sum, event) => sum + (event.duration || 0), 0);
+      const hours = totalMinutes / 60;
+      
+      totalHours += hours;
+      totalEvents += lessonEvents.length;
+
+      if (lesson.commission?.price_per_hour) {
+        const earnings = hours * lesson.commission.price_per_hour;
+        totalEarnings += earnings;
+      }
+
+      const lessonSchoolRevenue = lessonEvents.reduce((sum, event) => {
+        const packagePrice = lesson.booking?.package?.price_per_student || 0;
+        const studentCount = lesson.booking?.students?.length || 0;
+        return sum + (packagePrice * studentCount);
+      }, 0);
+      schoolRevenue += lessonSchoolRevenue;
+    });
+
+    return {
+      totalHours,
+      totalEvents,
+      totalEarnings,
+      schoolRevenue,
+      totalLessons
+    };
+  }
 }

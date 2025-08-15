@@ -263,13 +263,13 @@ export default function WhiteboardNav({
 
   // Location Controller Component
   const LocationController = () => (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border h-12">
-      <MapPin className="w-5 h-5 opacity-30" />
+    <div className="flex items-center gap-3">
       <Select
         value={controller.location}
         onValueChange={(value) => onControllerChange({ ...controller, location: value as Location })}
       >
         <SelectTrigger className="w-36 h-8 text-sm bg-muted border-border hover:bg-background">
+      <MapPin className="w-5 h-5 opacity-30" />
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

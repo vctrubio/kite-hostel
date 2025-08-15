@@ -6,6 +6,7 @@ import { TeacherSchedule } from '@/backend/TeacherSchedule';
 import { HeadsetIcon } from '@/svgs';
 import { LESSON_STATUS_FILTERS, type LessonStatusFilter } from '@/lib/constants';
 import EventToTeacherModal from '@/components/modals/EventToTeacherModal';
+import TeacherLessonStats from '@/components/TeacherLessonStats';
 import LessonCard from '@/components/cards/LessonCard';
 import TeacherLessonQueue from '@/components/TeacherLessonQueue';
 import { createTeacherQueueEvents } from '@/actions/event-actions';
@@ -103,23 +104,7 @@ function TeacherGroup({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>
-            {lessonsWithEvents}/{availableLessons} available lesson{availableLessons !== 1 ? 's' : ''}
-          </span>
-          {teacherSchedule && eventNodes.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-blue-600 dark:text-blue-400">
-                {eventNodes.length} event{eventNodes.length > 1 ? 's' : ''} • {Math.round(totalScheduledMinutes / 60 * 10) / 10}h scheduled
-              </span>
-              {totalGapMinutes > 0 && (
-                <span className="text-orange-600 dark:text-orange-400">
-                  • {Math.round(totalGapMinutes / 60 * 10) / 10}h gaps
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        {teacherSchedule && <TeacherLessonStats teacherSchedule={teacherSchedule} />}
       </div>
 
       {/* Lessons List */}

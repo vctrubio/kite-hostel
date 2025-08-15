@@ -63,3 +63,11 @@ export interface ValidationResult {
   message: string;
   code?: string;
 }
+
+export interface TeacherStats {
+  totalHours: number;
+  totalEvents: number;
+  totalEarnings: number;
+  schoolRevenue: number;
+  totalLessons: number;
+}
