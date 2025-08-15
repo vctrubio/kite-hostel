@@ -2,16 +2,17 @@
 
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle, ArrowUp, ArrowDown, MapPin } from 'lucide-react';
 import { HelmetIcon } from '@/svgs';
-import { addMinutesToTime } from '@/components/formatters/TimeZone';
 import { Duration } from '@/components/formatters/Duration';
+import { DateTime } from '@/components/formatters/DateTime';
 import { type QueuedLesson } from '@/backend/TeacherSchedule';
+import { addMinutes, format } from 'date-fns';
 
 interface TeacherLessonQueueCardProps {
-  queuedLesson: QueuedLesson;
-  location: string; // Add location prop
+  queuedLesson: QueuedLesson & { scheduledDateTime: string };
+  location: string;
   isFirst: boolean;
   isLast: boolean;
-  canMoveEarlier: boolean; // Can't overlap with previous lesson
+  canMoveEarlier: boolean;
   onRemove: (lessonId: string) => void;
   onAdjustDuration: (lessonId: string, increment: boolean) => void;
   onAdjustTime: (lessonId: string, increment: boolean) => void;
@@ -34,16 +35,15 @@ export default function TeacherLessonQueueCard({
   // --- Logic at the top ---
   const {
     students,
-    scheduledStartTime,
     duration,
     remainingMinutes,
     lessonId,
     hasGap,
-    timeAdjustment
+    timeAdjustment,
+    scheduledDateTime
   } = queuedLesson;
 
-  const endTime = scheduledStartTime ? addMinutesToTime(scheduledStartTime, duration) : '';
-  const durationDelta = timeAdjustment !== undefined && timeAdjustment !== 0 ? `${timeAdjustment > 0 ? '+' : ''}${timeAdjustment}m` : null;
+  const endTime = scheduledDateTime ? format(addMinutes(new Date(scheduledDateTime), duration), 'HH:mm') : '';
   const remaining = remainingMinutes - duration;
   const studentNames = students.join(', ');
 
@@ -123,15 +123,16 @@ export default function TeacherLessonQueueCard({
             </div>
           </div>
           <div className="flex items-center gap-2 justify-end">
-            {durationDelta && (
+            {timeAdjustment !== 0 && (
               <div className="text-xs text-blue-600 dark:text-blue-400 mr-2">
-                {durationDelta}
+                {timeAdjustment > 0 && '+'}
+                <Duration minutes={timeAdjustment} />
               </div>
             )}
             <div className="flex flex-col text-center">
-              {scheduledStartTime && (
+              {scheduledDateTime && (
                 <div className="text-sm font-medium text-green-600 dark:text-green-400">
-                  {scheduledStartTime}
+                  <DateTime dateString={scheduledDateTime} formatType="time" />
                 </div>
               )}
               {endTime && (

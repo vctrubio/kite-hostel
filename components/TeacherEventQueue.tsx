@@ -2,7 +2,7 @@
 
 import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
 import { extractStudentNames } from '@/backend/WhiteboardClass';
-import { timeToMinutes, createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
+import { timeToMinutes } from '@/components/formatters/TimeZone';
 
 interface TeacherEventQueueProps {
   scheduleNodes: any[];
@@ -41,20 +41,14 @@ export default function TeacherEventQueue({
         const previousNode = index > 0 ? scheduleNodes[index - 1] : null;
         const hasGapBefore = previousNode?.type === 'gap';
 
-        // Convert UTC time string to local time for display
-        const utcDateString = toUTCString(createUTCDateTime(selectedDate, node.startTime));
-        const localTime = new Date(utcDateString).toLocaleTimeString(undefined, {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-        });
+        const localDateTimeString = new Date(`${selectedDate}T${node.startTime}`).toISOString();
 
         const queuedLesson = {
           lessonId: eventData.lesson.id,
           students: studentList,
           duration: node.duration,
           remainingMinutes: 240, // Placeholder
-          scheduledStartTime: localTime,
+          scheduledDateTime: localDateTimeString, // Pass the full ISO string
           hasGap: hasGapBefore,
           timeAdjustment: timeAdjustment,
         };

@@ -124,13 +124,14 @@ function TeacherEventsGroup({
       // Find and process updates/position changes
       modifiedEventNodes.forEach(modifiedNode => {
           const originalNode = originalEventNodes.find(n => n.eventData.lessonId === modifiedNode.eventData.lessonId);
-          if (!originalNode) return; // Should not happen in this UI
+          if (!originalNode) return;
 
           const updates: { date?: string; duration?: number } = {};
           let hasChanges = false;
 
           if (originalNode.startTime !== modifiedNode.startTime) {
-              updates.date = toUTCString(createUTCDateTime(selectedDate, modifiedNode.startTime));
+              // Create a local date object and convert to ISO string for the database (which will be UTC)
+              updates.date = new Date(`${selectedDate}T${modifiedNode.startTime}`).toISOString();
               hasChanges = true;
           }
 
@@ -166,7 +167,6 @@ function TeacherEventsGroup({
               const failures = results.filter(r => !r.success);
               if (failures.length > 0) {
                   console.error("Some updates failed:", failures);
-                  // Here you could add UI feedback, e.g., a toast notification
               } else {
                   console.log("All events updated successfully.");
               }
@@ -640,7 +640,7 @@ function TeacherEventsGroup({
                   students={studentNames}
                   location={eventData?.location || 'No location'}
                   duration={node.duration}
-                  date={toUTCString(createUTCDateTime(selectedDate, node.startTime))}
+                  date={new Date(`${selectedDate}T${node.startTime}`).toISOString()}
                   status={eventData?.status || 'No status'}
                   viewAs={viewAs}
                   reorganizationOptions={pendingReorganizations.get(eventData.id)}

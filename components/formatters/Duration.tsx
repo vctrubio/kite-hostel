@@ -1,16 +1,20 @@
 
-"use client";
+'use client';
 
 interface DurationProps {
   minutes: number;
 }
 
 export function Duration({ minutes }: DurationProps) {
+  if (minutes === null || minutes === undefined || isNaN(minutes)) {
+    return null; // Don't render anything if the value is invalid
+  }
+
   if (minutes === 0) {
     return <span>0</span>;
   }
 
-  if (minutes < 60) {
+  if (minutes < 60 && minutes > -60) {
     return <span>{minutes}m</span>;
   }
 
