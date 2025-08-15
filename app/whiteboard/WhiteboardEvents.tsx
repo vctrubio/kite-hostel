@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import EventCard, { GapCard } from '@/components/cards/EventCard';
+import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
+import TeacherEventQueue from '@/components/TeacherEventQueue';
 import { HeadsetIcon, Clock, Zap, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 import { FlagIcon } from '@/svgs/FlagIcon';
 import { TeacherSchedule, ReorganizationOption } from '@/backend/TeacherSchedule';
@@ -8,8 +10,6 @@ import { updateEvent, deleteEvent } from '@/actions/event-actions';
 import { timeToMinutes, minutesToTime, createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
 import { 
   extractStudentNames,
-  extractTeacherInfo,
-  WhiteboardClass
 } from '@/backend/WhiteboardClass';
 
 interface WhiteboardEventsProps {
@@ -34,10 +34,164 @@ function TeacherEventsGroup({
   const [pendingReorganizations, setPendingReorganizations] = useState<Map<string, ReorganizationOption[]>>(new Map());
   const [timeAdjustmentMode, setTimeAdjustmentMode] = useState(false);
   const [proposedTimeOffset, setProposedTimeOffset] = useState(0);
+  const [viewMode, setViewMode] = useState<'event' | 'queue'>('event');
 
-  const scheduleNodes = teacherSchedule.getNodes(); // This now includes auto-detected gaps
-  const eventNodes = scheduleNodes.filter(node => node.type === 'event');
+  const scheduleNodes = useMemo(() => teacherSchedule.getNodes(), [teacherSchedule]);
+  const eventNodes = useMemo(() => scheduleNodes.filter(node => node.type === 'event'), [scheduleNodes]);
   
+  const [editableScheduleNodes, setEditableScheduleNodes] = useState(scheduleNodes);
+
+  useEffect(() => {
+      setEditableScheduleNodes(scheduleNodes);
+  }, [scheduleNodes]);
+
+  const handleAdjustDuration = (lessonId: string, increment: boolean) => {
+      setEditableScheduleNodes(currentNodes => {
+          const nodes = [...currentNodes];
+          const targetIndex = nodes.findIndex(node => node.eventData?.lessonId === lessonId);
+
+          if (targetIndex === -1) return nodes;
+
+          const oldDuration = nodes[targetIndex].duration;
+          const newDuration = Math.max(30, oldDuration + (increment ? 30 : -30));
+          const actualDurationDelta = newDuration - oldDuration;
+
+          if (actualDurationDelta === 0) return currentNodes;
+
+          return nodes.map((node, index) => {
+              if (index === targetIndex) {
+                  return { ...node, duration: newDuration };
+              }
+              if (index > targetIndex && node.type === 'event') {
+                  const newStartTime = minutesToTime(timeToMinutes(node.startTime) + actualDurationDelta);
+                  return { ...node, startTime: newStartTime };
+              }
+              return node;
+          });
+      });
+  };
+
+  const handleAdjustTime = (lessonId: string, increment: boolean) => {
+      setEditableScheduleNodes(currentNodes => {
+          const nodes = [...currentNodes];
+          const targetIndex = nodes.findIndex(node => node.eventData?.lessonId === lessonId);
+
+          if (targetIndex === -1) return nodes;
+
+          const delta = increment ? 30 : -30;
+
+          return nodes.map((node, index) => {
+              if (index >= targetIndex && node.type === 'event') {
+                  const newStartTime = minutesToTime(timeToMinutes(node.startTime) + delta);
+                  return { ...node, startTime: newStartTime };
+              }
+              return node;
+          });
+      });
+  };
+
+  const handleRemoveFromQueue = (lessonId: string) => {
+      setEditableScheduleNodes(currentNodes => {
+          return currentNodes.filter(node => node.eventData?.lessonId !== lessonId);
+      });
+  };
+
+  const handleMoveInQueue = (lessonId: string, direction: 'up' | 'down') => {
+      setEditableScheduleNodes(currentNodes => {
+          const nodes = [...currentNodes];
+          const index = nodes.findIndex(node => node.eventData?.lessonId === lessonId);
+
+          if (index === -1) return nodes;
+
+          const swapIndex = direction === 'up' ? index - 1 : index + 1;
+
+          if (swapIndex >= 0 && swapIndex < nodes.length) {
+              [nodes[index], nodes[swapIndex]] = [nodes[swapIndex], nodes[index]];
+          }
+          
+          return nodes;
+      });
+  };
+
+  const handleSubmitQueueChanges = async () => {
+      console.log("Submitting changes...");
+
+      const originalEventNodes = scheduleNodes.filter(n => n.type === 'event');
+      const modifiedEventNodes = editableScheduleNodes.filter(n => n.type === 'event');
+
+      const updatePromises: Promise<any>[] = [];
+
+      // Find and process updates/position changes
+      modifiedEventNodes.forEach(modifiedNode => {
+          const originalNode = originalEventNodes.find(n => n.eventData.lessonId === modifiedNode.eventData.lessonId);
+          if (!originalNode) return; // Should not happen in this UI
+
+          const updates: { date?: string; duration?: number } = {};
+          let hasChanges = false;
+
+          if (originalNode.startTime !== modifiedNode.startTime) {
+              updates.date = toUTCString(createUTCDateTime(selectedDate, modifiedNode.startTime));
+              hasChanges = true;
+          }
+
+          if (originalNode.duration !== modifiedNode.duration) {
+              updates.duration = modifiedNode.duration;
+              hasChanges = true;
+          }
+
+          if (hasChanges) {
+              const eventData = events.find(e => e.lesson?.id === modifiedNode.eventData.lessonId);
+              if (eventData && eventData.id) {
+                  console.log(`Updating event ${eventData.id} with`, updates);
+                  updatePromises.push(updateEvent(eventData.id, updates));
+              }
+          }
+      });
+
+      // Find and process deletions
+      originalEventNodes.forEach(originalNode => {
+          if (!modifiedEventNodes.some(n => n.eventData.lessonId === originalNode.eventData.lessonId)) {
+              const eventData = events.find(e => e.lesson?.id === originalNode.eventData.lessonId);
+              if (eventData && eventData.id) {
+                  console.log(`Deleting event ${eventData.id}`);
+                  updatePromises.push(deleteEvent(eventData.id));
+              }
+          }
+      });
+
+      if (updatePromises.length > 0) {
+          try {
+              const results = await Promise.all(updatePromises);
+              console.log("All updates complete:", results);
+              const failures = results.filter(r => !r.success);
+              if (failures.length > 0) {
+                  console.error("Some updates failed:", failures);
+                  // Here you could add UI feedback, e.g., a toast notification
+              } else {
+                  console.log("All events updated successfully.");
+              }
+          } catch (error) {
+              console.error("An error occurred during batch update:", error);
+          }
+      } else {
+          console.log("No changes to submit.");
+      }
+  };
+
+  const handleResetQueue = () => {
+    setEditableScheduleNodes(scheduleNodes);
+  };
+
+  const handleCancelQueue = () => {
+      setViewMode('event');
+      setEditableScheduleNodes(scheduleNodes);
+  };
+
+  const handleSubmitAndExit = async () => {
+      await handleSubmitQueueChanges();
+      setViewMode('event');
+  };
+
   // Get earliest event time from schedule - use first node for controller logic
   const firstEventTime = eventNodes.length > 0 ? eventNodes[0].startTime : null;
   const earliestEventTime = firstEventTime || 'No events';
@@ -355,21 +509,57 @@ function TeacherEventsGroup({
           <h4 className="text-lg font-medium text-foreground dark:text-white">
             {schedule.teacherName}
           </h4>
-          {canReorganize && viewAs === 'admin' && (
-            <button
-              onClick={handleFullScheduleReorganization}
-              className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
-              title="Optimize schedule by removing gaps"
-            >
-              <div className="flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                <span>Reorganize</span>
-              </div>
-            </button>
+          
+          {viewMode === 'event' ? (
+            <>
+              {canReorganize && viewAs === 'admin' && (
+                <button
+                  onClick={handleFullScheduleReorganization}
+                  className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
+                  title="Optimize schedule by removing gaps"
+                >
+                  <div className="flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    <span>Reorganize</span>
+                  </div>
+                </button>
+              )}
+              <button
+                onClick={() => setViewMode('queue')}
+                className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 border border-blue-300"
+                title="Edit schedule in queue view"
+              >
+                Edit Schedule
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleSubmitAndExit}
+                className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
+                title="Submit queue changes"
+              >
+                Submit
+              </button>
+              <button
+                onClick={handleResetQueue}
+                className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
+                title="Reset all changes made to the queue"
+              >
+                Reset
+              </button>
+              <button
+                onClick={handleCancelQueue}
+                className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
+                title="Cancel editing and discard all changes"
+              >
+                Cancel
+              </button>
+            </>
           )}
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-400">
-          {timeAdjustmentMode ? (
+          {viewMode === 'event' && (timeAdjustmentMode ? (
             <div className="flex items-center gap-1">
               <FlagIcon className="w-4 h-4" />
               <div className="flex items-center gap-2">
@@ -420,62 +610,69 @@ function TeacherEventsGroup({
               <FlagIcon className="w-4 h-4" />
               <span>{earliestEventTime}</span>
             </div>
-          )}
+          ))}
         </div>
       </div>
 
       {/* Events Grid */}
       <div className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-          {scheduleNodes
-            .map((node, nodeIndex) => {
-              if (node.type === 'gap') {
-                // Render gap card
-                return (
-                  <div key={`gap-${node.id}`}>
-                    <GapCard 
-                      duration={node.duration}
-                      startTime={node.startTime}
-                    />
-                  </div>
-                );
-              }
-              
-              // Find corresponding event data for this schedule node
-              const eventData = events.find(e => 
-                e.lesson?.id === node.eventData?.lessonId
-              );
-              
-              if (!eventData) return null;
-              
-              // Enhanced student names using business logic
-              const studentNames = eventData.booking ? extractStudentNames(eventData.booking) : 'No students';
-              
+          {viewMode === 'event' && scheduleNodes.map((node, nodeIndex) => {
+            if (node.type === 'gap') {
               return (
-                <div key={`event-${node.id}-${eventData.id}`}>
-                  <EventCard
-                    students={studentNames}
-                    location={eventData?.location || 'No location'}
-                    duration={eventData?.duration || 0}
-                    date={eventData?.date || 'No date'}
-                    status={eventData?.status || 'No status'}
-                    viewAs={viewAs}
-                    reorganizationOptions={pendingReorganizations.get(eventData.id)}
-                    onDelete={() => handleDeleteEvent(eventData, node.id)}
-                    onReorganize={(option) => handleReorganize(eventData.id, option)}
-                    onDismissReorganization={() => handleDismissReorganization(eventData.id)}
-                    onCancelReorganization={() => handleCancelReorganization(eventData.id)}
-                    onStatusChange={(newStatus) => handleStatusChange(eventData.id, newStatus)}
+                <div key={`gap-${node.id}`}>
+                  <GapCard 
+                    duration={node.duration}
+                    startTime={node.startTime}
                   />
                 </div>
               );
-            })
-            .filter(Boolean)} {/* Remove null entries */}
+            }
+            
+            const eventData = events.find(e => e.lesson?.id === node.eventData?.lessonId);
+            if (!eventData) return null;
+            
+            const studentNames = eventData.booking ? extractStudentNames(eventData.booking) : 'No students';
+            
+            return (
+              <div key={`event-${node.id}-${eventData.id}`}>
+                <EventCard
+                  students={studentNames}
+                  location={eventData?.location || 'No location'}
+                  duration={node.duration}
+                  date={toUTCString(createUTCDateTime(selectedDate, node.startTime))}
+                  status={eventData?.status || 'No status'}
+                  viewAs={viewAs}
+                  reorganizationOptions={pendingReorganizations.get(eventData.id)}
+                  onDelete={() => handleDeleteEvent(eventData, node.id)}
+                  onReorganize={(option) => handleReorganize(eventData.id, option)}
+                  onDismissReorganization={() => handleDismissReorganization(eventData.id)}
+                  onCancelReorganization={() => handleCancelReorganization(eventData.id)}
+                  onStatusChange={(newStatus) => handleStatusChange(eventData.id, newStatus)}
+                />
+              </div>
+            );
+          })}
+
+          {viewMode === 'queue' && (
+            <TeacherEventQueue
+              scheduleNodes={editableScheduleNodes}
+              originalScheduleNodes={scheduleNodes}
+              events={events}
+              teacherSchedule={teacherSchedule}
+              selectedDate={selectedDate}
+              onRemove={handleRemoveFromQueue}
+              onAdjustDuration={handleAdjustDuration}
+              onAdjustTime={handleAdjustTime}
+              onMove={handleMoveInQueue}
+            />
+          )}
         </div>
       </div>
     </div>
   );
 }
+
 
 export default function WhiteboardEvents({ events, selectedDate, teacherSchedules, viewAs = 'admin' }: WhiteboardEventsProps) {
   // Group events by teacher for rendering
