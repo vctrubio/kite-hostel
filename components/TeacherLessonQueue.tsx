@@ -19,8 +19,9 @@ interface TeacherLessonQueueProps {
   controller: EventController;
   onCreateEvents: (events: any[]) => void;
   onRef?: (ref: any) => void;
-  queueUpdateTrigger?: number; // For forcing re-renders when queue changes
-  onQueueChange?: () => void; // Callback when queue changes internally
+  queueUpdateTrigger?: number;
+  onQueueChange?: () => void;
+  editMode?: boolean;
 }
 
 export default function TeacherLessonQueue({ 
@@ -32,7 +33,8 @@ export default function TeacherLessonQueue({
   onCreateEvents,
   onRef,
   queueUpdateTrigger,
-  onQueueChange
+  onQueueChange,
+  editMode = false
 }: TeacherLessonQueueProps) {
   const [queueLocation, setQueueLocation] = useState<string>(controller.location);
 
@@ -174,7 +176,7 @@ export default function TeacherLessonQueue({
     teacherLessons = (window as any)[`teacherGroup_${teacherId}`].lessons;
   }
 
-  if (queue.length === 0) {
+  if (queue.length === 0 && !editMode) {
     return null;
   }
   // Get earliest queue time for the flag icon
@@ -238,21 +240,28 @@ export default function TeacherLessonQueue({
       {/* Queue Cards - Wider with more spacing */}
       <div className="p-4">
         <div className="flex flex-wrap gap-3">
-          {queue.map((queuedLesson, index) => (
-            <TeacherLessonQueueCard
-              key={queuedLesson.lessonId}
-              queuedLesson={queuedLesson}
-              location={queueLocation}
-              isFirst={index === 0}
-              isLast={index === queue.length - 1}
-              canMoveEarlier={teacherSchedule?.canMoveQueueLessonEarlier(queuedLesson.lessonId) ?? false}
-              onRemove={removeFromQueue}
-              onAdjustDuration={adjustDuration}
-              onAdjustTime={adjustTime}
-              onMoveUp={moveUp}
-              onMoveDown={moveDown}
-            />
-          ))}
+          {queue.map((queuedLesson, index) => {
+            // Ensure scheduledDateTime is always present
+            // Use scheduledStartTime (HH:mm) and selectedDate to build ISO string
+            const scheduledDateTime = queuedLesson.scheduledStartTime
+              ? new Date(`${selectedDate}T${queuedLesson.scheduledStartTime}`).toISOString()
+              : (selectedDate ? new Date(`${selectedDate}T09:00`).toISOString() : new Date().toISOString());
+            return (
+              <TeacherLessonQueueCard
+                key={queuedLesson.lessonId}
+                queuedLesson={{ ...queuedLesson, scheduledDateTime }}
+                location={queueLocation}
+                isFirst={index === 0}
+                isLast={index === queue.length - 1}
+                canMoveEarlier={teacherSchedule?.canMoveQueueLessonEarlier(queuedLesson.lessonId) ?? false}
+                onRemove={editMode ? removeFromQueue : () => {}}
+                onAdjustDuration={editMode ? adjustDuration : () => {}}
+                onAdjustTime={editMode ? adjustTime : () => {}}
+                onMoveUp={editMode ? moveUp : () => {}}
+                onMoveDown={editMode ? moveDown : () => {}}
+              />
+            );
+          })}
         </div>
       </div>
     </div>

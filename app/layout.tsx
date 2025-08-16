@@ -46,7 +46,7 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Analytics />
-            {/* <Navbar /> */}
+            <Navbar />
             {children}
             <Toaster position="top-left" />
           </ThemeProvider>

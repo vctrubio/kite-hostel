@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { FlagIcon } from '@/svgs/FlagIcon';
 import { useRouter } from 'next/navigation';
 import { TeacherSchedule } from '@/backend/TeacherSchedule';
 import { HeadsetIcon } from '@/svgs';
@@ -54,6 +55,7 @@ function LessonStatusFilters({
 }
 
 // Sub-component: Teacher Group
+
 function TeacherGroup({ 
   teacherGroup, 
   onLessonClick,
@@ -64,7 +66,9 @@ function TeacherGroup({
   selectedDate,
   controller,
   queueUpdateTrigger,
-  onQueueChange
+  onQueueChange,
+  editMode,
+  onToggleEditMode
 }: { 
   teacherGroup: any;
   onLessonClick: (lesson: any) => void;
@@ -76,6 +80,8 @@ function TeacherGroup({
   controller: any;
   queueUpdateTrigger: number;
   onQueueChange: () => void;
+  editMode: boolean;
+  onToggleEditMode: () => void;
 }) {
   const { availableLessons, lessonsWithEvents } = calculateLessonStats(teacherGroup.lessons);
   
@@ -103,6 +109,14 @@ function TeacherGroup({
               Can optimize
             </span>
           )}
+          {/* Flag icon for edit mode toggle */}
+          <button
+            onClick={onToggleEditMode}
+            className={`ml-2 p-1 rounded ${editMode ? 'bg-blue-200 dark:bg-blue-800' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+            title={editMode ? 'Exit edit mode' : 'Edit event queue'}
+          >
+            <FlagIcon className="w-5 h-5" />
+          </button>
         </div>
         {teacherSchedule && <TeacherLessonStats teacherSchedule={teacherSchedule} />}
       </div>
@@ -127,15 +141,13 @@ function TeacherGroup({
           teacherName={teacherGroup.teacherName}
           teacherSchedule={teacherSchedule}
           selectedDate={selectedDate}
-          controller={controller} // Pass controller
+          controller={controller}
           onCreateEvents={onBatchEventCreation}
-          queueUpdateTrigger={queueUpdateTrigger} // Pass the trigger for re-renders
-          onQueueChange={onQueueChange} // Handle internal queue changes
+          queueUpdateTrigger={queueUpdateTrigger}
+          onQueueChange={onQueueChange}
+          editMode={editMode}
           onRef={(ref) => {
-            // Store the queue ref for this teacher
             if (ref) {
-              // We need to pass this back to the parent somehow
-              // For now, let's use a simple approach
               (window as any)[`queue_${teacherGroup.teacherId}`] = ref;
             }
           }}
@@ -158,8 +170,12 @@ function EmptyState({ activeFilter }: { activeFilter: LessonStatusFilter }) {
   );
 }
 
-// Main component
+
 export default function WhiteboardLessons({ lessons, controller, selectedDate, teacherSchedules }: WhiteboardLessonsProps) {
+  // Track edit mode per teacher group
+  const [editModes, setEditModes] = useState<{ [teacherId: string]: boolean }>({});
+  // Track global edit mode
+  const [globalEditMode, setGlobalEditMode] = useState(false);
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<LessonStatusFilter>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -202,11 +218,12 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
         break;
       }
     }
-  };  // Open lesson modal with calculated student data
+  };
+
+  // Open lesson modal with calculated student data
   const openLessonModal = (lesson: any) => {
     const bookingClass = new WhiteboardClass(lesson.booking);
     const students = extractStudents(lesson.booking);
-    
     setSelectedLesson({
       ...lesson,
       students,
@@ -219,10 +236,8 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
   // Handle batch event creation from queues
   const handleBatchEventCreation = async (events: any[]) => {
     console.log('🚀 Creating teacher queue events:', events.length);
-    
     try {
       const result = await createTeacherQueueEvents(events);
-      
       if (result.success) {
         console.log('✅ All queue events created successfully');
       } else {
@@ -231,7 +246,6 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
           console.log(`📊 Summary: ${result.summary.successCount}/${result.summary.total} events created`);
         }
       }
-      
       // Refresh to show new events
       router.refresh();
     } catch (error) {
@@ -243,11 +257,9 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
   const handleConfirmEvent = (eventData: any) => {
     console.log('Creating event:', eventData);
     // Here you would typically make an API call to create the event
-    
     // Add to teacher schedule
     if (selectedLesson?.teacher?.id) {
       let teacherSchedule = teacherSchedules.get(selectedLesson.teacher.id);
-      
       if (!teacherSchedule) {
         teacherSchedule = new TeacherSchedule(
           selectedLesson.teacher.id,
@@ -256,12 +268,10 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
         );
         teacherSchedules.set(selectedLesson.teacher.id, teacherSchedule);
       }
-      
       // Check for conflicts using TeacherSchedule method
       const conflict = teacherSchedule.checkConflict(eventData.startTime, eventData.duration);
       if (conflict.hasConflict) {
         console.log('Failed to add event: conflict detected', conflict);
-        
         // Show available alternatives if any
         if (conflict.suggestedAlternatives.length > 0) {
           const alternative = conflict.suggestedAlternatives[0];
@@ -269,7 +279,6 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
         }
         return;
       }
-      
       // Add the event using TeacherSchedule method
       const addedNode = teacherSchedule.addEvent(
         eventData.startTime,
@@ -279,9 +288,7 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
         eventData.studentCount,
         selectedLesson.students?.map((s: any) => s.name) // Pass student names
       );
-      
       console.log('Event added to teacher schedule successfully:', addedNode);
-      
       // Get available slots for next event
       const availableSlots = teacherSchedule.getAvailableSlots(60); // 1 hour minimum
       if (availableSlots.length > 0) {
@@ -311,10 +318,32 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium dark:text-white">
-          Lessons by Teacher ({filteredLessons.length} total)
-        </h3>
-        
+        <div className="flex items-center gap-3">
+          <h3 className="text-lg font-medium dark:text-white">
+            Lessons by Teacher ({filteredLessons.length} total)
+          </h3>
+          {/* Global flag icon for edit mode */}
+          <button
+            onClick={() => {
+              setGlobalEditMode((prev) => {
+                const newVal = !prev;
+                // Set all teacher edit modes to match global
+                setEditModes((old) => {
+                  const updated: { [teacherId: string]: boolean } = {};
+                  groupedLessons.forEach((g) => {
+                    updated[g.teacherId] = newVal;
+                  });
+                  return updated;
+                });
+                return newVal;
+              });
+            }}
+            className={`ml-2 p-1 rounded ${globalEditMode ? 'bg-blue-200 dark:bg-blue-800' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+            title={globalEditMode ? 'Exit edit mode for all' : 'Edit all teacher queues'}
+          >
+            <FlagIcon className="w-6 h-6" />
+          </button>
+        </div>
         <LessonStatusFilters 
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
@@ -326,21 +355,26 @@ export default function WhiteboardLessons({ lessons, controller, selectedDate, t
         <EmptyState activeFilter={activeFilter} />
       ) : (
         <div className="space-y-4">
-          {groupedLessons.map((teacherGroup) => (
-            <TeacherGroup 
-              key={teacherGroup.teacherId}
-              teacherGroup={teacherGroup}
-              onLessonClick={toggleLessonQueue}
-              onOpenModal={openLessonModal}
-              onRemoveFromQueue={handleRemoveFromQueue}
-              onBatchEventCreation={handleBatchEventCreation}
-              selectedDate={selectedDate}
-              controller={controller}
-              teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)} // Pass teacher schedule
-              queueUpdateTrigger={queueUpdateTrigger}
-              onQueueChange={handleQueueChange}
-            />
-          ))}
+          {groupedLessons.map((teacherGroup) => {
+            const editMode = globalEditMode || !!editModes[teacherGroup.teacherId];
+            return (
+              <TeacherGroup 
+                key={teacherGroup.teacherId}
+                teacherGroup={teacherGroup}
+                onLessonClick={toggleLessonQueue}
+                onOpenModal={openLessonModal}
+                onRemoveFromQueue={handleRemoveFromQueue}
+                onBatchEventCreation={handleBatchEventCreation}
+                selectedDate={selectedDate}
+                controller={controller}
+                teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)}
+                queueUpdateTrigger={queueUpdateTrigger}
+                onQueueChange={handleQueueChange}
+                editMode={editMode}
+                onToggleEditMode={() => setEditModes((prev) => ({ ...prev, [teacherGroup.teacherId]: !editMode }))}
+              />
+            );
+          })}
         </div>
       )}
 
