@@ -112,7 +112,9 @@ function TeacherGroup({
           </button>
         </div>
         {teacherSchedule && (
-          <TeacherLessonStats teacherSchedule={teacherSchedule} />
+          <TeacherLessonStats
+            teacherStats={teacherSchedule.calculateTeacherStats()}
+          />
         )}
       </div>
 
@@ -245,6 +247,32 @@ export default function WhiteboardLessons({
 
   const groupedLessons = groupLessonsByTeacher(filteredLessons);
 
+  // Calculate global stats from all teacher schedules
+  const globalStats = useMemo(() => {
+    let totalEvents = 0;
+    let totalLessons = 0;
+    let totalHours = 0;
+    let totalEarnings = 0;
+    let schoolRevenue = 0;
+
+    teacherSchedules.forEach((schedule) => {
+      const stats = schedule.calculateTeacherStats();
+      totalEvents += stats.totalEvents;
+      totalLessons += stats.totalLessons;
+      totalHours += stats.totalHours;
+      totalEarnings += stats.totalEarnings;
+      schoolRevenue += stats.schoolRevenue;
+    });
+
+    return {
+      totalEvents,
+      totalLessons,
+      totalHours,
+      totalEarnings,
+      schoolRevenue,
+    };
+  }, [teacherSchedules]);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
@@ -252,6 +280,14 @@ export default function WhiteboardLessons({
           <h3 className="text-lg font-medium dark:text-white">
             Lessons by Teacher ({filteredLessons.length} total)
           </h3>
+        </div>
+        <div className="flex items-center gap-4">
+          <TeacherLessonStats teacherStats={globalStats} />
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => {
               setGlobalEditMode((prev) => {

@@ -20,13 +20,20 @@ interface LessonStatusLabelProps {
   lessonId: string;
   currentStatus: LessonStatus;
   lessonEvents?: Array<{ status: string; id: string }>;
+  hasEventToday?: boolean;
 }
 
-export function LessonStatusLabel({ lessonId, currentStatus, lessonEvents = [] }: LessonStatusLabelProps) {
+export function LessonStatusLabel({ lessonId, currentStatus, lessonEvents = [], hasEventToday = false }: LessonStatusLabelProps) {
   const [status, setStatus] = useState<LessonStatus>(currentStatus);
   const [isPending, startTransition] = useTransition();
 
   const validateStatusChange = (newStatus: LessonStatus): boolean => {
+    // Cannot change status if lesson has event today (blue border)
+    if (hasEventToday) {
+      toast.error("Cannot change lesson status when it has an event today");
+      return false;
+    }
+
     // Check if changing to 'delegated' or 'rest'
     if (newStatus === 'delegated' || newStatus === 'rest') {
       // Validate that all events are completed or TBC

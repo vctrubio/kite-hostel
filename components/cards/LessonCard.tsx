@@ -192,11 +192,14 @@ export default function LessonCard({
               IN QUEUE
             </div>
           ) : (
-            <LessonStatusLabel 
-              lessonId={lesson.id} 
-              currentStatus={lesson.status}
-              lessonEvents={lesson.events || []}
-            />
+            <div onClick={(e) => e.stopPropagation()}>
+              <LessonStatusLabel 
+                lessonId={lesson.id} 
+                currentStatus={lesson.status}
+                lessonEvents={lesson.events || []}
+                hasEventToday={lessonHasEvent}
+              />
+            </div>
           )}
           <div className="text-sm text-muted-foreground dark:text-gray-400">
             <Duration minutes={remainingMinutes} /> remaining

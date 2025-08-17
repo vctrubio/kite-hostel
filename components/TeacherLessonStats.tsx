@@ -1,18 +1,13 @@
 'use client';
 
 import React from 'react';
-import { TeacherSchedule } from '@/backend/TeacherSchedule';
 import type { TeacherStats } from '@/backend/types';
 
 interface TeacherLessonStatsProps {
-  teacherSchedule: TeacherSchedule;
+  teacherStats: TeacherStats;
 }
 
-export default function TeacherLessonStats({ teacherSchedule }: TeacherLessonStatsProps) {
-  // Calculate teacher statistics using TeacherSchedule
-  const teacherStats = React.useMemo((): TeacherStats => {
-    return teacherSchedule.calculateTeacherStats();
-  }, [teacherSchedule]);
+export default function TeacherLessonStats({ teacherStats }: TeacherLessonStatsProps) {
 
   return (
     <div className="flex items-center gap-4 text-sm">
