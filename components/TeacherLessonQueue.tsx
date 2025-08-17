@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Play, MapPin, Trash2, Send } from 'lucide-react';
 import { TeacherSchedule, type QueuedLesson as TeacherQueuedLesson } from '@/backend/TeacherSchedule';
 import { HelmetIcon, FlagIcon } from '@/svgs';
@@ -106,15 +106,32 @@ export default function TeacherLessonQueue({
 
     teacherSchedule.updateQueueLessonDuration(lessonId, newDuration);
     setQueue(teacherSchedule.getLessonQueue());
+    // Notify parent component about queue change
+    onQueueChange?.();
   };
 
   // Adjust time by 30 minutes
   const adjustTime = (lessonId: string, increment: boolean) => {
     if (!teacherSchedule) return;
     
+    // Get current lesson to check time bounds
+    const lesson = queue.find(q => q.lessonId === lessonId);
+    if (!lesson) return;
+    
+    // Parse current time to minutes
+    const currentTimeMinutes = timeToMinutes(lesson.scheduledStartTime || '09:00');
     const adjustmentMinutes = increment ? 30 : -30;
+    const newTimeMinutes = currentTimeMinutes + adjustmentMinutes;
+    
+    // Prevent going below 6:00 AM (360 minutes) or above 23:00 PM (1380 minutes)
+    if (newTimeMinutes < 360 || newTimeMinutes > 1380) {
+      return;
+    }
+    
     teacherSchedule.updateQueueLessonStartTime(lessonId, adjustmentMinutes);
     setQueue(teacherSchedule.getLessonQueue());
+    // Notify parent component about queue change
+    onQueueChange?.();
   };
 
   // Move lesson up in queue
@@ -123,6 +140,8 @@ export default function TeacherLessonQueue({
     
     teacherSchedule.moveQueueLessonUp(lessonId);
     setQueue(teacherSchedule.getLessonQueue());
+    // Notify parent component about queue change
+    onQueueChange?.();
   };
 
   // Move lesson down in queue
@@ -131,6 +150,8 @@ export default function TeacherLessonQueue({
     
     teacherSchedule.moveQueueLessonDown(lessonId);
     setQueue(teacherSchedule.getLessonQueue());
+    // Notify parent component about queue change
+    onQueueChange?.();
   };
 
   // Clear entire queue
@@ -176,11 +197,14 @@ export default function TeacherLessonQueue({
     teacherLessons = (window as any)[`teacherGroup_${teacherId}`].lessons;
   }
 
+  // Get earliest queue time for the flag icon - recalculate on every queue change
+  const earliestTime = useMemo(() => {
+    return queue.length > 0 ? queue[0].scheduledStartTime || controller.submitTime : controller.submitTime;
+  }, [queue, controller.submitTime]);
+
   if (queue.length === 0 && !editMode) {
     return null;
   }
-  // Get earliest queue time for the flag icon
-  const earliestTime = queue.length > 0 ? queue[0].scheduledStartTime || controller.submitTime : controller.submitTime;
 
   return (
     <div className="mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -241,11 +265,20 @@ export default function TeacherLessonQueue({
       <div className="p-4">
         <div className="flex flex-wrap gap-3">
           {queue.map((queuedLesson, index) => {
-            // Ensure scheduledDateTime is always present
-            // Use scheduledStartTime (HH:mm) and selectedDate to build ISO string
-            const scheduledDateTime = queuedLesson.scheduledStartTime
-              ? new Date(`${selectedDate}T${queuedLesson.scheduledStartTime}`).toISOString()
-              : (selectedDate ? new Date(`${selectedDate}T09:00`).toISOString() : new Date().toISOString());
+            // Check time bounds for this lesson
+            const currentTimeMinutes = timeToMinutes(queuedLesson.scheduledStartTime || '09:00');
+            const canMoveEarlier = currentTimeMinutes > 360 && (teacherSchedule?.canMoveQueueLessonEarlier(queuedLesson.lessonId) ?? false);
+            const canMoveLater = currentTimeMinutes < 1380;
+            
+            // Ensure scheduledDateTime is always present and valid
+            let scheduledDateTime: string;
+            if (queuedLesson.scheduledStartTime && currentTimeMinutes >= 360 && currentTimeMinutes <= 1380) {
+              scheduledDateTime = new Date(`${selectedDate}T${queuedLesson.scheduledStartTime}`).toISOString();
+            } else {
+              // Fallback to a safe time if invalid
+              scheduledDateTime = new Date(`${selectedDate}T09:00`).toISOString();
+            }
+            
             return (
               <TeacherLessonQueueCard
                 key={queuedLesson.lessonId}
@@ -253,12 +286,13 @@ export default function TeacherLessonQueue({
                 location={queueLocation}
                 isFirst={index === 0}
                 isLast={index === queue.length - 1}
-                canMoveEarlier={teacherSchedule?.canMoveQueueLessonEarlier(queuedLesson.lessonId) ?? false}
-                onRemove={editMode ? removeFromQueue : () => {}}
-                onAdjustDuration={editMode ? adjustDuration : () => {}}
-                onAdjustTime={editMode ? adjustTime : () => {}}
-                onMoveUp={editMode ? moveUp : () => {}}
-                onMoveDown={editMode ? moveDown : () => {}}
+                canMoveEarlier={canMoveEarlier}
+                canMoveLater={canMoveLater}
+                onRemove={removeFromQueue}
+                onAdjustDuration={adjustDuration}
+                onAdjustTime={adjustTime}
+                onMoveUp={moveUp}
+                onMoveDown={moveDown}
               />
             );
           })}

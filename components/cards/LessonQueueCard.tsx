@@ -13,6 +13,7 @@ interface TeacherLessonQueueCardProps {
   isFirst: boolean;
   isLast: boolean;
   canMoveEarlier: boolean;
+  canMoveLater?: boolean;
   onRemove: (lessonId: string) => void;
   onAdjustDuration: (lessonId: string, increment: boolean) => void;
   onAdjustTime: (lessonId: string, increment: boolean) => void;
@@ -26,6 +27,7 @@ export default function TeacherLessonQueueCard({
   isFirst,
   isLast,
   canMoveEarlier,
+  canMoveLater = true,
   onRemove,
   onAdjustDuration,
   onAdjustTime,
@@ -114,8 +116,9 @@ export default function TeacherLessonQueueCard({
                 </button>
                 <button
                   onClick={() => onAdjustTime(lessonId, true)}
-                  className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  title="30 minutes later"
+                  disabled={!canMoveLater}
+                  className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={canMoveLater ? "30 minutes later" : "Cannot move later - would exceed 23:00"}
                 >
                   <ChevronRight className="w-3 h-3" />
                 </button>

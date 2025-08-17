@@ -41,7 +41,15 @@ export default function TeacherEventQueue({
         const previousNode = index > 0 ? scheduleNodes[index - 1] : null;
         const hasGapBefore = previousNode?.type === 'gap';
 
-        const localDateTimeString = new Date(`${selectedDate}T${node.startTime}`).toISOString();
+        // Check time bounds and create safe datetime
+        const currentTimeMinutes = timeToMinutes(node.startTime);
+        let localDateTimeString: string;
+        if (currentTimeMinutes >= 360 && currentTimeMinutes <= 1380) {
+          localDateTimeString = new Date(`${selectedDate}T${node.startTime}`).toISOString();
+        } else {
+          // Fallback to a safe time if invalid
+          localDateTimeString = new Date(`${selectedDate}T09:00`).toISOString();
+        }
 
         const queuedLesson = {
           lessonId: eventData.lesson.id,
@@ -58,6 +66,7 @@ export default function TeacherEventQueue({
         const isFirst = eventNodeIndex === 0;
         const isLast = eventNodeIndex === eventNodes.length - 1;
 
+        // Check if can move earlier (conflict check)
         let canMoveEarlier = true;
         if (!isFirst) {
           const previousEventNode = eventNodes[eventNodeIndex - 1];
@@ -69,6 +78,14 @@ export default function TeacherEventQueue({
             }
           }
         }
+        
+        // Also check time bounds for moving earlier
+        if (currentTimeMinutes <= 360) {
+          canMoveEarlier = false;
+        }
+        
+        // Check if can move later (time bounds check)
+        const canMoveLater = currentTimeMinutes < 1380;
 
         return (
           <div key={`queue-${node.id}`}>
@@ -78,6 +95,7 @@ export default function TeacherEventQueue({
               isFirst={isFirst}
               isLast={isLast}
               canMoveEarlier={canMoveEarlier}
+              canMoveLater={canMoveLater}
               onRemove={onRemove}
               onAdjustDuration={onAdjustDuration}
               onAdjustTime={onAdjustTime}
