@@ -17,8 +17,8 @@ import {
   setStoredDate,
   getTodayDateString,
 } from "@/components/formatters/DateTime";
-import { type EventController, type BookingData } from "@/backend/types";
-import { LOCATION_ENUM_VALUES } from "@/lib/constants";
+import { type EventController, type BookingData, type MiniNavController } from "@/backend/types";
+import { LOCATION_ENUM_VALUES, type BookingStatusFilter, type LessonStatusFilter, type EventStatusFilter } from "@/lib/constants";
 import {
   getCurrentUTCDate,
   getCurrentUTCTime,
@@ -61,6 +61,17 @@ interface WhiteboardClientProps {
 export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   const [activeSection, setActiveSection] = useState("bookings");
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateString()); // Use consistent default
+  
+  // Filter state
+  const [filters, setFilters] = useState<{
+    bookings: BookingStatusFilter;
+    lessons: LessonStatusFilter;
+    events: EventStatusFilter;
+  }>({
+    bookings: "all",
+    lessons: "all", 
+    events: "all"
+  });
 
   // Event Controller State
   const [controller, setController] = useState<EventController>({
@@ -75,6 +86,13 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
     setStoredDate(STORAGE_KEY, date);
+  };
+
+  const handleFilterChange = (section: 'bookings' | 'lessons' | 'events', filter: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [section]: filter
+    }));
   };
 
   // Load stored date after mount to avoid hydration issues
@@ -284,6 +302,10 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
               bookingsCount={filteredData.bookings.length}
               lessonsCount={filteredData.lessons.length}
               eventsCount={filteredData.events.length}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              controller={controller}
+              onControllerChange={setController}
             />
           </div>
         </div>
@@ -294,12 +316,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
             <div className="p-4">
               <div className="w-full">
                 {activeSection === "bookings" && (
-                  <WhiteboardBookings
-                    bookings={filteredData.bookings}
-                    teacherSchedules={filteredData.teacherSchedules}
-                    selectedDate={selectedDate}
-                    controller={controller}
-                  />
+                  <WhiteboardBookings bookings={filteredData.bookings} />
                 )}
 
                 {activeSection === "lessons" && (

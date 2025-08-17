@@ -5,10 +5,6 @@ import { FlagIcon } from "@/svgs/FlagIcon";
 import { useRouter } from "next/navigation";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { HeadsetIcon } from "@/svgs";
-import {
-  LESSON_STATUS_FILTERS,
-  type LessonStatusFilter,
-} from "@/lib/constants";
 import TeacherLessonStats from "@/components/TeacherLessonStats";
 import LessonCard from "@/components/cards/LessonCard";
 import TeacherLessonQueue from "@/components/TeacherLessonQueue";
@@ -23,38 +19,6 @@ interface WhiteboardLessonsProps {
   controller: any;
   selectedDate: string;
   teacherSchedules: Map<string, TeacherSchedule>;
-}
-
-// Sub-component: Filter Buttons
-function LessonStatusFilters({
-  activeFilter,
-  onFilterChange,
-  statusCounts,
-}: {
-  activeFilter: LessonStatusFilter;
-  onFilterChange: (filter: LessonStatusFilter) => void;
-  statusCounts: Record<LessonStatusFilter, number>;
-}) {
-  return (
-    <div className="flex gap-2 flex-wrap">
-      {LESSON_STATUS_FILTERS.map((filter) => (
-        <button
-          key={filter.value}
-          onClick={() => onFilterChange(filter.value)}
-          className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-            activeFilter === filter.value
-              ? filter.color
-                  .replace("hover:", "")
-                  .replace("100", "200")
-                  .replace("900/30", "900/50")
-              : filter.color
-          }`}
-        >
-          {filter.label} ({statusCounts[filter.value]})
-        </button>
-      ))}
-    </div>
-  );
 }
 
 // Sub-component: Teacher Group
@@ -152,13 +116,11 @@ function TeacherGroup({
 }
 
 // Sub-component: Empty State
-function EmptyState({ activeFilter }: { activeFilter: LessonStatusFilter }) {
+function EmptyState() {
   return (
     <div className="p-8 bg-muted dark:bg-gray-800 rounded-lg text-center">
       <p className="text-muted-foreground dark:text-gray-400">
-        {activeFilter === "all"
-          ? "No lessons found for this date"
-          : `No ${activeFilter} lessons found for this date`}
+        No lessons found for this date
       </p>
     </div>
   );
@@ -173,9 +135,7 @@ export default function WhiteboardLessons({
   const [editModes, setEditModes] = useState<{ [teacherId: string]: boolean }>(
     {},
   );
-  const [globalEditMode, setGlobalEditMode] = useState(false);
   const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState<LessonStatusFilter>("all");
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0);
 
   const toggleLessonQueue = (lesson: any) => {
@@ -231,21 +191,7 @@ export default function WhiteboardLessons({
     }
   };
 
-  const filteredLessons =
-    activeFilter === "all"
-      ? lessons
-      : lessons.filter((lesson) => lesson.status === activeFilter);
-
-  const statusCounts = {
-    all: lessons.length,
-    planned: lessons.filter((l) => l.status === "planned").length,
-    rest: lessons.filter((l) => l.status === "rest").length,
-    delegated: lessons.filter((l) => l.status === "delegated").length,
-    completed: lessons.filter((l) => l.status === "completed").length,
-    cancelled: lessons.filter((l) => l.status === "cancelled").length,
-  };
-
-  const groupedLessons = groupLessonsByTeacher(filteredLessons);
+  const groupedLessons = groupLessonsByTeacher(lessons);
 
   // Calculate global stats from all teacher schedules
   const globalStats = useMemo(() => {
@@ -275,57 +221,44 @@ export default function WhiteboardLessons({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-medium dark:text-white">
-            Lessons by Teacher ({filteredLessons.length} total)
-          </h3>
+      {/* Global Stats Header */}
+      <div className="flex justify-center">
+        <div className="border border-border rounded-lg p-4 bg-card">
+          <div className="flex items-center gap-6 text-sm">
+            <div className="text-center">
+              <div className="font-semibold text-indigo-600 dark:text-indigo-400">
+                {globalStats.totalEvents}/{globalStats.totalLessons}
+              </div>
+              <div className="text-xs text-muted-foreground">Events/Lessons</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-purple-600 dark:text-purple-400">
+                {Math.round(globalStats.totalHours * 10) / 10}h
+              </div>
+              <div className="text-xs text-muted-foreground">Hours</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-green-600 dark:text-green-400">
+                €{Math.round(globalStats.totalEarnings)}
+              </div>
+              <div className="text-xs text-muted-foreground">Teacher</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-orange-600 dark:text-orange-400">
+                €{Math.round(globalStats.schoolRevenue)}
+              </div>
+              <div className="text-xs text-muted-foreground">School</div>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <TeacherLessonStats teacherStats={globalStats} />
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setGlobalEditMode((prev) => {
-                const newVal = !prev;
-                setEditModes((old) => {
-                  const updated: { [teacherId: string]: boolean } = {};
-                  groupedLessons.forEach((g) => {
-                    updated[g.teacherId] = newVal;
-                  });
-                  return updated;
-                });
-                return newVal;
-              });
-            }}
-            className={`ml-2 p-1 rounded ${globalEditMode ? "bg-blue-200 dark:bg-blue-800" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-            title={
-              globalEditMode
-                ? "Exit edit mode for all"
-                : "Edit all teacher queues"
-            }
-          >
-            <FlagIcon className="w-6 h-6" />
-          </button>
-        </div>
-        <LessonStatusFilters
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          statusCounts={statusCounts}
-        />
       </div>
 
       {groupedLessons.length === 0 ? (
-        <EmptyState activeFilter={activeFilter} />
+        <EmptyState />
       ) : (
         <div className="space-y-4">
           {groupedLessons.map((teacherGroup) => {
-            const editMode =
-              globalEditMode || !!editModes[teacherGroup.teacherId];
+            const editMode = !!editModes[teacherGroup.teacherId];
             return (
               <TeacherGroup
                 key={teacherGroup.teacherId}

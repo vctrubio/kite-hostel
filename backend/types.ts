@@ -11,7 +11,12 @@ import {
   BookingStudent,
   Teacher,
 } from "@/drizzle/migrations/schema";
-import { type Location } from '@/lib/constants';
+import { 
+  type Location,
+  type BookingStatusFilter,
+  type LessonStatusFilter,
+  type EventStatusFilter
+} from '@/lib/constants';
 
 export type PackageStudent = InferSelectModel<typeof PackageStudent>;
 
@@ -70,4 +75,15 @@ export interface TeacherStats {
   totalEarnings: number;
   schoolRevenue: number;
   totalLessons: number;
+}
+
+// MiniNav Controller interface for centralized navigation and filter state
+export interface MiniNavController {
+  activeSection: string;
+  selectedDate: string;
+  filters: {
+    bookings: BookingStatusFilter;
+    lessons: LessonStatusFilter;
+    events: EventStatusFilter;
+  };
 }

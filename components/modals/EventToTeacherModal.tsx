@@ -250,7 +250,7 @@ export default function EventToTeacherModal({
 
   const handleSubmit = useCallback(async () => {
     if (conflictInfo?.hasConflict && !selectedAlternative) return;
-    let finalStartTime = selectedAlternative ? selectedAlternative.startTime : formData.startTime;
+    const finalStartTime = selectedAlternative ? selectedAlternative.startTime : formData.startTime;
     const eventData = { lessonId: lesson.id, date: selectedDate, startTime: finalStartTime, durationMinutes: formData.duration, location: formData.location };
     try {
       const result = await createEvent(eventData);
