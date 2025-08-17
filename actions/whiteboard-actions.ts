@@ -2,6 +2,7 @@
 
 import { getBookings } from "./booking-actions";
 import { WhiteboardClass, createBookingClasses } from "@/backend/WhiteboardClass";
+import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { type BookingData } from "@/backend/types";
 
 export interface WhiteboardData {
@@ -125,6 +126,94 @@ export async function getBookingData(bookingId: string): Promise<{ data: Booking
     }
 
     return { data: bookingData, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { data: null, error: errorMessage };
+  }
+}
+
+export async function getFilteredWhiteboardData(selectedDate: string): Promise<{ data: any | null; error: string | null }> {
+  try {
+    const { data, error } = await getWhiteboardData();
+
+    if (error || !data) {
+      return { data: null, error };
+    }
+
+    const filterDate = new Date(selectedDate);
+    filterDate.setHours(0, 0, 0, 0);
+
+    const filteredBookings = data.rawBookings.filter(booking => {
+      const bookingStart = new Date(booking.date_start);
+      const bookingEnd = new Date(booking.date_end);
+      bookingStart.setHours(0, 0, 0, 0);
+      bookingEnd.setHours(23, 59, 59, 999);
+      return filterDate >= bookingStart && filterDate <= bookingEnd;
+    });
+
+    const bookingClasses = filteredBookings.map(booking => new WhiteboardClass(booking));
+    const activeBookingClasses = bookingClasses.filter(bc => bc.getStatus() === 'active');
+    const completableBookingClasses = bookingClasses.filter(bc => bc.isReadyForCompletion());
+
+    const filteredLessons = filteredBookings.flatMap(booking => 
+      booking.lessons?.map((lesson: any) => {
+        const originalEvents = lesson.events || [];
+        const eventsForSelectedDate = lesson.events?.filter((event: any) => {
+          if (!event.date) return true;
+          const eventDate = new Date(event.date);
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate.getTime() === filterDate.getTime();
+        }) || [];
+
+        return {
+          ...lesson,
+          originalEvents: originalEvents,
+          events: eventsForSelectedDate,
+          selectedDate: selectedDate,
+          booking: booking
+        };
+      }) || []
+    );
+
+    const filteredEvents = filteredLessons.flatMap(lesson => 
+      lesson.events?.map((event: any) => ({
+        ...event,
+        lesson: {
+          id: lesson.id,
+          teacher: lesson.teacher,
+          status: lesson.status,
+        },
+        booking: lesson.booking,
+      })) || []
+    );
+
+    const enhancedStats = {
+      totalBookings: filteredBookings.length,
+      totalLessons: filteredLessons.length,
+      totalEvents: filteredEvents.length,
+      activeBookings: activeBookingClasses.length,
+      completableBookings: completableBookingClasses.length,
+      averageProgress: Math.round(
+        bookingClasses.reduce((sum, bc) => sum + bc.getCompletionPercentage(), 0) / 
+        (bookingClasses.length || 1)
+      ),
+      totalUsedMinutes: bookingClasses.reduce((sum, bc) => sum + bc.getUsedMinutes(), 0),
+      totalAvailableMinutes: bookingClasses.reduce((sum, bc) => sum + bc.getTotalMinutes(), 0),
+    };
+
+    const teacherSchedules = TeacherSchedule.createSchedulesFromLessons(selectedDate, filteredLessons);
+
+    return {
+      data: {
+        bookings: filteredBookings,
+        bookingClasses,
+        lessons: filteredLessons,
+        events: filteredEvents,
+        teacherSchedules,
+        status: enhancedStats,
+      },
+      error: null,
+    };
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return { data: null, error: errorMessage };

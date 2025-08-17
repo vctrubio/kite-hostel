@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import EventCard, { GapCard } from '@/components/cards/EventCard';
 import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
@@ -26,18 +28,19 @@ interface TimeAdjustmentFlagProps {
   onSetViewMode: (mode: 'event' | 'queue') => void;
 }
 
-function TimeAdjustmentFlag({
-  firstEventTime,
-  proposedTimeOffset,
-  timeAdjustmentMode,
-  editableScheduleNodes,
-  parentTimeAdjustmentMode = false,
-  onTimeAdjustment,
-  onAcceptTimeAdjustment,
-  onCancelTimeAdjustment,
-  onSetTimeAdjustmentMode,
-  onSetViewMode
-}: TimeAdjustmentFlagProps) {
+function TimeAdjustmentFlag({ ...props }) {
+  const { 
+    firstEventTime, 
+    proposedTimeOffset, 
+    timeAdjustmentMode, 
+    editableScheduleNodes, 
+    parentTimeAdjustmentMode = false, 
+    onTimeAdjustment, 
+    onAcceptTimeAdjustment, 
+    onCancelTimeAdjustment, 
+    onSetTimeAdjustmentMode, 
+    onSetViewMode 
+  } = props;
   // Always show the actual first lesson time from the editable schedule
   const firstEventNode = editableScheduleNodes.find(node => node.type === 'event');
   const displayTime = firstEventNode ? firstEventNode.startTime : (firstEventTime || 'No events');
@@ -1043,7 +1046,7 @@ export default function WhiteboardEvents({ events, selectedDate, teacherSchedule
           {teacherEventGroups.map((group) => (
             <TeacherEventsGroup 
               key={group.teacherId}
-              teacherSchedule={group.teacherSchedule}
+              teacherSchedule={group.teacherSchedule!}
               events={group.events}
               selectedDate={selectedDate}
               viewAs={viewAs}

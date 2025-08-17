@@ -5,12 +5,22 @@ import BookingCard from '@/components/cards/BookingCard';
 import { BOOKING_STATUS_FILTERS, type BookingStatusFilter } from '@/lib/constants';
 import { WhiteboardClass, createBookingClasses } from '@/backend/WhiteboardClass';
 import { CheckCircle } from 'lucide-react';
+import { TeacherSchedule } from '@/backend/TeacherSchedule';
+import { type EventController } from '@/backend/types';
 
 interface WhiteboardBookingsProps {
   bookings: any[];
+  teacherSchedules: Map<string, TeacherSchedule>;
+  selectedDate: string;
+  controller: EventController;
 }
 
-export default function WhiteboardBookings({ bookings }: WhiteboardBookingsProps) {
+export default function WhiteboardBookings({ 
+  bookings, 
+  teacherSchedules, 
+  selectedDate, 
+  controller
+}: WhiteboardBookingsProps) {
   const [activeFilter, setActiveFilter] = useState<BookingStatusFilter>('all');
 
   // Create WhiteboardClass instances for enhanced business logic
@@ -87,6 +97,9 @@ export default function WhiteboardBookings({ bookings }: WhiteboardBookingsProps
             <BookingCard 
               key={bookingClass.getId()} 
               booking={bookingClass.toJSON()}
+              teacherSchedules={teacherSchedules}
+              selectedDate={selectedDate}
+              controller={controller}
             />
           ))}
         </div>
