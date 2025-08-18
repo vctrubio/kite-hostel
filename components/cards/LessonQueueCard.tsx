@@ -6,6 +6,7 @@ import { Duration } from '@/components/formatters/Duration';
 import { DateTime } from '@/components/formatters/DateTime';
 import { type QueuedLesson } from '@/backend/TeacherSchedule';
 import { addMinutes, format } from 'date-fns';
+import { extractTimeFromUTC } from '@/components/formatters/TimeZone';
 
 interface TeacherLessonQueueCardProps {
   queuedLesson: QueuedLesson & { scheduledDateTime: string };
@@ -135,7 +136,7 @@ export default function TeacherLessonQueueCard({
             <div className="flex flex-col text-center">
               {scheduledDateTime && (
                 <div className="text-sm font-medium text-green-600 dark:text-green-400">
-                  <DateTime dateString={scheduledDateTime} formatType="time" />
+                  {extractTimeFromUTC(scheduledDateTime)}
                 </div>
               )}
               {endTime && (
