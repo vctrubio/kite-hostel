@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import EventCard, { GapCard } from "@/components/cards/EventCard";
 import TeacherEventQueue from "@/components/TeacherEventQueue";
 import { HeadsetIcon, Zap, ChevronLeft, ChevronRight } from "lucide-react";
@@ -359,6 +360,11 @@ function TeacherEventsGroup({
 
   const handleMoveInQueue = (lessonId: string, direction: 'up' | 'down') => {
     setEditableScheduleNodes(currentNodes => {
+        // Find the original start time of the first event in the current teacher's schedule
+        const firstEventNode = currentNodes.find(n => n.type === 'event');
+        if (!firstEventNode) return currentNodes; // No events to reorder
+        const anchorTime = firstEventNode.startTime;
+
         const updatedNodes = [...currentNodes];
         const movingNodeIndex = updatedNodes.findIndex(n => n.eventData?.lessonId === lessonId);
 
@@ -386,9 +392,10 @@ function TeacherEventsGroup({
         // Swap the nodes
         [updatedNodes[movingNodeIndex], updatedNodes[swapNodeIndex]] = [updatedNodes[swapNodeIndex], updatedNodes[movingNodeIndex]];
 
-        // Filter out gaps and compact the schedule
         const eventNodes = updatedNodes.filter(n => n.type === 'event');
-        const compactedNodes = compactSchedulePreservingOrder(eventNodes);
+        
+        // Pass the original start time as the anchor
+        const compactedNodes = compactSchedulePreservingOrder(eventNodes, anchorTime);
 
         return compactedNodes;
     });
@@ -416,9 +423,7 @@ function TeacherEventsGroup({
 
       if (originalNode.startTime !== modifiedNode.startTime) {
         // Create a local date object and convert to ISO string for the database (which will be UTC)
-        updates.date = new Date(
-          `${selectedDate}T${modifiedNode.startTime}`,
-        ).toISOString();
+        updates.date = toUTCString(createUTCDateTime(selectedDate, modifiedNode.startTime));
         hasChanges = true;
       }
 
@@ -974,7 +979,7 @@ function TeacherEventsGroup({
 
       {/* Events Grid */}
       <div className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+        <div className="flex flex-wrap gap-4">
           {viewMode === "event" &&
             scheduleNodes.map((node) => {
               if (node.type === "gap") {
@@ -983,6 +988,7 @@ function TeacherEventsGroup({
                     <GapCard
                       duration={node.duration}
                       startTime={node.startTime}
+                      selectedDate={selectedDate}
                     />
                   </div>
                 );

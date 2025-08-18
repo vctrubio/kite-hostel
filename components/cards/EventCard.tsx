@@ -1,5 +1,6 @@
 import { Duration } from "@/components/formatters/Duration";
 import { DateTime } from "@/components/formatters/DateTime";
+import { createUTCDateTime } from "@/components/formatters/TimeZone";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
 import {
   Trash2,
@@ -265,27 +266,30 @@ const AdminControls = ({
 export function GapCard({
   duration,
   startTime,
+  selectedDate,
 }: {
   duration: number;
   startTime: string;
+  selectedDate: string;
 }) {
+  const dateString = createUTCDateTime(selectedDate, startTime).toISOString();
+
   return (
-    <div className="flex bg-orange-50 border border-orange-200 rounded-lg overflow-hidden">
-      {/* Orange sidebar */}
+    <div className="flex bg-card border border-border rounded-lg overflow-hidden h-full">
+      {/* Status Sidebar */}
       <div className="w-2 bg-orange-400" />
 
-      {/* Gap Content */}
-      <div className="flex-1 p-4">
-        <div className="flex items-center gap-2 text-orange-700 mb-2">
+      {/* Card Content */}
+      <div className="flex-1 p-4 flex flex-col justify-center">
+        {/* "Schedule Gap" Title */}
+        <div className="flex items-center gap-2 text-muted-foreground mb-3">
           <Minus className="w-4 h-4" />
-          <span className="text-sm font-medium">Schedule Gap</span>
+          <span className="font-medium">Schedule Gap</span>
         </div>
 
-        <div className="flex items-center gap-2 text-orange-600">
-          <Clock className="w-3 h-3" />
-          <span className="text-xs">
-            {startTime} • <Duration minutes={duration} /> free
-          </span>
+        {/* Event Details */}
+        <div className="space-y-2">
+          <TimeDisplay date={dateString} duration={duration} />
         </div>
       </div>
     </div>

@@ -214,25 +214,24 @@ export function findNextAvailableSlot<T extends ScheduleItem>(
  * @param items - Array of schedule items to compact, in the desired order.
  * @returns A new array of items with gaps removed (items moved earlier).
  */
-export function compactSchedulePreservingOrder<T extends ScheduleItem>(items: T[]): T[] {
-  if (items.length <= 1) {
-    return items.map(item => ({ ...item }));
+export function compactSchedulePreservingOrder<T extends ScheduleItem>(
+  items: T[],
+  anchorTime?: string,
+): T[] {
+  if (items.length === 0) {
+    return [];
   }
 
-  const compactedItems = items.map(item => ({ ...item }));
+  const compactedItems = items.map((item) => ({ ...item }));
 
-  // Start with the first item time - keep it as anchor
-  let currentEndTime = timeToMinutes(compactedItems[0].startTime) + compactedItems[0].duration;
+  // Use anchorTime if provided, otherwise use the first item's time.
+  let currentTimeMinutes = anchorTime
+    ? timeToMinutes(anchorTime)
+    : timeToMinutes(compactedItems[0].startTime);
 
-  // Compact all items starting from the second one
-  for (let i = 1; i < compactedItems.length; i++) {
-    const currentItem = compactedItems[i];
-
-    // Set current item to start right after previous one ends (no gap)
-    currentItem.startTime = minutesToTime(currentEndTime);
-
-    // Update end time for next iteration
-    currentEndTime = currentEndTime + currentItem.duration;
+  for (let i = 0; i < compactedItems.length; i++) {
+    compactedItems[i].startTime = minutesToTime(currentTimeMinutes);
+    currentTimeMinutes += compactedItems[i].duration;
   }
 
   return compactedItems;
