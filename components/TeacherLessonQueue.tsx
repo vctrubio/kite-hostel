@@ -154,6 +154,16 @@ export default function TeacherLessonQueue({
     onQueueChange?.();
   };
 
+  // Remove gap for lesson
+  const removeGap = (lessonId: string) => {
+    if (!teacherSchedule) return;
+    
+    teacherSchedule.removeGapForLesson(lessonId);
+    setQueue(teacherSchedule.getLessonQueue());
+    // Notify parent component about queue change
+    onQueueChange?.();
+  };
+
   // Clear entire queue
   const clearQueue = () => {
     if (!teacherSchedule) return;
@@ -293,6 +303,7 @@ export default function TeacherLessonQueue({
                 onAdjustTime={adjustTime}
                 onMoveUp={moveUp}
                 onMoveDown={moveDown}
+                onRemoveGap={removeGap}
               />
             );
           })}

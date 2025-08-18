@@ -6,7 +6,7 @@ import { Duration } from '@/components/formatters/Duration';
 import { DateTime } from '@/components/formatters/DateTime';
 import { type QueuedLesson } from '@/backend/TeacherSchedule';
 import { addMinutes, format } from 'date-fns';
-import { extractTimeFromUTC } from '@/components/formatters/TimeZone';
+import { extractTimeFromUTC, addMinutesToTime } from '@/components/formatters/TimeZone';
 
 interface TeacherLessonQueueCardProps {
   queuedLesson: QueuedLesson & { scheduledDateTime: string };
@@ -20,6 +20,7 @@ interface TeacherLessonQueueCardProps {
   onAdjustTime: (lessonId: string, increment: boolean) => void;
   onMoveUp: (lessonId: string) => void;
   onMoveDown: (lessonId: string) => void;
+  onRemoveGap?: (lessonId: string) => void;
 }
 
 export default function TeacherLessonQueueCard({
@@ -33,7 +34,8 @@ export default function TeacherLessonQueueCard({
   onAdjustDuration,
   onAdjustTime,
   onMoveUp,
-  onMoveDown
+  onMoveDown,
+  onRemoveGap
 }: TeacherLessonQueueCardProps) {
   // --- Logic at the top ---
   const {
@@ -46,9 +48,10 @@ export default function TeacherLessonQueueCard({
     scheduledDateTime
   } = queuedLesson;
 
-  const endTime = scheduledDateTime ? format(addMinutes(new Date(scheduledDateTime), duration), 'HH:mm') : '';
+  const endTime = scheduledDateTime ? addMinutesToTime(extractTimeFromUTC(scheduledDateTime), duration) : '';
   const remaining = remainingMinutes - duration;
   const studentNames = students.join(', ');
+  const gapDuration = (queuedLesson as any).gapDuration || 0;
 
   // --- Render ---
   return (
@@ -192,10 +195,15 @@ export default function TeacherLessonQueueCard({
 
       {/* Gap warning - only show if not first and has gap */}
       {!isFirst && hasGap && (
-        <div className="flex items-center justify-center gap-1 mt-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 p-2 rounded border border-orange-200 dark:border-orange-800">
+        <button
+          onClick={() => onRemoveGap?.(lessonId)}
+          className="flex items-center justify-center gap-1 mt-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 p-2 rounded border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 hover:border-orange-300 dark:hover:border-orange-700 transition-colors cursor-pointer w-full"
+          title="Click to remove gap"
+        >
           <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-          <span>Gap from previous lesson</span>
-        </div>
+          <Duration minutes={gapDuration} />
+          <span>gap</span>
+        </button>
       )}
     </div>
   );

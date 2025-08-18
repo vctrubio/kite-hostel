@@ -17,6 +17,7 @@ export interface QueuedLesson {
   scheduledStartTime?: string; // Calculated start time
   hasGap?: boolean; // Whether there's a gap before this lesson
   timeAdjustment?: number; // Manual time adjustment in minutes
+  gapClosureAdjustment?: number; // Automatic adjustment from gap closure
 }
 
 export interface ScheduleNode extends ScheduleItem {
@@ -802,15 +803,50 @@ export class TeacherSchedule {
 
   // Update lesson start time adjustment in queue
   updateQueueLessonStartTime(lessonId: string, timeAdjustmentMinutes: number): void {
-    const lesson = this.lessonQueue.find(q => q.lessonId === lessonId);
-    if (lesson) {
-      // Initialize timeAdjustment if it doesn't exist
-      if (!lesson.timeAdjustment) {
-        lesson.timeAdjustment = 0;
-      }
-      lesson.timeAdjustment += timeAdjustmentMinutes;
-      this.recalculateQueueSchedule(this.queueStartTime);
+    const lessonIndex = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    if (lessonIndex < 0) return;
+    
+    const lesson = this.lessonQueue[lessonIndex];
+    
+    // Initialize timeAdjustment if it doesn't exist
+    if (!lesson.timeAdjustment) {
+      lesson.timeAdjustment = 0;
     }
+    lesson.timeAdjustment += timeAdjustmentMinutes;
+    
+    // If moving later (+30 minutes) and there's a next lesson, check for gap closure
+    if (timeAdjustmentMinutes > 0 && lessonIndex < this.lessonQueue.length - 1) {
+      const nextLesson = this.lessonQueue[lessonIndex + 1];
+      
+      // Store original adjustments before recalculation
+      const originalAdjustments = this.lessonQueue.map(q => q.timeAdjustment || 0);
+      
+      // Recalculate to get current state
+      this.recalculateQueueSchedule(this.queueStartTime);
+      
+      // Check if after adjustment, this lesson would end exactly when next lesson starts
+      if (lesson.scheduledStartTime && nextLesson.scheduledStartTime) {
+        const currentEndTime = this.timeToMinutes(lesson.scheduledStartTime) + lesson.duration;
+        const nextStartTime = this.timeToMinutes(nextLesson.scheduledStartTime);
+        const gap = nextStartTime - currentEndTime;
+        
+        // If gap is exactly 30 minutes (the adjustment we just made), close it
+        if (gap === 30) {
+          // Instead of modifying timeAdjustment (which affects display), 
+          // we'll handle this in recalculateQueueSchedule by tracking gap closure
+          for (let i = lessonIndex + 1; i < this.lessonQueue.length; i++) {
+            const subsequentLesson = this.lessonQueue[i];
+            // Mark this lesson as having an automatic gap closure adjustment
+            if (!subsequentLesson.gapClosureAdjustment) {
+              subsequentLesson.gapClosureAdjustment = 0;
+            }
+            subsequentLesson.gapClosureAdjustment -= 30;
+          }
+        }
+      }
+    }
+    
+    this.recalculateQueueSchedule(this.queueStartTime);
   }
 
   // Set queue gap - REMOVED: Now hardcoded to 15 minutes
@@ -879,18 +915,23 @@ export class TeacherSchedule {
     return proposedStartMinutes >= previousEndMinutes;
   }
 
-  // Recalculate queue schedule with gap detection
+  // Recalculate queue schedule with proper gap detection
   private recalculateQueueSchedule(preferredStartTime?: string): void {
     if (this.lessonQueue.length === 0) return;
 
-    // Use preferredStartTime if provided, otherwise use stored queueStartTime, fallback to finding next available
+    // PHASE 1: Calculate all lesson positions
     const startTime = preferredStartTime || this.queueStartTime;
     let currentTime = this.findNextAvailableTime(startTime);
 
     this.lessonQueue.forEach((queuedLesson, index) => {
-      // Apply time adjustment if specified
+      // Apply manual time adjustment if specified
       if (queuedLesson.timeAdjustment) {
         currentTime += queuedLesson.timeAdjustment;
+      }
+      
+      // Apply gap closure adjustment if specified
+      if (queuedLesson.gapClosureAdjustment) {
+        currentTime += queuedLesson.gapClosureAdjustment;
       }
 
       // Check if there's a conflict with existing events
@@ -903,18 +944,110 @@ export class TeacherSchedule {
         }
       }
 
-      // Check for gap (if not starting immediately after previous lesson)
-      const expectedStartTime = index === 0 ? 
-        this.findNextAvailableTime(startTime) : 
-        this.timeToMinutes(this.lessonQueue[index - 1].scheduledStartTime || '09:00') + 
-        this.lessonQueue[index - 1].duration; // No automatic gap
-
+      // Set the calculated start time
       queuedLesson.scheduledStartTime = this.minutesToTime(currentTime);
-      queuedLesson.hasGap = currentTime > expectedStartTime;
 
       // Move to next time slot - back-to-back lessons
       currentTime += queuedLesson.duration;
     });
+
+    // PHASE 2: Detect gaps between consecutive lessons
+    this.detectAndUpdateGaps();
+  }
+
+  // Separate method for gap detection after all positions are calculated
+  private detectAndUpdateGaps(): void {
+    this.lessonQueue.forEach((queuedLesson, index) => {
+      if (index === 0) {
+        // First lesson never has a gap from previous
+        queuedLesson.hasGap = false;
+        return;
+      }
+
+      const previousLesson = this.lessonQueue[index - 1];
+      if (!previousLesson.scheduledStartTime || !queuedLesson.scheduledStartTime) {
+        queuedLesson.hasGap = false;
+        return;
+      }
+
+      // Calculate when this lesson should start (immediately after previous lesson ends)
+      const previousEndTime = this.timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
+      const actualStartTime = this.timeToMinutes(queuedLesson.scheduledStartTime);
+      
+      // There's a gap if the actual start time is later than when it should start
+      const gapMinutes = actualStartTime - previousEndTime;
+      queuedLesson.hasGap = gapMinutes > 0;
+      
+      // Optional: Store gap duration for debugging or display
+      if (queuedLesson.hasGap) {
+        (queuedLesson as any).gapDuration = gapMinutes;
+      } else {
+        delete (queuedLesson as any).gapDuration;
+      }
+    });
+  }
+
+  // Remove gap for a specific lesson by setting exact start time
+  removeGapForLesson(lessonId: string): void {
+    const lessonIndex = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    if (lessonIndex <= 0) return; // Can't remove gap for first lesson or lesson not found
+
+    const lesson = this.lessonQueue[lessonIndex];
+    const previousLesson = this.lessonQueue[lessonIndex - 1];
+    
+    if (!lesson.scheduledStartTime || !previousLesson.scheduledStartTime) return;
+
+    // Calculate where this lesson should start (immediately after previous lesson ends)
+    const previousEndTime = this.timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
+    const currentStartTime = this.timeToMinutes(lesson.scheduledStartTime);
+    const gapMinutes = currentStartTime - previousEndTime;
+
+    if (gapMinutes > 0) {
+      // Reset timeAdjustment and calculate the exact adjustment needed
+      lesson.timeAdjustment = 0;
+      
+      // Calculate what the original scheduled start time would be without any adjustments
+      const originalStartTime = this.findOriginalScheduledTime(lessonIndex);
+      
+      // Calculate the adjustment needed to place it exactly after previous lesson
+      const targetStartTime = this.minutesToTime(previousEndTime);
+      const adjustmentNeeded = previousEndTime - this.timeToMinutes(originalStartTime);
+      
+      // Set the precise time adjustment
+      lesson.timeAdjustment = adjustmentNeeded;
+      
+      // Move all subsequent lessons by the same gap amount to maintain spacing
+      for (let i = lessonIndex + 1; i < this.lessonQueue.length; i++) {
+        const subsequentLesson = this.lessonQueue[i];
+        if (!subsequentLesson.timeAdjustment) {
+          subsequentLesson.timeAdjustment = 0;
+        }
+        subsequentLesson.timeAdjustment -= gapMinutes;
+      }
+      
+      // Recalculate to apply changes
+      this.recalculateQueueSchedule(this.queueStartTime);
+    }
+  }
+
+  // Helper method to find original scheduled time without adjustments
+  private findOriginalScheduledTime(lessonIndex: number): string {
+    // Temporarily remove adjustments and recalculate to get base time
+    const originalAdjustments = this.lessonQueue.map(q => q.timeAdjustment || 0);
+    
+    // Clear all adjustments
+    this.lessonQueue.forEach(q => { q.timeAdjustment = 0; q.gapClosureAdjustment = 0; });
+    
+    // Recalculate to get base scheduled times
+    this.recalculateQueueSchedule(this.queueStartTime);
+    
+    // Get the base time for the target lesson
+    const baseTime = this.lessonQueue[lessonIndex].scheduledStartTime || '09:00';
+    
+    // Restore original adjustments
+    this.lessonQueue.forEach((q, i) => { q.timeAdjustment = originalAdjustments[i]; });
+    
+    return baseTime;
   }
 
   // Find next available time considering controller submit time
@@ -1020,6 +1153,37 @@ export class TeacherSchedule {
     const earliest = Math.min(...timeMinutes);
     
     return minutesToTime(earliest);
+  }
+
+  /**
+   * Analyze gaps in any array of schedule nodes using ScheduleUtils
+   * @param scheduleNodes - Array of schedule nodes to analyze
+   * @returns Array of nodes with gap information added
+   */
+  analyzeScheduleGaps(scheduleNodes: ScheduleNode[]): Array<ScheduleNode & { hasGap?: boolean; gapDuration?: number }> {
+    const eventNodes = scheduleNodes.filter(node => node.type === 'event');
+    
+    if (eventNodes.length <= 1) {
+      return eventNodes.map(node => ({ ...node, hasGap: false }));
+    }
+
+    // Map back to original nodes with gap information
+    return eventNodes.map((node, index) => {
+      if (index === 0) {
+        return { ...node, hasGap: false };
+      }
+
+      const previousNode = eventNodes[index - 1];
+      const previousEndTime = this.timeToMinutes(previousNode.startTime) + previousNode.duration;
+      const currentStartTime = this.timeToMinutes(node.startTime);
+      const gapMinutes = currentStartTime - previousEndTime;
+
+      return {
+        ...node,
+        hasGap: gapMinutes > 0,
+        gapDuration: gapMinutes > 0 ? gapMinutes : undefined
+      };
+    });
   }
 
   calculateTeacherStats(): TeacherStats {

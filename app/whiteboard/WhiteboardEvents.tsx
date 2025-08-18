@@ -227,13 +227,43 @@ function TeacherEventsGroup({
               setGlobalTimeOffset(prev => prev + delta);
           }
 
-          return nodes.map((node, index) => {
+          const updatedNodes = nodes.map((node, index) => {
               if (index >= targetIndex && node.type === 'event') {
                   const newStartTime = minutesToTime(timeToMinutes(node.startTime) + delta);
                   return { ...node, startTime: newStartTime };
               }
               return node;
           });
+
+          // Auto-close gaps when moving later (+30 minutes)
+          if (increment && targetIndex < nodes.length - 1) {
+              const eventNodes = updatedNodes.filter(n => n.type === 'event');
+              const currentEventIndex = eventNodes.findIndex(n => n.eventData?.lessonId === lessonId);
+              
+              if (currentEventIndex >= 0 && currentEventIndex < eventNodes.length - 1) {
+                  const currentEvent = eventNodes[currentEventIndex];
+                  const nextEvent = eventNodes[currentEventIndex + 1];
+                  
+                  const currentEndTime = timeToMinutes(currentEvent.startTime) + currentEvent.duration;
+                  const nextStartTime = timeToMinutes(nextEvent.startTime);
+                  const gap = nextStartTime - currentEndTime;
+                  
+                  // If gap is exactly 30 minutes (the adjustment we just made), close it
+                  if (gap === 30) {
+                      // Move all subsequent events 30 minutes earlier
+                      return updatedNodes.map((node, index) => {
+                          const nodeEventIndex = eventNodes.findIndex(en => en.id === node.id);
+                          if (nodeEventIndex > currentEventIndex && node.type === 'event') {
+                              const newStartTime = minutesToTime(timeToMinutes(node.startTime) - 30);
+                              return { ...node, startTime: newStartTime };
+                          }
+                          return node;
+                      });
+                  }
+              }
+          }
+
+          return updatedNodes;
       });
   };
 
@@ -257,6 +287,18 @@ function TeacherEventsGroup({
           
           return filteredNodes;
       });
+  };
+
+  // Remove gap for lesson - use existing TeacherSchedule method
+  const handleRemoveGap = (lessonId: string) => {
+    if (!teacherSchedule) return;
+    
+    // Use the existing TeacherSchedule gap removal method
+    teacherSchedule.removeGapForLesson(lessonId);
+    
+    // Update the editable schedule nodes to reflect the changes
+    const updatedNodes = teacherSchedule.getNodes();
+    setEditableScheduleNodes(updatedNodes);
   };
 
   const handleMoveInQueue = (lessonId: string, direction: 'up' | 'down') => {
@@ -831,6 +873,7 @@ function TeacherEventsGroup({
               onAdjustDuration={handleAdjustDuration}
               onAdjustTime={handleAdjustTime}
               onMove={handleMoveInQueue}
+              onRemoveGap={handleRemoveGap}
             />
           )}
         </div>
