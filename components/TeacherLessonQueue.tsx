@@ -5,7 +5,7 @@ import { X, Play, MapPin, Trash2, Send } from 'lucide-react';
 import { TeacherSchedule, type QueuedLesson as TeacherQueuedLesson } from '@/backend/TeacherSchedule';
 import { HelmetIcon, FlagIcon } from '@/svgs';
 import { extractStudents, WhiteboardClass, calculateLessonStats, getAvailableLessons } from '@/backend/WhiteboardClass';
-import { timeToMinutes, minutesToTime } from '@/components/formatters/TimeZone';
+import { timeToMinutes, minutesToTime, createUTCDateTime } from '@/components/formatters/TimeZone';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
 import { type EventController } from '@/backend/types';
 import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
@@ -273,10 +273,10 @@ export default function TeacherLessonQueue({
             // Ensure scheduledDateTime is always present and valid
             let scheduledDateTime: string;
             if (queuedLesson.scheduledStartTime && currentTimeMinutes >= 360 && currentTimeMinutes <= 1380) {
-              scheduledDateTime = new Date(`${selectedDate}T${queuedLesson.scheduledStartTime}`).toISOString();
+              scheduledDateTime = createUTCDateTime(selectedDate, queuedLesson.scheduledStartTime).toISOString();
             } else {
               // Fallback to a safe time if invalid
-              scheduledDateTime = new Date(`${selectedDate}T09:00`).toISOString();
+              scheduledDateTime = createUTCDateTime(selectedDate, '09:00').toISOString();
             }
             
             return (
