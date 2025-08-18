@@ -207,3 +207,33 @@ export function findNextAvailableSlot<T extends ScheduleItem>(
     duration: requestedDuration
   };
 }
+
+/**
+ * Compact a schedule by removing gaps, preserving the order of items.
+ * The first item's start time is used as an anchor.
+ * @param items - Array of schedule items to compact, in the desired order.
+ * @returns A new array of items with gaps removed (items moved earlier).
+ */
+export function compactSchedulePreservingOrder<T extends ScheduleItem>(items: T[]): T[] {
+  if (items.length <= 1) {
+    return items.map(item => ({ ...item }));
+  }
+
+  const compactedItems = items.map(item => ({ ...item }));
+
+  // Start with the first item time - keep it as anchor
+  let currentEndTime = timeToMinutes(compactedItems[0].startTime) + compactedItems[0].duration;
+
+  // Compact all items starting from the second one
+  for (let i = 1; i < compactedItems.length; i++) {
+    const currentItem = compactedItems[i];
+
+    // Set current item to start right after previous one ends (no gap)
+    currentItem.startTime = minutesToTime(currentEndTime);
+
+    // Update end time for next iteration
+    currentEndTime = currentEndTime + currentItem.duration;
+  }
+
+  return compactedItems;
+}
