@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-// import WhiteboardNav from './WhiteboardNav';
 import WhiteboardMiniNav from "./WhiteboardMiniNav";
 import WhiteboardBookings from "./WhiteboardBookings";
 import WhiteboardLessons from "./WhiteboardLessons";
 import WhiteboardEvents from "./WhiteboardEvents";
-import WhiteboardEventController from "./WhiteboardEventController";
 import WhiteboardStatus from "./WhiteboardStatus";
 import WhiteboardWeather from "./WhiteboardWeather";
 import { WhiteboardData } from "@/actions/whiteboard-actions";
@@ -17,15 +15,7 @@ import {
   setStoredDate,
   getTodayDateString,
 } from "@/components/formatters/DateTime";
-import { type EventController, type BookingData, type MiniNavController } from "@/backend/types";
-import { LOCATION_ENUM_VALUES, type BookingStatusFilter, type LessonStatusFilter, type EventStatusFilter } from "@/lib/constants";
-import {
-  getCurrentUTCDate,
-  getCurrentUTCTime,
-  addMinutesToTime,
-  extractDateFromUTC,
-} from "@/components/formatters/TimeZone";
-export type { EventController };
+import { type BookingStatusFilter, type LessonStatusFilter, type EventStatusFilter } from "@/lib/constants";
 
 const STORAGE_KEY = "whiteboard-selected-date";
 
@@ -45,11 +35,6 @@ const WHITEBOARD_SECTIONS = [
     id: "weather",
     name: "Weather",
     description: "See forecast at 3PM for planning",
-  },
-  {
-    id: "controller",
-    name: "Controller",
-    description: "Event creation settings",
   },
   { id: "status", name: "Status", description: "See all stats & more..." },
 ] as const;
@@ -73,15 +58,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     events: "all"
   });
 
-  // Event Controller State
-  const [controller, setController] = useState<EventController>({
-    flag: false, // Will be set based on whether there are events for this date
-    location: LOCATION_ENUM_VALUES[0], // Default to first location from enum
-    durationCapOne: 120, // Duration for single student lessons (1:30hrs)
-    durationCapTwo: 180, // Duration for 2+ student lessons (2:00hrs)
-    durationCapThree: 240, // Duration for large group lessons (3:00hrs)
-    submitTime: "11:00", // Default start time for events
-  });
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
@@ -101,37 +77,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     setSelectedDate(storedDate);
   }, []);
 
-  // Initialize controller with current time if today is selected
-  useEffect(() => {
-    const isToday = selectedDate === getCurrentUTCDate();
-
-    if (isToday) {
-      const currentTime = getCurrentUTCTime();
-      const [currentHour, currentMinute] = currentTime.split(":").map(Number);
-
-      // Round up to next 30-minute interval
-      let roundedMinute = currentMinute <= 30 ? 30 : 60;
-      let roundedHour = currentHour;
-
-      if (roundedMinute === 60) {
-        roundedHour += 1;
-        roundedMinute = 0;
-      }
-
-      const timeString = `${roundedHour.toString().padStart(2, "0")}:${roundedMinute.toString().padStart(2, "0")}`;
-
-      setController((prev) => ({
-        ...prev,
-        submitTime: timeString,
-      }));
-    } else {
-      // Reset to default time for future dates
-      setController((prev) => ({
-        ...prev,
-        submitTime: "11:00",
-      }));
-    }
-  }, [selectedDate]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -262,14 +207,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     };
   }, [data, selectedDate]);
 
-  // Update controller flag based on whether there are events for the selected date
-  useEffect(() => {
-    const hasEvents = filteredData.events.length > 0;
-    setController((prev) => ({
-      ...prev,
-      flag: hasEvents,
-    }));
-  }, [filteredData.events]);
 
   const handleSectionClick = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -282,18 +219,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         {/* Sidebar */}
         <div className="xl:col-span-1 order-2 xl:order-1">
           <div className="xl:sticky xl:top-4 p-4">
-            {/* <WhiteboardNav
-              activeSection={activeSection}
-              onSectionClick={handleSectionClick}
-              sections={WHITEBOARD_SECTIONS}
-              selectedDate={selectedDate}
-              onDateChange={handleDateChange}
-              controller={controller}
-              onControllerChange={setController}
-              events={filteredData.events}
-              bookings={filteredData.bookings} // Pass bookings for enhanced analytics
-              teacherSchedules={filteredData.teacherSchedules} // Pass teacher schedules for actions
-            /> */}
             <WhiteboardMiniNav
               activeSection={activeSection}
               onSectionClick={handleSectionClick}
@@ -304,8 +229,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
               eventsCount={filteredData.events.length}
               filters={filters}
               onFilterChange={handleFilterChange}
-              controller={controller}
-              onControllerChange={setController}
             />
           </div>
         </div>
@@ -322,7 +245,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                 {activeSection === "lessons" && (
                   <WhiteboardLessons
                     lessons={filteredData.lessons}
-                    controller={controller}
                     selectedDate={selectedDate}
                     teacherSchedules={filteredData.teacherSchedules}
                   />
@@ -334,9 +256,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                     selectedDate={selectedDate}
                     teacherSchedules={filteredData.teacherSchedules}
                     viewAs="admin"
-                    controller={controller}
-                    allLessons={filteredData.lessons}
-                    allBookings={filteredData.bookings}
                   />
                 )}
 
@@ -349,14 +268,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                   />
                 )}
 
-                {activeSection === "controller" && (
-                  <WhiteboardEventController
-                    controller={controller}
-                    onControllerChange={setController}
-                    events={filteredData.events}
-                    selectedDate={selectedDate}
-                  />
-                )}
 
                 {activeSection === "status" && (
                   <WhiteboardStatus

@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { FlagIcon } from "@/svgs/FlagIcon";
+import FlagPicker from "@/components/pickers/flag-picker";
+import DurationSettings from "@/components/duration-settings";
+import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { HeadsetIcon } from "@/svgs";
@@ -17,7 +20,6 @@ import {
 
 interface WhiteboardLessonsProps {
   lessons: any[];
-  controller: any;
   selectedDate: string;
   teacherSchedules: Map<string, TeacherSchedule>;
 }
@@ -31,6 +33,7 @@ function TeacherGroup({
   teacherSchedule,
   selectedDate,
   controller,
+  durationSettings,
   queueUpdateTrigger,
   onQueueChange,
 }: {
@@ -40,26 +43,28 @@ function TeacherGroup({
   onBatchEventCreation: (events: any[]) => void;
   teacherSchedule?: TeacherSchedule;
   selectedDate: string;
+  durationSettings: any;
   controller: any;
   queueUpdateTrigger: number;
   onQueueChange: () => void;
 }) {
-  const { availableLessons, lessonsWithEvents } = calculateLessonStats(
-    teacherGroup.lessons,
-  );
   const canReorganize = teacherSchedule
     ? teacherSchedule.canReorganizeSchedule()
     : false;
 
   // Get earliest time from teacher schedule using existing method
   const earliestTime = useMemo(() => {
-    // return teacherSchedle ? teacherSchedule.getEarliestTime() : null;
+    if (!teacherSchedule) return null;
+    const firstEventNode = teacherSchedule
+      .getNodes()
+      .find((node) => node.type === "event");
+    return firstEventNode ? firstEventNode.startTime : null;
   }, [teacherSchedule, queueUpdateTrigger]);
 
   // Create mapping from lesson ID to event ID for database updates
   const createEventIdMap = (lessons: any[]): Map<string, string> => {
     const map = new Map<string, string>();
-    lessons.forEach(lesson => {
+    lessons.forEach((lesson) => {
       if (lesson?.events && Array.isArray(lesson.events)) {
         lesson.events.forEach((event: any) => {
           if (event?.id && lesson?.id) {
@@ -78,33 +83,41 @@ function TeacherGroup({
     try {
       // Create event ID mapping for database updates
       const eventIdMap = createEventIdMap(teacherGroup.lessons);
-      
+
       // Use the existing performCompactReorganization method
       const success = teacherSchedule.performCompactReorganization();
       if (!success) {
-        console.log('No reorganization needed or failed to reorganize schedule');
+        console.log(
+          "No reorganization needed or failed to reorganize schedule",
+        );
         return;
       }
-      
+
       // Get database updates using the existing method
-      const databaseUpdates = teacherSchedule.getDatabaseUpdatesForCompactReorganization(selectedDate, eventIdMap);
-      
+      const databaseUpdates =
+        teacherSchedule.getDatabaseUpdatesForCompactReorganization(
+          selectedDate,
+          eventIdMap,
+        );
+
       // Update database if we have changes to make
       if (databaseUpdates.length > 0) {
         const dbResult = await reorganizeEventTimes(databaseUpdates);
         if (dbResult.success) {
-          console.log(`Full schedule reorganized successfully. Updated ${dbResult.updatedCount} events in database.`);
+          console.log(
+            `Full schedule reorganized successfully. Updated ${dbResult.updatedCount} events in database.`,
+          );
           // Trigger queue update to refresh the UI
           onQueueChange();
         } else {
-          console.error('Failed to update database:', dbResult.error);
+          console.error("Failed to update database:", dbResult.error);
           return;
         }
       } else {
-        console.log('Schedule already optimized');
+        console.log("Schedule already optimized");
       }
     } catch (error) {
-      console.error('Error reorganizing full schedule:', error);
+      console.error("Error reorganizing full schedule:", error);
     }
   };
 
@@ -156,7 +169,8 @@ function TeacherGroup({
           teacherName={teacherGroup.teacherName}
           teacherSchedule={teacherSchedule}
           selectedDate={selectedDate}
-          controller={controller}
+          durationSettings={durationSettings}
+          controllerTime={controller.submitTime}
           onCreateEvents={onBatchEventCreation}
           queueUpdateTrigger={queueUpdateTrigger}
           onQueueChange={onQueueChange}
@@ -166,6 +180,54 @@ function TeacherGroup({
             }
           }}
         />
+      </div>
+    </div>
+  );
+}
+
+// Sub-component: Global Stats Header
+function GlobalStatsHeader({
+  globalStats,
+  controller,
+  onControllerChange,
+  earliestTime,
+}: {
+  globalStats: {
+    totalEvents: number;
+    totalLessons: number;
+    totalHours: number;
+    totalEarnings: number;
+    schoolRevenue: number;
+  };
+  controller: any;
+  onControllerChange?: (controller: any) => void;
+  earliestTime: string;
+}) {
+  const teacherStats = {
+    totalEvents: globalStats.totalEvents,
+    totalLessons: globalStats.totalLessons,
+    totalHours: globalStats.totalHours,
+    totalEarnings: globalStats.totalEarnings,
+    schoolRevenue: globalStats.schoolRevenue,
+  };
+
+  return (
+    <div className="border border-border rounded-lg p-4 bg-card">
+      <div className="space-y-4">
+        <div className="flex justify-center">
+          <TeacherLessonStats teacherStats={teacherStats} />
+        </div>
+
+        {controller && onControllerChange && (
+          <div className="flex justify-center">
+            <FlagPicker
+              controller={controller}
+              onControllerChange={onControllerChange}
+              showLocation={true}
+              variant="compact"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -184,12 +246,25 @@ function EmptyState() {
 
 export default function WhiteboardLessons({
   lessons,
-  controller,
   selectedDate,
   teacherSchedules,
 }: WhiteboardLessonsProps) {
   const router = useRouter();
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0);
+
+  //this needs to be removed...... overcomplex, we have it inside the duration-settings
+  const [durationSettings, setDurationSettings] = useState({
+    durationCapOne: 120, // Will be set by DurationSettings component
+    durationCapTwo: 180, // Will be set by DurationSettings component
+    durationCapThree: 240, // Will be set by DurationSettings component
+  });
+
+  // Local controller state for GlobalStatsHeader FlagPicker
+  const [controller, setController] = useState({
+    flag: false,
+    location: LOCATION_ENUM_VALUES[0],
+    submitTime: "11:00",
+  });
 
   const toggleLessonQueue = (lesson: any) => {
     const teacherSchedule = teacherSchedules.get(lesson.teacher?.id);
@@ -272,40 +347,50 @@ export default function WhiteboardLessons({
     };
   }, [teacherSchedules]);
 
+  // Calculate earliest time from all teacher schedules
+  const earliestTime = useMemo(() => {
+    let earliest = null;
+
+    teacherSchedules.forEach((schedule) => {
+      const firstEventNode = schedule
+        .getNodes()
+        .find((node) => node.type === "event");
+      if (firstEventNode) {
+        if (!earliest || firstEventNode.startTime < earliest) {
+          earliest = firstEventNode.startTime;
+        }
+      }
+    });
+
+    return earliest || "11:00"; // Default to 11:00 if no events
+  }, [teacherSchedules]);
+
+  // Update controller time to earliest time initially, but allow user to change it
+  useEffect(() => {
+    setController((prev) => ({
+      ...prev,
+      submitTime: earliestTime,
+    }));
+  }, [earliestTime]);
+
   return (
     <div className="space-y-6">
+      {/* Duration Settings */}
+      <DurationSettings
+        onSettingsChange={(settings) => {
+          console.log("Duration settings updated:", settings);
+          setDurationSettings(settings);
+        }}
+      />
+
       {/* Global Stats Header */}
       <div className="flex justify-center">
-        <div className="border border-border rounded-lg p-4 bg-card">
-          <div className="flex items-center gap-6 text-sm">
-            <div className="text-center">
-              <div className="font-semibold text-indigo-600 dark:text-indigo-400">
-                {globalStats.totalEvents}/{globalStats.totalLessons}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Events/Lessons
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="font-semibold text-purple-600 dark:text-purple-400">
-                {Math.round(globalStats.totalHours * 10) / 10}h
-              </div>
-              <div className="text-xs text-muted-foreground">Hours</div>
-            </div>
-            <div className="text-center">
-              <div className="font-semibold text-green-600 dark:text-green-400">
-                €{Math.round(globalStats.totalEarnings)}
-              </div>
-              <div className="text-xs text-muted-foreground">Teacher</div>
-            </div>
-            <div className="text-center">
-              <div className="font-semibold text-orange-600 dark:text-orange-400">
-                €{Math.round(globalStats.schoolRevenue)}
-              </div>
-              <div className="text-xs text-muted-foreground">School</div>
-            </div>
-          </div>
-        </div>
+        <GlobalStatsHeader
+          globalStats={globalStats}
+          controller={controller}
+          onControllerChange={setController}
+          earliestTime={earliestTime}
+        />
       </div>
 
       {groupedLessons.length === 0 ? (
@@ -321,6 +406,7 @@ export default function WhiteboardLessons({
                 onRemoveFromQueue={handleRemoveFromQueue}
                 onBatchEventCreation={handleBatchEventCreation}
                 selectedDate={selectedDate}
+                durationSettings={durationSettings}
                 controller={controller}
                 teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)}
                 queueUpdateTrigger={queueUpdateTrigger}

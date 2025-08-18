@@ -1,13 +1,14 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EventCard, { GapCard } from "@/components/cards/EventCard";
 import TeacherEventQueue from "@/components/TeacherEventQueue";
-import { HeadsetIcon, Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { HeadsetIcon, Zap, ChevronLeft, ChevronRight, Wind, ChevronDown } from "lucide-react";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import { TeacherSchedule, ScheduleNode } from "@/backend/TeacherSchedule";
 import { type ReorganizationOption } from "@/backend/types";
+import { TeacherEventsUtils, type TeacherEventGroupData } from "@/backend/TeacherEventsUtils";
 import { reorganizeEventTimes } from "@/actions/kite-actions";
 import { updateEvent, deleteEvent } from "@/actions/event-actions";
 import {
@@ -16,14 +17,17 @@ import {
   createUTCDateTime,
   toUTCString,
 } from "@/components/formatters/TimeZone";
-import { 
-  extractStudentNames,
-} from '@/backend/WhiteboardClass';
-import { compactSchedulePreservingOrder } from '@/backend/ScheduleUtils';
+import { extractStudentNames } from '@/backend/WhiteboardClass';
+
+interface WhiteboardEventsProps {
+  events: any[];
+  selectedDate: string;
+  teacherSchedules: Map<string, TeacherSchedule>;
+  viewAs?: "admin" | "teacher" | "student";
+}
 
 // Sub-component: Time Adjustment Flag
 interface TimeAdjustmentFlagProps {
-  firstEventTime: string | null;
   proposedTimeOffset: number;
   timeAdjustmentMode: boolean;
   editableScheduleNodes: ScheduleNode[];
@@ -35,26 +39,21 @@ interface TimeAdjustmentFlagProps {
   onSetViewMode: (mode: "event" | "queue") => void;
 }
 
-function TimeAdjustmentFlag({ ...props }) {
-  const {
-    firstEventTime,
-    proposedTimeOffset,
-    timeAdjustmentMode,
-    editableScheduleNodes,
-    parentTimeAdjustmentMode = false,
-    onTimeAdjustment,
-    onAcceptTimeAdjustment,
-    onCancelTimeAdjustment,
-    onSetTimeAdjustmentMode,
-    onSetViewMode,
-  } = props;
-  // Always show the actual first lesson time from the editable schedule
+function TimeAdjustmentFlag({
+  proposedTimeOffset,
+  timeAdjustmentMode,
+  editableScheduleNodes,
+  parentTimeAdjustmentMode = false,
+  onTimeAdjustment,
+  onAcceptTimeAdjustment,
+  onCancelTimeAdjustment,
+  onSetTimeAdjustmentMode,
+  onSetViewMode,
+}: TimeAdjustmentFlagProps) {
   const firstEventNode = editableScheduleNodes.find(
     (node) => node.type === "event",
   );
-  const displayTime = firstEventNode
-    ? firstEventNode.startTime
-    : firstEventTime || "No events";
+  const displayTime = firstEventNode ? firstEventNode.startTime : "No events";
 
   if (timeAdjustmentMode) {
     return (
@@ -91,8 +90,8 @@ function TimeAdjustmentFlag({ ...props }) {
   return (
     <div
       onClick={() => {
-        onSetTimeAdjustmentMode(true); // Enter time adjustment mode
-        onSetViewMode("queue"); // Switch to queue view to see real-time updates
+        onSetTimeAdjustmentMode(true);
+        onSetViewMode("queue");
       }}
       className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 cursor-pointer transition-colors"
       title="Click to adjust start time and switch to queue view"
@@ -103,11 +102,56 @@ function TimeAdjustmentFlag({ ...props }) {
   );
 }
 
-interface WhiteboardEventsProps {
-  events: any[];
-  selectedDate: string;
-  teacherSchedules: Map<string, TeacherSchedule>;
-  viewAs?: "admin" | "teacher" | "student";
+// Sub-component: Parent Time Adjustment Flag
+interface ParentTimeAdjustmentFlagProps {
+  parentTimeAdjustmentMode: boolean;
+  parentGlobalTime: string | null;
+  earliestTime: string | null;
+  onParentTimeAdjustment: (minutesOffset: number) => void;
+  onParentFlagClick: () => void;
+}
+
+function ParentTimeAdjustmentFlag({
+  parentTimeAdjustmentMode,
+  parentGlobalTime,
+  earliestTime,
+  onParentTimeAdjustment,
+  onParentFlagClick,
+}: ParentTimeAdjustmentFlagProps) {
+  if (parentTimeAdjustmentMode) {
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onParentTimeAdjustment(-30)}
+          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          title="Move all schedules back 30 minutes"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="min-w-[60px] text-center font-mono">
+          {parentGlobalTime || "No events"}
+        </span>
+        <button
+          onClick={() => onParentTimeAdjustment(30)}
+          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          title="Move all schedules forward 30 minutes"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={onParentFlagClick}
+      className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 cursor-pointer transition-colors"
+      title="Click to adjust all schedules globally"
+    >
+      <FlagIcon className="w-4 h-4" />
+      <span>{earliestTime || "No events"}</span>
+    </div>
+  );
 }
 
 // Sub-component: Teacher Events Group using TeacherSchedule
@@ -117,726 +161,235 @@ function TeacherEventsGroup({
   selectedDate,
   viewAs = "admin",
   parentTimeAdjustmentMode = false,
-  parentGlobalTimeOffset = 0,
+  parentGlobalTime = null,
+  onTeacherEditModeChange,
 }: {
   teacherSchedule: TeacherSchedule;
   events: any[];
   selectedDate: string;
   viewAs?: "admin" | "teacher" | "student";
   parentTimeAdjustmentMode?: boolean;
-  parentGlobalTimeOffset?: number;
+  parentGlobalTime?: string | null;
+  onTeacherEditModeChange?: (teacherId: string, inEditMode: boolean) => void;
 }) {
+  // State management
   const [pendingReorganizations, setPendingReorganizations] = useState<
     Map<string, ReorganizationOption[]>
   >(new Map());
   const [timeAdjustmentMode, setTimeAdjustmentMode] = useState(false);
-  const [globalTimeOffset, setGlobalTimeOffset] = useState(0); // Global offset from original schedule
+  const [globalTimeOffset, setGlobalTimeOffset] = useState(0);
   const [viewMode, setViewMode] = useState<"event" | "queue">("event");
 
-  const scheduleNodes = useMemo(
-    () => teacherSchedule.getNodes(),
-    [teacherSchedule],
-  );
-  const eventNodes = useMemo(
-    () => scheduleNodes.filter((node) => node.type === "event"),
-    [scheduleNodes],
-  );
+  // Computed values
+  const scheduleNodes = useMemo(() => teacherSchedule.getNodes(), [teacherSchedule]);
+  const eventNodes = useMemo(() => scheduleNodes.filter((node) => node.type === "event"), [scheduleNodes]);
+  const [editableScheduleNodes, setEditableScheduleNodes] = useState(scheduleNodes);
+  const schedule = teacherSchedule.getSchedule();
+  const canReorganize = teacherSchedule.canReorganizeSchedule();
+  const router = useRouter();
 
-  const [editableScheduleNodes, setEditableScheduleNodes] =
-    useState(scheduleNodes);
-
-  // Check if this teacher schedule has been modified independently
-  const hasIndependentModifications = useMemo(() => {
-    if (parentTimeAdjustmentMode && parentGlobalTimeOffset !== 0) {
-      // If parent is adjusting, check if this teacher's first event time differs from what it would be with parent offset
-      const firstEvent = eventNodes[0];
-      if (firstEvent) {
-        const expectedTimeWithParentOffset =
-          timeToMinutes(firstEvent.startTime) + parentGlobalTimeOffset;
-        const actualTime = timeToMinutes(
-          editableScheduleNodes.find((n) => n.type === "event")?.startTime ||
-          firstEvent.startTime,
-        );
-
-        // If the actual time doesn't match what it should be with parent offset, it has independent modifications
-        return Math.abs(actualTime - expectedTimeWithParentOffset) > 1; // Allow 1 minute tolerance
-      }
-    }
-    return false;
-  }, [
-    parentTimeAdjustmentMode,
-    parentGlobalTimeOffset,
-    eventNodes,
-    editableScheduleNodes,
-  ]);
-
-  // Auto-switch to edit mode when parent is active or teacher has independent modifications
+  // Parent mode auto-switch effect
   useEffect(() => {
     if (parentTimeAdjustmentMode && viewMode === "event") {
       setViewMode("queue");
       setTimeAdjustmentMode(true);
+      const teacherId = teacherSchedule.getSchedule().teacherId;
+      onTeacherEditModeChange?.(teacherId, true);
     }
   }, [parentTimeAdjustmentMode, viewMode]);
 
-  // Apply parent offset to teachers or reset when parent is cancelled
+  // Parent time application effect  
   useEffect(() => {
-    if (parentTimeAdjustmentMode) {
-      if (parentGlobalTimeOffset !== 0) {
-        // Simply apply the parent offset to all events in this teacher's schedule
-        const updatedNodes = scheduleNodes.map((node) => {
-          if (node.type === "event") {
-            const originalTime = timeToMinutes(node.startTime);
-            const newTime = originalTime + parentGlobalTimeOffset;
-            return {
-              ...node,
-              startTime: minutesToTime(Math.max(0, newTime)), // Ensure time is not negative
-            };
-          }
-          return node;
-        });
+    const teacherId = teacherSchedule.getSchedule().teacherId;
 
-        setEditableScheduleNodes(updatedNodes);
-        setGlobalTimeOffset(parentGlobalTimeOffset);
-      } else {
-        // Parent is active but no offset - show original schedule in edit mode
-        setEditableScheduleNodes(scheduleNodes);
-        setGlobalTimeOffset(0);
-      }
-    } else {
-      // Parent is not active - reset to original state
+    if (parentTimeAdjustmentMode && parentGlobalTime) {
+      const updatedNodes = TeacherEventsUtils.applyParentTimeToSchedule(scheduleNodes, parentGlobalTime);
+      const timeOffset = TeacherEventsUtils.calculateTimeOffset(teacherSchedule, parentGlobalTime);
+      setEditableScheduleNodes(updatedNodes);
+      setGlobalTimeOffset(timeOffset);
+    } else if (!parentTimeAdjustmentMode) {
       setEditableScheduleNodes(scheduleNodes);
       setGlobalTimeOffset(0);
       setTimeAdjustmentMode(false);
       setViewMode("event");
     }
-  }, [parentTimeAdjustmentMode, parentGlobalTimeOffset, scheduleNodes]);
+  }, [parentTimeAdjustmentMode, parentGlobalTime, scheduleNodes, teacherSchedule]);
 
+  // Sync with original schedule
   useEffect(() => {
     setEditableScheduleNodes(scheduleNodes);
   }, [scheduleNodes]);
 
-  const handleAdjustDuration = (lessonId: string, increment: boolean) => {
+  // Handler functions (using backend utilities)
+  const handleAdjustDuration = useCallback((lessonId: string, increment: boolean) => {
+    setEditableScheduleNodes((currentNodes) => 
+      TeacherEventsUtils.adjustLessonDuration(currentNodes, lessonId, increment)
+    );
+  }, []);
+
+  const handleAdjustTime = useCallback((lessonId: string, increment: boolean) => {
     setEditableScheduleNodes((currentNodes) => {
-      const nodes = [...currentNodes];
-      const targetIndex = nodes.findIndex(
-        (node) => node.eventData?.lessonId === lessonId,
-      );
-
-      if (targetIndex === -1) return nodes;
-
-      const oldDuration = nodes[targetIndex].duration;
-      const newDuration = Math.max(30, oldDuration + (increment ? 30 : -30));
-      const actualDurationDelta = newDuration - oldDuration;
-
-      if (actualDurationDelta === 0) return currentNodes;
-
-      // If this is the first event and we're changing duration, we need to update subsequent events
-      // but this doesn't affect the global offset since we're not changing the start time
-      return nodes.map((node, index) => {
-        if (index === targetIndex) {
-          return { ...node, duration: newDuration };
-        }
-        if (index > targetIndex && node.type === "event") {
-          const newStartTime = minutesToTime(
-            timeToMinutes(node.startTime) + actualDurationDelta,
-          );
-          return { ...node, startTime: newStartTime };
-        }
-        return node;
-      });
+      const { nodes, globalOffsetDelta } = TeacherEventsUtils.adjustLessonTime(currentNodes, lessonId, increment);
+      setGlobalTimeOffset(prev => prev + globalOffsetDelta);
+      return nodes;
     });
-  };
+  }, []);
 
-  const handleAdjustTime = (lessonId: string, increment: boolean) => {
+  const handleRemoveFromQueue = useCallback((lessonId: string) => {
     setEditableScheduleNodes((currentNodes) => {
-      const nodes = [...currentNodes];
-      const targetIndex = nodes.findIndex(
-        (node) => node.eventData?.lessonId === lessonId,
-      );
-
-      if (targetIndex === -1) return nodes;
-
-      const delta = increment ? 30 : -30;
-
-      // If this is the first event, update the global offset
-      if (targetIndex === 0) {
-        setGlobalTimeOffset((prev) => prev + delta);
-      }
-
-      const updatedNodes = nodes.map((node, index) => {
-        if (index >= targetIndex && node.type === "event") {
-          const newStartTime = minutesToTime(
-            timeToMinutes(node.startTime) + delta,
-          );
-          return { ...node, startTime: newStartTime };
-        }
-        return node;
-      });
-
-      // Auto-close gaps when moving later (+30 minutes)
-      if (increment && targetIndex < nodes.length - 1) {
-        const eventNodes = updatedNodes.filter((n) => n.type === "event");
-        const currentEventIndex = eventNodes.findIndex(
-          (n) => n.eventData?.lessonId === lessonId,
-        );
-
-        if (
-          currentEventIndex >= 0 &&
-          currentEventIndex < eventNodes.length - 1
-        ) {
-          const currentEvent = eventNodes[currentEventIndex];
-          const nextEvent = eventNodes[currentEventIndex + 1];
-
-          const currentEndTime =
-            timeToMinutes(currentEvent.startTime) + currentEvent.duration;
-          const nextStartTime = timeToMinutes(nextEvent.startTime);
-          const gap = nextStartTime - currentEndTime;
-
-          // If gap is exactly 30 minutes (the adjustment we just made), close it
-          if (gap === 30) {
-            // Move all subsequent events 30 minutes earlier
-            return updatedNodes.map((node, index) => {
-              const nodeEventIndex = eventNodes.findIndex(
-                (en) => en.id === node.id,
-              );
-              if (nodeEventIndex > currentEventIndex && node.type === "event") {
-                const newStartTime = minutesToTime(
-                  timeToMinutes(node.startTime) - 30,
-                );
-                return { ...node, startTime: newStartTime };
-              }
-              return node;
-            });
-          }
-        }
-      }
-
-      return updatedNodes;
+      const { nodes, newGlobalOffset } = TeacherEventsUtils.removeLessonFromQueue(currentNodes, scheduleNodes, lessonId);
+      setGlobalTimeOffset(newGlobalOffset);
+      return nodes;
     });
-  };
+  }, [scheduleNodes]);
 
-  const handleRemoveFromQueue = (lessonId: string) => {
-    setEditableScheduleNodes((currentNodes) => {
-      const filteredNodes = currentNodes.filter(
-        (node) => node.eventData?.lessonId !== lessonId,
-      );
-
-      // If we removed the first event, we need to recalculate the global offset
-      // based on the new first event's time compared to the original first event
-      if (
-        currentNodes[0]?.eventData?.lessonId === lessonId &&
-        filteredNodes.length > 0
-      ) {
-        const newFirstEvent = filteredNodes.find(
-          (node) => node.type === "event",
-        );
-        const originalFirstEvent = scheduleNodes.find(
-          (node) => node.type === "event",
-        );
-
-        if (newFirstEvent && originalFirstEvent) {
-          const newTime = timeToMinutes(newFirstEvent.startTime);
-          const originalTime = timeToMinutes(originalFirstEvent.startTime);
-          const newOffset = newTime - originalTime;
-          setGlobalTimeOffset(newOffset);
-        }
-      }
-
-      return filteredNodes;
-    });
-  };
-
-  // Remove gap for lesson - use existing TeacherSchedule method
-  const handleRemoveGap = (lessonId: string) => {
+  const handleRemoveGap = useCallback((lessonId: string) => {
     if (!teacherSchedule) return;
-
-    // Use the existing TeacherSchedule gap removal method
     teacherSchedule.removeGapForLesson(lessonId);
-
-    // Update the editable schedule nodes to reflect the changes
     const updatedNodes = teacherSchedule.getNodes();
     setEditableScheduleNodes(updatedNodes);
-  };
+  }, [teacherSchedule]);
 
-  const handleMoveInQueue = (lessonId: string, direction: 'up' | 'down') => {
-    setEditableScheduleNodes(currentNodes => {
-        // Find the original start time of the first event in the current teacher's schedule
-        const firstEventNode = currentNodes.find(n => n.type === 'event');
-        if (!firstEventNode) return currentNodes; // No events to reorder
-        const anchorTime = firstEventNode.startTime;
-
-        const updatedNodes = [...currentNodes];
-        const movingNodeIndex = updatedNodes.findIndex(n => n.eventData?.lessonId === lessonId);
-
-        if (movingNodeIndex === -1) return currentNodes;
-
-        let swapNodeIndex = -1;
-        if (direction === 'up') {
-            for (let i = movingNodeIndex - 1; i >= 0; i--) {
-                if (updatedNodes[i].type === 'event') {
-                    swapNodeIndex = i;
-                    break;
-                }
-            }
-        } else {
-            for (let i = movingNodeIndex + 1; i < updatedNodes.length; i++) {
-                if (updatedNodes[i].type === 'event') {
-                    swapNodeIndex = i;
-                    break;
-                }
-            }
-        }
-
-        if (swapNodeIndex === -1) return currentNodes;
-
-        // Swap the nodes
-        [updatedNodes[movingNodeIndex], updatedNodes[swapNodeIndex]] = [updatedNodes[swapNodeIndex], updatedNodes[movingNodeIndex]];
-
-        const eventNodes = updatedNodes.filter(n => n.type === 'event');
-        
-        // Pass the original start time as the anchor
-        const compactedNodes = compactSchedulePreservingOrder(eventNodes, anchorTime);
-
-        return compactedNodes;
-    });
-  };
-
-  const handleSubmitQueueChanges = async () => {
-    console.log("Submitting changes...");
-
-    const originalEventNodes = scheduleNodes.filter((n) => n.type === "event");
-    const modifiedEventNodes = editableScheduleNodes.filter(
-      (n) => n.type === "event",
+  const handleMoveInQueue = useCallback((lessonId: string, direction: 'up' | 'down') => {
+    setEditableScheduleNodes(currentNodes => 
+      TeacherEventsUtils.moveLessonInQueue(currentNodes, lessonId, direction)
     );
+  }, []);
 
-    const updatePromises: Promise<any>[] = [];
+  const handleSubmitQueueChanges = useCallback(async () => {
+    await TeacherEventsUtils.submitQueueChanges(scheduleNodes, editableScheduleNodes, events, selectedDate);
+  }, [scheduleNodes, editableScheduleNodes, events, selectedDate]);
 
-    // Find and process updates/position changes
-    modifiedEventNodes.forEach((modifiedNode) => {
-      const originalNode = originalEventNodes.find(
-        (n) => n.eventData.lessonId === modifiedNode.eventData.lessonId,
-      );
-      if (!originalNode) return;
+  const handleResetQueue = useCallback(() => {
+    setEditableScheduleNodes(scheduleNodes);
+  }, [scheduleNodes]);
 
-      const updates: { date?: string; duration?: number } = {};
-      let hasChanges = false;
-
-      if (originalNode.startTime !== modifiedNode.startTime) {
-        // Create a local date object and convert to ISO string for the database (which will be UTC)
-        updates.date = toUTCString(createUTCDateTime(selectedDate, modifiedNode.startTime));
-        hasChanges = true;
-      }
-
-      if (originalNode.duration !== modifiedNode.duration) {
-        updates.duration = modifiedNode.duration;
-        hasChanges = true;
-      }
-
-      if (hasChanges) {
-        const eventData = events.find(
-          (e) => e.lesson?.id === modifiedNode.eventData.lessonId,
-        );
-        if (eventData && eventData.id) {
-          console.log(`Updating event ${eventData.id} with`, updates);
-          updatePromises.push(updateEvent(eventData.id, updates));
-        }
-      }
-    });
-
-    // Find and process deletions
-    originalEventNodes.forEach((originalNode) => {
-      if (
-        !modifiedEventNodes.some(
-          (n) => n.eventData.lessonId === originalNode.eventData.lessonId,
-        )
-      ) {
-        const eventData = events.find(
-          (e) => e.lesson?.id === originalNode.eventData.lessonId,
-        );
-        if (eventData && eventData.id) {
-          console.log(`Deleting event ${eventData.id}`);
-          updatePromises.push(deleteEvent(eventData.id));
-        }
-      }
-    });
-
-    if (updatePromises.length > 0) {
-      try {
-        const results = await Promise.all(updatePromises);
-        console.log("All updates complete:", results);
-        const failures = results.filter((r) => !r.success);
-        if (failures.length > 0) {
-          console.error("Some updates failed:", failures);
-        } else {
-          console.log("All events updated successfully.");
-        }
-      } catch (error) {
-        console.error("An error occurred during batch update:", error);
-      }
+  const handleCancelQueue = useCallback(() => {
+    const teacherId = teacherSchedule.getSchedule().teacherId;
+    
+    if (parentTimeAdjustmentMode) {
+      setEditableScheduleNodes(scheduleNodes);
     } else {
-      console.log("No changes to submit.");
+      setViewMode("event");
+      setEditableScheduleNodes(scheduleNodes);
     }
-  };
+    
+    onTeacherEditModeChange?.(teacherId, false);
+  }, [scheduleNodes, teacherSchedule, onTeacherEditModeChange, parentTimeAdjustmentMode]);
 
-  const handleResetQueue = () => {
-    setEditableScheduleNodes(scheduleNodes);
-  };
-
-  const handleCancelQueue = () => {
-    setViewMode("event");
-    setEditableScheduleNodes(scheduleNodes);
-  };
-
-  const handleSubmitAndExit = async () => {
+  const handleSubmitAndExit = useCallback(async () => {
     await handleSubmitQueueChanges();
     setViewMode("event");
-  };
+  }, [handleSubmitQueueChanges]);
 
-  // Get earliest event time from schedule - use first node for controller logic
-  const firstEventTime = eventNodes.length > 0 ? eventNodes[0].startTime : null;
-
-  const schedule = teacherSchedule.getSchedule();
-
-  // Check if reorganization is possible
-  const canReorganize = teacherSchedule.canReorganizeSchedule();
-
-  // Utility: Create mapping from lesson ID to event ID for database updates
-  const createEventIdMap = (eventsList: any[]): Map<string, string> => {
-    const map = new Map<string, string>();
-    eventsList.forEach((eventData) => {
-      if (eventData.lesson?.id && eventData.id) {
-        map.set(eventData.lesson.id, eventData.id);
-      }
-    });
-    return map;
-  };
-
-  // Use TeacherSchedule class for full schedule reorganization
-  const router = useRouter();
-  const handleFullScheduleReorganization = async () => {
-    if (!teacherSchedule) return;
-    try {
-      const eventIdMap = createEventIdMap(events);
-      const success = teacherSchedule.performCompactReorganization();
-      if (!success) {
-        console.log('No reorganization needed or failed to reorganize schedule');
-        return;
-      }
-      const databaseUpdates = teacherSchedule.getDatabaseUpdatesForCompactReorganization(selectedDate, eventIdMap);
-      if (databaseUpdates.length > 0) {
-        const dbResult = await reorganizeEventTimes(databaseUpdates);
-        if (dbResult.success) {
-          console.log(`Full schedule reorganized successfully. Updated ${dbResult.updatedCount} events in database.`);
-          router.refresh();
-        } else {
-          console.error('Failed to update database:', dbResult.error);
-        }
-      } else {
-        console.log('Schedule already optimized');
-      }
-    } catch (error) {
-      console.error('Error reorganizing full schedule:', error);
+  const handleFullScheduleReorganization = useCallback(async () => {
+    const success = await TeacherEventsUtils.performFullScheduleReorganization(teacherSchedule, events, selectedDate);
+    if (success) {
+      router.refresh();
     }
-  };
+  }, [teacherSchedule, events, selectedDate, router]);
 
-  const handleDeleteEvent = async (eventData: any, eventNodeId?: string) => {
-    try {
-      // First get reorganization options if we have a node ID
-      let reorganizationOptions: ReorganizationOption[] = [];
-      if (eventNodeId) {
-        reorganizationOptions =
-          teacherSchedule.getReorganizationOptions(eventNodeId);
-      }
-
-      // Show reorganization options BEFORE deleting if available
-      if (reorganizationOptions.length > 0) {
-        setPendingReorganizations((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(eventData.id, reorganizationOptions);
-          return newMap;
-        });
-
-        // Don't delete yet - wait for user to choose reorganization option
-        console.log(
-          "Reorganization options available. Please choose an option or dismiss.",
-        );
-        return;
-      }
-
-      // Only delete immediately if no reorganization options
-      await performDelete(eventData.id, eventNodeId);
-    } catch (error) {
-      console.error("Error preparing event deletion:", error);
-    }
-  };
-
-  const performDelete = async (eventId: string, eventNodeId?: string) => {
-    try {
-      // Delete the event from database
-      const result = await deleteEvent(eventId);
-      if (result.success) {
-        console.log("Event deleted successfully:", eventId);
-
-        // Remove from teacher schedule
-        if (eventNodeId) {
-          teacherSchedule.removeNode(eventNodeId); // No manual gap needed, auto-detected
-        }
-      } else {
-        console.error("Failed to delete event:", result.error);
-      }
-    } catch (error) {
-      console.error("Error deleting event:", error);
-    }
-  };
-
-  const handleReorganize = async (
-    eventId: string,
-    option: ReorganizationOption,
-  ) => {
-    try {
-      // Find the event node before deleting
-      const eventNodeId = eventNodes.find(
-        (node) =>
-          node.eventData?.lessonId ===
-          events.find((e) => e.id === eventId)?.lesson?.id,
-      )?.id;
-
-      if (!eventNodeId) {
-        console.error("Could not find event node to reorganize");
-        return;
-      }
-
-      // IMPORTANT: Store the deleted event's time slot before removing it
-      const nodeToDelete = eventNodes.find((node) => node.id === eventNodeId);
-      const deletedEventStartTime = nodeToDelete?.startTime;
-
-      if (!deletedEventStartTime) {
-        console.error("Could not find deleted event start time");
-        return;
-      }
-
-      // Get the database updates that simulate reorganization after removal
-  const eventIdMap = createEventIdMap(events);
-
-      // Create a modified option that includes the deleted event's time slot
-      const modifiedOption: ReorganizationOption = {
-        ...option,
-        deletedEventTime: deletedEventStartTime, // Add the deleted event's time as reference
-      };
-
-      const databaseUpdates =
-        teacherSchedule.getDatabaseUpdatesAfterNodeRemoval(
-          eventNodeId,
-          modifiedOption,
-          selectedDate,
-          eventIdMap,
-        );
-
-      // Delete the event from database first
-      const deleteResult = await deleteEvent(eventId);
-      if (!deleteResult.success) {
-        console.error("Failed to delete event:", deleteResult.error);
-        return;
-      }
-
-      // Remove from teacher schedule
-      teacherSchedule.removeNode(eventNodeId);
-
-      // Apply reorganization to the schedule using the modified option
-      const success = teacherSchedule.reorganizeTeacherEvents(modifiedOption);
-      if (!success) {
-        console.error("Failed to reorganize schedule");
-        return;
-      }
-
-      // Update database with the reorganized times
-      if (databaseUpdates.length > 0) {
-        const dbResult = await reorganizeEventTimes(databaseUpdates);
-        if (dbResult.success) {
-          console.log(
-            `Event deleted and schedule reorganized: ${option.description}. Updated ${dbResult.updatedCount} events in database.`,
-          );
-        } else {
-          console.error("Failed to update database:", dbResult.error);
-        }
-      } else {
-        console.log("Event deleted successfully. No reorganization needed.");
-      }
-
-      // Clear pending reorganizations for this event
-      setPendingReorganizations((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(eventId);
-        return newMap;
-      });
-    } catch (error) {
-      console.error("Error reorganizing schedule:", error);
-    }
-  };
-
-  const handleCancelReorganization = (eventId: string) => {
-    // Simply clear the reorganization options without deleting
-    setPendingReorganizations((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(eventId);
-      return newMap;
-    });
-  };
-
-  const handleDismissReorganization = async (eventId: string) => {
-    // Clear reorganization options and proceed with deletion
-    setPendingReorganizations((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(eventId);
-      return newMap;
-    });
-
-    // Find the event data and node ID
-    const eventData = events.find((e) => e.id === eventId);
-    const eventNodeId = eventNodes.find(
-      (node) => node.eventData?.lessonId === eventData?.lesson?.id,
-    )?.id;
-
-    await performDelete(eventId, eventNodeId);
-  };
-
-  const handleTimeAdjustment = (minutesOffset: number) => {
+  const handleTimeAdjustment = useCallback((minutesOffset: number) => {
     const newOffset = globalTimeOffset + minutesOffset;
     setGlobalTimeOffset(newOffset);
 
     if (newOffset === 0) {
-      // Reset to original state
       setEditableScheduleNodes(scheduleNodes);
       return;
     }
 
-    // Apply global time offset to all events
-    const updatedNodes = scheduleNodes.map((node) => {
-      if (node.type === "event") {
-        const originalTime = timeToMinutes(node.startTime);
-        const newTime = originalTime + newOffset;
-        return {
-          ...node,
-          startTime: minutesToTime(Math.max(0, newTime)), // Ensure time is not negative
-        };
-      }
-      return node;
-    });
-
+    const updatedNodes = TeacherEventsUtils.applyGlobalTimeOffset(scheduleNodes, newOffset);
     setEditableScheduleNodes(updatedNodes);
-  };
+  }, [globalTimeOffset, scheduleNodes]);
 
-  const handleAcceptTimeAdjustment = async () => {
-    try {
-      if (globalTimeOffset === 0) {
-        setTimeAdjustmentMode(false);
-        setEditableScheduleNodes(scheduleNodes); // Reset to original
-        return;
+  const handleAcceptTimeAdjustment = useCallback(async () => {
+    const result = await TeacherEventsUtils.acceptTimeAdjustment(teacherSchedule, globalTimeOffset, events, selectedDate);
+    
+    if (result.success) {
+      if (result.updatedNodes) {
+        setEditableScheduleNodes(result.updatedNodes);
       }
-
-      // Create event ID mapping for database updates
-  const eventIdMap = createEventIdMap(events);
-
-      // Apply the global time shift to the teacher schedule
-      const success =
-        teacherSchedule.shiftFirstEventAndReorganize(globalTimeOffset);
-      if (!success) {
-        console.error("Failed to shift schedule");
-        return;
-      }
-
-      // Get database updates for the shifted schedule using the proper method
-      const databaseUpdates =
-        teacherSchedule.getDatabaseUpdatesForShiftedSchedule(
-          selectedDate,
-          eventIdMap,
-        );
-
-      // Update database with the new times
-      if (databaseUpdates.length > 0) {
-        const dbResult = await reorganizeEventTimes(databaseUpdates);
-        if (dbResult.success) {
-          console.log(
-            `Schedule shifted by ${globalTimeOffset} minutes. Updated ${dbResult.updatedCount} events in database.`,
-          );
-
-          // Update the editable schedule nodes to reflect the actual changes
-          const updatedNodes = teacherSchedule.getNodes();
-          setEditableScheduleNodes(updatedNodes);
-        } else {
-          console.error("Failed to update database:", dbResult.error);
-          // Reset to original on failure
-          setEditableScheduleNodes(scheduleNodes);
-        }
-      }
-
-      // Reset adjustment state
       setTimeAdjustmentMode(false);
       setGlobalTimeOffset(0);
-      // Switch back to event view only if parent is not active
       if (!parentTimeAdjustmentMode) {
         setViewMode("event");
       }
-    } catch (error) {
-      console.error("Error adjusting schedule time:", error);
-      // Reset to original on error
+    } else {
       setEditableScheduleNodes(scheduleNodes);
     }
-  };
+  }, [teacherSchedule, globalTimeOffset, events, selectedDate, parentTimeAdjustmentMode, scheduleNodes]);
 
-  const handleStatusChange = async (
-    eventId: string,
-    newStatus: "planned" | "completed" | "tbc" | "cancelled",
-  ) => {
-    try {
-      const result = await updateEvent(eventId, { status: newStatus });
-      if (result.success) {
-        console.log(
-          "Event status updated successfully:",
-          eventId,
-          "to",
-          newStatus,
-        );
-      } else {
-        console.error("Failed to update event status:", result.error);
-      }
-    } catch (error) {
-      console.error("Error updating event status:", error);
-    }
-  };
+  const handleStatusChange = useCallback(async (eventId: string, newStatus: "planned" | "completed" | "tbc" | "cancelled") => {
+    await TeacherEventsUtils.changeEventStatus(eventId, newStatus);
+  }, []);
 
-  const handleCancelTimeAdjustment = () => {
-    setTimeAdjustmentMode(false);
-    setGlobalTimeOffset(0);
-    // Reset the editable schedule nodes to the original state
-    setEditableScheduleNodes(scheduleNodes);
-    // Switch back to event view only if parent is not active
-    if (!parentTimeAdjustmentMode) {
+  const handleCancelTimeAdjustment = useCallback(() => {
+    const teacherId = teacherSchedule.getSchedule().teacherId;
+    
+    if (parentTimeAdjustmentMode) {
+      setTimeAdjustmentMode(false);
+      setGlobalTimeOffset(0);
+      setEditableScheduleNodes(scheduleNodes);
+    } else {
+      setTimeAdjustmentMode(false);
+      setGlobalTimeOffset(0);
+      setEditableScheduleNodes(scheduleNodes);
       setViewMode("event");
     }
+    
+    onTeacherEditModeChange?.(teacherId, false);
+  }, [scheduleNodes, teacherSchedule, onTeacherEditModeChange, parentTimeAdjustmentMode]);
+
+  // Render event cards
+  const renderEventCards = () => {
+    return scheduleNodes.map((node) => {
+      if (node.type === "gap") {
+        return (
+          <div key={`gap-${node.id}`}>
+            <GapCard
+              duration={node.duration}
+              startTime={node.startTime}
+              selectedDate={selectedDate}
+            />
+          </div>
+        );
+      }
+
+      const eventData = events.find((e) => e.lesson?.id === node.eventData?.lessonId);
+      if (!eventData) return null;
+
+      const studentNames = eventData.booking ? extractStudentNames(eventData.booking) : "No students";
+
+      return (
+        <div key={`event-${node.id}-${eventData.id}`}>
+          <EventCard
+            students={studentNames}
+            location={eventData?.location || "No location"}
+            duration={node.duration}
+            date={new Date(`${selectedDate}T${node.startTime}`).toISOString()}
+            status={eventData?.status || "No status"}
+            viewAs={viewAs}
+            reorganizationOptions={pendingReorganizations.get(eventData.id)}
+            onDelete={() => {}}
+            onReorganize={() => {}}
+            onDismissReorganization={() => {}}
+            onCancelReorganization={() => {}}
+            onStatusChange={(newStatus) => handleStatusChange(eventData.id, newStatus)}
+          />
+        </div>
+      );
+    });
   };
 
   return (
     <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg">
-      {/* Enhanced Teacher Header using TeacherSchedule data */}
-      <div
-        className={`flex justify-between items-center p-4 border-b border-border dark:border-gray-700 ${hasIndependentModifications
-          ? "bg-orange-50 dark:bg-orange-900/20"
-          : ""
-          }`}
-      >
+      <div className="flex justify-between items-center p-4 border-b border-border dark:border-gray-700">
         <div className="flex items-center gap-2">
-          <HeadsetIcon
-            className={`w-5 h-5 ${hasIndependentModifications
-              ? "text-orange-600 dark:text-orange-400"
-              : "text-green-600 dark:text-green-400"
-              }`}
-          />
+          <HeadsetIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
           <h4 className="text-lg font-medium text-foreground dark:text-white">
             {schedule.teacherName}
           </h4>
           <TimeAdjustmentFlag
-            firstEventTime={firstEventTime}
             proposedTimeOffset={globalTimeOffset}
             timeAdjustmentMode={timeAdjustmentMode}
             editableScheduleNodes={editableScheduleNodes}
@@ -864,9 +417,7 @@ function TeacherEventsGroup({
                 </button>
               )}
               <button
-                onClick={() => {
-                  setViewMode("queue");
-                }}
+                onClick={() => setViewMode("queue")}
                 className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 border border-blue-300"
                 title="Edit schedule in queue view"
               >
@@ -876,47 +427,23 @@ function TeacherEventsGroup({
           ) : (
             <>
               <button
-                onClick={
-                  timeAdjustmentMode
-                    ? handleAcceptTimeAdjustment
-                    : handleSubmitAndExit
-                }
+                onClick={timeAdjustmentMode ? handleAcceptTimeAdjustment : handleSubmitAndExit}
                 className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
-                title={
-                  timeAdjustmentMode
-                    ? "Accept time changes"
-                    : "Submit queue changes"
-                }
+                title={timeAdjustmentMode ? "Accept time changes" : "Submit queue changes"}
               >
                 Submit
               </button>
               <button
-                onClick={
-                  timeAdjustmentMode
-                    ? handleCancelTimeAdjustment
-                    : handleResetQueue
-                }
+                onClick={timeAdjustmentMode ? handleCancelTimeAdjustment : handleResetQueue}
                 className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
-                title={
-                  timeAdjustmentMode
-                    ? "Cancel time changes"
-                    : "Reset all changes made to the queue"
-                }
+                title={timeAdjustmentMode ? "Cancel time changes" : "Reset all changes made to the queue"}
               >
                 Reset
               </button>
               <button
-                onClick={
-                  timeAdjustmentMode
-                    ? handleCancelTimeAdjustment
-                    : handleCancelQueue
-                }
+                onClick={timeAdjustmentMode ? handleCancelTimeAdjustment : handleCancelQueue}
                 className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
-                title={
-                  timeAdjustmentMode
-                    ? "Cancel time changes"
-                    : "Cancel editing and discard all changes"
-                }
+                title={timeAdjustmentMode ? "Cancel time changes" : "Cancel editing and discard all changes"}
               >
                 Cancel
               </button>
@@ -925,64 +452,9 @@ function TeacherEventsGroup({
         </div>
       </div>
 
-      {/* Events Grid */}
       <div className="p-4">
         <div className="flex flex-wrap gap-4">
-          {viewMode === "event" &&
-            scheduleNodes.map((node) => {
-              if (node.type === "gap") {
-                return (
-                  <div key={`gap-${node.id}`}>
-                    <GapCard
-                      duration={node.duration}
-                      startTime={node.startTime}
-                      selectedDate={selectedDate}
-                    />
-                  </div>
-                );
-              }
-
-              const eventData = events.find(
-                (e) => e.lesson?.id === node.eventData?.lessonId,
-              );
-              if (!eventData) return null;
-
-              const studentNames = eventData.booking
-                ? extractStudentNames(eventData.booking)
-                : "No students";
-
-              return (
-                <div key={`event-${node.id}-${eventData.id}`}>
-                  <EventCard
-                    students={studentNames}
-                    location={eventData?.location || "No location"}
-                    duration={node.duration}
-                    date={new Date(
-                      `${selectedDate}T${node.startTime}`,
-                    ).toISOString()}
-                    status={eventData?.status || "No status"}
-                    viewAs={viewAs}
-                    reorganizationOptions={pendingReorganizations.get(
-                      eventData.id,
-                    )}
-                    onDelete={() => handleDeleteEvent(eventData, node.id)}
-                    onReorganize={(option) =>
-                      handleReorganize(eventData.id, option)
-                    }
-                    onDismissReorganization={() =>
-                      handleDismissReorganization(eventData.id)
-                    }
-                    onCancelReorganization={() =>
-                      handleCancelReorganization(eventData.id)
-                    }
-                    onStatusChange={(newStatus) =>
-                      handleStatusChange(eventData.id, newStatus)
-                    }
-                  />
-                </div>
-              );
-            })}
-
+          {viewMode === "event" && renderEventCards()}
           {viewMode === "queue" && (
             <TeacherEventQueue
               scheduleNodes={editableScheduleNodes}
@@ -994,7 +466,6 @@ function TeacherEventsGroup({
               onAdjustDuration={handleAdjustDuration}
               onAdjustTime={handleAdjustTime}
               onMove={handleMoveInQueue}
-              onRemoveGap={handleRemoveGap}
             />
           )}
         </div>
@@ -1009,202 +480,240 @@ export default function WhiteboardEvents({
   teacherSchedules,
   viewAs = "admin",
 }: WhiteboardEventsProps) {
-  // Parent time adjustment state
-  const [parentTimeAdjustmentMode, setParentTimeAdjustmentMode] =
-    useState(false);
-  const [parentGlobalTimeOffset, setParentGlobalTimeOffset] = useState(0);
+  // State
+  const [parentTimeAdjustmentMode, setParentTimeAdjustmentMode] = useState(false);
+  const [parentGlobalTime, setParentGlobalTime] = useState<string | null>(null);
+  const teachersInEditModeRef = useRef<Set<string>>(new Set());
+  const [teachersNotInEditMode, setTeachersNotInEditMode] = useState<Set<string>>(new Set());
+  const [noWindDropdownOpen, setNoWindDropdownOpen] = useState(false);
+  const router = useRouter();
 
-  // Group events by teacher for rendering
-  const teacherEventGroups = useMemo(() => {
+  // Computed values
+  const teacherEventGroups: TeacherEventGroupData[] = useMemo(() => {
     const groups = new Map<string, any[]>();
-
     events
-      .filter((eventData) => eventData?.id != null) // Filter out null/undefined events
+      .filter((eventData) => eventData?.id != null)
       .forEach((eventData) => {
         const teacherId = eventData.lesson?.teacher?.id || "unassigned";
-
         if (!groups.has(teacherId)) {
           groups.set(teacherId, []);
         }
         groups.get(teacherId)!.push(eventData);
       });
 
-    const result = Array.from(groups.entries())
+    return Array.from(groups.entries())
       .map(([teacherId, eventDataList]) => ({
         teacherId,
         teacherSchedule: teacherSchedules.get(teacherId),
         events: eventDataList,
       }))
-      .filter((group) => group.teacherSchedule); // Only include teachers with schedules
-
-    return result;
+      .filter((group) => group.teacherSchedule) as TeacherEventGroupData[];
   }, [events, teacherSchedules]);
 
-  // Find the earliest time across all teachers (original schedule, not modified)
-  const earliestTime = useMemo(() => {
-    if (teacherEventGroups.length === 0) return null;
+  const earliestTime = useMemo(() => 
+    TeacherEventsUtils.findEarliestTime(teacherEventGroups), 
+    [teacherEventGroups]
+  );
 
-    const allFirstTimes = teacherEventGroups
-      .map((group) => {
-        const firstEvent = group.teacherSchedule
-          ?.getNodes()
-          .find((node) => node.type === "event");
-        return firstEvent ? timeToMinutes(firstEvent.startTime) : Infinity;
-      })
-      .filter((time) => time !== Infinity);
-
-    return allFirstTimes.length > 0
-      ? minutesToTime(Math.min(...allFirstTimes))
-      : null;
-  }, [teacherEventGroups]);
-
-  // Parent time adjustment handlers
-  const handleParentTimeAdjustment = (minutesOffset: number) => {
-    const newOffset = parentGlobalTimeOffset + minutesOffset;
-    setParentGlobalTimeOffset(newOffset);
-  };
-
-  const handleParentAcceptTimeAdjustment = async () => {
-    try {
-      if (parentGlobalTimeOffset === 0) {
-        setParentTimeAdjustmentMode(false);
-        return;
+  // Handlers
+  const handleParentTimeAdjustment = useCallback((minutesOffset: number) => {
+    if (!parentGlobalTime) {
+      if (earliestTime) {
+        const newTime = minutesToTime(timeToMinutes(earliestTime) + minutesOffset);
+        setParentGlobalTime(newTime);
       }
+    } else {
+      const newTime = minutesToTime(timeToMinutes(parentGlobalTime) + minutesOffset);
+      setParentGlobalTime(newTime);
+    }
+  }, [parentGlobalTime, earliestTime]);
 
-      // Apply the global time shift to all teacher schedules
-      const updatePromises: Promise<any>[] = [];
+  const handleParentAcceptTimeAdjustment = useCallback(async () => {
+    if (!parentGlobalTime) {
+      setParentTimeAdjustmentMode(false);
+      return;
+    }
 
-      teacherEventGroups.forEach((group) => {
-        const teacherSchedule = group.teacherSchedule;
-        if (teacherSchedule) {
-          const success = teacherSchedule.shiftFirstEventAndReorganize(
-            parentGlobalTimeOffset,
-          );
+    const updatePromises: Promise<any>[] = [];
+
+    teacherEventGroups.forEach((group) => {
+      const teacherSchedule = group.teacherSchedule;
+      if (teacherSchedule && teachersInEditModeRef.current.has(group.teacherId) && !teachersNotInEditMode.has(group.teacherId)) {
+        const firstEventNode = teacherSchedule.getNodes().find(n => n.type === "event");
+        if (firstEventNode) {
+          const originalStartTime = timeToMinutes(firstEventNode.startTime);
+          const targetStartTime = timeToMinutes(parentGlobalTime);
+          const timeOffset = targetStartTime - originalStartTime;
+          
+          const success = teacherSchedule.shiftFirstEventAndReorganize(timeOffset);
           if (success) {
-            // Get database updates for this teacher
-            const eventIdMap = new Map<string, string>();
-            group.events.forEach((eventData) => {
-              if (eventData.lesson?.id && eventData.id) {
-                eventIdMap.set(eventData.lesson.id, eventData.id);
-              }
-            });
-
-            const databaseUpdates =
-              teacherSchedule.getDatabaseUpdatesForShiftedSchedule(
-                selectedDate,
-                eventIdMap,
-              );
+            const eventIdMap = TeacherEventsUtils.createEventIdMap(group.events);
+            const databaseUpdates = teacherSchedule.getDatabaseUpdatesForShiftedSchedule(selectedDate, eventIdMap);
             if (databaseUpdates.length > 0) {
               updatePromises.push(reorganizeEventTimes(databaseUpdates));
             }
           }
         }
-      });
+      }
+    });
 
-      if (updatePromises.length > 0) {
-        const results = await Promise.all(updatePromises);
-        const failures = results.filter((r) => !r.success);
-        if (failures.length === 0) {
-          console.log(
-            `Parent time adjustment applied successfully. Updated ${results.length} teachers.`,
-          );
+    if (updatePromises.length > 0) {
+      const results = await Promise.all(updatePromises);
+      const failures = results.filter((r) => !r.success);
+      if (failures.length === 0) {
+        console.log(`Parent time adjustment applied successfully. Updated ${results.length} teachers.`);
+      } else {
+        console.error("Some parent time updates failed:", failures);
+      }
+    }
+
+    setParentTimeAdjustmentMode(false);
+    setParentGlobalTime(null);
+    teachersInEditModeRef.current.clear();
+    setTeachersNotInEditMode(new Set());
+  }, [parentGlobalTime, teacherEventGroups, selectedDate, teachersNotInEditMode]);
+
+  const handleParentCancelTimeAdjustment = useCallback(() => {
+    setParentTimeAdjustmentMode(false);
+    setParentGlobalTime(null);
+    teachersInEditModeRef.current.clear();
+    setTeachersNotInEditMode(new Set());
+  }, []);
+
+  const handleTeacherEditModeChange = useCallback((teacherId: string, inEditMode: boolean) => {
+    if (inEditMode) {
+      teachersInEditModeRef.current.add(teacherId);
+    } else {
+      teachersInEditModeRef.current.delete(teacherId);
+    }
+  }, []);
+
+  const handleParentFlagClick = useCallback(() => {
+    setParentTimeAdjustmentMode(true);
+    setParentGlobalTime(earliestTime);
+    const allTeacherIds = teacherEventGroups.map(group => group.teacherId);
+    teachersInEditModeRef.current = new Set(allTeacherIds);
+  }, [earliestTime, teacherEventGroups]);
+
+  const handleNoWind = useCallback(async () => {
+    if (events.length === 0) return;
+    
+    try {
+      let deletedCount = 0;
+      for (const event of events) {
+        console.log(`🗑️ Deleting event ${event.id} due to NO WIND`);
+        const result = await deleteEvent(event.id);
+        if (result.success) {
+          deletedCount++;
         } else {
-          console.error("Some parent time updates failed:", failures);
+          console.error(`❌ Failed to delete event ${event.id}:`, result.error);
         }
       }
-
-      // Reset parent adjustment state
-      setParentTimeAdjustmentMode(false);
-      setParentGlobalTimeOffset(0);
+      
+      console.log(`✅ ${deletedCount}/${events.length} events deleted due to NO WIND conditions`);
+      setNoWindDropdownOpen(false);
+      router.refresh();
     } catch (error) {
-      console.error("Error applying parent time adjustment:", error);
+      console.error('❌ Error deleting events:', error);
     }
-  };
+  }, [events, router]);
 
-  const handleParentCancelTimeAdjustment = () => {
-    setParentTimeAdjustmentMode(false);
-    setParentGlobalTimeOffset(0);
-    // All teachers will automatically reset via useEffect when parentTimeAdjustmentMode becomes false
-  };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (noWindDropdownOpen && !(event.target as Element)?.closest('.relative')) {
+        setNoWindDropdownOpen(false);
+      }
+    };
 
-  // Function to put all teachers in edit mode when parent flag is clicked
-  const handleParentFlagClick = () => {
-    setParentTimeAdjustmentMode(true);
-    // All teachers will automatically go into edit mode via useEffect
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [noWindDropdownOpen]);
 
   return (
     <div className="space-y-6">
-      {/* Parent Time Adjustment Flag */}
       {teacherEventGroups.length > 0 && (
         <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <HeadsetIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h3 className="text-lg font-medium text-foreground dark:text-white">
-                Global Schedule Control
-              </h3>
-              {parentTimeAdjustmentMode ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleParentTimeAdjustment(-30)}
-                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                    title="Move all schedules back 30 minutes"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <span className="min-w-[60px] text-center font-mono">
-                    {earliestTime
-                      ? minutesToTime(
-                        timeToMinutes(earliestTime) + parentGlobalTimeOffset,
-                      )
-                      : "No events"}
-                    {parentGlobalTimeOffset !== 0 && (
-                      <span className="text-orange-600 dark:text-orange-400 ml-1">
-                        ({parentGlobalTimeOffset > 0 ? "+" : ""}
-                        {parentGlobalTimeOffset}m)
-                      </span>
-                    )}
-                  </span>
-                  <button
-                    onClick={() => handleParentTimeAdjustment(30)}
-                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                    title="Move all schedules forward 30 minutes"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  onClick={handleParentFlagClick}
-                  className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 cursor-pointer transition-colors"
-                  title="Click to adjust all schedules globally"
-                >
-                  <FlagIcon className="w-4 h-4" />
-                  <span>{earliestTime || "No events"}</span>
-                </div>
-              )}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <HeadsetIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-lg font-medium text-foreground dark:text-white">
+                  Global Schedule Control
+                </h3>
+                <ParentTimeAdjustmentFlag
+                  parentTimeAdjustmentMode={parentTimeAdjustmentMode}
+                  parentGlobalTime={parentGlobalTime}
+                  earliestTime={earliestTime}
+                  onParentTimeAdjustment={handleParentTimeAdjustment}
+                  onParentFlagClick={handleParentFlagClick}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                {parentTimeAdjustmentMode && (
+                  <>
+                    <button
+                      onClick={handleParentAcceptTimeAdjustment}
+                      className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
+                      title="Apply global time adjustment to all teachers"
+                    >
+                      Submit All
+                    </button>
+                    <button
+                      onClick={handleParentCancelTimeAdjustment}
+                      className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
+                      title="Cancel global time adjustment"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {parentTimeAdjustmentMode ? (
-                <>
+
+            {/* NO WIND Button - Emergency Cancel All Events - Separate row */}
+            {events.length > 0 && (
+              <div className="flex justify-end">
+                <div className="relative">
                   <button
-                    onClick={handleParentAcceptTimeAdjustment}
-                    className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
-                    title="Apply global time adjustment to all teachers"
+                    onClick={() => setNoWindDropdownOpen(!noWindDropdownOpen)}
+                    className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded hover:bg-red-200 border border-red-300 flex items-center gap-1"
+                    title="Cancel all events due to unsafe wind conditions"
                   >
-                    Submit All
+                    <Wind className="w-3 h-3" />
+                    <span>NO WIND</span>
+                    <ChevronDown className="w-3 h-3" />
                   </button>
-                  <button
-                    onClick={handleParentCancelTimeAdjustment}
-                    className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
-                    title="Cancel global time adjustment"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : null}
-            </div>
+                  
+                  {noWindDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-red-300 rounded shadow-lg p-3 z-10 w-64">
+                      <div className="text-sm text-red-800 font-medium mb-2">
+                        Delete all {events.length} events?
+                      </div>
+                      <div className="text-xs text-red-600 mb-3">
+                        This will cancel all events for today due to unsafe wind conditions. This action cannot be undone.
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleNoWind}
+                          className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded"
+                        >
+                          Delete All
+                        </button>
+                        <button
+                          onClick={() => setNoWindDropdownOpen(false)}
+                          className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1220,12 +729,13 @@ export default function WhiteboardEvents({
           {teacherEventGroups.map((group) => (
             <TeacherEventsGroup
               key={group.teacherId}
-              teacherSchedule={group.teacherSchedule!}
+              teacherSchedule={group.teacherSchedule}
               events={group.events}
               selectedDate={selectedDate}
               viewAs={viewAs}
               parentTimeAdjustmentMode={parentTimeAdjustmentMode}
-              parentGlobalTimeOffset={parentGlobalTimeOffset}
+              parentGlobalTime={parentGlobalTime}
+              onTeacherEditModeChange={handleTeacherEditModeChange}
             />
           ))}
         </div>

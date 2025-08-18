@@ -7,16 +7,22 @@ import { HelmetIcon, FlagIcon } from '@/svgs';
 import { extractStudents, WhiteboardClass, calculateLessonStats, getAvailableLessons } from '@/backend/WhiteboardClass';
 import { timeToMinutes, minutesToTime, createUTCDateTime } from '@/components/formatters/TimeZone';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
-import { type EventController } from '@/backend/types';
 import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
 
+
+interface DurationSettings {
+  durationCapOne: number;
+  durationCapTwo: number;
+  durationCapThree: number;
+}
 
 interface TeacherLessonQueueProps {
   teacherId: string;
   teacherName: string;
   teacherSchedule?: TeacherSchedule;
   selectedDate: string;
-  controller: EventController;
+  durationSettings: DurationSettings;
+  controllerTime: string; // Time from the FlagPicker controller
   onCreateEvents: (events: any[]) => void;
   onRef?: (ref: any) => void;
   queueUpdateTrigger?: number;
@@ -28,20 +34,16 @@ export default function TeacherLessonQueue({
   teacherId, 
   teacherName, 
   teacherSchedule, 
-  selectedDate, 
-  controller,
+  selectedDate,
+  durationSettings,
+  controllerTime,
   onCreateEvents,
   onRef,
   queueUpdateTrigger,
   onQueueChange,
   editMode = false
 }: TeacherLessonQueueProps) {
-  const [queueLocation, setQueueLocation] = useState<string>(controller.location);
-
-  // Sync queue location with controller location
-  useEffect(() => {
-    setQueueLocation(controller.location);
-  }, [controller.location]);
+  const [queueLocation, setQueueLocation] = useState<string>(LOCATION_ENUM_VALUES[0]);
   const [queue, setQueue] = useState<TeacherQueuedLesson[]>([]);
 
   // Sync queue with TeacherSchedule
@@ -59,18 +61,18 @@ export default function TeacherLessonQueue({
     const students = extractStudents(lesson.booking);
     const remainingMinutes = bookingClass.getRemainingMinutes();
     
-    // Calculate duration based on student count using controller logic
+    // Calculate duration based on student count using localStorage settings
     const studentCount = students.length;
-    let defaultDuration = controller.durationCapOne;
+    let defaultDuration = durationSettings.durationCapOne;
     
     if (studentCount >= 4) {
-      defaultDuration = controller.durationCapThree;
+      defaultDuration = durationSettings.durationCapThree;
     } else if (studentCount >= 2) {
-      defaultDuration = controller.durationCapTwo;
+      defaultDuration = durationSettings.durationCapTwo;
     }
 
-    // Set the preferred start time from controller before adding to queue
-    teacherSchedule.setQueueStartTime(controller.submitTime);
+    // Set the preferred start time from controller
+    teacherSchedule.setQueueStartTime(controllerTime);
 
     teacherSchedule.addLessonToQueue(
       lesson.id,
@@ -81,7 +83,7 @@ export default function TeacherLessonQueue({
 
     // Update local state
     setQueue(teacherSchedule.getLessonQueue());
-  }, [teacherSchedule, controller]);
+  }, [teacherSchedule, durationSettings, controllerTime]);
 
   // Remove lesson from queue
   const removeFromQueue = (lessonId: string) => {
@@ -209,8 +211,8 @@ export default function TeacherLessonQueue({
 
   // Get earliest queue time for the flag icon - recalculate on every queue change
   const earliestTime = useMemo(() => {
-    return queue.length > 0 ? queue[0].scheduledStartTime || controller.submitTime : controller.submitTime;
-  }, [queue, controller.submitTime]);
+    return queue.length > 0 ? queue[0].scheduledStartTime || controllerTime : controllerTime;
+  }, [queue, controllerTime]);
 
   if (queue.length === 0 && !editMode) {
     return null;
