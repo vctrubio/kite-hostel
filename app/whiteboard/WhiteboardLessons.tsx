@@ -53,7 +53,7 @@ function TeacherGroup({
 
   // Get earliest time from teacher schedule using existing method
   const earliestTime = useMemo(() => {
-    return teacherSchedule ? teacherSchedule.getEarliestTime() : null;
+    // return teacherSchedle ? teacherSchedule.getEarliestTime() : null;
   }, [teacherSchedule, queueUpdateTrigger]);
 
   // Create mapping from lesson ID to event ID for database updates

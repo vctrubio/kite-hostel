@@ -500,10 +500,10 @@ function TeacherEventsGroup({
   // Check if reorganization is possible
   const canReorganize = teacherSchedule.canReorganizeSchedule();
 
-  // Create mapping from lesson ID to event ID for database updates
-  const createEventIdMap = (): Map<string, string> => {
+  // Utility: Create mapping from lesson ID to event ID for database updates
+  const createEventIdMap = (eventsList: any[]): Map<string, string> => {
     const map = new Map<string, string>();
-    events.forEach((eventData) => {
+    eventsList.forEach((eventData) => {
       if (eventData.lesson?.id && eventData.id) {
         map.set(eventData.lesson.id, eventData.id);
       }
@@ -511,83 +511,31 @@ function TeacherEventsGroup({
     return map;
   };
 
+  // Use TeacherSchedule class for full schedule reorganization
+  const router = useRouter();
   const handleFullScheduleReorganization = async () => {
+    if (!teacherSchedule) return;
     try {
-      // Create event ID mapping for database updates
-      const eventIdMap = createEventIdMap();
-
-      // Get all event nodes to reorganize
-      const allEventNodes = eventNodes.filter((node) => node.type === "event");
-      if (allEventNodes.length <= 1) {
-        console.log("No reorganization needed - only one or no events");
-        return;
-      }
-
-      // Create a reorganization option that moves all events after the first one
-      const firstEventTime = allEventNodes[0].startTime;
-      const nodesToMove = allEventNodes.slice(1); // All events except the first
-
-      const reorganizationOption: ReorganizationOption = {
-        type: "compact_schedule",
-        description: `Compact entire schedule by moving ${nodesToMove.length} events`,
-        nodesToMove: nodesToMove,
-        timeSaved: 0, // Will be calculated to eliminate gaps
-        feasible: true,
-        deletedEventTime: firstEventTime, // Use first event time as anchor
-      };
-
-      // Calculate database updates for the reorganization
-      const databaseUpdates: Array<{ eventId: string; newDateTime: string }> =
-        [];
-
-      // Start timing from right after the first event ends
-      let nextStartTime =
-        timeToMinutes(firstEventTime) + allEventNodes[0].duration;
-
-      // Generate updates for each node that needs to move
-      nodesToMove.forEach((node) => {
-        const lessonId = node.eventData?.lessonId;
-        const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
-
-        if (eventId && lessonId) {
-          const newStartTime = minutesToTime(nextStartTime);
-          const newDateTime = toUTCString(
-            createUTCDateTime(selectedDate, newStartTime),
-          );
-
-          databaseUpdates.push({
-            eventId,
-            newDateTime,
-          });
-        }
-
-        // Next event starts after this one ends (account for duration)
-        nextStartTime += node.duration;
-      });
-
-      // Apply reorganization to the schedule
-      const success =
-        teacherSchedule.reorganizeTeacherEvents(reorganizationOption);
+      const eventIdMap = createEventIdMap(events);
+      const success = teacherSchedule.performCompactReorganization();
       if (!success) {
-        console.error("Failed to reorganize schedule");
+        console.log('No reorganization needed or failed to reorganize schedule');
         return;
       }
-
-      // Update database if we have changes to make
+      const databaseUpdates = teacherSchedule.getDatabaseUpdatesForCompactReorganization(selectedDate, eventIdMap);
       if (databaseUpdates.length > 0) {
         const dbResult = await reorganizeEventTimes(databaseUpdates);
         if (dbResult.success) {
-          console.log(
-            `Full schedule reorganized successfully. Updated ${dbResult.updatedCount} events in database.`,
-          );
+          console.log(`Full schedule reorganized successfully. Updated ${dbResult.updatedCount} events in database.`);
+          router.refresh();
         } else {
-          console.error("Failed to update database:", dbResult.error);
+          console.error('Failed to update database:', dbResult.error);
         }
       } else {
-        console.log("Schedule already optimized");
+        console.log('Schedule already optimized');
       }
     } catch (error) {
-      console.error("Error reorganizing full schedule:", error);
+      console.error('Error reorganizing full schedule:', error);
     }
   };
 
@@ -668,7 +616,7 @@ function TeacherEventsGroup({
       }
 
       // Get the database updates that simulate reorganization after removal
-      const eventIdMap = createEventIdMap();
+  const eventIdMap = createEventIdMap(events);
 
       // Create a modified option that includes the deleted event's time slot
       const modifiedOption: ReorganizationOption = {
@@ -787,7 +735,7 @@ function TeacherEventsGroup({
       }
 
       // Create event ID mapping for database updates
-      const eventIdMap = createEventIdMap();
+  const eventIdMap = createEventIdMap(events);
 
       // Apply the global time shift to the teacher schedule
       const success =
