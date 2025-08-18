@@ -5,6 +5,7 @@
 import { addMinutesToTime, timeToMinutes, minutesToTime, createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
 import { format } from 'date-fns';
 import { detectScheduleGaps, hasScheduleGaps, compactSchedule, findNextAvailableSlot, type ScheduleItem } from './ScheduleUtils';
+import { type TeacherStats, type ReorganizationOption } from './types';
 
 export type ScheduleItemType = 'event' | 'gap';
 
@@ -53,16 +54,6 @@ export interface ConflictInfo {
   suggestedAlternatives: AvailableSlot[];
 }
 
-export interface ReorganizationOption {
-  type: 'shift_next' | 'compact_schedule';
-  description: string;
-  nodeToMove?: ScheduleNode;
-  nodesToMove?: ScheduleNode[];
-  newStartTime?: string;
-  timeSaved?: number;
-  feasible: boolean;
-  deletedEventTime?: string; // Time slot of the deleted event for reference
-}
 
 export class TeacherSchedule {
   private schedule: TeacherDaySchedule;
@@ -997,6 +988,38 @@ export class TeacherSchedule {
     }));
 
     return events;
+  }
+
+  /**
+   * Get the earliest time from both scheduled events and queued lessons
+   * @returns The earliest time in HH:MM format, or null if no events/lessons
+   */
+  getEarliestTime(): string | null {
+    const scheduleNodes = this.getStoredNodes();
+    const eventNodes = scheduleNodes.filter(node => node.type === 'event');
+    const queuedLessons = this.getLessonQueue();
+    
+    const allTimes: string[] = [];
+    
+    // Add existing event times
+    eventNodes.forEach(node => {
+      allTimes.push(node.startTime);
+    });
+    
+    // Add queued lesson times
+    queuedLessons.forEach(lesson => {
+      if (lesson.scheduledStartTime) {
+        allTimes.push(lesson.scheduledStartTime);
+      }
+    });
+    
+    if (allTimes.length === 0) return null;
+    
+    // Use existing utility to find earliest time
+    const timeMinutes = allTimes.map(time => timeToMinutes(time));
+    const earliest = Math.min(...timeMinutes);
+    
+    return minutesToTime(earliest);
   }
 
   calculateTeacherStats(): TeacherStats {

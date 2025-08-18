@@ -77,6 +77,18 @@ export interface TeacherStats {
   totalLessons: number;
 }
 
+// Teacher schedule reorganization options
+export interface ReorganizationOption {
+  type: 'shift_next' | 'compact_schedule';
+  description: string;
+  nodeToMove?: any; // ScheduleNode - using any to avoid circular imports
+  nodesToMove?: any[]; // ScheduleNode[] - using any to avoid circular imports
+  newStartTime?: string;
+  timeSaved?: number;
+  feasible: boolean;
+  deletedEventTime?: string; // Time slot of the deleted event for reference
+}
+
 // MiniNav Controller interface for centralized navigation and filter state
 export interface MiniNavController {
   activeSection: string;

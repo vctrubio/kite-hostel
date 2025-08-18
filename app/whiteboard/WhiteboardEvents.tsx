@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import EventCard, { GapCard } from '@/components/cards/EventCard';
-import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
 import TeacherEventQueue from '@/components/TeacherEventQueue';
-import { HeadsetIcon, Clock, Zap, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { HeadsetIcon, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FlagIcon } from '@/svgs/FlagIcon';
-import { TeacherSchedule, ReorganizationOption, ScheduleNode } from '@/backend/TeacherSchedule';
+import { TeacherSchedule, ScheduleNode } from '@/backend/TeacherSchedule';
+import { type ReorganizationOption } from '@/backend/types';
 import { reorganizeEventTimes } from '@/actions/kite-actions';
 import { updateEvent, deleteEvent } from '@/actions/event-actions';
 import { timeToMinutes, minutesToTime, createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
@@ -105,8 +105,7 @@ function TeacherEventsGroup({
   selectedDate,
   viewAs = 'admin',
   parentTimeAdjustmentMode = false,
-  parentGlobalTimeOffset = 0,
-  parentEarliestTime = null
+  parentGlobalTimeOffset = 0
 }: { 
   teacherSchedule: TeacherSchedule;
   events: any[];
@@ -114,7 +113,6 @@ function TeacherEventsGroup({
   viewAs?: 'admin' | 'teacher' | 'student';
   parentTimeAdjustmentMode?: boolean;
   parentGlobalTimeOffset?: number;
-  parentEarliestTime?: string | null;
 }) {
   const [pendingReorganizations, setPendingReorganizations] = useState<Map<string, ReorganizationOption[]>>(new Map());
   const [timeAdjustmentMode, setTimeAdjustmentMode] = useState(false);
@@ -132,7 +130,6 @@ function TeacherEventsGroup({
       // If parent is adjusting, check if this teacher's first event time differs from what it would be with parent offset
       const firstEvent = eventNodes[0];
       if (firstEvent) {
-        const originalTime = timeToMinutes(firstEvent.startTime);
         const expectedTimeWithParentOffset = timeToMinutes(firstEvent.startTime) + parentGlobalTimeOffset;
         const actualTime = timeToMinutes(editableScheduleNodes.find(n => n.type === 'event')?.startTime || firstEvent.startTime);
         
@@ -360,7 +357,6 @@ function TeacherEventsGroup({
 
   // Get earliest event time from schedule - use first node for controller logic
   const firstEventTime = eventNodes.length > 0 ? eventNodes[0].startTime : null;
-  const earliestEventTime = firstEventTime || 'No events';
   
   const schedule = teacherSchedule.getSchedule();
 
@@ -442,7 +438,6 @@ function TeacherEventsGroup({
           console.log(`Full schedule reorganized successfully. Updated ${dbResult.updatedCount} events in database.`);
         } else {
           console.error('Failed to update database:', dbResult.error);
-          return;
         }
       } else {
         console.log('Schedule already optimized');
@@ -560,7 +555,6 @@ function TeacherEventsGroup({
           console.log(`Event deleted and schedule reorganized: ${option.description}. Updated ${dbResult.updatedCount} events in database.`);
         } else {
           console.error('Failed to update database:', dbResult.error);
-          return;
         }
       } else {
         console.log('Event deleted successfully. No reorganization needed.');
@@ -664,7 +658,6 @@ function TeacherEventsGroup({
           console.error('Failed to update database:', dbResult.error);
           // Reset to original on failure
           setEditableScheduleNodes(scheduleNodes);
-          return;
         }
       }
       
@@ -732,14 +725,6 @@ function TeacherEventsGroup({
             onSetTimeAdjustmentMode={setTimeAdjustmentMode}
             onSetViewMode={setViewMode}
           />
-          
-          {viewMode === 'event' ? (
-            <>
-            </>
-          ) : (
-            <>
-            </>
-          )}
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-400">
           {viewMode === 'event' ? (
@@ -798,7 +783,7 @@ function TeacherEventsGroup({
       {/* Events Grid */}
       <div className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-          {viewMode === 'event' && scheduleNodes.map((node, nodeIndex) => {
+          {viewMode === 'event' && scheduleNodes.map((node) => {
             if (node.type === 'gap') {
               return (
                 <div key={`gap-${node.id}`}>
@@ -1052,7 +1037,6 @@ export default function WhiteboardEvents({ events, selectedDate, teacherSchedule
               viewAs={viewAs}
               parentTimeAdjustmentMode={parentTimeAdjustmentMode}
               parentGlobalTimeOffset={parentGlobalTimeOffset}
-              parentEarliestTime={earliestTime}
             />
           ))}
         </div>

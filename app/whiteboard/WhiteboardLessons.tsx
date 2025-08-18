@@ -9,6 +9,7 @@ import TeacherLessonStats from "@/components/TeacherLessonStats";
 import LessonCard from "@/components/cards/LessonCard";
 import TeacherLessonQueue from "@/components/TeacherLessonQueue";
 import { createTeacherQueueEvents } from "@/actions/event-actions";
+import { reorganizeEventTimes } from "@/actions/kite-actions";
 import {
   groupLessonsByTeacher,
   calculateLessonStats,
@@ -32,8 +33,6 @@ function TeacherGroup({
   controller,
   queueUpdateTrigger,
   onQueueChange,
-  editMode,
-  onToggleEditMode,
 }: {
   teacherGroup: any;
   onLessonClick: (lesson: any) => void;
@@ -44,8 +43,6 @@ function TeacherGroup({
   controller: any;
   queueUpdateTrigger: number;
   onQueueChange: () => void;
-  editMode: boolean;
-  onToggleEditMode: () => void;
 }) {
   const { availableLessons, lessonsWithEvents } = calculateLessonStats(
     teacherGroup.lessons,
@@ -53,6 +50,63 @@ function TeacherGroup({
   const canReorganize = teacherSchedule
     ? teacherSchedule.canReorganizeSchedule()
     : false;
+
+  // Get earliest time from teacher schedule using existing method
+  const earliestTime = useMemo(() => {
+    return teacherSchedule ? teacherSchedule.getEarliestTime() : null;
+  }, [teacherSchedule, queueUpdateTrigger]);
+
+  // Create mapping from lesson ID to event ID for database updates
+  const createEventIdMap = (lessons: any[]): Map<string, string> => {
+    const map = new Map<string, string>();
+    lessons.forEach(lesson => {
+      if (lesson?.events && Array.isArray(lesson.events)) {
+        lesson.events.forEach((event: any) => {
+          if (event?.id && lesson?.id) {
+            map.set(lesson.id, event.id);
+          }
+        });
+      }
+    });
+    return map;
+  };
+
+  // Handle full schedule reorganization using existing TeacherSchedule methods
+  const handleFullScheduleReorganization = async () => {
+    if (!teacherSchedule) return;
+
+    try {
+      // Create event ID mapping for database updates
+      const eventIdMap = createEventIdMap(teacherGroup.lessons);
+      
+      // Use the existing performCompactReorganization method
+      const success = teacherSchedule.performCompactReorganization();
+      if (!success) {
+        console.log('No reorganization needed or failed to reorganize schedule');
+        return;
+      }
+      
+      // Get database updates using the existing method
+      const databaseUpdates = teacherSchedule.getDatabaseUpdatesForCompactReorganization(selectedDate, eventIdMap);
+      
+      // Update database if we have changes to make
+      if (databaseUpdates.length > 0) {
+        const dbResult = await reorganizeEventTimes(databaseUpdates);
+        if (dbResult.success) {
+          console.log(`Full schedule reorganized successfully. Updated ${dbResult.updatedCount} events in database.`);
+          // Trigger queue update to refresh the UI
+          onQueueChange();
+        } else {
+          console.error('Failed to update database:', dbResult.error);
+          return;
+        }
+      } else {
+        console.log('Schedule already optimized');
+      }
+    } catch (error) {
+      console.error('Error reorganizing full schedule:', error);
+    }
+  };
 
   return (
     <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg">
@@ -63,17 +117,20 @@ function TeacherGroup({
             {teacherGroup.teacherName}
           </h4>
           {canReorganize && (
-            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border">
+            <button
+              onClick={handleFullScheduleReorganization}
+              className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border hover:bg-yellow-200 transition-colors"
+              title="Optimize schedule by removing gaps"
+            >
               Can optimize
-            </span>
+            </button>
           )}
-          <button
-            onClick={onToggleEditMode}
-            className={`ml-2 p-1 rounded ${editMode ? "bg-blue-200 dark:bg-blue-800" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-            title={editMode ? "Exit edit mode" : "Edit event queue"}
-          >
-            <FlagIcon className="w-5 h-5" />
-          </button>
+          {earliestTime && (
+            <div className="flex items-center gap-1 ml-3">
+              <FlagIcon className="w-4 h-4" />
+              <span className="text-sm font-medium">{earliestTime}</span>
+            </div>
+          )}
         </div>
         {teacherSchedule && (
           <TeacherLessonStats
@@ -103,7 +160,6 @@ function TeacherGroup({
           onCreateEvents={onBatchEventCreation}
           queueUpdateTrigger={queueUpdateTrigger}
           onQueueChange={onQueueChange}
-          editMode={editMode}
           onRef={(ref) => {
             if (ref) {
               (window as any)[`queue_${teacherGroup.teacherId}`] = ref;
@@ -132,9 +188,6 @@ export default function WhiteboardLessons({
   selectedDate,
   teacherSchedules,
 }: WhiteboardLessonsProps) {
-  const [editModes, setEditModes] = useState<{ [teacherId: string]: boolean }>(
-    {},
-  );
   const router = useRouter();
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0);
 
@@ -229,7 +282,9 @@ export default function WhiteboardLessons({
               <div className="font-semibold text-indigo-600 dark:text-indigo-400">
                 {globalStats.totalEvents}/{globalStats.totalLessons}
               </div>
-              <div className="text-xs text-muted-foreground">Events/Lessons</div>
+              <div className="text-xs text-muted-foreground">
+                Events/Lessons
+              </div>
             </div>
             <div className="text-center">
               <div className="font-semibold text-purple-600 dark:text-purple-400">
@@ -258,7 +313,6 @@ export default function WhiteboardLessons({
       ) : (
         <div className="space-y-4">
           {groupedLessons.map((teacherGroup) => {
-            const editMode = !!editModes[teacherGroup.teacherId];
             return (
               <TeacherGroup
                 key={teacherGroup.teacherId}
@@ -271,13 +325,6 @@ export default function WhiteboardLessons({
                 teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)}
                 queueUpdateTrigger={queueUpdateTrigger}
                 onQueueChange={handleQueueChange}
-                editMode={editMode}
-                onToggleEditMode={() =>
-                  setEditModes((prev) => ({
-                    ...prev,
-                    [teacherGroup.teacherId]: !editMode,
-                  }))
-                }
               />
             );
           })}
