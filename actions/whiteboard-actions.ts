@@ -35,8 +35,15 @@ export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null
     }
 
     const rawBookings = (bookingsResult.data || []).sort((a, b) => {
-      // Sort by start date, earliest first
-      return new Date(a.date_start).getTime() - new Date(b.date_start).getTime();
+      const startA = new Date(a.date_start).getTime();
+      const startB = new Date(b.date_start).getTime();
+      if (startA !== startB) {
+        return startA - startB;
+      }
+      // If start dates are equal, sort by end date
+      const endA = new Date(a.date_end).getTime();
+      const endB = new Date(b.date_end).getTime();
+      return endA - endB;
     });
     
     // Create WhiteboardClass instances for analysis (server-side only)
