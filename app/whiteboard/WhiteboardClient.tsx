@@ -254,7 +254,12 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
             <div className="p-4">
               <div className="w-full">
                 {activeSection === "bookings" && (
-                  <WhiteboardBookings bookings={filteredData.bookings} />
+                  <WhiteboardBookings 
+                    bookings={filteredData.bookings} 
+                    bookingClasses={filteredData.bookingClasses}
+                    selectedDate={selectedDate}
+                    teacherSchedules={filteredData.teacherSchedules}
+                  />
                 )}
 
                 {activeSection === "lessons" && (

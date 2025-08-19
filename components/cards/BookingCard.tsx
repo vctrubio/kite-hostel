@@ -5,15 +5,13 @@ import {
   BookingIcon,
   HelmetIcon,
   HeadsetIcon,
-  PackageIcon,
+  BookmarkIcon,
   FlagIcon,
 } from "@/svgs";
 import { Plus } from "lucide-react";
-import { FormatDateRange } from "@/components/formatters/DateRange";
-import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
+import { FormatedDateExp } from "@/components/label/FormatedDateExp";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
-import { DateSince } from "@/components/formatters/DateSince";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import {
   WhiteboardClass,
@@ -24,90 +22,161 @@ import { useRouter } from "next/navigation";
 import EventToTeacherModal from "@/components/modals/EventToTeacherModal";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { type EventController } from "@/backend/types";
+import FooterDropdown from "@/components/FooterDropdown";
+import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 
 interface BookingCardProps {
   booking: BookingData;
+  bookingClass?: WhiteboardClass;
   teacherSchedules?: Map<string, TeacherSchedule>;
-  selectedDate?: string;
+  selectedDate: string;
   controller?: EventController;
 }
 
-// Sub-component: Booking Header (no changes)
-function BookingHeader({ booking }: { booking: BookingData }) {
+// Sub-component: Booking Header
+function BookingHeader({ booking, selectedDate, bookingClass }: { 
+  booking: BookingData, 
+  selectedDate: string, 
+  bookingClass?: WhiteboardClass 
+}) {
   return (
-    <div className="flex items-center gap-2 mb-3 p-4">
-      <BookingIcon className="w-6 h-5 text-primary" />
-      <FormatDateRange
-        startDate={booking.date_start}
-        endDate={booking.date_end}
-      />
-      <div className="ml-auto">
-        <BookingStatusLabel
-          bookingId={booking.id}
-          currentStatus={booking.status}
-        />
+    <div className="grid grid-cols-12 gap-3 p-4 border-b border-border/50">
+      {/* Icon - 2 columns */}
+      <div className="col-span-2 flex items-center justify-center">
+        <BookingIcon className="w-8 h-8 text-blue-600" />
+      </div>
+      
+      {/* Date and Progress - 10 columns */}
+      <div className="col-span-10 space-y-2">
+        {/* Top row: Date */}
+        <div>
+          <FormatedDateExp
+            startDate={booking.date_start}
+            endDate={booking.date_end}
+            selectedDate={selectedDate}
+            status={booking.status}
+          />
+        </div>
+        
+        {/* Bottom row: Progress */}
+        {bookingClass && (
+          <div>
+            <BookingProgressBar
+              eventMinutes={bookingClass.calculateBookingLessonEventMinutes()}
+              totalMinutes={bookingClass.getTotalMinutes()}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Sub-component: Students Section (no changes)
+// Sub-component: Students Section
 function StudentsSection({ booking, onStudentClick }: { booking: BookingData, onStudentClick: (id: string) => void }) {
   return (
-    <div className="flex items-center gap-2">
-      {booking.students && booking.students.length > 0 ? (
-        <>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: booking.students.length }, (_, index) => (
-              <HelmetIcon key={index} className="w-6 h-6 text-amber-500" />
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {booking.students.map((studentRelation: any, index: number) => (
-              <span
-                key={studentRelation.student.id}
-                className="inline-flex items-center"
-              >
-                <button
-                  onClick={() => onStudentClick(studentRelation.student.id)}
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                >
-                  {studentRelation.student.name}
-                </button>
-                {index < booking.students.length - 1 && (
-                  <span className="text-sm text-muted-foreground ml-1">,</span>
+    <div className="bg-background/50 rounded-md p-3">
+      <div className="flex items-center gap-3">
+        {booking.students && booking.students.length > 0 ? (
+          <>
+            <div className="flex items-center">
+              <div className="grid gap-0.5 w-fit">
+                {booking.students.length === 1 && (
+                  <div className="flex justify-center">
+                    <HelmetIcon className="w-5 h-5 text-amber-500" />
+                  </div>
                 )}
-              </span>
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <HelmetIcon className="w-6 h-6 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            No students assigned
-          </span>
-        </>
-      )}
+                {booking.students.length === 2 && (
+                  <div className="flex gap-1">
+                    <HelmetIcon className="w-5 h-5 text-amber-500" />
+                    <HelmetIcon className="w-5 h-5 text-amber-500" />
+                  </div>
+                )}
+                {booking.students.length === 3 && (
+                  <>
+                    <div className="flex gap-1 justify-center">
+                      <HelmetIcon className="w-5 h-5 text-amber-500" />
+                      <HelmetIcon className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div className="flex justify-center">
+                      <HelmetIcon className="w-5 h-5 text-amber-500" />
+                    </div>
+                  </>
+                )}
+                {booking.students.length === 4 && (
+                  <>
+                    <div className="flex gap-1">
+                      <HelmetIcon className="w-5 h-5 text-amber-500" />
+                      <HelmetIcon className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div className="flex gap-1">
+                      <HelmetIcon className="w-5 h-5 text-amber-500" />
+                      <HelmetIcon className="w-5 h-5 text-amber-500" />
+                    </div>
+                  </>
+                )}
+                {booking.students.length > 4 && (
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: booking.students.length }, (_, index) => (
+                      <HelmetIcon key={index} className="w-5 h-5 text-amber-500" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {booking.students.map((studentRelation: any, index: number) => (
+                <span
+                  key={studentRelation.student.id}
+                  className="inline-flex items-center"
+                >
+                  <button
+                    onClick={() => onStudentClick(studentRelation.student.id)}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                  >
+                    {studentRelation.student.name}
+                  </button>
+                  {index < booking.students.length - 1 && (
+                    <span className="text-sm text-muted-foreground ml-1">,</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <HelmetIcon className="w-5 h-5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground font-medium">
+              No students assigned
+            </span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-// Sub-component: Package Info (no changes)
+// Sub-component: Package Info
 function PackageInfo({ booking }: { booking: BookingData }) {
   if (!booking.package) return null;
   const pricePerHour = Math.round((booking.package.price_per_student / (booking.package.duration / 60)) * 100) / 100;
   const durationHours = booking.package.duration / 60;
   return (
-    <div className="flex items-center gap-2">
-      <PackageIcon className="w-6 h-6 text-amber-500" />
-      <span className="text-sm font-medium">{durationHours}h</span>
-      <span className="text-sm font-medium">€{pricePerHour}/h</span>
+    <div className="flex items-center gap-3">
+      <BookmarkIcon className="w-5 h-5 text-amber-500" />
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded">
+          {durationHours}h
+        </span>
+        <span className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded">
+          €{pricePerHour}/h
+        </span>
+      </div>
     </div>
   );
 }
 
-// Sub-component: Lessons Section (UPDATED)
+// Sub-component: Lessons Section
 interface LessonsSectionProps {
   displayLessons: any[];
   onAddEventClick: (lesson: any) => void;
@@ -117,7 +186,7 @@ function LessonsSection({ displayLessons, onAddEventClick }: LessonsSectionProps
   const getHeadsetColor = (status: string) => {
     switch (status) {
       case "planned": return "text-green-600";
-      case "delegated": return "text-orange-800";
+      case "delegated": return "text-orange-600";
       case "cancelled": return "text-red-600";
       case "rest": return "text-blue-600";
       case "completed": return "text-gray-400";
@@ -132,22 +201,24 @@ function LessonsSection({ displayLessons, onAddEventClick }: LessonsSectionProps
     return `${day}-${month}`;
   };
 
+  if (displayLessons.length === 0) return null;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {displayLessons.map((lesson) => (
-        <div key={lesson.id} className="space-y-2">
-          <div className="flex items-center gap-2">
-            <HeadsetIcon className={`w-6 h-6 ${getHeadsetColor(lesson.status)}`} />
-            <span className="text-sm font-medium">
+        <div key={lesson.id} className="bg-background/50 rounded-md p-3 space-y-2">
+          <div className="flex items-center gap-3">
+            <HeadsetIcon className={`w-5 h-5 ${getHeadsetColor(lesson.status)}`} />
+            <span className="text-sm font-medium flex-1">
               {lesson.teacher?.name || "Unassigned"}
             </span>
             <LessonStatusLabel lessonId={lesson.id} currentStatus={lesson.status} />
             <button
               onClick={() => onAddEventClick(lesson)}
-              className={`ml-auto p-1 rounded-full transition-colors ${
+              className={`p-1.5 rounded-md transition-colors ${
                 lesson.canCreateEvent
-                  ? 'text-green-600 hover:bg-green-500/10'
-                  : 'text-gray-400'
+                  ? 'text-green-600 hover:bg-green-500/10 hover:text-green-700'
+                  : 'text-gray-400 cursor-not-allowed'
               }`}
               title={lesson.canCreateEvent ? "Add event for this lesson" : lesson.disabledReason}
               disabled={!lesson.canCreateEvent}
@@ -155,15 +226,17 @@ function LessonsSection({ displayLessons, onAddEventClick }: LessonsSectionProps
               <Plus className="w-4 h-4" />
             </button>
           </div>
-          <div className="pl-8 space-y-1">
-            {lesson.events?.map((event: any) => (
-              <div key={event.id} className="flex items-center gap-2 text-xs">
-                <FlagIcon className="w-4 h-4" />
-                <Duration minutes={event.duration || 0} />
-                <span>{formatDate(event.date)}</span>
-              </div>
-            ))}
-          </div>
+          {lesson.events && lesson.events.length > 0 && (
+            <div className="ml-8 space-y-1">
+              {lesson.events.map((event: any) => (
+                <div key={event.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <FlagIcon className="w-3 h-3" />
+                  <Duration minutes={event.duration || 0} />
+                  <span>{formatDate(event.date)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -172,6 +245,7 @@ function LessonsSection({ displayLessons, onAddEventClick }: LessonsSectionProps
 
 export default function BookingCard({
   booking,
+  bookingClass,
   teacherSchedules,
   selectedDate,
   controller,
@@ -181,10 +255,10 @@ export default function BookingCard({
   const [selectedLessonForEvent, setSelectedLessonForEvent] = useState<any>(null);
   const router = useRouter();
 
-  const bookingClass = useMemo(() => new WhiteboardClass(booking), [booking]);
+  const localBookingClass = useMemo(() => new WhiteboardClass(booking), [booking]);
 
   const displayLessons = useMemo(() => {
-    return bookingClass
+    return localBookingClass
       .getLessons()
       .map(lesson => {
         const hasEventOnDate = selectedDate
@@ -207,13 +281,13 @@ export default function BookingCard({
 
         return { ...lesson, canCreateEvent, disabledReason };
       });
-  }, [bookingClass, selectedDate, booking.status]);
+  }, [localBookingClass, selectedDate, booking.status]);
 
   const hasNonDelegatedActiveLessons = useMemo(() => 
-    bookingClass
+    localBookingClass
       .getLessons()
       .some((lesson) => lesson.status === "planned" || lesson.status === "rest"), 
-    [bookingClass]
+    [localBookingClass]
   );
 
   const handleStudentClick = (studentId: string) => {
@@ -227,7 +301,7 @@ export default function BookingCard({
       booking: booking, // Pass the full booking object to the modal
       students,
       studentCount: students.length,
-      remainingMinutes: bookingClass.getRemainingMinutes(),
+      remainingMinutes: localBookingClass.getRemainingMinutes(),
     });
     setIsEventModalOpen(true);
   };
@@ -244,32 +318,34 @@ export default function BookingCard({
     : null;
 
   return (
-    <div className="bg-card border border-border rounded-lg hover:shadow-md transition-shadow">
-      <BookingHeader booking={booking} />
-
-      <div className="border flex flex-col bg-muted-foreground/20 dark:bg-muted/10 rounded-lg py-2 gap-2 p-4">
-        <StudentsSection
-          booking={booking}
-          onStudentClick={handleStudentClick}
-        />
-        <PackageInfo booking={booking} />
-        <LessonsSection
-          displayLessons={displayLessons}
-          onAddEventClick={handleOpenEventModal}
-        />
-      </div>
+    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+      <BookingHeader booking={booking} selectedDate={selectedDate} bookingClass={bookingClass} />
 
       <div className="p-4">
-        {!hasNonDelegatedActiveLessons && (
+        <div className="space-y-3">
+          <StudentsSection
+            booking={booking}
+            onStudentClick={handleStudentClick}
+          />
+          
+          <LessonsSection
+            displayLessons={displayLessons}
+            onAddEventClick={handleOpenEventModal}
+          />
+        </div>
+      </div>
+
+      {!hasNonDelegatedActiveLessons && (
+        <div className="p-4 border-t border-border/50">
           <button
             onClick={() => setShowLessonModal(true)}
-            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-2 border border-dashed border-blue-300 dark:border-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-400 dark:hover:border-blue-500 w-full justify-center"
+            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-3 border border-dashed border-blue-300 dark:border-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-400 dark:hover:border-blue-500 w-full justify-center font-medium"
           >
             <Plus className="w-4 h-4" />
             <span>Assign New Lesson</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {showLessonModal && (
         <BookingToLessonModal
@@ -294,6 +370,8 @@ export default function BookingCard({
           remainingMinutes={selectedLessonForEvent.remainingMinutes}
         />
       )}
+
+      <FooterDropdown booking={booking} />
     </div>
   );
 }

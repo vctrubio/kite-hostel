@@ -34,7 +34,10 @@ export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null
       return { data: null, error: `Bookings error: ${bookingsResult.error}` };
     }
 
-    const rawBookings = bookingsResult.data || [];
+    const rawBookings = (bookingsResult.data || []).sort((a, b) => {
+      // Sort by start date, earliest first
+      return new Date(a.date_start).getTime() - new Date(b.date_start).getTime();
+    });
     
     // Create WhiteboardClass instances for analysis (server-side only)
     // We can't pass these to client, but we can use them for calculations
@@ -143,13 +146,18 @@ export async function getFilteredWhiteboardData(selectedDate: string): Promise<{
     const filterDate = new Date(selectedDate);
     filterDate.setHours(0, 0, 0, 0);
 
-    const filteredBookings = data.rawBookings.filter(booking => {
-      const bookingStart = new Date(booking.date_start);
-      const bookingEnd = new Date(booking.date_end);
-      bookingStart.setHours(0, 0, 0, 0);
-      bookingEnd.setHours(23, 59, 59, 999);
-      return filterDate >= bookingStart && filterDate <= bookingEnd;
-    });
+    const filteredBookings = data.rawBookings
+      .filter(booking => {
+        const bookingStart = new Date(booking.date_start);
+        const bookingEnd = new Date(booking.date_end);
+        bookingStart.setHours(0, 0, 0, 0);
+        bookingEnd.setHours(23, 59, 59, 999);
+        return filterDate >= bookingStart && filterDate <= bookingEnd;
+      })
+      .sort((a, b) => {
+        // Sort by start date, earliest first
+        return new Date(a.date_start).getTime() - new Date(b.date_start).getTime();
+      });
 
     const bookingClasses = filteredBookings.map(booking => new WhiteboardClass(booking));
     const activeBookingClasses = bookingClasses.filter(bc => bc.getStatus() === 'active');

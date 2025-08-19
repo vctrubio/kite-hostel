@@ -12,22 +12,19 @@ import { type EventController } from "@/backend/types";
 
 interface WhiteboardBookingsProps {
   bookings: any[];
+  bookingClasses: WhiteboardClass[];
   teacherSchedules: Map<string, TeacherSchedule>;
   selectedDate: string;
-  controller: EventController;
+  controller?: EventController;
 }
 
 export default function WhiteboardBookings({
   bookings,
+  bookingClasses,
   teacherSchedules,
   selectedDate,
   controller,
 }: WhiteboardBookingsProps) {
-  // Create WhiteboardClass instances for enhanced business logic
-  const bookingClasses = useMemo(
-    () => createBookingClasses(bookings),
-    [bookings],
-  );
 
   // Get bookings ready for completion using business logic
   const completableBookings = bookingClasses.filter((bc) =>
@@ -57,15 +54,20 @@ export default function WhiteboardBookings({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-          {bookings.map((booking) => (
-            <BookingCard
-              key={booking.id}
-              booking={booking}
-              teacherSchedules={teacherSchedules}
-              selectedDate={selectedDate}
-              controller={controller}
-            />
-          ))}
+          {bookings.map((booking) => {
+            // Find the corresponding booking class for progress data
+            const bookingClass = bookingClasses.find(bc => bc.getId() === booking.id);
+            return (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                bookingClass={bookingClass}
+                teacherSchedules={teacherSchedules}
+                selectedDate={selectedDate}
+                controller={controller}
+              />
+            );
+          })}
         </div>
       )}
     </div>

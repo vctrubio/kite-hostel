@@ -2,6 +2,7 @@ export { HelmetIcon } from './HelmetIcon';
 export { UsersIcon } from './UsersIcon';
 export { BookingIcon } from './BookingIcon';
 export { BookIcon } from './BookIcon';
+export { BookmarkIcon } from './BookmarkIcon';
 export { KiteIcon } from './KiteIcon';
 export { EquipmentIcon } from './EquipmentIcon';
 export { AdminIcon } from './AdminIcon';

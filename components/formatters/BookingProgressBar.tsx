@@ -2,38 +2,55 @@
 import { Duration } from "./Duration";
 
 interface BookingProgressBarProps {
-  usedMinutes: number;
+  eventMinutes: {
+    completed: number;
+    planned: number;
+    tbc: number;
+    cancelled: number;
+  };
   totalMinutes: number;
 }
 
-export function BookingProgressBar({ usedMinutes, totalMinutes }: BookingProgressBarProps) {
+export function BookingProgressBar({ eventMinutes, totalMinutes }: BookingProgressBarProps) {
   if (!totalMinutes || totalMinutes === 0) {
     return <span className="text-xs text-muted-foreground">N/A</span>;
   }
 
-  const progressPercentage = (usedMinutes / totalMinutes) * 100;
+  const completedPercentage = (eventMinutes.completed / totalMinutes) * 100;
+  const plannedPercentage = (eventMinutes.planned / totalMinutes) * 100;
+  const tbcPercentage = (eventMinutes.tbc / totalMinutes) * 100;
+  
+  // Calculate cumulative percentages for proper positioning
+  const completedWidth = Math.min(completedPercentage, 100);
+  const plannedWidth = Math.min(plannedPercentage, 100 - completedWidth);
+  const tbcWidth = Math.min(tbcPercentage, 100 - completedWidth - plannedWidth);
 
-  let fillColorClass = "bg-gray-300"; // Default: grey for in-progress
-  if (usedMinutes >= totalMinutes) {
-    fillColorClass = "bg-green-500"; // Completed or over, but within limits
-  }
-  if (usedMinutes > totalMinutes) {
-    fillColorClass = "bg-red-300"; // Light red for over-duration
-  }
+  const totalUsedMinutes = eventMinutes.completed + eventMinutes.planned + eventMinutes.tbc;
 
   return (
     <div className="inline-flex items-center gap-2">
       <div
-        className="h-3 rounded-full overflow-hidden border border-gray-200"
+        className="h-3 rounded-full overflow-hidden border border-gray-200 bg-gray-100 dark:bg-gray-800"
         style={{ width: "100px" }}
       >
+        {/* Completed minutes - Green */}
         <div
-          className={`h-full ${fillColorClass} rounded-full transition-all duration-300`}
-          style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+          className="h-full bg-green-500 transition-all duration-300 float-left"
+          style={{ width: `${completedWidth}%` }}
+        />
+        {/* Planned minutes - Teal */}
+        <div
+          className="h-full bg-teal-500 transition-all duration-300 float-left"
+          style={{ width: `${plannedWidth}%` }}
+        />
+        {/* TBC minutes - Purple */}
+        <div
+          className="h-full bg-purple-500 transition-all duration-300 float-left"
+          style={{ width: `${tbcWidth}%` }}
         />
       </div>
       <span className="text-xs text-muted-foreground">
-        <Duration minutes={usedMinutes} />/<Duration minutes={totalMinutes} />
+        {Math.round(totalUsedMinutes / 60 * 10) / 10}/<Duration minutes={totalMinutes} />
       </span>
     </div>
   );
