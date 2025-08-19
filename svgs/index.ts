@@ -16,3 +16,8 @@ export { EventIcon } from './EventIcon';
 export { LessonIcon } from './LessonIcon';
 export { TeacherIcon } from './TeacherIcon';
 export { ProgressIcon } from './ProgressIcon';
+export { Share2Icon } from './Share2Icon';
+export { StethoscopeIcon } from './StethoscopeIcon';
+export { FileTextIcon } from './FileTextIcon';
+export { PrinterIcon } from './PrinterIcon';
+export { ChevronDownIcon } from './ChevronDownIcon';

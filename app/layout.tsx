@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
@@ -19,8 +19,8 @@ export const metadata: Metadata = {
   description: "Tarifa Kite Hostel Management App",
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   display: "swap",
   subsets: ["latin"],
 });
@@ -37,7 +37,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className={`${inter.className} antialiased`}>
         <UserWalletProvider initialUser={user}>
           <ThemeProvider
             attribute="class"
@@ -46,7 +46,7 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Analytics />
-            {/* <Navbar /> */}
+            <Navbar />
             {children}
             <Toaster position="top-left" />
           </ThemeProvider>

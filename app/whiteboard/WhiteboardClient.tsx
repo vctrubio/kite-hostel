@@ -215,10 +215,25 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Mobile Top Navigation */}
+      <div className="xl:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border p-2">
+        <WhiteboardMiniNav
+          activeSection={activeSection}
+          onSectionClick={handleSectionClick}
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+          bookingsCount={filteredData.bookings.length}
+          lessonsCount={filteredData.lessons.length}
+          eventsCount={filteredData.events.length}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+        />
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-4 2xl:grid-cols-5 w-full px-4">
-        {/* Sidebar */}
-        <div className="xl:col-span-1 order-2 xl:order-1">
-          <div className="xl:sticky xl:top-4 p-4">
+        {/* Desktop Sidebar */}
+        <div className="hidden xl:block xl:col-span-1">
+          <div className="sticky top-4 p-4">
             <WhiteboardMiniNav
               activeSection={activeSection}
               onSectionClick={handleSectionClick}
@@ -234,7 +249,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         </div>
 
         {/* Content */}
-        <div className="xl:col-span-3 2xl:col-span-4 order-1 xl:order-2 pt-4">
+        <div className="xl:col-span-3 2xl:col-span-4 pt-4">
           <div className="bg-card">
             <div className="p-4">
               <div className="w-full">
