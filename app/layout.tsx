@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { UserWalletProvider } from "@/provider/UserWalletProvider";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/navbar";
+import { UserNav } from "@/components/UserNav";
 
 import "./globals.css";
 
@@ -46,7 +47,8 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Analytics />
-            <Navbar />
+            <UserNav />
+            {/* <Navbar /> */}
             {children}
             <Toaster position="top-left" />
           </ThemeProvider>

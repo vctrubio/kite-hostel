@@ -64,6 +64,24 @@ export async function getTeachers() {
   }
 }
 
+export async function fetchUserBySk(sk: string): Promise<{ data: TeacherWithRelations | null; error: string | null }> {
+  try {
+    const userWallet = await db.query.user_wallet.findFirst({
+      where: eq(user_wallet.sk, sk),
+    });
+
+    if (!userWallet || !userWallet.pk) {
+      return { data: null, error: "No teacher associated with this user." };
+    }
+
+    return await getTeacherById(userWallet.pk);
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(`Error fetching teacher by SK ${sk}:`, error);
+    return { data: null, error: errorMessage };
+  }
+}
+
 export async function getTeacherById(id: string): Promise<{ data: TeacherWithRelations | null; error: string | null }> {
   try {
     const teacher = await db.query.Teacher.findFirst({

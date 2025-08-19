@@ -6,6 +6,20 @@ import {
   locationEnum,
   userRole,
 } from "@/drizzle/migrations/schema";
+import {
+  HelmetIcon,
+  HeadsetIcon,
+  BookmarkIcon,
+  BookingIcon,
+  KiteIcon,
+  PaymentIcon,
+  UsersIcon,
+  BookIcon,
+  CalendarIcon,
+  FlagIcon,
+  AdminIcon,
+  EquipmentIcon,
+} from "@/svgs";
 
 export const LESSON_STATUS_ENUM_VALUES = lessonStatusEnum.enumValues;
 export type LessonStatus = (typeof LESSON_STATUS_ENUM_VALUES)[number];
@@ -121,3 +135,136 @@ export const getEventStatusColor = (status: EventStatus): string => {
 // Event status values for progress calculation
 export const COMPLETED_EVENT_STATUSES: EventStatus[] = ['completed'];
 export const PLANNED_EVENT_STATUSES: EventStatus[] = ['planned', 'tbc'];
+
+// Entity data for forms and documentation
+export const ENTITY_DATA = [
+  {
+    name: "Student",
+    icon: HelmetIcon,
+    color: "text-yellow-500",
+    bgColor: "bg-yellow-500",
+    link: "/students",
+    description: [
+      "Students create bookings.",
+      "Can only have one active booking at a time.",
+    ],
+  },
+  {
+    name: "Teacher",
+    icon: HeadsetIcon,
+    color: "text-green-500",
+    bgColor: "bg-green-500",
+    link: "/teachers",
+    description: [
+      "Our employees, each has a commission rate for a lesson and earn money.",
+      "Payments are used to deduct earnings from the total.",
+    ],
+    many_to_many: [
+      {
+        name: "Teacher Kite",
+        link: "/teachers",
+        icon: KiteIcon,
+        color: "text-lime-500",
+        bgColor: "bg-lime-500",
+      },
+    ],
+  },
+  {
+    name: "Package",
+    icon: BookmarkIcon,
+    color: "text-orange-500",
+    bgColor: "bg-orange-500",
+    link: "/packages",
+    description: [
+      "Determines the duration, capacity, and kites for the booking.",
+    ],
+  },
+  {
+    name: "Booking",
+    icon: BookingIcon,
+    color: "text-blue-500",
+    bgColor: "bg-blue-500",
+    link: "/bookings",
+    description: [
+      "Has a start date and end date.",
+      "References come from user accounts.",
+    ],
+    many_to_many: [
+      {
+        name: "Booking Student",
+        link: "/bookings",
+        icon: AdminIcon,
+        color: "text-gray-500",
+        bgColor: "bg-gray-500",
+      },
+    ],
+  },
+  {
+    name: "Lesson",
+    icon: FlagIcon,
+    color: "text-cyan-500",
+    bgColor: "bg-cyan-500",
+    link: "/lessons",
+    description: [
+      "Represents a scheduled lesson, linked to a teacher, booking, and commission.",
+    ],
+  },
+  {
+    name: "Event",
+    icon: KiteIcon,
+    color: "text-teal-500",
+    bgColor: "bg-teal-500",
+    link: "/events",
+    description: [
+      "Must be derived from a lesson.",
+      "Has a duration and kite that was used.",
+    ],
+    many_to_many: [
+      {
+        name: "Kite Event",
+        link: "/events",
+        icon: KiteIcon,
+        color: "text-brown-500",
+        bgColor: "bg-brown-500",
+      },
+    ],
+  },
+  {
+    name: "Kite",
+    icon: EquipmentIcon,
+    color: "text-purple-500",
+    bgColor: "bg-purple-500",
+    link: "/kites",
+    description: ["Added and used for tracking of usage in each event."],
+  },
+  {
+    name: "Payment",
+    icon: PaymentIcon,
+    color: "text-amber-500",
+    bgColor: "bg-amber-500",
+    link: "/payments",
+    description: ["Records payments made to teachers."],
+  },
+  {
+    name: "Commission",
+    icon: BookIcon,
+    color: "text-cyan-500",
+    bgColor: "bg-cyan-500",
+    link: "/teachers",
+    description: [
+      "Defines the commission rate for a teacher.",
+      "Must be selected when creating a lesson.",
+    ],
+  },
+  {
+    name: "References",
+    icon: BookIcon,
+    color: "text-slate-400",
+    bgColor: "bg-slate-400", 
+    link: "/references",
+    description: [
+      "Referenced bookings and user notes.",
+      "Links bookings to user wallet references.",
+    ],
+  },
+] as const;

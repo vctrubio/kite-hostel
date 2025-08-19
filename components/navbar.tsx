@@ -4,6 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeSwitcher } from "@/components/supabase-init/theme-switcher";
 
+const mainRoutes = [
+  { href: "/whiteboard", label: "Whiteboard" },
+  { href: "/(tables)", label: "Tables" },
+];
+
 const primaryLinks = [
   { href: "/students", label: "Students" },
   { href: "/teachers", label: "Teachers" },
@@ -26,18 +31,21 @@ export function Navbar() {
   return (
     <nav className="p-4 border">
       <div className="container mx-auto">
-        {/* Top row: Home and Theme Switcher */}
+        {/* Top row: Home, Main Routes and Theme Switcher */}
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center space-x-4">
             <Link href="/" className="font-bold text-xl">
               Kite Hostel
             </Link>
-            <Link
-              href="/whiteboard"
-              className={`text-lg ${pathname === "/whiteboard" ? "font-bold" : ""}`}
-            >
-              Whiteboard
-            </Link>
+            {mainRoutes.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`text-lg ${pathname === href || pathname.startsWith(href.replace("(", "").replace(")", "")) ? "font-bold" : ""}`}
+              >
+                {label}
+              </Link>
+            ))}
           </div>
           <div className="flex items-center space-x-4">
             <Link

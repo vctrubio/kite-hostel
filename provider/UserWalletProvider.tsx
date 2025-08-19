@@ -8,6 +8,7 @@ interface UserAuth {
   name: string | null;
   email: string | null;
   phone: string | null;
+  avatar_url: string | null;
 }
 
 interface Wallet {
@@ -71,6 +72,7 @@ export function UserWalletProvider({ children, initialUser }: UserWalletProvider
                  null;
     const email = supabaseUser.email || null;
     const phone = supabaseUser.phone || null;
+    const avatar_url = supabaseUser.user_metadata?.avatar_url || null;
 
     // Fetch pk and role from user_wallet table
     const { pk, role } = await fetchUserWallet(supabaseUser.id);
@@ -80,6 +82,7 @@ export function UserWalletProvider({ children, initialUser }: UserWalletProvider
         name,
         email,
         phone,
+        avatar_url,
       },
       role,
       wallet: {

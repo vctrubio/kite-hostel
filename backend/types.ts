@@ -99,3 +99,21 @@ export interface MiniNavController {
     events: EventStatusFilter;
   };
 }
+
+// Date filter types for entity tables
+export type DateFilterType = 'off' | 'month' | 'range';
+
+export interface DateFilter {
+  type: DateFilterType;
+  startDate: string | null; // ISO date string (YYYY-MM-DD)
+  endDate: string | null;   // ISO date string (YYYY-MM-DD)
+}
+
+// Predefined date filter presets
+export type DateFilterPreset = 
+  | 'off'
+  | 'current_month'
+  | 'last_3_months'
+  | 'last_6_months'
+  | 'this_year'
+  | 'custom_range';

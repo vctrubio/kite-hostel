@@ -17,6 +17,10 @@ export default {
     'bg-orange-100', 'bg-orange-900/30', 'text-orange-800', 'text-orange-300',
     'bg-red-100', 'bg-red-900/30', 'text-red-800', 'text-red-300',
     'bg-gray-100', 'bg-gray-800', 'text-gray-800', 'text-gray-200',
+    // Entity colors for forms page
+    'text-amber-500', 'bg-amber-500', 'text-purple-500', 'bg-purple-500',
+    'text-slate-400', 'bg-slate-400', 'text-teal-500', 'bg-teal-500',
+    'text-cyan-500', 'bg-cyan-500', 'text-fuchsia-500', 'bg-fuchsia-500',
   ],
   theme: {
     extend: {

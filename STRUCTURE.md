@@ -84,3 +84,20 @@ The core admin interface for managing daily kite lessons and events:
 - **Event Controller**: Manages event creation settings and real-time schedule coordination
 
 **Data Flow**: Server-side data fetching → Client filtering → Component rendering → User interactions
+
+## TODO List
+
+### High Priority
+- [ ] Create searchbar component
+- [ ] Create layout for tables  
+- [ ] Create teacher portal
+- [ ] Finish whiteboard admin playbook
+
+### Schema Updates
+- [ ] Migrate schema - add user last name field
+- [ ] Make structure editable constants for easy maintenance
+
+### Development Tasks
+- [ ] Implement user invitation system
+- [ ] Enhance navigation dropdown functionality
+- [ ] Optimize form validation and error handling
