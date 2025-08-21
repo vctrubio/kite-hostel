@@ -6,6 +6,8 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { EquipmentIcon } from "@/svgs";
 import { toast } from "sonner";
 
 interface KiteFormProps {
@@ -67,56 +69,87 @@ export function KiteForm({ teachers }: KiteFormProps) {
     setLoading(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as any);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row md:items-end space-y-2 md:space-y-0 md:space-x-2">
-      <div className="grid gap-1 w-full md:w-auto">
-        <Label htmlFor="model">Model</Label>
-        <Input
-          id="model"
-          placeholder="e.g., Rebel"
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          disabled={loading}
-        />
+    <Card>
+      <div className="w-full p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <EquipmentIcon className="h-6 w-6 text-purple-500" />
+          <h2 className="text-lg font-semibold">Add New Kite</h2>
+        </div>
+        
+        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="model">Model</Label>
+              <Input
+                id="model"
+                placeholder="e.g., Rebel"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                disabled={loading}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="size">Size (m)</Label>
+              <Input
+                id="size"
+                type="number"
+                placeholder="e.g., 9"
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+                disabled={loading}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="serialId">Serial ID</Label>
+              <Input
+                id="serialId"
+                placeholder="e.g., ABC123XYZ"
+                value={serialId}
+                onChange={(e) => setSerialId(e.target.value)}
+                disabled={loading}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="teacher">Assign to Teacher</Label>
+              <MultiSelect
+                options={teachers.map((teacher) => ({
+                  label: teacher.name,
+                  value: teacher.id,
+                }))}
+                selected={selectedTeacherIds}
+                onValueChange={setSelectedTeacherIds}
+                placeholder="Select teachers"
+                disabled={loading}
+                className="w-full"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              type="submit" 
+              disabled={loading || !model || !size || !serialId}
+              className="h-9 px-6 bg-purple-500 hover:bg-purple-600 text-white"
+            >
+              {loading ? "Creating..." : "Create Kite"}
+            </Button>
+          </div>
+        </form>
       </div>
-      <div className="grid gap-1 w-full md:w-auto">
-        <Label htmlFor="size">Size (m)</Label>
-        <Input
-          id="size"
-          type="number"
-          placeholder="e.g., 9"
-          value={size}
-          onChange={(e) => setSize(Number(e.target.value))}
-          disabled={loading}
-        />
-      </div>
-      <div className="grid gap-1 w-full md:w-auto">
-        <Label htmlFor="serialId">Serial ID</Label>
-        <Input
-          id="serialId"
-          placeholder="e.g., ABC123XYZ"
-          value={serialId}
-          onChange={(e) => setSerialId(e.target.value)}
-          disabled={loading}
-        />
-      </div>
-      <div className="grid gap-1 w-full md:w-auto">
-        <Label htmlFor="teacher">Assign to Teacher</Label>
-        <MultiSelect
-          options={teachers.map((teacher) => ({
-            label: teacher.name,
-            value: teacher.id,
-          }))}
-          selected={selectedTeacherIds}
-          onValueChange={setSelectedTeacherIds}
-          placeholder="Select teachers"
-          disabled={loading}
-          className="w-[180px]"
-        />
-      </div>
-      <Button type="submit" disabled={loading}>
-        {loading ? "Creating..." : "Create Kite"}
-      </Button>
-    </form>
+    </Card>
   );
 }

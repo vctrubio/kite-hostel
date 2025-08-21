@@ -65,6 +65,25 @@ export function getEntitySorter(entityName: string): Sorter {
         }
         return defaultSorter(a, b, sortConfig);
       };
+    case 'kite':
+      return (a, b, sortConfig) => {
+        const { key } = sortConfig;
+        if (key === 'assignedTeachers') {
+          const aLength = a.assignedTeachers?.length || 0;
+          const bLength = b.assignedTeachers?.length || 0;
+          if (aLength < bLength) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aLength > bLength) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        if (key === 'events') {
+          const aLength = a.events?.length || 0;
+          const bLength = b.events?.length || 0;
+          if (aLength < bLength) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aLength > bLength) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        return defaultSorter(a, b, sortConfig);
+      };
     case 'booking':
       return (a, b, sortConfig) => {
         const { key } = sortConfig;

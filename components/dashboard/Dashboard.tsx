@@ -163,7 +163,8 @@ function DataTable({
   onSort,
   sortConfig,
   onSelect,
-  selectedIds
+  selectedIds,
+  formProps
 }: {
   tableHeaders: TableHeader[];
   filteredData: any[];
@@ -175,6 +176,7 @@ function DataTable({
   sortConfig: SortConfig | null;
   onSelect?: (id: string) => void;
   selectedIds?: string[];
+  formProps?: any;
 }) {
   return (
     <Card>
@@ -218,6 +220,7 @@ function DataTable({
                     setExpandedRow={setExpandedRow}
                     isSelected={selectedIds?.includes(item.id)}
                     onSelect={onSelect}
+                    {...(formProps || {})}
                   />
                 ))
               )}
@@ -387,6 +390,7 @@ export function Dashboard({
           sortConfig={sortConfig}
           onSelect={entityName.toLowerCase() === 'student' ? handleSelect : undefined}
           selectedIds={entityName.toLowerCase() === 'student' ? selectedIds : undefined}
+          formProps={formProps}
         />
       </div>
       {EntityModal && <EntityModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} selectedIds={selectedIds} />}

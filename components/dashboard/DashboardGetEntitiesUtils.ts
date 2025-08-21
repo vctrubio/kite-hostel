@@ -204,6 +204,29 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
         },
       };
     
+    case 'kite':
+      return {
+        options: [
+          { label: "All", value: "all" },
+          { label: "With Teachers", value: "with_teachers" },
+          { label: "Available", value: "available" },
+          { label: "Used", value: "used" },
+        ],
+        defaultFilter: "all",
+        filterFunction: (kite: any, filterValue: string) => {
+          if (filterValue === "with_teachers") {
+            return kite.assignedTeachers?.length > 0;
+          }
+          if (filterValue === "available") {
+            return !kite.assignedTeachers?.length;
+          }
+          if (filterValue === "used") {
+            return kite.events?.length > 0;
+          }
+          return true;
+        },
+      };
+    
     default:
       return {
         options: [

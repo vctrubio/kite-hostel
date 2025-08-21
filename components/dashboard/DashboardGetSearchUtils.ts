@@ -49,6 +49,18 @@ export function getEntitySearchFunction(entityName: string): SearchFunction {
         return teacherMatch || amountMatch;
       };
 
+    case 'kite':
+      return (kite: any, searchTerm: string) => {
+        const term = searchTerm.toLowerCase();
+        const modelMatch = kite.model?.toLowerCase().includes(term);
+        const serialIdMatch = kite.serial_id?.toLowerCase().includes(term);
+        const sizeMatch = kite.size?.toString().includes(term);
+        const teacherMatch = kite.assignedTeachers?.some((teacher: any) => 
+          teacher.name?.toLowerCase().includes(term)
+        );
+        return modelMatch || serialIdMatch || sizeMatch || teacherMatch;
+      };
+
     case 'booking':
       return (booking: any, searchTerm: string) => {
         const term = searchTerm.toLowerCase();
