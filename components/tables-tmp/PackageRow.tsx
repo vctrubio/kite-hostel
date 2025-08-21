@@ -8,7 +8,7 @@ import { DateSince } from "@/components/formatters/DateSince";
 import { Duration } from "@/components/formatters/Duration";
 
 interface PackageRowProps {
-  pkg: {
+  data: {
     id: string;
     duration: number;
     capacity_students: number;
@@ -16,12 +16,13 @@ interface PackageRowProps {
     description: string;
     capacity_kites: number;
     bookingCount: number;
+    created_at?: string;
   };
   expandedRow: string | null;
   setExpandedRow: (id: string | null) => void;
 }
 
-export function PackageRow({ pkg, expandedRow, setExpandedRow }: PackageRowProps) {
+export function PackageRow({ data: pkg, expandedRow, setExpandedRow }: PackageRowProps) {
   const isExpanded = expandedRow === pkg.id;
   const router = useRouter();
 

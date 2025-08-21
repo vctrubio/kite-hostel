@@ -1,29 +1,39 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CreatedOrUpdated } from "@/components/formatters/CreatedOrUpdated";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { ChevronDown, ChevronUp, Send } from "lucide-react";
 import { updatePaymentAmount, deletePayment } from "@/actions/payment-actions";
 
 interface PaymentRowProps {
-  payment: {
+  data: {
     id: string;
     amount: number;
     created_at: string;
     updated_at: string;
-    teacher: { name: string };
+    teacher_id: string;
+    teacher: { id: string; name: string };
   };
+  expandedRow: string | null;
+  setExpandedRow: (id: string | null) => void;
 }
 
-export function PaymentRow({ payment }: PaymentRowProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function PaymentRow({ data: payment, expandedRow, setExpandedRow }: PaymentRowProps) {
+  const isExpanded = expandedRow === payment.id;
+  const router = useRouter();
   const [newAmount, setNewAmount] = useState(payment.amount);
   const [loading, setLoading] = useState(false);
 
   const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
+    if (isExpanded) {
+      setExpandedRow(null);
+    } else {
+      setExpandedRow(payment.id);
+    }
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +51,7 @@ export function PaymentRow({ payment }: PaymentRowProps) {
     const result = await updatePaymentAmount(payment.id, newAmount);
     if (result.success) {
       toast.success("Payment amount updated successfully!");
-      setIsExpanded(false); // Collapse after saving
+      setExpandedRow(null); // Collapse after saving
     } else {
       toast.error(result.error || "Failed to update payment amount.");
     }
@@ -63,34 +73,72 @@ export function PaymentRow({ payment }: PaymentRowProps) {
 
   return (
     <>
-      <tr className="cursor-pointer hover:bg-gray-50" onClick={toggleExpand}>
-        <td className="py-2 px-4 text-left border-b border-gray-200">
+      <tr className="border-b border-border">
+        <td className="py-2 px-4 text-left">
           <CreatedOrUpdated createdAt={payment.created_at} updatedAt={payment.updated_at} />
         </td>
-        <td className="py-2 px-4 text-left border-b border-gray-200">{payment.teacher.name}</td>
-        <td className="py-2 px-4 text-left border-b border-gray-200">{payment.amount}</td>
+        <td className="py-2 px-4 text-left">{payment.teacher.name}</td>
+        <td className="py-2 px-4 text-left">€{payment.amount}</td>
+        <td className="py-2 px-4">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={toggleExpand}
+              className="h-8 w-8"
+            >
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/teachers/${payment.teacher.id}`);
+              }}
+              className="h-8 w-8"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </td>
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={3} className="py-2 px-4 border-b border-gray-200">
-            <div className="p-2 flex items-center justify-between space-x-2">
-              <div className="flex items-center space-x-2">
-                <label htmlFor="edit-amount" className="font-semibold">Edit Amount:</label>
-                <Input
-                  id="edit-amount"
-                  type="number"
-                  value={newAmount}
-                  onChange={handleAmountChange}
-                  className="w-32"
-                  disabled={loading}
-                />
-                <Button onClick={handleSaveAmount} disabled={loading}>
-                  {loading ? "Saving..." : "Save"}
-                </Button>
+          <td colSpan={4} className="py-4 px-4 bg-background/30">
+            <div className="w-full space-y-3">
+              {/* Payment Edit Details */}
+              <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-amber-500">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground">Edit Amount:</span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={newAmount}
+                        onChange={handleAmountChange}
+                        className="w-32 h-9"
+                        disabled={loading}
+                        min="1"
+                        placeholder="Amount"
+                      />
+                      <Button onClick={handleSaveAmount} disabled={loading} size="sm">
+                        {loading ? "Saving..." : "Save"}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-end">
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDelete} 
+                      disabled={loading}
+                      size="sm"
+                    >
+                      {loading ? "Deleting..." : "Delete Payment"}
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-                {loading ? "Deleting..." : "Delete"}
-              </Button>
             </div>
           </td>
         </tr>

@@ -2,6 +2,8 @@
 
 import { StudentForm } from "@/components/forms/StudentForm";
 import { TeacherForm } from "@/components/forms/TeacherForm";
+import { PackageForm } from "@/components/forms/PackageForm";
+import { PaymentForm } from "@/components/forms/PaymentForm";
 
 export function getEntityDropdownForm(entityName: string) {
   const normalizedName = entityName.toLowerCase();
@@ -11,6 +13,10 @@ export function getEntityDropdownForm(entityName: string) {
       return StudentForm;
     case 'teacher':
       return TeacherForm;
+    case 'package':
+      return PackageForm;
+    case 'payment':
+      return PaymentForm;
     default:
       return null;
   }

@@ -6,6 +6,14 @@ import { PackageStudent, Booking } from "@/drizzle/migrations/schema";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+interface CreatePackageParams {
+  duration: number;
+  description?: string;
+  price_per_student: number;
+  capacity_students: number;
+  capacity_kites?: number;
+}
+
 type PackageWithRelations = InferSelectModel<typeof PackageStudent> & {
   bookingCount: number;
 };
@@ -58,5 +66,44 @@ export async function getPackageById(id: string): Promise<{ data: PackageWithRel
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error(`Error fetching package with ID ${id} with Drizzle:`, error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return { data: null, error: errorMessage };
+  }
+}
+
+export async function createPackage({
+  duration,
+  description,
+  price_per_student,
+  capacity_students,
+  capacity_kites = 1,
+}: CreatePackageParams): Promise<{ success: boolean; error: string | null; data?: PackageWithRelations }> {
+  try {
+    const newPackage = await db
+      .insert(PackageStudent)
+      .values({
+        duration,
+        description,
+        price_per_student,
+        capacity_students,
+        capacity_kites,
+      })
+      .returning();
+
+    if (newPackage.length === 0) {
+      return { success: false, error: "Failed to create package." };
+    }
+
+    const createdPackage: PackageWithRelations = {
+      ...newPackage[0],
+      bookingCount: 0, // New package has no bookings yet
+    };
+
+    revalidatePath("/packages"); // Revalidate packages page
+    revalidatePath("/bookings/form"); // Revalidate booking form in case it needs updated packages
+
+    return { success: true, error: null, data: createdPackage };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error creating package:", error);
+    return { success: false, error: errorMessage };
   }
 }

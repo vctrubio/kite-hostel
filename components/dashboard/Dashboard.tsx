@@ -31,6 +31,7 @@ interface DashboardProps {
   actionsPlaceholder?: React.ReactNode;
   isFilterRangeSelected?: boolean;
   isDropdown?: boolean;
+  formProps?: any;
 }
 
 type CustomFilterValue = string;
@@ -235,7 +236,8 @@ export function Dashboard({
   data,
   actionsPlaceholder,
   isFilterRangeSelected = true,
-  isDropdown = false
+  isDropdown = false,
+  formProps
 }: DashboardProps) {
   // All constants at the top
   const router = useRouter();
@@ -367,7 +369,10 @@ export function Dashboard({
 
         {isDropdown && isDropdownFormOpen && EntityDropdownForm && (
           <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-muted">
-            <EntityDropdownForm onSubmit={() => setIsDropdownFormOpen(false)} />
+            <EntityDropdownForm 
+              onSubmit={() => setIsDropdownFormOpen(false)}
+              {...formProps}
+            />
           </div>
         )}
 

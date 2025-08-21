@@ -28,6 +28,43 @@ export function getEntitySorter(entityName: string): Sorter {
         }
         return defaultSorter(a, b, sortConfig);
       };
+    case 'teacher':
+      return (a, b, sortConfig) => {
+        const { key } = sortConfig;
+        if (key === 'commissions') {
+          const aLength = a.commissions?.length || 0;
+          const bLength = b.commissions?.length || 0;
+          if (aLength < bLength) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aLength > bLength) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        return defaultSorter(a, b, sortConfig);
+      };
+    case 'package':
+      return (a, b, sortConfig) => {
+        const { key } = sortConfig;
+        if (key === 'hourly_rate') {
+          // Calculate hourly rate for each package
+          const aRate = a.duration > 0 ? (a.price_per_student / (a.duration / 60)) : 0;
+          const bRate = b.duration > 0 ? (b.price_per_student / (b.duration / 60)) : 0;
+          if (aRate < bRate) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aRate > bRate) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        return defaultSorter(a, b, sortConfig);
+      };
+    case 'payment':
+      return (a, b, sortConfig) => {
+        const { key } = sortConfig;
+        if (key === 'teacher') {
+          const aName = a.teacher?.name || '';
+          const bName = b.teacher?.name || '';
+          if (aName < bName) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aName > bName) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        return defaultSorter(a, b, sortConfig);
+      };
     case 'booking':
       return (a, b, sortConfig) => {
         const { key } = sortConfig;

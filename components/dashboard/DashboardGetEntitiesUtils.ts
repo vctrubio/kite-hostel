@@ -151,6 +151,59 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
         },
       };
     
+    case 'teacher':
+      return {
+        options: [
+          { label: "All", value: "all" },
+          { label: "With Commissions", value: "with_commissions" },
+          { label: "Without Commissions", value: "without_commissions" },
+        ],
+        defaultFilter: "all",
+        filterFunction: (teacher: any, filterValue: string) => {
+          if (filterValue === "with_commissions") {
+            return teacher.commissions?.length > 0;
+          }
+          if (filterValue === "without_commissions") {
+            return !teacher.commissions?.length;
+          }
+          return true;
+        },
+      };
+    
+    case 'package':
+      return {
+        options: [
+          { label: "All", value: "all" },
+          { label: "Individual", value: "individual" },
+          { label: "Dual", value: "dual" },
+          { label: "Group", value: "group" },
+        ],
+        defaultFilter: "all",
+        filterFunction: (pkg: any, filterValue: string) => {
+          if (filterValue === "individual") {
+            return pkg.capacity_students === 1;
+          }
+          if (filterValue === "dual") {
+            return pkg.capacity_students === 2;
+          }
+          if (filterValue === "group") {
+            return pkg.capacity_students >= 3;
+          }
+          return true;
+        },
+      };
+    
+    case 'payment':
+      return {
+        options: [
+          { label: "All", value: "all" },
+        ],
+        defaultFilter: "all",
+        filterFunction: (payment: any, filterValue: string) => {
+          return true;
+        },
+      };
+    
     default:
       return {
         options: [

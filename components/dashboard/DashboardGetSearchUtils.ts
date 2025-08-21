@@ -23,6 +23,32 @@ export function getEntitySearchFunction(entityName: string): SearchFunction {
         return nameMatch || phoneMatch || passportMatch;
       };
 
+    case 'teacher':
+      return (teacher: any, searchTerm: string) => {
+        const term = searchTerm.toLowerCase();
+        const nameMatch = teacher.name?.toLowerCase().includes(term);
+        const phoneMatch = teacher.phone?.toLowerCase().includes(term);
+        const passportMatch = teacher.passport_number?.toLowerCase().includes(term);
+        return nameMatch || phoneMatch || passportMatch;
+      };
+
+    case 'package':
+      return (pkg: any, searchTerm: string) => {
+        const term = searchTerm.toLowerCase();
+        const descriptionMatch = pkg.description?.toLowerCase().includes(term);
+        const priceMatch = pkg.price_per_student?.toString().includes(term);
+        const durationMatch = pkg.duration?.toString().includes(term);
+        return descriptionMatch || priceMatch || durationMatch;
+      };
+
+    case 'payment':
+      return (payment: any, searchTerm: string) => {
+        const term = searchTerm.toLowerCase();
+        const teacherMatch = payment.teacher?.name?.toLowerCase().includes(term);
+        const amountMatch = payment.amount?.toString().includes(term);
+        return teacherMatch || amountMatch;
+      };
+
     case 'booking':
       return (booking: any, searchTerm: string) => {
         const term = searchTerm.toLowerCase();
