@@ -51,6 +51,25 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Events", key: "events", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
+    case 'event':
+      return [
+        { title: "Date", key: "date", sortable: true },
+        { title: "Teacher", key: "teacher", sortable: true },
+        { title: "Student", key: "students", sortable: false },
+        { title: "Location", key: "location", sortable: true },
+        { title: "Duration", key: "duration", sortable: true },
+        { title: "Kite", key: "kite", sortable: false },
+        { title: "Total", key: "total", sortable: true },
+        { title: "Actions", key: "actions", sortable: false },
+      ];
+    case 'lesson':
+      return [
+        { title: "Teacher", key: "teacher", sortable: true },
+        { title: "Students", key: "students", sortable: false },
+        { title: "Events", key: "events", sortable: true },
+        { title: "Status", key: "status", sortable: true },
+        { title: "Actions", key: "actions", sortable: false },
+      ];
     case 'booking':
       return [
         { title: "Start Date", key: "date_start", sortable: true },

@@ -186,6 +186,57 @@ export async function updateEvent(eventId: string, updates: {
   }
 }
 
+export async function getEvents() {
+  try {
+    const events = await db.select({
+      id: Event.id,
+      date: Event.date,
+      duration: Event.duration,
+      location: Event.location,
+      status: Event.status,
+      created_at: Event.created_at,
+      teacher: {
+        id: Teacher.id,
+        name: Teacher.name,
+      },
+      commission_per_hour: Commission.price_per_hour,
+      package: {
+        description: PackageStudent.description,
+        price_per_student: PackageStudent.price_per_student,
+        duration: PackageStudent.duration,
+      },
+      kite: {
+        model: Kite.model,
+        serial_id: Kite.serial_id,
+      },
+      students: sql`
+        (SELECT json_agg(s.name)
+         FROM booking_student bs
+         JOIN student s ON bs.student_id = s.id
+         WHERE bs.booking_id = ${Booking.id})
+      `.as("students"),
+      student_count: sql`
+        (SELECT COUNT(*)
+         FROM booking_student bs
+         WHERE bs.booking_id = ${Booking.id})
+      `.as("student_count"),
+    })
+    .from(Event)
+    .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
+    .leftJoin(Teacher, eq(Lesson.teacher_id, Teacher.id))
+    .leftJoin(Commission, eq(Lesson.commission_id, Commission.id))
+    .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
+    .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
+    .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
+    .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
+
+    return { data: events, error: null };
+  } catch (error: any) {
+    console.error("Error fetching events:", error);
+    return { data: null, error: error.message };
+  }
+}
+
 export async function getEventCsv() {
   try {
     const events = await db.select({

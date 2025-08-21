@@ -61,6 +61,33 @@ export function getEntitySearchFunction(entityName: string): SearchFunction {
         return modelMatch || serialIdMatch || sizeMatch || teacherMatch;
       };
 
+    case 'event':
+      return (event: any, searchTerm: string) => {
+        const term = searchTerm.toLowerCase();
+        const teacherMatch = event.teacher?.name?.toLowerCase().includes(term);
+        const locationMatch = event.location?.toLowerCase().includes(term);
+        const statusMatch = event.status?.toLowerCase().includes(term);
+        const studentMatch = event.students?.some((student: string) => 
+          student.toLowerCase().includes(term)
+        );
+        const kiteMatch = event.kite?.model?.toLowerCase().includes(term) ||
+                         event.kite?.serial_id?.toLowerCase().includes(term);
+        return teacherMatch || locationMatch || statusMatch || studentMatch || kiteMatch;
+      };
+
+    case 'lesson':
+      return (lesson: any, searchTerm: string) => {
+        const term = searchTerm.toLowerCase();
+        const teacherMatch = lesson.teacher?.name?.toLowerCase().includes(term);
+        const statusMatch = lesson.status?.toLowerCase().includes(term);
+        const bookingIdMatch = lesson.booking?.id?.toLowerCase().includes(term);
+        const packageMatch = lesson.booking?.package?.description?.toLowerCase().includes(term);
+        const studentMatch = lesson.booking?.students?.some((bs: any) => 
+          bs.student?.name?.toLowerCase().includes(term)
+        );
+        return teacherMatch || statusMatch || bookingIdMatch || packageMatch || studentMatch;
+      };
+
     case 'booking':
       return (booking: any, searchTerm: string) => {
         const term = searchTerm.toLowerCase();

@@ -1,79 +1,60 @@
-"use client";
+import { getEvents } from "@/actions/event-actions";
+import { Dashboard } from "@/components/dashboard/Dashboard";
+import { EventRow } from "@/components/tables-tmp/EventRow";
 
-import { useEffect, useState } from "react";
-import { getEventCsv } from "@/actions/event-actions";
-import { CSVLink } from "react-csv";
-import { Button } from "@/components/ui/button";
-
-export default function EventsPage() {
-  const [eventData, setEventData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchEventData() {
-      const { data, error } = await getEventCsv();
-      if (error) {
-        setError(error);
-      } else if (data) {
-        setEventData(data);
-      }
-      setLoading(false);
-    }
-    fetchEventData();
-  }, []);
-
-  if (loading) {
-    return <div className="container mx-auto p-4">Loading events...</div>;
-  }
+export default async function EventsPage() {
+  const { data: events, error } = await getEvents();
 
   if (error) {
-    return <div className="container mx-auto p-4">Error: {error}</div>;
+    return <div className="container mx-auto p-4">Error loading events: {error}</div>;
   }
 
-  const headers = [
-    { label: "Date", key: "date" },
-    { label: "Teacher", key: "teacher" },
-    { label: "Students", key: "students" },
-    { label: "Location", key: "location" },
-    { label: "Duration", key: "duration" },
-    { label: "Kite", key: "kite" },
-    { label: "Price Per Hour", key: "pricePerHour" },
-    { label: "Commission Per Hour", key: "commissionPerHour" },
+  // Calculate stats based on all events
+  const totalEvents = events?.length || 0;
+  const plannedEvents = events?.filter(e => e.status === "planned").length || 0;
+  const completedEvents = events?.filter(e => e.status === "completed").length || 0;
+  const tbcEvents = events?.filter(e => e.status === "tbc").length || 0;
+  
+  // Calculate total revenue and duration
+  const totalDuration = events?.reduce((sum, e) => sum + (e.duration || 0), 0) || 0;
+  const totalRevenue = events?.reduce((sum, e) => {
+    if (e.package?.price_per_student && e.student_count && e.duration && e.package?.duration) {
+      const hours = e.duration / 60;
+      const packageHours = e.package.duration / 60;
+      const pricePerHour = e.package.price_per_student / packageHours;
+      return sum + (pricePerHour * hours * e.student_count);
+    }
+    return sum;
+  }, 0) || 0;
+
+  const stats = [
+    {
+      description: "Total Events",
+      value: totalEvents,
+      subStats: [
+        { label: "Planned", value: plannedEvents },
+        { label: "Completed", value: completedEvents },
+        { label: "TBC", value: tbcEvents },
+      ],
+    },
+    {
+      description: "Revenue & Duration",
+      value: `€${Math.round(totalRevenue)}`,
+      subStats: [
+        { label: "Total Hours", value: `${Math.round(totalDuration / 60)}h` },
+        { label: "Avg Duration", value: totalEvents > 0 ? `${Math.round(totalDuration / totalEvents)}min` : "0min" },
+      ],
+    },
   ];
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Events Overview</h1>
-      <div className="flex justify-end mb-4 space-x-2">
-        <CSVLink data={eventData} headers={headers} filename={"events.csv"}>
-          <Button>Export CSV</Button>
-        </CSVLink>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              {headers.map((header) => (
-                <th key={header.key} className="py-2 px-4 border-b text-left">
-                  {header.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {eventData.map((row, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                {headers.map((header) => (
-                  <td key={header.key} className="py-2 px-4 border-b">
-                    {row[header.key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Dashboard
+      entityName="Event"
+      stats={stats}
+      rowComponent={EventRow}
+      data={events || []}
+      isFilterRangeSelected={true}
+      isDropdown={false}
+    />
   );
 }

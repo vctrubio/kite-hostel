@@ -84,6 +84,54 @@ export function getEntitySorter(entityName: string): Sorter {
         }
         return defaultSorter(a, b, sortConfig);
       };
+    case 'event':
+      return (a, b, sortConfig) => {
+        const { key } = sortConfig;
+        if (key === 'teacher') {
+          const aName = a.teacher?.name || '';
+          const bName = b.teacher?.name || '';
+          if (aName < bName) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aName > bName) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        if (key === 'total') {
+          // Calculate total for sorting
+          const calculateTotal = (event: any) => {
+            if (event.package?.price_per_student && event.student_count && event.duration && event.package?.duration) {
+              const hours = event.duration / 60;
+              const packageHours = event.package.duration / 60;
+              const pricePerHour = event.package.price_per_student / packageHours;
+              return pricePerHour * hours * event.student_count;
+            }
+            return 0;
+          };
+          const aTotal = calculateTotal(a);
+          const bTotal = calculateTotal(b);
+          if (aTotal < bTotal) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aTotal > bTotal) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        return defaultSorter(a, b, sortConfig);
+      };
+    case 'lesson':
+      return (a, b, sortConfig) => {
+        const { key } = sortConfig;
+        if (key === 'teacher') {
+          const aName = a.teacher?.name || '';
+          const bName = b.teacher?.name || '';
+          if (aName < bName) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aName > bName) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        if (key === 'events') {
+          const aLength = a.events?.length || 0;
+          const bLength = b.events?.length || 0;
+          if (aLength < bLength) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aLength > bLength) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        return defaultSorter(a, b, sortConfig);
+      };
     case 'booking':
       return (a, b, sortConfig) => {
         const { key } = sortConfig;

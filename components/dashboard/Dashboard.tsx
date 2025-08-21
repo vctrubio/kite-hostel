@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { LucideIcon, Calendar, CalendarOff, ArrowUp, ArrowDown } from "lucide-react";
+import { LucideIcon, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MonthPicker } from "@/components/pickers/month-picker";
 import { useRouter } from "next/navigation";
 import { getEntityConfig, generateEntityActionButtons, getEntityFilterConfig, type ActionButton, type FilterConfig } from "./DashboardGetEntitiesUtils";
 import { DashboardActionButtons } from "./DashboardActionButtons";
@@ -13,6 +12,7 @@ import { getEntityColumnHeaders, type TableHeader } from "./DashboardColumnHeade
 import { getEntitySorter, type SortConfig } from "./DashboardSorting";
 import { getEntityModal } from "./DashboardGetEntityModal";
 import { getEntityDropdownForm } from "./DashboardGetEntityDropdownForm";
+import { DashboardHeader } from "./DashboardHeader";
 
 interface Stat {
   description: string;
@@ -36,87 +36,6 @@ interface DashboardProps {
 
 type CustomFilterValue = string;
 
-// Sub-component: Dashboard Header
-function DashboardHeader({ 
-  entity, 
-  searchTerm, 
-  setSearchTerm, 
-  filterEnabled, 
-  handleToggleFilter, 
-  selectedMonth, 
-  setSelectedMonth,
-  showDateFilter 
-}: {
-  entity: any;
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  filterEnabled: boolean;
-  handleToggleFilter: () => void;
-  selectedMonth: string;
-  setSelectedMonth: (month: string) => void;
-  showDateFilter: boolean;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-sm"></div>
-              <div className={`relative p-4 rounded-xl border shadow-lg ${entity.color || 'text-blue-500'}`} 
-                   style={{
-                     background: `linear-gradient(135deg, ${entity.color?.replace('text-', '') || 'blue-500'}15, ${entity.color?.replace('text-', '') || 'blue-500'}05)`,
-                     borderColor: `${entity.color?.replace('text-', '') || 'blue-500'}40`
-                   }}>
-                <entity.icon className={`h-8 w-8 ${entity.color || 'text-blue-500'} drop-shadow-sm`} />
-              </div>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-              {entity.name}
-            </h1>
-          </div>
-          
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 px-4 py-2 border rounded-lg bg-background"
-            />
-            
-            {showDateFilter && (
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleToggleFilter}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                    filterEnabled 
-                      ? 'bg-primary/10 text-primary border border-primary/20' 
-                      : 'bg-muted text-muted-foreground border border-muted-foreground/20'
-                  }`}
-                >
-                  {filterEnabled ? (
-                    <Calendar className="h-4 w-4" />
-                  ) : (
-                    <CalendarOff className="h-4 w-4" />
-                  )}
-                  <span>{filterEnabled ? 'Month Filter On' : 'All Data'}</span>
-                </button>
-                
-                {filterEnabled && (
-                  <MonthPicker
-                    selectedMonth={selectedMonth}
-                    onMonthChange={setSelectedMonth}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 // Sub-component: Stats Grid
 function StatsGrid({ stats }: { stats: Stat[] }) {

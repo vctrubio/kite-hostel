@@ -1,6 +1,7 @@
 import { ENTITY_DATA } from "@/lib/constants";
-import { Plus, LucideIcon, PlusCircle, Package, UserPlus } from "lucide-react";
+import { Plus, LucideIcon, PlusCircle, Package, UserPlus, Download } from "lucide-react";
 import { seedCreateStudent, seedCreateTeacher } from "@/actions/seed-actions";
+import { getEventCsv } from "@/actions/event-actions";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 export interface EntityConfig {
@@ -46,11 +47,20 @@ export function generateEntityActionButtons(
   openDropdownForm?: () => void,
   isDropdownFormOpen?: boolean
 ): ActionButton[] {
+  // For complex forms (lesson, event), always go to route instead of dropdown
+  const useRoute = entityName.toLowerCase() === 'lesson' || entityName.toLowerCase() === 'event';
+  
+  const buttonLabel = entityName.toLowerCase() === 'event' 
+    ? 'Create New Event'
+    : entityName.toLowerCase() === 'lesson'
+    ? 'Create New Lesson'
+    : (openDropdownForm && !useRoute ? (isDropdownFormOpen ? 'Close' : `Add New ${entityName}`) : `Create New ${entityName}`);
+    
   const actions: ActionButton[] = [
     {
       icon: Plus,
-      label: openDropdownForm ? (isDropdownFormOpen ? 'Close' : `Add New ${entityName}`) : `Create New ${entityName}`,
-      action: openDropdownForm || (() => router.push(`/${entityName.toLowerCase()}s/form`))
+      label: buttonLabel,
+      action: useRoute ? (() => router.push(`/${entityName.toLowerCase()}s/form`)) : (openDropdownForm || (() => router.push(`/${entityName.toLowerCase()}s/form`)))
     }
   ];
 
@@ -78,6 +88,46 @@ export function generateEntityActionButtons(
       action: async () => {
         await seedCreateTeacher();
         router.refresh();
+      }
+    });
+  }
+
+  if (entityName.toLowerCase() === 'event') {
+    actions.push({
+      icon: Download,
+      label: "Export CSV",
+      action: async () => {
+        const { data, error } = await getEventCsv();
+        if (error) {
+          alert(`Export failed: ${error}`);
+          return;
+        }
+        if (data) {
+          // Convert data to CSV and download
+          const headers = [
+            { label: "Date", key: "date" },
+            { label: "Teacher", key: "teacher" },
+            { label: "Students", key: "students" },
+            { label: "Location", key: "location" },
+            { label: "Duration", key: "duration" },
+            { label: "Kite", key: "kite" },
+            { label: "Price Per Hour", key: "pricePerHour" },
+            { label: "Commission Per Hour", key: "commissionPerHour" },
+          ];
+          
+          const csvContent = [
+            headers.map(h => h.label).join(','),
+            ...data.map(row => headers.map(h => `"${row[h.key as keyof typeof row] || ''}"`).join(','))
+          ].join('\n');
+          
+          const blob = new Blob([csvContent], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'events.csv';
+          a.click();
+          window.URL.revokeObjectURL(url);
+        }
       }
     });
   }
@@ -222,6 +272,39 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
           }
           if (filterValue === "used") {
             return kite.events?.length > 0;
+          }
+          return true;
+        },
+      };
+    
+    case 'event':
+      return {
+        options: [
+          { label: "All", value: "all" },
+          { label: "Planned", value: "planned" },
+          { label: "TBC", value: "tbc" },
+          { label: "Completed", value: "completed" },
+        ],
+        defaultFilter: "all",
+        filterFunction: (event: any, filterValue: string) => {
+          if (filterValue === "planned" || filterValue === "tbc" || filterValue === "completed") {
+            return event.status === filterValue;
+          }
+          return true;
+        },
+      };
+    
+    case 'lesson':
+      return {
+        options: [
+          { label: "All", value: "all" },
+          { label: "Planned", value: "planned" },
+          { label: "Completed", value: "completed" },
+        ],
+        defaultFilter: "all",
+        filterFunction: (lesson: any, filterValue: string) => {
+          if (filterValue === "planned" || filterValue === "completed") {
+            return lesson.status === filterValue;
           }
           return true;
         },
