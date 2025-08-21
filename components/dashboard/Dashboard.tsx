@@ -12,6 +12,7 @@ import { getEntitySearchFunction } from "./DashboardGetSearchUtils";
 import { getEntityColumnHeaders, type TableHeader } from "./DashboardColumnHeaders";
 import { getEntitySorter, type SortConfig } from "./DashboardSorting";
 import { getEntityModal } from "./DashboardGetEntityModal";
+import { getEntityDropdownForm } from "./DashboardGetEntityDropdownForm";
 
 interface Stat {
   description: string;
@@ -28,6 +29,8 @@ interface DashboardProps {
   rowComponent: React.ComponentType<any>;
   data: any[];
   actionsPlaceholder?: React.ReactNode;
+  isFilterRangeSelected?: boolean;
+  isDropdown?: boolean;
 }
 
 type CustomFilterValue = string;
@@ -40,7 +43,8 @@ function DashboardHeader({
   filterEnabled, 
   handleToggleFilter, 
   selectedMonth, 
-  setSelectedMonth 
+  setSelectedMonth,
+  showDateFilter 
 }: {
   entity: any;
   searchTerm: string;
@@ -49,6 +53,7 @@ function DashboardHeader({
   handleToggleFilter: () => void;
   selectedMonth: string;
   setSelectedMonth: (month: string) => void;
+  showDateFilter: boolean;
 }) {
   return (
     <Card>
@@ -79,30 +84,32 @@ function DashboardHeader({
               className="w-full sm:w-64 px-4 py-2 border rounded-lg bg-background"
             />
             
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleToggleFilter}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  filterEnabled 
-                    ? 'bg-primary/10 text-primary border border-primary/20' 
-                    : 'bg-muted text-muted-foreground border border-muted-foreground/20'
-                }`}
-              >
-                {filterEnabled ? (
-                  <Calendar className="h-4 w-4" />
-                ) : (
-                  <CalendarOff className="h-4 w-4" />
+            {showDateFilter && (
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleToggleFilter}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                    filterEnabled 
+                      ? 'bg-primary/10 text-primary border border-primary/20' 
+                      : 'bg-muted text-muted-foreground border border-muted-foreground/20'
+                  }`}
+                >
+                  {filterEnabled ? (
+                    <Calendar className="h-4 w-4" />
+                  ) : (
+                    <CalendarOff className="h-4 w-4" />
+                  )}
+                  <span>{filterEnabled ? 'Month Filter On' : 'All Data'}</span>
+                </button>
+                
+                {filterEnabled && (
+                  <MonthPicker
+                    selectedMonth={selectedMonth}
+                    onMonthChange={setSelectedMonth}
+                  />
                 )}
-                <span>{filterEnabled ? 'Month Filter On' : 'All Data'}</span>
-              </button>
-              
-              {filterEnabled && (
-                <MonthPicker
-                  selectedMonth={selectedMonth}
-                  onMonthChange={setSelectedMonth}
-                />
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
@@ -226,7 +233,9 @@ export function Dashboard({
   stats,
   rowComponent: RowComponent,
   data,
-  actionsPlaceholder
+  actionsPlaceholder,
+  isFilterRangeSelected = true,
+  isDropdown = false
 }: DashboardProps) {
   // All constants at the top
   const router = useRouter();
@@ -236,6 +245,7 @@ export function Dashboard({
   const searchFunction = useMemo(() => getEntitySearchFunction(entityName), [entityName]);
   const sorter = useMemo(() => getEntitySorter(entityName), [entityName]);
   const EntityModal = useMemo(() => getEntityModal(entityName), [entityName]);
+  const EntityDropdownForm = useMemo(() => getEntityDropdownForm(entityName), [entityName]);
   const currentDate = new Date();
   const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
 
@@ -243,15 +253,23 @@ export function Dashboard({
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [filterEnabled, setFilterEnabled] = useState(true);
+  const [filterEnabled, setFilterEnabled] = useState(isFilterRangeSelected);
   const [customFilter, setCustomFilter] = useState<CustomFilterValue>(
     customFilters.defaultFilter
   );
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDropdownFormOpen, setIsDropdownFormOpen] = useState(false);
 
-  const actionButtons = generateEntityActionButtons(entityName, router, selectedIds, () => setIsModalOpen(true));
+  const actionButtons = generateEntityActionButtons(
+    entityName, 
+    router, 
+    selectedIds, 
+    () => setIsModalOpen(true),
+    isDropdown ? () => setIsDropdownFormOpen(!isDropdownFormOpen) : undefined,
+    isDropdownFormOpen
+  );
 
   // All handlers at the top
   const handleSort = (key: string) => {
@@ -281,8 +299,8 @@ export function Dashboard({
       filtered.sort((a, b) => sorter(a, b, sortConfig));
     }
 
-    // Month filter
-    if (filterEnabled) {
+    // Month filter - only apply if date filtering is enabled
+    if (filterEnabled && isFilterRangeSelected) {
       filtered = filtered.filter((item) => {
         if (!item.created_at) return false;
         const itemDate = new Date(item.created_at);
@@ -304,16 +322,23 @@ export function Dashboard({
     }
 
     return filtered;
-  }, [data, selectedMonth, filterEnabled, searchTerm, customFilter, customFilters, searchFunction, sortConfig, sorter]);
+  }, [data, selectedMonth, filterEnabled, searchTerm, customFilter, customFilters, searchFunction, sortConfig, sorter, isFilterRangeSelected]);
 
   const handleToggleFilter = () => {
     setFilterEnabled(!filterEnabled);
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape' && isDropdownFormOpen) {
+      event.preventDefault();
+      setIsDropdownFormOpen(false);
+    }
+  };
+
   // Parent div only renders sub-components
   return (
     <>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6" onKeyDown={handleKeyDown}>
         <DashboardHeader
           entity={entity}
           searchTerm={searchTerm}
@@ -322,6 +347,7 @@ export function Dashboard({
           handleToggleFilter={handleToggleFilter}
           selectedMonth={selectedMonth}
           setSelectedMonth={setSelectedMonth}
+          showDateFilter={isFilterRangeSelected}
         />
 
         <StatsGrid stats={stats} />
@@ -339,6 +365,12 @@ export function Dashboard({
           </div>
         )}
 
+        {isDropdown && isDropdownFormOpen && EntityDropdownForm && (
+          <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-muted">
+            <EntityDropdownForm onSubmit={() => setIsDropdownFormOpen(false)} />
+          </div>
+        )}
+
         <DataTable
           tableHeaders={tableHeaders}
           filteredData={filteredData}
@@ -349,7 +381,7 @@ export function Dashboard({
           onSort={handleSort}
           sortConfig={sortConfig}
           onSelect={entityName.toLowerCase() === 'student' ? handleSelect : undefined}
-          selectedIds={selectedIds}
+          selectedIds={entityName.toLowerCase() === 'student' ? selectedIds : undefined}
         />
       </div>
       {EntityModal && <EntityModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} selectedIds={selectedIds} />}

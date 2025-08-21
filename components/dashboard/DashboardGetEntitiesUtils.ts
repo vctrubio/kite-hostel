@@ -1,6 +1,6 @@
 import { ENTITY_DATA } from "@/lib/constants";
-import { Plus, LucideIcon, PlusCircle, Package } from "lucide-react";
-import { seedCreateStudent } from "@/actions/seed-actions";
+import { Plus, LucideIcon, PlusCircle, Package, UserPlus } from "lucide-react";
+import { seedCreateStudent, seedCreateTeacher } from "@/actions/seed-actions";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 export interface EntityConfig {
@@ -42,13 +42,15 @@ export function generateEntityActionButtons(
   entityName: string,
   router: AppRouterInstance,
   selectedIds?: string[],
-  openModal?: () => void
+  openModal?: () => void,
+  openDropdownForm?: () => void,
+  isDropdownFormOpen?: boolean
 ): ActionButton[] {
   const actions: ActionButton[] = [
     {
       icon: Plus,
-      label: `Create New ${entityName}`,
-      action: () => router.push(`/${entityName.toLowerCase()}s/form`)
+      label: openDropdownForm ? (isDropdownFormOpen ? 'Close' : `Add New ${entityName}`) : `Create New ${entityName}`,
+      action: openDropdownForm || (() => router.push(`/${entityName.toLowerCase()}s/form`))
     }
   ];
 
@@ -66,6 +68,17 @@ export function generateEntityActionButtons(
       label: `Select Package (${selectedIds?.length || 0})`,
       action: openModal || (() => {}),
       disabled: !selectedIds || selectedIds.length === 0
+    });
+  }
+
+  if (entityName.toLowerCase() === 'teacher') {
+    actions.push({
+      icon: UserPlus,
+      label: "Seed Teacher",
+      action: async () => {
+        await seedCreateTeacher();
+        router.refresh();
+      }
     });
   }
 

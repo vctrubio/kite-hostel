@@ -52,6 +52,7 @@ export default async function StudentsPage() {
       stats={stats}
       rowComponent={StudentRow}
       data={students}
+      isDropdown={true}
     />
   );
 }

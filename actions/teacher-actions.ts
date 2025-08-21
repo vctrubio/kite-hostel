@@ -7,6 +7,30 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export async function createTeacher(
+  teacherData: typeof Teacher.$inferInsert,
+): Promise<{ success: boolean; data?: InferSelectModel<typeof Teacher>; error?: string }> {
+  try {
+    const result = await db
+      .insert(Teacher)
+      .values(teacherData)
+      .returning();
+
+    if (result.length === 0) {
+      return { success: false, error: "Failed to create teacher." };
+    }
+
+    revalidatePath("/teachers");
+    revalidatePath("/forms");
+
+    return { success: true, data: result[0] };
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    return { success: false, error: errorMessage };
+  }
+}
+
 export async function updateTeacher(
   id: string,
   updatedFields: Partial<typeof Teacher.$inferInsert>,

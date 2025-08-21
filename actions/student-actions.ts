@@ -4,12 +4,37 @@ import db from "@/drizzle";
 import { BookingWithRelations } from "@/backend/types";
 import { Student } from "@/drizzle/migrations/schema";
 import { eq, InferSelectModel } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 type StudentWithRelations = InferSelectModel<typeof Student> & {
   totalBookings: number;
   isAvailable: boolean;
   bookings: BookingWithRelations[];
 };
+
+export async function createStudent(
+  studentData: typeof Student.$inferInsert,
+): Promise<{ success: boolean; data?: InferSelectModel<typeof Student>; error?: string }> {
+  try {
+    const result = await db
+      .insert(Student)
+      .values(studentData)
+      .returning();
+
+    if (result.length === 0) {
+      return { success: false, error: "Failed to create student." };
+    }
+
+    revalidatePath("/students");
+    revalidatePath("/forms");
+
+    return { success: true, data: result[0] };
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    return { success: false, error: errorMessage };
+  }
+}
 
 export async function updateStudent(
   id: string,
@@ -35,7 +60,10 @@ export async function updateStudent(
   }
 }
 
-export async function getStudents(): Promise<{ data: StudentWithRelations[]; error: string | null }> {
+export async function getStudents(): Promise<{
+  data: StudentWithRelations[];
+  error: string | null;
+}> {
   try {
     const students = await db.query.Student.findMany({
       orderBy: (student, { desc }) => [desc(student.created_at)],
@@ -94,12 +122,15 @@ export async function getStudents(): Promise<{ data: StudentWithRelations[]; err
 
     return { data: studentsWithRelations, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     return { data: [], error: errorMessage };
   }
 }
 
-export async function getStudentById(id: string): Promise<{ data: StudentWithRelations | null; error: string | null }> {
+export async function getStudentById(
+  id: string,
+): Promise<{ data: StudentWithRelations | null; error: string | null }> {
   try {
     const student = await db.query.Student.findFirst({
       where: eq(Student.id, id),
@@ -160,11 +191,8 @@ export async function getStudentById(id: string): Promise<{ data: StudentWithRel
 
     return { data: studentWithRelations, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     return { data: null, error: errorMessage };
   }
 }
-function revalidatePath(arg0: string) {
-  throw new Error("Function not implemented.");
-}
-
