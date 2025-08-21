@@ -1,0 +1,358 @@
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import { LucideIcon, Calendar, CalendarOff, ArrowUp, ArrowDown } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { MonthPicker } from "@/components/pickers/month-picker";
+import { useRouter } from "next/navigation";
+import { getEntityConfig, generateEntityActionButtons, getEntityFilterConfig, type ActionButton, type FilterConfig } from "./DashboardGetEntitiesUtils";
+import { DashboardActionButtons } from "./DashboardActionButtons";
+import { getEntitySearchFunction } from "./DashboardGetSearchUtils";
+import { getEntityColumnHeaders, type TableHeader } from "./DashboardColumnHeaders";
+import { getEntitySorter, type SortConfig } from "./DashboardSorting";
+import { getEntityModal } from "./DashboardGetEntityModal";
+
+interface Stat {
+  description: string;
+  value: number | string;
+  subStats?: Array<{
+    label: string;
+    value: number | string;
+  }>;
+}
+
+interface DashboardProps {
+  entityName: string;
+  stats: Stat[];
+  rowComponent: React.ComponentType<any>;
+  data: any[];
+  actionsPlaceholder?: React.ReactNode;
+}
+
+type CustomFilterValue = string;
+
+// Sub-component: Dashboard Header
+function DashboardHeader({ 
+  entity, 
+  searchTerm, 
+  setSearchTerm, 
+  filterEnabled, 
+  handleToggleFilter, 
+  selectedMonth, 
+  setSelectedMonth 
+}: {
+  entity: any;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  filterEnabled: boolean;
+  handleToggleFilter: () => void;
+  selectedMonth: string;
+  setSelectedMonth: (month: string) => void;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-sm"></div>
+              <div className={`relative p-4 rounded-xl border shadow-lg ${entity.color || 'text-blue-500'}`} 
+                   style={{
+                     background: `linear-gradient(135deg, ${entity.color?.replace('text-', '') || 'blue-500'}15, ${entity.color?.replace('text-', '') || 'blue-500'}05)`,
+                     borderColor: `${entity.color?.replace('text-', '') || 'blue-500'}40`
+                   }}>
+                <entity.icon className={`h-8 w-8 ${entity.color || 'text-blue-500'} drop-shadow-sm`} />
+              </div>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+              {entity.name}
+            </h1>
+          </div>
+          
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full sm:w-64 px-4 py-2 border rounded-lg bg-background"
+            />
+            
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleToggleFilter}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                  filterEnabled 
+                    ? 'bg-primary/10 text-primary border border-primary/20' 
+                    : 'bg-muted text-muted-foreground border border-muted-foreground/20'
+                }`}
+              >
+                {filterEnabled ? (
+                  <Calendar className="h-4 w-4" />
+                ) : (
+                  <CalendarOff className="h-4 w-4" />
+                )}
+                <span>{filterEnabled ? 'Month Filter On' : 'All Data'}</span>
+              </button>
+              
+              {filterEnabled && (
+                <MonthPicker
+                  selectedMonth={selectedMonth}
+                  onMonthChange={setSelectedMonth}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Sub-component: Stats Grid
+function StatsGrid({ stats }: { stats: Stat[] }) {
+  const gridClass = `grid grid-cols-1 gap-4 ${
+    stats.length === 2 ? 'md:grid-cols-2' : 
+    stats.length === 3 ? 'md:grid-cols-3' : 
+    stats.length >= 4 ? 'md:grid-cols-2 lg:grid-cols-4' : 
+    'md:grid-cols-1'
+  }`;
+
+  return (
+    <div className={gridClass}>
+      {stats.map((stat, index) => (
+        <Card key={index}>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+            <p className="text-sm font-medium text-muted-foreground mb-3">{stat.description}</p>
+            
+            {stat.subStats && stat.subStats.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-border/50">
+                {stat.subStats.map((subStat, subIndex) => (
+                  <div key={subIndex} className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground/80">{subStat.label}</span>
+                    <span className="text-sm font-semibold text-foreground">{subStat.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// Sub-component: Data Table
+function DataTable({ 
+  tableHeaders, 
+  filteredData, 
+  RowComponent, 
+  expandedRow, 
+  setExpandedRow, 
+  filterEnabled,
+  onSort,
+  sortConfig,
+  onSelect,
+  selectedIds
+}: {
+  tableHeaders: TableHeader[];
+  filteredData: any[];
+  RowComponent: React.ComponentType<any>;
+  expandedRow: string | null;
+  setExpandedRow: (id: string | null) => void;
+  filterEnabled: boolean;
+  onSort: (key: string) => void;
+  sortConfig: SortConfig | null;
+  onSelect?: (id: string) => void;
+  selectedIds?: string[];
+}) {
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-2 border-border bg-muted/50">
+                {tableHeaders.map((header) => (
+                  <th 
+                    key={header.key}
+                    className={`text-left p-4 font-semibold text-foreground ${header.sortable ? 'cursor-pointer' : ''}`}
+                    onClick={() => header.sortable && onSort(header.key)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span>{header.title}</span>
+                      {header.sortable && sortConfig && sortConfig.key === header.key && (
+                        sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={tableHeaders.length} className="p-6 text-center text-muted-foreground">
+                    {filterEnabled 
+                      ? "No items found for this month." 
+                      : "No items found."
+                    }
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((item) => (
+                  <RowComponent
+                    key={item.id}
+                    data={item}
+                    expandedRow={expandedRow}
+                    setExpandedRow={setExpandedRow}
+                    isSelected={selectedIds?.includes(item.id)}
+                    onSelect={onSelect}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function Dashboard({
+  entityName,
+  stats,
+  rowComponent: RowComponent,
+  data,
+  actionsPlaceholder
+}: DashboardProps) {
+  // All constants at the top
+  const router = useRouter();
+  const entity = getEntityConfig(entityName);
+  const tableHeaders = getEntityColumnHeaders(entityName);
+  const customFilters = getEntityFilterConfig(entityName);
+  const searchFunction = useMemo(() => getEntitySearchFunction(entityName), [entityName]);
+  const sorter = useMemo(() => getEntitySorter(entityName), [entityName]);
+  const EntityModal = useMemo(() => getEntityModal(entityName), [entityName]);
+  const currentDate = new Date();
+  const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+
+  // All state at the top
+  const [searchTerm, setSearchTerm] = useState("");
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [filterEnabled, setFilterEnabled] = useState(true);
+  const [customFilter, setCustomFilter] = useState<CustomFilterValue>(
+    customFilters.defaultFilter
+  );
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const actionButtons = generateEntityActionButtons(entityName, router, selectedIds, () => setIsModalOpen(true));
+
+  // All handlers at the top
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((i) => i !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
+  // All computed values at the top
+  const filteredData = useMemo(() => {
+    let filtered = [...data];
+
+    // Sorting
+    if (sortConfig !== null) {
+      filtered.sort((a, b) => sorter(a, b, sortConfig));
+    }
+
+    // Month filter
+    if (filterEnabled) {
+      filtered = filtered.filter((item) => {
+        if (!item.created_at) return false;
+        const itemDate = new Date(item.created_at);
+        const itemMonth = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}`;
+        return itemMonth === selectedMonth;
+      });
+    }
+
+    // Custom filter
+    if (customFilter !== 'all') {
+      filtered = filtered.filter((item) => 
+        customFilters.filterFunction(item, customFilter)
+      );
+    }
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter((item) => searchFunction(item, searchTerm));
+    }
+
+    return filtered;
+  }, [data, selectedMonth, filterEnabled, searchTerm, customFilter, customFilters, searchFunction, sortConfig, sorter]);
+
+  const handleToggleFilter = () => {
+    setFilterEnabled(!filterEnabled);
+  };
+
+  // Parent div only renders sub-components
+  return (
+    <>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <DashboardHeader
+          entity={entity}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterEnabled={filterEnabled}
+          handleToggleFilter={handleToggleFilter}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+        />
+
+        <StatsGrid stats={stats} />
+
+        <DashboardActionButtons 
+          actionButtons={actionButtons} 
+          customFilters={customFilters}
+          customFilter={customFilter}
+          setCustomFilter={setCustomFilter}
+        />
+
+        {actionsPlaceholder && (
+          <div className="space-y-4">
+            {actionsPlaceholder}
+          </div>
+        )}
+
+        <DataTable
+          tableHeaders={tableHeaders}
+          filteredData={filteredData}
+          RowComponent={RowComponent}
+          expandedRow={expandedRow}
+          setExpandedRow={setExpandedRow}
+          filterEnabled={filterEnabled}
+          onSort={handleSort}
+          sortConfig={sortConfig}
+          onSelect={entityName.toLowerCase() === 'student' ? handleSelect : undefined}
+          selectedIds={selectedIds}
+        />
+      </div>
+      {EntityModal && <EntityModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} selectedIds={selectedIds} />}
+    </>
+  );
+}

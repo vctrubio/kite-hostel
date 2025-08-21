@@ -1,6 +1,6 @@
 
 import { getPackages } from "@/actions/package-actions";
-import { PackagesTable } from "./PackagesTable";
+import { PackagesTable } from "../../../components/tables-tmp/PackagesTable";
 
 export default async function PackagesPage() {
   const { data: initialPackages } = await getPackages();

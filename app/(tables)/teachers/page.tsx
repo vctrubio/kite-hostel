@@ -1,5 +1,5 @@
 import { getTeachers } from "@/actions/teacher-actions";
-import { TeachersTable } from "./TeachersTable";
+import { TeachersTable } from "../../../components/tables-tmp/TeachersTable";
 
 export default async function TeachersPage() {
   const { data: initialTeachers } = await getTeachers();

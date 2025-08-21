@@ -1,5 +1,5 @@
 import { getLessonsWithDetails } from "@/actions/lesson-actions";
-import { LessonsTable } from "./LessonsTable";
+import { LessonsTable } from "../../../components/tables-tmp/LessonsTable";
 
 export default async function Page() {
   const { data: lessons, error } = await getLessonsWithDetails();

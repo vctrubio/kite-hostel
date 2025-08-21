@@ -1,6 +1,6 @@
 import { getPaymentsWithTeacher } from "@/actions/payment-actions";
 import { getTeachers } from "@/actions/teacher-actions";
-import { PaymentsTable } from "./PaymentsTable";
+import { PaymentsTable } from "../../../components/tables-tmp/PaymentsTable";
 
 export default async function PaymentsPage() {
   const { data: initialPayments, error: paymentsError } = await getPaymentsWithTeacher();

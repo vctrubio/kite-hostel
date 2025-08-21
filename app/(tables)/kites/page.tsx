@@ -1,5 +1,5 @@
 import { getKitesWithEvents } from "@/actions/kite-actions";
-import { KitesTable } from "./KitesTable";
+import { KitesTable } from "../../../components/tables-tmp/KitesTable";
 import { getTeachers } from "@/actions/teacher-actions";
 
 export default async function KitesPage() {
