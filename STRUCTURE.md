@@ -88,8 +88,6 @@ The core admin interface for managing daily kite lessons and events:
 ## TODO List
 
 ### High Priority
-- [ ] Create searchbar component
-- [ ] Create layout for tables  
 - [ ] Create teacher portal
 - [ ] Finish whiteboard admin playbook
 

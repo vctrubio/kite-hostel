@@ -1,6 +1,6 @@
 import { getLessonsWithDetails } from "@/actions/lesson-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { LessonRow } from "@/components/tables-tmp/LessonRow";
+import { LessonRow } from "@/components/rows/LessonRow";
 
 export default async function LessonsPage() {
   const { data: lessons, error } = await getLessonsWithDetails();

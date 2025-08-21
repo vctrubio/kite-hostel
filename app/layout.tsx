@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+// import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
@@ -20,11 +20,7 @@ export const metadata: Metadata = {
   description: "Tarifa Kite Hostel Management App",
 };
 
-const inter = Inter({
-  variable: "--font-inter",
-  display: "swap",
-  subsets: ["latin"],
-});
+
 
 export default async function RootLayout({
   children,
@@ -38,7 +34,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
+  <body className={"antialiased"}>
         <UserWalletProvider initialUser={user}>
           <ThemeProvider
             attribute="class"

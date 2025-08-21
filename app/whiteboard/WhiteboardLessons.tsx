@@ -3,14 +3,14 @@
 import { useState, useMemo, useEffect } from "react";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import FlagPicker from "@/components/pickers/flag-picker";
-import DurationSettings from "@/components/duration-settings";
+import DurationSettings from "@/components/whiteboard-usage/duration-settings";
 import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { HeadsetIcon } from "@/svgs";
-import TeacherLessonStats from "@/components/TeacherLessonStats";
+import TeacherLessonStats from "@/components/whiteboard-usage/TeacherLessonStats";
 import LessonCard from "@/components/cards/LessonCard";
-import TeacherLessonQueue from "@/components/TeacherLessonQueue";
+import TeacherLessonQueue from "@/components/whiteboard-usage/TeacherLessonQueue";
 import { createTeacherQueueEvents } from "@/actions/event-actions";
 import { reorganizeEventTimes } from "@/actions/kite-actions";
 import {

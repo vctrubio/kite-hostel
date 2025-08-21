@@ -1,6 +1,6 @@
 import { getStudents } from "@/actions/student-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { StudentRow } from "@/components/tables-tmp/StudentRow";
+import { StudentRow } from "@/components/rows/StudentRow";
 
 export default async function StudentsPage() {
   const { data: students, error } = await getStudents();

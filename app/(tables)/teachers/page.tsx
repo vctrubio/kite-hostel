@@ -1,6 +1,6 @@
 import { getTeachers } from "@/actions/teacher-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { TeacherRow } from "@/components/tables-tmp/TeacherRow";
+import { TeacherRow } from "@/components/rows/TeacherRow";
 
 export default async function TeachersPage() {
   const { data: teachers, error } = await getTeachers();

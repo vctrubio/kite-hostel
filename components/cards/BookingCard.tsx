@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import EventToTeacherModal from "@/components/modals/EventToTeacherModal";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { type EventController } from "@/backend/types";
-import FooterDropdown from "@/components/FooterDropdown";
+import FooterDropdown from "@/components/whiteboard-usage/FooterDropdown";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 
 interface BookingCardProps {

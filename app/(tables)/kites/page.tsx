@@ -1,7 +1,7 @@
 import { getKitesWithEvents } from "@/actions/kite-actions";
 import { getTeachers } from "@/actions/teacher-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { KiteRow } from "@/components/tables-tmp/KiteRow";
+import { KiteRow } from "@/components/rows/KiteRow";
 
 export default async function KitesPage() {
   const { data: kites, error: kitesError } = await getKitesWithEvents();

@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EventCard, { GapCard } from "@/components/cards/EventCard";
-import TeacherEventQueue from "@/components/TeacherEventQueue";
+import TeacherEventQueue from "@/components/whiteboard-usage/TeacherEventQueue";
 import { HeadsetIcon, Zap, ChevronLeft, ChevronRight, Wind, ChevronDown } from "lucide-react";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import { TeacherSchedule, ScheduleNode } from "@/backend/TeacherSchedule";

@@ -1,6 +1,6 @@
 import { getEvents } from "@/actions/event-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { EventRow } from "@/components/tables-tmp/EventRow";
+import { EventRow } from "@/components/rows/EventRow";
 
 export default async function EventsPage() {
   const { data: events, error } = await getEvents();

@@ -1,5 +1,5 @@
 import { getAllReferencedBookings } from "@/actions/reference-actions";
-import { ReferenceBookingTable } from "../../../components/tables-tmp/ReferenceBookingTable";
+import { ReferenceBookingTable } from "../../../components/rows/ReferenceBookingTableRow";
 
 export default async function Page() {
   const { data: initialReferencedBookings, error } = await getAllReferencedBookings();

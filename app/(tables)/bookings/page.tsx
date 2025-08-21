@@ -1,6 +1,6 @@
 import { getBookings } from "@/actions/booking-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { BookingRow } from "@/components/tables-tmp/BookingRow";
+import { BookingRow } from "@/components/rows/BookingRow";
 
 export default async function BookingPage() {
   const { data: bookings, error: bookingsError } = await getBookings();

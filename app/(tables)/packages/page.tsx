@@ -1,7 +1,7 @@
 
 import { getPackages } from "@/actions/package-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { PackageRow } from "@/components/tables-tmp/PackageRow";
+import { PackageRow } from "@/components/rows/PackageRow";
 
 export default async function PackagesPage() {
   const { data: packages, error } = await getPackages();

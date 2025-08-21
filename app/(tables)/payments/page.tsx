@@ -1,7 +1,7 @@
 import { getPaymentsWithTeacher } from "@/actions/payment-actions";
 import { getTeachers } from "@/actions/teacher-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { PaymentRow } from "@/components/tables-tmp/PaymentRow";
+import { PaymentRow } from "@/components/rows/PaymentRow";
 
 export default async function PaymentsPage() {
   const { data: payments, error: paymentsError } = await getPaymentsWithTeacher();
