@@ -10,7 +10,7 @@ import { BookingPackageTable } from "@/components/forms/BookingPackageTable";
 import { BookingStudentTable } from "@/components/forms/BookingStudentTable";
 import { BookingReferenceTable } from "@/components/forms/BookingReferenceTable";
 import { BookingLessonTeacherTable } from "@/components/forms/BookingLessonTeacherTable";
-import { BookingSummary } from "@/components/forms/BookingSummary";
+import { BookingFormSummary } from "@/components/forms/BookingFormSummary";
 import { StudentForm } from "@/components/forms/StudentForm";
 import { PackageForm } from "@/components/forms/PackageForm";
 import { createBooking } from "@/actions/booking-actions";
@@ -62,6 +62,7 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
     studentIds.length > 0,
   );
   const [activeForm, setActiveForm] = useState<FormType>('booking');
+  const [stayOnFormAfterSubmit, setStayOnFormAfterSubmit] = useState(false);
 
   useEffect(() => {
     const updateAvailableStudents = () => {
@@ -293,7 +294,7 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
         {/* Summary Sidebar */}
         <div className="lg:col-span-2 order-2 lg:order-1">
           <div className="lg:sticky lg:top-4 p-4">
-            <BookingSummary
+            <BookingFormSummary
               selectedPackage={selectedPackage}
               selectedStudents={selectedStudentsList}
               selectedReference={selectedReference}
@@ -307,6 +308,9 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
               selectedLessonCommissionId={selectedLessonCommissionId}
               teachers={teachers}
               activeForm={activeForm}
+              setActiveForm={setActiveForm}
+              stayOnFormAfterSubmit={stayOnFormAfterSubmit}
+              setStayOnFormAfterSubmit={setStayOnFormAfterSubmit}
             />
           </div>
         </div>
@@ -314,47 +318,6 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
         {/* Form Content */}
         <div className="lg:col-span-3 order-1 lg:order-2">
           <div className="bg-card">
-            <div className="px-4 py-6 border-b border-border">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-semibold text-foreground">
-                  Master Booking Form
-                </h1>
-              </div>
-              
-              {/* Navigation Tabs */}
-              <div className="flex space-x-1 bg-muted p-1 rounded-lg">
-                <button
-                  onClick={() => setActiveForm('booking')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
-                    activeForm === 'booking'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Booking
-                </button>
-                <button
-                  onClick={() => setActiveForm('student')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
-                    activeForm === 'student'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Student
-                </button>
-                <button
-                  onClick={() => setActiveForm('package')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
-                    activeForm === 'package'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Package
-                </button>
-              </div>
-            </div>
 
             <div className="p-4">
               {/* Render the appropriate form based on activeForm */}
@@ -492,8 +455,10 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
                     onSubmit={(data) => {
                       // Handle student creation success
                       console.log('Student created:', data);
-                      // Optionally switch back to booking form
-                      setActiveForm('booking');
+                      // Switch to booking form only if toggle is off
+                      if (!stayOnFormAfterSubmit) {
+                        setActiveForm('booking');
+                      }
                     }}
                   />
                 </div>
@@ -505,8 +470,10 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
                     onSubmit={(data) => {
                       // Handle package creation success
                       console.log('Package created:', data);
-                      // Optionally switch back to booking form
-                      setActiveForm('booking');
+                      // Switch to booking form only if toggle is off
+                      if (!stayOnFormAfterSubmit) {
+                        setActiveForm('booking');
+                      }
                     }}
                   />
                 </div>

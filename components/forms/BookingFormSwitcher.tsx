@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { BookingIcon, HelmetIcon, BookmarkIcon } from "@/svgs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import BookingForm from "./BookingForm";
+import MasterBookingForm from "./MasterBookingForm";
 import { StudentForm } from "./StudentForm";
 import { PackageForm } from "./PackageForm";
 import { FormSummary } from "./FormSummary";
@@ -52,7 +52,7 @@ interface FormSwitcherProps {
   initialForm?: FormType;
 }
 
-export function FormSwitcher({
+export function BookingFormSwitcher({
   packages = [],
   students = [],
   userWallets = [],
@@ -86,7 +86,7 @@ export function FormSwitcher({
   };
 
 
-  const ActiveFormComponent = FORM_CONFIGS.find(config => config.key === activeForm)?.component || BookingForm;
+  const ActiveFormComponent = FORM_CONFIGS.find(config => config.key === activeForm)?.component || MasterBookingForm;
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,7 +148,7 @@ export function FormSwitcher({
         <div className="lg:col-span-3 order-1 lg:order-2">
           <div className="transition-opacity duration-200">
             {activeForm === 'booking' && (
-              <BookingForm
+              <MasterBookingForm
                 packages={packages}
                 students={students}
                 userWallets={userWallets}

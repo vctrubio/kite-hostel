@@ -25,7 +25,7 @@ interface BookingSummaryProps {
   setStayOnFormAfterSubmit: (stay: boolean) => void;
 }
 
-export function BookingSummary({
+export function BookingFormSummary({
   selectedPackage,
   selectedStudents,
   selectedReference,
