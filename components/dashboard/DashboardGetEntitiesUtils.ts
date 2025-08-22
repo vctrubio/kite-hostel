@@ -310,6 +310,29 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
         },
       };
     
+    case 'reference':
+      return {
+        options: [
+          { label: "All", value: "all" },
+          { label: "Teacher", value: "teacher" },
+          { label: "Reference", value: "reference" },
+          { label: "Others", value: "others" },
+        ],
+        defaultFilter: "all",
+        filterFunction: (reference: any, filterValue: string) => {
+          if (filterValue === "teacher") {
+            return reference.role?.toLowerCase() === "teacher";
+          }
+          if (filterValue === "reference") {
+            return reference.role?.toLowerCase() === "reference";
+          }
+          if (filterValue === "others") {
+            return reference.role?.toLowerCase() !== "teacher" && reference.role?.toLowerCase() !== "reference";
+          }
+          return true;
+        },
+      };
+    
     default:
       return {
         options: [

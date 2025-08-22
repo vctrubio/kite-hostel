@@ -8,11 +8,14 @@ export async function getAllReferencedBookings() {
   try {
     const referencedBookings = await db
       .select({
+        bookingId: Booking.id,
         bookingCreatedAt: Booking.created_at,
         bookingStartDate: Booking.date_start,
         referenceId: Booking.reference_id,
         packageCapacity: PackageStudent.capacity_students,
         packagePrice: PackageStudent.price_per_student,
+        packageDuration: PackageStudent.duration,
+        packageDescription: PackageStudent.description,
         teacherName: Teacher.name,
         note: user_wallet.note,
         role: user_wallet.role,

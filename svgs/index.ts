@@ -21,4 +21,5 @@ export { Share2Icon } from './Share2Icon';
 export { StethoscopeIcon } from './StethoscopeIcon';
 export { FileTextIcon } from './FileTextIcon';
 export { PrinterIcon } from './PrinterIcon';
+export { SeparatorIcon } from './SeparatorIcon';
 export { ChevronDownIcon } from './ChevronDownIcon';

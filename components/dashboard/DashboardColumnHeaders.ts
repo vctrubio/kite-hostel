@@ -79,6 +79,14 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Lessons", key: "lessons", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
+    case 'reference':
+      return [
+        { title: "Name", key: "name", sortable: true },
+        { title: "When", key: "created_at", sortable: true },
+        { title: "Capacity", key: "capacity", sortable: true },
+        { title: "Price €", key: "price", sortable: true },
+        { title: "Actions", key: "actions", sortable: false },
+      ];
     default:
       return [];
   }

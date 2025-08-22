@@ -107,6 +107,15 @@ export function getEntitySearchFunction(entityName: string): SearchFunction {
         return defaultSearchFunction(booking, searchTerm);
       };
 
+    case 'reference':
+      return (reference: any, searchTerm: string) => {
+        const term = searchTerm.toLowerCase();
+        const nameMatch = reference.teacherName?.toLowerCase().includes(term);
+        const roleMatch = reference.role?.toLowerCase().includes(term);
+        const noteMatch = reference.note?.toLowerCase().includes(term);
+        return nameMatch || roleMatch || noteMatch;
+      };
+
     default:
       return defaultSearchFunction;
   }

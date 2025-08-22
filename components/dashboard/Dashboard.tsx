@@ -131,13 +131,13 @@ function DataTable({
                   </td>
                 </tr>
               ) : (
-                filteredData.map((item) => (
+                filteredData.map((item, index) => (
                   <RowComponent
-                    key={item.id}
+                    key={item.id || item.bookingId || `item-${index}`}
                     data={item}
                     expandedRow={expandedRow}
                     setExpandedRow={setExpandedRow}
-                    isSelected={selectedIds?.includes(item.id)}
+                    isSelected={selectedIds?.includes(item.id || item.bookingId)}
                     onSelect={onSelect}
                     {...(formProps || {})}
                   />
@@ -226,8 +226,16 @@ export function Dashboard({
     // Month filter - only apply if date filtering is enabled
     if (filterEnabled && isFilterRangeSelected) {
       filtered = filtered.filter((item) => {
-        if (!item.created_at) return false;
-        const itemDate = new Date(item.created_at);
+        // Use different date fields based on entity type
+        let dateField = item.created_at;
+        if (entityName.toLowerCase() === 'event' && item.date) {
+          dateField = item.date;
+        } else if (entityName.toLowerCase() === 'reference' && item.bookingCreatedAt) {
+          dateField = item.bookingCreatedAt;
+        }
+        
+        if (!dateField) return false;
+        const itemDate = new Date(dateField);
         const itemMonth = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}`;
         return itemMonth === selectedMonth;
       });

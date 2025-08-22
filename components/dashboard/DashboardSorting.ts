@@ -151,6 +151,46 @@ export function getEntitySorter(entityName: string): Sorter {
         }
         return defaultSorter(a, b, sortConfig);
       };
+    case 'reference':
+      return (a, b, sortConfig) => {
+        const { key } = sortConfig;
+        if (key === 'price') {
+          const aPrice = a.packagePrice || 0;
+          const bPrice = b.packagePrice || 0;
+          if (aPrice < bPrice) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aPrice > bPrice) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        if (key === 'capacity') {
+          const aCapacity = a.packageCapacity || 0;
+          const bCapacity = b.packageCapacity || 0;
+          if (aCapacity < bCapacity) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aCapacity > bCapacity) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        if (key === 'created_at') {
+          const aDate = new Date(a.bookingCreatedAt || 0).getTime();
+          const bDate = new Date(b.bookingCreatedAt || 0).getTime();
+          if (aDate < bDate) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aDate > bDate) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        if (key === 'start_date') {
+          const aDate = new Date(a.bookingStartDate || 0).getTime();
+          const bDate = new Date(b.bookingStartDate || 0).getTime();
+          if (aDate < bDate) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aDate > bDate) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        if (key === 'name') {
+          const aName = a.teacherName || '';
+          const bName = b.teacherName || '';
+          if (aName < bName) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aName > bName) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        return defaultSorter(a, b, sortConfig);
+      };
     default:
       return defaultSorter;
   }

@@ -20,6 +20,7 @@ import {
   AdminIcon,
   EquipmentIcon,
 } from "@/svgs";
+import { UserCheck } from "lucide-react";
 
 export const LESSON_STATUS_ENUM_VALUES = lessonStatusEnum.enumValues;
 export type LessonStatus = (typeof LESSON_STATUS_ENUM_VALUES)[number];
@@ -334,10 +335,10 @@ export const ENTITY_DATA = [
   //   ],
   // },
   {
-    name: "References",
-    icon: BookIcon,
-    color: "text-slate-400",
-    bgColor: "bg-slate-400",
+    name: "Reference",
+    icon: UserCheck,
+    color: "text-gray-500",
+    bgColor: "bg-gray-500",
     link: "/references",
     description: [
       "Referenced bookings and user notes.",

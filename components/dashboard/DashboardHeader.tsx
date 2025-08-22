@@ -3,6 +3,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MonthPicker } from "@/components/pickers/month-picker";
+import { SeparatorIcon } from "@/svgs";
 
 interface DashboardHeaderProps {
   entity: any;
@@ -50,9 +51,23 @@ export function DashboardHeader({
                 className="w-full lg:w-64 px-4 py-2 rounded-lg bg-background/80 backdrop-blur-sm border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               />
               
+              {/* Separator on large screens */}
+              {showDateFilter && (
+                <div className="hidden lg:flex items-center">
+                  <SeparatorIcon className="w-5 h-8 text-muted-foreground/30" />
+                </div>
+              )}
+
               {/* Date filter on large screens */}
               {showDateFilter && (
                 <div className="hidden lg:flex items-center space-x-4">
+                  {filterEnabled && (
+                    <MonthPicker
+                      selectedMonth={selectedMonth}
+                      onMonthChange={setSelectedMonth}
+                    />
+                  )}
+                  
                   <button
                     onClick={handleToggleFilter}
                     className={`p-2 rounded-lg transition-all duration-200 ${
@@ -68,13 +83,6 @@ export function DashboardHeader({
                       <EyeOff className="h-4 w-4" />
                     )}
                   </button>
-                  
-                  {filterEnabled && (
-                    <MonthPicker
-                      selectedMonth={selectedMonth}
-                      onMonthChange={setSelectedMonth}
-                    />
-                  )}
                 </div>
               )}
             </div>
@@ -83,6 +91,13 @@ export function DashboardHeader({
           {/* Second row: Date filter on small screens */}
           {showDateFilter && (
             <div className="flex lg:hidden items-center justify-center space-x-4">
+              {filterEnabled && (
+                <MonthPicker
+                  selectedMonth={selectedMonth}
+                  onMonthChange={setSelectedMonth}
+                />
+              )}
+              
               <button
                 onClick={handleToggleFilter}
                 className={`p-2 rounded-lg transition-all duration-200 ${
@@ -98,13 +113,6 @@ export function DashboardHeader({
                   <EyeOff className="h-4 w-4" />
                 )}
               </button>
-              
-              {filterEnabled && (
-                <MonthPicker
-                  selectedMonth={selectedMonth}
-                  onMonthChange={setSelectedMonth}
-                />
-              )}
             </div>
           )}
         </div>

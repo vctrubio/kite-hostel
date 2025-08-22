@@ -12,6 +12,7 @@ import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { LessonView } from "@/components/views/LessonView";
 import { BookingWithRelations } from "@/backend/types";
+import { getUserWalletName } from "@/lib/getters";
 
 interface BookingRowProps {
   data: BookingWithRelations;
@@ -42,7 +43,7 @@ export function BookingRow({ data: booking, expandedRow, setExpandedRow }: Booki
         <td className="py-2 px-4 text-left">
           <BookingStatusLabel bookingId={booking.id} currentStatus={booking.status} />
         </td>
-        <td className="py-2 px-4 text-left">{booking.reference?.teacher?.name || booking.reference?.role || 'N/A'}</td>
+        <td className="py-2 px-4 text-left">{getUserWalletName(booking.reference)}</td>
         <td className="py-2 px-4 text-left">
           {booking.students && booking.students.length > 0 ? (
             <span>{booking.students.map((bs: any) => bs.student.name).join(', ')}</span>
