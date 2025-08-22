@@ -2,49 +2,16 @@
 
 import React, { useState } from "react";
 import { BookingIcon, HelmetIcon, BookmarkIcon } from "@/svgs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import MasterBookingForm from "./MasterBookingForm";
 import { StudentForm } from "./StudentForm";
 import { PackageForm } from "./PackageForm";
 import { FormSummary } from "./FormSummary";
-import { toast } from "sonner";
 
 type FormType = 'booking' | 'student' | 'package';
 
-interface FormConfig {
-  key: FormType;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bgColor: string;
-}
 
-const FORM_CONFIGS: FormConfig[] = [
-  {
-    key: 'booking',
-    label: 'Booking',
-    icon: BookingIcon,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500',
-  },
-  {
-    key: 'student',
-    label: 'Student', 
-    icon: HelmetIcon,
-    color: 'text-yellow-500',
-    bgColor: 'bg-yellow-500',
-  },
-  {
-    key: 'package',
-    label: 'Package',
-    icon: BookmarkIcon,
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-500',
-  },
-];
 
-interface FormSwitcherProps {
+interface BookingFormSwitcherProps {
   packages?: any[];
   students?: any[];
   userWallets?: any[];
@@ -58,7 +25,7 @@ export function BookingFormSwitcher({
   userWallets = [],
   teachers = [],
   initialForm = 'booking'
-}: FormSwitcherProps) {
+}: BookingFormSwitcherProps) {
   const [activeForm, setActiveForm] = useState<FormType>(initialForm);
   const [formData, setFormData] = useState<any>({});
   const [loading, setLoading] = useState(false);
@@ -70,23 +37,7 @@ export function BookingFormSwitcher({
 
   const handleFormReset = () => {
     setFormData({});
-    // Additional reset logic for each form type
   };
-
-  const isFormValid = () => {
-    if (activeForm === 'student') {
-      return formData.name && formData.name.trim() !== '' && formData.languages && formData.languages.length > 0;
-    } else if (activeForm === 'package') {
-      return formData.duration_hours > 0 && formData.price_per_student > 0 && formData.capacity_students > 0 && formData.capacity_kites > 0;
-    } else if (activeForm === 'booking') {
-      // Booking validation is handled by the BookingForm itself
-      return true;
-    }
-    return false;
-  };
-
-
-  const ActiveFormComponent = FORM_CONFIGS.find(config => config.key === activeForm)?.component || MasterBookingForm;
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,7 +51,6 @@ export function BookingFormSwitcher({
               onReset={handleFormReset}
               loading={loading}
               setLoading={setLoading}
-              isFormValid={isFormValid()}
               summaryData={formData}
             >
               {/* Form-specific summary content will go here */}
@@ -153,8 +103,6 @@ export function BookingFormSwitcher({
                 students={students}
                 userWallets={userWallets}
                 teachers={teachers}
-                onFormSwitch={handleFormSwitch}
-                activeForm={activeForm}
               />
             )}
             {activeForm === 'student' && (

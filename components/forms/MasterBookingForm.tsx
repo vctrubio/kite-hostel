@@ -2,9 +2,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-
 import { useSearchParams } from "next/navigation";
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation";
 import { DatePicker, DateRange } from "@/components/pickers/date-picker";
 import { BookingPackageTable } from "@/components/forms/BookingPackageTable";
 import { BookingStudentTable } from "@/components/forms/BookingStudentTable";
@@ -454,7 +453,6 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
                   <StudentForm
                     onSubmit={(data) => {
                       // Handle student creation success
-                      console.log('Student created:', data);
                       // Switch to booking form only if toggle is off
                       if (!stayOnFormAfterSubmit) {
                         setActiveForm('booking');
@@ -469,7 +467,6 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
                   <PackageForm
                     onSubmit={(data) => {
                       // Handle package creation success
-                      console.log('Package created:', data);
                       // Switch to booking form only if toggle is off
                       if (!stayOnFormAfterSubmit) {
                         setActiveForm('booking');
