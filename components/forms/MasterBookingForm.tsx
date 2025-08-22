@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useRouter } from 'next/navigation";
+import { useRouter } from "next/navigation";
 import { DatePicker, DateRange } from "@/components/pickers/date-picker";
 import { BookingPackageTable } from "@/components/forms/BookingPackageTable";
 import { BookingStudentTable } from "@/components/forms/BookingStudentTable";
@@ -17,9 +16,14 @@ import { getStudents } from "@/actions/student-actions";
 import { createLesson } from "@/actions/lesson-actions";
 import { toast } from "sonner";
 
-type FormType = 'booking' | 'student' | 'package';
+type FormType = "booking" | "student" | "package";
 
-export default function MasterBookingForm({ packages, students, userWallets, teachers }) {
+export default function MasterBookingForm({
+  packages,
+  students,
+  userWallets,
+  teachers,
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const studentIdsParam = searchParams.get("studentIds");
@@ -38,9 +42,15 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
   });
   const [selectedStudentIds, setSelectedStudentIds] =
     useState<string[]>(studentIds);
-  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(null);
-  const [selectedLessonTeacherId, setSelectedLessonTeacherId] = useState<string | null>(null);
-  const [selectedLessonCommissionId, setSelectedLessonCommissionId] = useState<string | null>(null);
+  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(
+    null,
+  );
+  const [selectedLessonTeacherId, setSelectedLessonTeacherId] = useState<
+    string | null
+  >(null);
+  const [selectedLessonCommissionId, setSelectedLessonCommissionId] = useState<
+    string | null
+  >(null);
   const [loading, setLoading] = useState(false);
   const [availableStudents, setAvailableStudents] = useState<Set<string>>(
     new Set(),
@@ -60,7 +70,7 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
   const [viaStudentParams, setViaStudentParams] = useState(
     studentIds.length > 0,
   );
-  const [activeForm, setActiveForm] = useState<FormType>('booking');
+  const [activeForm, setActiveForm] = useState<FormType>("booking");
   const [stayOnFormAfterSubmit, setStayOnFormAfterSubmit] = useState(false);
 
   useEffect(() => {
@@ -156,12 +166,14 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
         newSet.delete("reference-section");
         return newSet;
       });
-      const selectedWallet = userWallets.find(wallet => wallet.id === referenceId);
+      const selectedWallet = userWallets.find(
+        (wallet) => wallet.id === referenceId,
+      );
       if (selectedWallet && selectedWallet.pk) {
-        const teacher = teachers.find(t => t.id === selectedWallet.pk);
+        const teacher = teachers.find((t) => t.id === selectedWallet.pk);
         if (teacher) {
           setSelectedLessonTeacherId(teacher.id);
-          setExpandedSections(prev => {
+          setExpandedSections((prev) => {
             const newSet = new Set(prev);
             newSet.add("lesson-section");
             return newSet;
@@ -234,11 +246,23 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
         setSelectedReferenceId(null);
         setSelectedLessonTeacherId(null);
         setSelectedLessonCommissionId(null);
-        setExpandedSections(new Set(['dates-section', 'package-section', 'students-section', 'reference-section']));
+        setExpandedSections(
+          new Set([
+            "dates-section",
+            "package-section",
+            "students-section",
+            "reference-section",
+          ]),
+        );
         // Re-fetch students to update availability
-        const { data: updatedStudents, error: studentsError } = await getStudents();
+        const { data: updatedStudents, error: studentsError } =
+          await getStudents();
         if (updatedStudents) {
-          setAvailableStudents(new Set(updatedStudents.filter(s => s.isAvailable).map(s => s.id)));
+          setAvailableStudents(
+            new Set(
+              updatedStudents.filter((s) => s.isAvailable).map((s) => s.id),
+            ),
+          );
         } else if (studentsError) {
           console.error("Error re-fetching students:", studentsError);
         }
@@ -317,10 +341,9 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
         {/* Form Content */}
         <div className="lg:col-span-3 order-1 lg:order-2">
           <div className="bg-card">
-
             <div className="p-4">
               {/* Render the appropriate form based on activeForm */}
-              {activeForm === 'booking' && (
+              {activeForm === "booking" && (
                 <div className="space-y-6">
                   {/* Dates Section - First */}
                   <div id="dates-section" className="scroll-mt-4">
@@ -402,16 +425,18 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
 
                   {/* Reference Section - Fourth */}
                   <div id="reference-section" className="scroll-mt-4">
-                    <div 
+                    <div
                       className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                      onClick={() => handleEditSection('reference-section')}
+                      onClick={() => handleEditSection("reference-section")}
                     >
-                      <h2 className="text-lg font-semibold text-foreground">Select Reference</h2>
+                      <h2 className="text-lg font-semibold text-foreground">
+                        Select Reference
+                      </h2>
                       <span className="text-sm text-muted-foreground">
-                        {expandedSections.has('reference-section') ? '−' : '+'}
+                        {expandedSections.has("reference-section") ? "−" : "+"}
                       </span>
                     </div>
-                    {expandedSections.has('reference-section') && (
+                    {expandedSections.has("reference-section") && (
                       <div className="mt-3">
                         <BookingReferenceTable
                           userWallets={userWallets}
@@ -424,16 +449,18 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
 
                   {/* Lesson Details Section - Fifth */}
                   <div id="lesson-section" className="scroll-mt-4">
-                    <div 
+                    <div
                       className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                      onClick={() => handleEditSection('lesson-section')}
+                      onClick={() => handleEditSection("lesson-section")}
                     >
-                      <h2 className="text-lg font-semibold text-foreground">Lesson Details (Optional)</h2>
+                      <h2 className="text-lg font-semibold text-foreground">
+                        Lesson Details (Optional)
+                      </h2>
                       <span className="text-sm text-muted-foreground">
-                        {expandedSections.has('lesson-section') ? '−' : '+'}
+                        {expandedSections.has("lesson-section") ? "−" : "+"}
                       </span>
                     </div>
-                    {expandedSections.has('lesson-section') && (
+                    {expandedSections.has("lesson-section") && (
                       <div className="mt-3">
                         <BookingLessonTeacherTable
                           teachers={teachers}
@@ -447,29 +474,29 @@ export default function MasterBookingForm({ packages, students, userWallets, tea
                   </div>
                 </div>
               )}
-              
-              {activeForm === 'student' && (
+
+              {activeForm === "student" && (
                 <div className="-m-4">
                   <StudentForm
                     onSubmit={(data) => {
                       // Handle student creation success
                       // Switch to booking form only if toggle is off
                       if (!stayOnFormAfterSubmit) {
-                        setActiveForm('booking');
+                        setActiveForm("booking");
                       }
                     }}
                   />
                 </div>
               )}
-              
-              {activeForm === 'package' && (
+
+              {activeForm === "package" && (
                 <div className="-m-4">
                   <PackageForm
                     onSubmit={(data) => {
                       // Handle package creation success
                       // Switch to booking form only if toggle is off
                       if (!stayOnFormAfterSubmit) {
-                        setActiveForm('booking');
+                        setActiveForm("booking");
                       }
                     }}
                   />
