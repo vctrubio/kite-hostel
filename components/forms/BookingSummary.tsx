@@ -2,6 +2,7 @@
 
 import React from "react";
 import { formatHours } from "@/components/formatters/Duration";
+import { BookingIcon, HelmetIcon, BookmarkIcon } from "@/svgs";
 
 type FormType = 'booking' | 'student' | 'package';
 
@@ -19,6 +20,9 @@ interface BookingSummaryProps {
   selectedLessonCommissionId: string | null;
   teachers: any[];
   activeForm: FormType;
+  setActiveForm: (form: FormType) => void;
+  stayOnFormAfterSubmit: boolean;
+  setStayOnFormAfterSubmit: (stay: boolean) => void;
 }
 
 export function BookingSummary({
@@ -35,21 +39,13 @@ export function BookingSummary({
   selectedLessonCommissionId,
   teachers,
   activeForm,
+  setActiveForm,
+  stayOnFormAfterSubmit,
+  setStayOnFormAfterSubmit,
 }: BookingSummaryProps) {
   const selectedTeacher = teachers.find(t => t.id === selectedLessonTeacherId);
   const selectedCommission = selectedTeacher?.commissions.find(c => c.id === selectedLessonCommissionId);
   
-  interface Commission {
-    id: string;
-    price_per_hour: number;
-    description: string | null;
-  }
-
-  interface Teacher {
-    id: string;
-    name: string;
-    commissions: Commission[];
-  }
   const getDaysDifference = (startDate: string, endDate: string) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
@@ -66,34 +62,90 @@ export function BookingSummary({
     onEditSection(sectionId);
   };
 
-  const getSummaryTitle = () => {
-    switch (activeForm) {
+  const getFormIcon = (form: FormType) => {
+    switch (form) {
+      case 'booking':
+        return BookingIcon;
       case 'student':
-        return 'Student Form';
+        return HelmetIcon;
       case 'package':
-        return 'Package Form';
-      default:
-        return 'Booking Summary';
+        return BookmarkIcon;
+    }
+  };
+
+  const getFormLabel = (form: FormType) => {
+    switch (form) {
+      case 'booking':
+        return 'Booking';
+      case 'student':
+        return 'Student';
+      case 'package':
+        return 'Package';
     }
   };
 
   const getSummaryDescription = () => {
-    switch (activeForm) {
-      case 'student':
-        return 'Create a new student to add to bookings';
-      case 'package':
-        return 'Create a new package for lessons';
-      default:
-        return viaStudentParams ? `${selectedStudents.length} student(s) pre-selected. Please reset if not accorded.` : null;
+    if (activeForm === 'booking' && viaStudentParams) {
+      return `${selectedStudents.length} student(s) pre-selected. Please reset if not accorded.`;
     }
+    return null;
   };
 
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm sticky top-4 z-10">
       <div className="px-4 py-3 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground">{getSummaryTitle()}</h2>
+        {/* Navigation Tabs */}
+        <div className="flex space-x-1 bg-muted p-1 rounded-lg mb-3">
+          {(['booking', 'student', 'package'] as FormType[]).map((form) => {
+            const Icon = getFormIcon(form);
+            return (
+              <button
+                key={form}
+                onClick={() => setActiveForm(form)}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                  activeForm === form
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Icon className={`h-4 w-4 ${
+                  form === 'booking' ? 'text-blue-500' :
+                  form === 'student' ? 'text-yellow-500' :
+                  form === 'package' ? 'text-orange-500' : ''
+                }`} />
+                {getFormLabel(form)}
+              </button>
+            );
+          })}
+        </div>
         {getSummaryDescription() && (
           <p className="text-xs text-muted-foreground">{getSummaryDescription()}</p>
+        )}
+        
+        {(activeForm === 'student' || activeForm === 'package') && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Stay on this form after submit</span>
+              <button
+                onClick={() => setStayOnFormAfterSubmit(!stayOnFormAfterSubmit)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  stayOnFormAfterSubmit ? 'bg-blue-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    stayOnFormAfterSubmit ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stayOnFormAfterSubmit 
+                ? `Keep me on the ${activeForm} form after creating` 
+                : `Switch to booking form after creating ${activeForm}`
+              }
+            </p>
+          </div>
         )}
       </div>
       
@@ -205,39 +257,6 @@ export function BookingSummary({
           </>
         )}
         
-        {activeForm === 'student' && (
-          <div className="space-y-4">
-            <div className="rounded-lg p-3 border border-border">
-              <h3 className="font-medium text-foreground mb-2">Create New Student</h3>
-              <p className="text-sm text-muted-foreground">Fill out the student form to add a new student to the system. Once created, you can use this student in bookings.</p>
-            </div>
-            <div className="rounded-lg p-3 border border-border">
-              <h4 className="text-sm font-medium text-foreground mb-1">Required Fields</h4>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Name</li>
-                <li>• At least one language</li>
-              </ul>
-            </div>
-          </div>
-        )}
-        
-        {activeForm === 'package' && (
-          <div className="space-y-4">
-            <div className="rounded-lg p-3 border border-border">
-              <h3 className="font-medium text-foreground mb-2">Create New Package</h3>
-              <p className="text-sm text-muted-foreground">Define a new lesson package with duration, pricing, and capacity details. Once created, it can be used for bookings.</p>
-            </div>
-            <div className="rounded-lg p-3 border border-border">
-              <h4 className="text-sm font-medium text-foreground mb-1">Required Fields</h4>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Duration (hours)</li>
-                <li>• Price per student</li>
-                <li>• Student capacity</li>
-                <li>• Kites required</li>
-              </ul>
-            </div>
-          </div>
-        )}
       </div>
 
       {activeForm === 'booking' && (
@@ -260,13 +279,6 @@ export function BookingSummary({
         </div>
       )}
       
-      {(activeForm === 'student' || activeForm === 'package') && (
-        <div className="p-4 border-t border-border">
-          <p className="text-sm text-muted-foreground text-center">
-            Use the form on the right to create a new {activeForm}. After creation, you can switch to the booking form to use it.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

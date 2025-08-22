@@ -1,4 +1,4 @@
-import MasterBookingForm from "@/components/forms/MasterBookingForm";
+import BookingForm from "@/components/forms/BookingForm";
 import { getPackages } from "@/actions/package-actions";
 import { getStudents } from "@/actions/student-actions";
 import { getUserWallets } from "@/actions/user-actions";
@@ -28,7 +28,7 @@ export default async function BookingFormPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <MasterBookingForm
+      <BookingForm
         packages={packages}
         students={students}
         userWallets={userWallets}
