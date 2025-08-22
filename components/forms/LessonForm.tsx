@@ -1,68 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { FlagIcon } from "@/svgs";
 import { toast } from "sonner";
+import { Booking4LessonTable } from "@/components/forms/Booking4LessonTable";
+import { getBookings } from "@/actions/booking-actions";
+import { BookingWithRelations } from "@/backend/types";
 
 interface LessonFormProps {
   onSubmit?: () => void;
 }
 
 export function LessonForm({ onSubmit }: LessonFormProps) {
-  const [loading, setLoading] = useState(false);
+  const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchBookings = async () => {
     setLoading(true);
-    
-    // Hello world placeholder
-    toast.success("Hello World! Lesson form submitted.");
-    
-    if (onSubmit) {
-      onSubmit();
+    try {
+      const { data, error } = await getBookings();
+      if (data) {
+        setBookings(data);
+      } else if (error) {
+        console.error("Error fetching bookings:", error);
+        toast.error("Failed to load bookings: " + error);
+      }
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+      toast.error("An unexpected error occurred while loading bookings");
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e as any);
-    }
-  };
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  if (loading) {
+    return;
+  }
 
   return (
-    <Card>
-      <div className="w-full p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <FlagIcon className="h-6 w-6 text-cyan-500" />
-          <h2 className="text-lg font-semibold">Create New Lesson</h2>
-        </div>
-        
-        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-4">
-          <div className="p-4 bg-muted rounded-lg text-center">
-            <p className="text-lg font-medium text-muted-foreground">
-              Hello World!
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Lesson form placeholder - coming soon
-            </p>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button 
-              type="submit" 
-              disabled={loading}
-              className="h-9 px-6 bg-cyan-500 hover:bg-cyan-600 text-white"
-            >
-              {loading ? "Creating..." : "Create Lesson"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </Card>
+    <div className="w-full p-6">
+      <Booking4LessonTable bookings={bookings} onRefresh={fetchBookings} />
+    </div>
   );
 }

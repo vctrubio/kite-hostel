@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -37,39 +43,48 @@ interface UserWalletProviderProps {
   initialUser?: User | null;
 }
 
-export function UserWalletProvider({ children, initialUser }: UserWalletProviderProps) {
+export function UserWalletProvider({
+  children,
+  initialUser,
+}: UserWalletProviderProps) {
   const [user, setUser] = useState<UserWalletData | null>(null);
   const [loading, setLoading] = useState(!initialUser);
   const supabase = createClient();
+  console.log("dev:User in UserWalletProvider:", initialUser);
 
-  const fetchUserWallet = async (userId: string): Promise<{ pk: string | null; role: string }> => {
+  const fetchUserWallet = async (
+    userId: string,
+  ): Promise<{ pk: string | null; role: string }> => {
     try {
       const { data, error } = await supabase
-        .from('user_wallet')
-        .select('pk, role')
-        .eq('sk', userId)
+        .from("user_wallet")
+        .select("pk, role")
+        .eq("sk", userId)
         .single();
 
       if (error || !data) {
         return { pk: null, role: "guest" };
       }
 
-      return { 
-        pk: data.pk, 
-        role: data.role || "guest" 
+      return {
+        pk: data.pk,
+        role: data.role || "guest",
       };
     } catch (error) {
-      console.error('Error fetching user wallet:', error);
+      console.error("Error fetching user wallet:", error);
       return { pk: null, role: "guest" };
     }
   };
 
-  const transformUser = async (supabaseUser: User | null): Promise<UserWalletData | null> => {
+  const transformUser = async (
+    supabaseUser: User | null,
+  ): Promise<UserWalletData | null> => {
     if (!supabaseUser) return null;
 
-    const name = supabaseUser.user_metadata?.full_name || 
-                 supabaseUser.user_metadata?.name || 
-                 null;
+    const name =
+      supabaseUser.user_metadata?.full_name ||
+      supabaseUser.user_metadata?.name ||
+      null;
     const email = supabaseUser.email || null;
     const phone = supabaseUser.phone || null;
     const avatar_url = supabaseUser.user_metadata?.avatar_url || null;
@@ -102,11 +117,13 @@ export function UserWalletProvider({ children, initialUser }: UserWalletProvider
     }
 
     // Listen for auth state changes
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const transformedUser = await transformUser(session?.user ?? null);
-      setUser(transformedUser);
-      setLoading(false);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        const transformedUser = await transformUser(session?.user ?? null);
+        setUser(transformedUser);
+        setLoading(false);
+      },
+    );
 
     return () => {
       listener?.subscription.unsubscribe();
@@ -122,4 +139,4 @@ export function UserWalletProvider({ children, initialUser }: UserWalletProvider
 
 export function useUserWallet() {
   return useContext(UserWalletContext);
-} 
+}

@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-// import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { UserWalletProvider } from "@/provider/UserWalletProvider";
 import { createClient } from "@/lib/supabase/server";
-import { Navbar } from "@/components/navbar";
 import { UserNav } from "@/components/UserNav";
 
 import "./globals.css";
@@ -20,8 +18,6 @@ export const metadata: Metadata = {
   description: "Tarifa Kite Hostel Management App",
 };
 
-
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -32,9 +28,10 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  console.log("dev:User in RootLayout:", user);
   return (
     <html lang="en" suppressHydrationWarning>
-  <body className={"antialiased"}>
+      <body className={"antialiased"}>
         <UserWalletProvider initialUser={user}>
           <ThemeProvider
             attribute="class"
@@ -44,7 +41,6 @@ export default async function RootLayout({
           >
             <Analytics />
             <UserNav />
-            {/* <Navbar /> */}
             {children}
             <Toaster position="top-left" />
           </ThemeProvider>
