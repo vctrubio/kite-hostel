@@ -11,12 +11,16 @@ import { BookingStudentTable } from "@/components/forms/BookingStudentTable";
 import { BookingReferenceTable } from "@/components/forms/BookingReferenceTable";
 import { BookingLessonTeacherTable } from "@/components/forms/BookingLessonTeacherTable";
 import { BookingSummary } from "@/components/forms/BookingSummary";
+import { StudentForm } from "@/components/forms/StudentForm";
+import { PackageForm } from "@/components/forms/PackageForm";
 import { createBooking } from "@/actions/booking-actions";
 import { getStudents } from "@/actions/student-actions";
 import { createLesson } from "@/actions/lesson-actions";
 import { toast } from "sonner";
 
-export default function BookingForm({ packages, students, userWallets, teachers }) {
+type FormType = 'booking' | 'student' | 'package';
+
+export default function MasterBookingForm({ packages, students, userWallets, teachers }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const studentIdsParam = searchParams.get("studentIds");
@@ -57,6 +61,7 @@ export default function BookingForm({ packages, students, userWallets, teachers 
   const [viaStudentParams, setViaStudentParams] = useState(
     studentIds.length > 0,
   );
+  const [activeForm, setActiveForm] = useState<FormType>('booking');
 
   useEffect(() => {
     const updateAvailableStudents = () => {
@@ -301,6 +306,7 @@ export default function BookingForm({ packages, students, userWallets, teachers 
               selectedLessonTeacherId={selectedLessonTeacherId}
               selectedLessonCommissionId={selectedLessonCommissionId}
               teachers={teachers}
+              activeForm={activeForm}
             />
           </div>
         </div>
@@ -309,135 +315,202 @@ export default function BookingForm({ packages, students, userWallets, teachers 
         <div className="lg:col-span-3 order-1 lg:order-2">
           <div className="bg-card">
             <div className="px-4 py-6 border-b border-border">
-              <h1 className="text-2xl font-semibold text-foreground">
-                Create New Booking
-              </h1>
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl font-semibold text-foreground">
+                  Master Booking Form
+                </h1>
+              </div>
+              
+              {/* Navigation Tabs */}
+              <div className="flex space-x-1 bg-muted p-1 rounded-lg">
+                <button
+                  onClick={() => setActiveForm('booking')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                    activeForm === 'booking'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Booking
+                </button>
+                <button
+                  onClick={() => setActiveForm('student')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                    activeForm === 'student'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Student
+                </button>
+                <button
+                  onClick={() => setActiveForm('package')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                    activeForm === 'package'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Package
+                </button>
+              </div>
             </div>
 
-            <div className="p-4 space-y-6">
-              {/* Dates Section - First */}
-              <div id="dates-section" className="scroll-mt-4">
-                <div
-                  className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection("dates-section")}
-                >
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Booking Dates
-                  </h2>
-                  <span className="text-sm text-muted-foreground">
-                    {expandedSections.has("dates-section") ? "−" : "+"}
-                  </span>
-                </div>
-                {expandedSections.has("dates-section") && (
-                  <div className="mt-3">
-                    <DatePicker
-                      dateRange={dateRange}
-                      setDateRange={handleDatesChange}
-                    />
+            <div className="p-4">
+              {/* Render the appropriate form based on activeForm */}
+              {activeForm === 'booking' && (
+                <div className="space-y-6">
+                  {/* Dates Section - First */}
+                  <div id="dates-section" className="scroll-mt-4">
+                    <div
+                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
+                      onClick={() => handleEditSection("dates-section")}
+                    >
+                      <h2 className="text-lg font-semibold text-foreground">
+                        Booking Dates
+                      </h2>
+                      <span className="text-sm text-muted-foreground">
+                        {expandedSections.has("dates-section") ? "−" : "+"}
+                      </span>
+                    </div>
+                    {expandedSections.has("dates-section") && (
+                      <div className="mt-3">
+                        <DatePicker
+                          dateRange={dateRange}
+                          setDateRange={handleDatesChange}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Package Section - Second */}
-              <div id="package-section" className="scroll-mt-4">
-                <div
-                  className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection("package-section")}
-                >
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Select Package
-                  </h2>
-                  <span className="text-sm text-muted-foreground">
-                    {expandedSections.has("package-section") ? "−" : "+"}
-                  </span>
-                </div>
-                {expandedSections.has("package-section") && (
-                  <div className="mt-3">
-                    <BookingPackageTable
-                      packages={packages}
-                      onSelectPackage={handlePackageChange}
-                      selectedPackageId={selectedPackageId}
-                      viaStudentParams={viaStudentParams}
-                      selectedStudentIds={selectedStudentIds}
-                    />
+                  {/* Package Section - Second */}
+                  <div id="package-section" className="scroll-mt-4">
+                    <div
+                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
+                      onClick={() => handleEditSection("package-section")}
+                    >
+                      <h2 className="text-lg font-semibold text-foreground">
+                        Select Package
+                      </h2>
+                      <span className="text-sm text-muted-foreground">
+                        {expandedSections.has("package-section") ? "−" : "+"}
+                      </span>
+                    </div>
+                    {expandedSections.has("package-section") && (
+                      <div className="mt-3">
+                        <BookingPackageTable
+                          packages={packages}
+                          onSelectPackage={handlePackageChange}
+                          selectedPackageId={selectedPackageId}
+                          viaStudentParams={viaStudentParams}
+                          selectedStudentIds={selectedStudentIds}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Students Section - Third */}
-              <div id="students-section" className="scroll-mt-4">
-                <div
-                  className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection("students-section")}
-                >
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Select Students{" "}
-                    <span className="text-sm font-normal text-muted-foreground">
-                      (Max: {selectedPackageCapacity})
-                    </span>
-                  </h2>
-                  <span className="text-sm text-muted-foreground">
-                    {expandedSections.has("students-section") ? "−" : "+"}
-                  </span>
-                </div>
-                {expandedSections.has("students-section") && (
-                  <div className="mt-3">
-                    <BookingStudentTable
-                      students={students}
-                      selectedStudentIds={selectedStudentIds}
-                      onSelectStudent={handleStudentChange}
-                      packageCapacity={selectedPackageCapacity}
-                      availableStudents={availableStudents}
-                    />
+                  {/* Students Section - Third */}
+                  <div id="students-section" className="scroll-mt-4">
+                    <div
+                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
+                      onClick={() => handleEditSection("students-section")}
+                    >
+                      <h2 className="text-lg font-semibold text-foreground">
+                        Select Students{" "}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          (Max: {selectedPackageCapacity})
+                        </span>
+                      </h2>
+                      <span className="text-sm text-muted-foreground">
+                        {expandedSections.has("students-section") ? "−" : "+"}
+                      </span>
+                    </div>
+                    {expandedSections.has("students-section") && (
+                      <div className="mt-3">
+                        <BookingStudentTable
+                          students={students}
+                          selectedStudentIds={selectedStudentIds}
+                          onSelectStudent={handleStudentChange}
+                          packageCapacity={selectedPackageCapacity}
+                          availableStudents={availableStudents}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Reference Section - Fourth */}
-              <div id="reference-section" className="scroll-mt-4">
-                <div 
-                  className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection('reference-section')}
-                >
-                  <h2 className="text-lg font-semibold text-foreground">Select Reference</h2>
-                  <span className="text-sm text-muted-foreground">
-                    {expandedSections.has('reference-section') ? '−' : '+'}
-                  </span>
-                </div>
-                {expandedSections.has('reference-section') && (
-                  <div className="mt-3">
-                    <BookingReferenceTable
-                      userWallets={userWallets}
-                      onSelectReference={handleReferenceChange}
-                      selectedReferenceId={selectedReferenceId}
-                    />
+                  {/* Reference Section - Fourth */}
+                  <div id="reference-section" className="scroll-mt-4">
+                    <div 
+                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
+                      onClick={() => handleEditSection('reference-section')}
+                    >
+                      <h2 className="text-lg font-semibold text-foreground">Select Reference</h2>
+                      <span className="text-sm text-muted-foreground">
+                        {expandedSections.has('reference-section') ? '−' : '+'}
+                      </span>
+                    </div>
+                    {expandedSections.has('reference-section') && (
+                      <div className="mt-3">
+                        <BookingReferenceTable
+                          userWallets={userWallets}
+                          onSelectReference={handleReferenceChange}
+                          selectedReferenceId={selectedReferenceId}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Lesson Details Section - Fifth */}
-              <div id="lesson-section" className="scroll-mt-4">
-                <div 
-                  className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                  onClick={() => handleEditSection('lesson-section')}
-                >
-                  <h2 className="text-lg font-semibold text-foreground">Lesson Details (Optional)</h2>
-                  <span className="text-sm text-muted-foreground">
-                    {expandedSections.has('lesson-section') ? '−' : '+'}
-                  </span>
-                </div>
-                {expandedSections.has('lesson-section') && (
-                  <div className="mt-3">
-                    <BookingLessonTeacherTable
-                      teachers={teachers}
-                      selectedTeacherId={selectedLessonTeacherId}
-                      selectedCommissionId={selectedLessonCommissionId}
-                      onSelectTeacher={setSelectedLessonTeacherId}
-                      onSelectCommission={setSelectedLessonCommissionId}
-                    />
+                  {/* Lesson Details Section - Fifth */}
+                  <div id="lesson-section" className="scroll-mt-4">
+                    <div 
+                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
+                      onClick={() => handleEditSection('lesson-section')}
+                    >
+                      <h2 className="text-lg font-semibold text-foreground">Lesson Details (Optional)</h2>
+                      <span className="text-sm text-muted-foreground">
+                        {expandedSections.has('lesson-section') ? '−' : '+'}
+                      </span>
+                    </div>
+                    {expandedSections.has('lesson-section') && (
+                      <div className="mt-3">
+                        <BookingLessonTeacherTable
+                          teachers={teachers}
+                          selectedTeacherId={selectedLessonTeacherId}
+                          selectedCommissionId={selectedLessonCommissionId}
+                          onSelectTeacher={setSelectedLessonTeacherId}
+                          onSelectCommission={setSelectedLessonCommissionId}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+              
+              {activeForm === 'student' && (
+                <div className="-m-4">
+                  <StudentForm
+                    onSubmit={(data) => {
+                      // Handle student creation success
+                      console.log('Student created:', data);
+                      // Optionally switch back to booking form
+                      setActiveForm('booking');
+                    }}
+                  />
+                </div>
+              )}
+              
+              {activeForm === 'package' && (
+                <div className="-m-4">
+                  <PackageForm
+                    onSubmit={(data) => {
+                      // Handle package creation success
+                      console.log('Package created:', data);
+                      // Optionally switch back to booking form
+                      setActiveForm('booking');
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
