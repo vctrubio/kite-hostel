@@ -56,11 +56,11 @@ export async function updateTeacher(
 }
 
 
-type TeacherWithRelations = InferSelectModel<typeof Teacher> & {
+export type TeacherWithRelations = InferSelectModel<typeof Teacher> & {
   commissions: InferSelectModel<typeof Commission>[];
   kites: (InferSelectModel<typeof TeacherKite> & { kite: InferSelectModel<typeof Kite> })[];
   payments: InferSelectModel<typeof Payment>[];
-  lessons: InferSelectModel<typeof Lesson>[];
+  lessons: (InferSelectModel<typeof Lesson> & { events: InferSelectModel<typeof Event>[] })[];
   user_wallet?: {
     id: string;
     role: string;
@@ -118,7 +118,11 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
           },
         },
         payments: true,
-        lessons: true,
+        lessons: {
+          with: {
+            events: true,
+          },
+        },
       },
     });
 

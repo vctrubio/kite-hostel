@@ -6,6 +6,8 @@ import { InferInsertModel, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toUTCString } from '@/components/formatters/TimeZone';
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 const formatUserWallet = (wallet: any) => ({
   id: wallet.id,
@@ -244,5 +246,64 @@ export async function getAvailablePks() {
   } catch (error: any) {
     console.error("Error fetching available PKs:", error);
     return { data: [], error: error.message };
+  }
+}
+
+import { getTeacherById, type TeacherWithRelations } from "./teacher-actions";
+
+export async function getCurrentUserWallet(): Promise<{
+  pk: string | null;
+  role: string;
+  teacher: TeacherWithRelations | null;
+}> {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    },
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { pk: null, role: "guest", teacher: null };
+  }
+
+  try {
+    const wallet = await db.query.user_wallet.findFirst({
+      where: eq(user_wallet.sk, user.id),
+    });
+
+    if (!wallet) {
+      return { pk: null, role: "guest", teacher: null };
+    }
+
+    let teacherData: TeacherWithRelations | null = null;
+    const userRole = wallet.role || "guest";
+
+    if (
+      wallet.pk &&
+      (userRole === "teacher" || userRole === "teacherAdmin")
+    ) {
+      const { data } = await getTeacherById(wallet.pk);
+      teacherData = data;
+    }
+
+    return {
+      pk: wallet.pk,
+      role: userRole,
+      teacher: teacherData,
+    };
+  } catch (error) {
+    console.error("Error fetching user wallet with Drizzle:", error);
+    return { pk: null, role: "guest", teacher: null };
   }
 }

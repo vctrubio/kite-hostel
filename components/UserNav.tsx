@@ -1,8 +1,7 @@
 "use client";
 
 import { useUserWallet } from "@/provider/UserWalletProvider";
-import { getUserWalletById } from "@/actions/user-actions";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogoutButtonUserWallet } from "@/components/users/LogoutButtonUserWallet";
 import { ThemeSwitcher } from "@/components/supabase-init/theme-switcher";
@@ -21,11 +20,6 @@ import {
   BookIcon,
 } from "@/svgs";
 import { ENTITY_DATA } from "@/lib/constants";
-
-interface UserWalletData {
-  teacher_name: string | null;
-  note: string | null;
-}
 
 function UserNavRoutes() {
   const pathname = usePathname();
@@ -307,37 +301,12 @@ function UserNavRoutes() {
 
 export function UserNav() {
   const { user, loading } = useUserWallet();
-  const [walletData, setWalletData] = useState<UserWalletData | null>(null);
-  const [fetchingWallet, setFetchingWallet] = useState(false);
 
-  useEffect(() => {
-    const fetchWalletData = async () => {
-      if (!user?.wallet.pk) return;
-
-      setFetchingWallet(true);
-      try {
-        const { data: wallet, error } = await getUserWalletById(user.wallet.pk);
-        if (!error && wallet) {
-          setWalletData({
-            teacher_name: wallet.teacher_name,
-            note: wallet.note,
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching wallet data:", error);
-      } finally {
-        setFetchingWallet(false);
-      }
-    };
-
-    fetchWalletData();
-  }, [user?.wallet.pk]);
-
-  const displayName = walletData?.teacher_name || user?.userAuth.name || "";
+  const displayName = user?.teacher?.name || user?.userAuth.name || "";
   const email = user?.userAuth.email || "";
   const role = user?.role || "";
   const avatar_url = user?.userAuth.avatar_url;
-  const note = walletData?.note || "";
+  const note = user?.teacher?.user_wallet?.note || "";
 
   return (
     <div className="border-b">
@@ -345,44 +314,40 @@ export function UserNav() {
       <div className="hidden md:block p-2">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            {/* <Avatar className="h-8 w-8"> */}
-            {/*   <AvatarImage  */}
-            {/*     src={avatar_url || ""}  */}
-            {/*     alt={displayName} */}
-            {/*     className="transition-opacity duration-300" */}
-            {/*   /> */}
-            {/*   <AvatarFallback className="text-xs transition-all duration-300"> */}
-            {/*     {displayName ? displayName.split(' ').map(n => n[0]).join('').toUpperCase() : "U"} */}
-            {/*   </AvatarFallback> */}
-            {/* </Avatar> */}
-            {/* <div className="text-sm"> */}
-            {/*   <div className={`font-semibold transition-opacity duration-300 min-h-[16px] ${!displayName ? "bg-muted rounded animate-pulse" : ""}`}> */}
-            {/*     {displayName || <span className="invisible">Loading name</span>} */}
-            {/*   </div> */}
-            {/*   <div className={`text-xs text-muted-foreground transition-opacity duration-300 min-h-[12px] ${!role ? "bg-muted rounded animate-pulse mt-1" : ""}`}> */}
-            {/*     {role || <span className="invisible">guest</span>} */}
-            {/*   </div> */}
-            {/*   <div className={`text-xs text-muted-foreground transition-opacity duration-300 min-h-[12px] ${!email ? "bg-muted rounded animate-pulse mt-1" : ""}`}> */}
-            {/*     {email ? `(${email})` : <span className="invisible">(email@example.com)</span>} */}
-            {/*   </div> */}
-            {/* </div> */}
+            <Avatar className={`h-8 w-8 transition-all duration-300 ${loading ? 'ring-2 ring-border ring-offset-2 ring-offset-background' : ''}`}>
+              <AvatarImage
+                src={avatar_url || "/logo-tkh.png"}
+                alt={displayName}
+                className="transition-opacity duration-300"
+              />
+              <AvatarFallback />
+            </Avatar>
+            <div className="text-sm">
+              <div className="font-semibold min-h-[16px]">
+                {displayName}
+              </div>
+              <div className="text-xs text-muted-foreground min-h-[12px]">
+                {role}
+              </div>
+              <div className="text-xs text-muted-foreground min-h-[12px]">
+                {email ? `(${email})` : ''}
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center space-x-4">
             <UserNavRoutes />
 
             <div className="flex items-center space-x-2">
-              <div
-                className={`text-xs text-muted-foreground transition-opacity duration-300 min-h-[12px] ${!note && fetchingWallet ? "bg-muted rounded animate-pulse w-16" : ""}`}
-              >
+              <div className="text-xs text-muted-foreground min-h-[12px]">
                 {note && <span>{note}</span>}
               </div>
               <ThemeSwitcher />
-              <div
-                className={`transition-opacity duration-300 ${!user ? "opacity-50" : "opacity-100"}`}
-              >
-                <LogoutButtonUserWallet />
-              </div>
+              {user && (
+                <div className="transition-opacity duration-300">
+                  <LogoutButtonUserWallet />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -394,40 +359,24 @@ export function UserNav() {
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Avatar className="h-10 w-10">
+              <Avatar className={`h-10 w-10 transition-all duration-300 ${loading ? 'ring-2 ring-border ring-offset-2 ring-offset-background' : ''}`}>
                 <AvatarImage
-                  src={avatar_url || ""}
+                  src={avatar_url || "/logo-tkh.png"}
                   alt={displayName}
                   className="transition-opacity duration-300"
                 />
-                <AvatarFallback className="text-sm transition-all duration-300">
-                  {displayName
-                    ? displayName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()
-                    : "U"}
-                </AvatarFallback>
+                <AvatarFallback />
               </Avatar>
               <div className="flex-1">
-                <div
-                  className={`font-semibold transition-opacity duration-300 min-h-[18px] ${!displayName ? "bg-muted rounded animate-pulse" : ""}`}
-                >
-                  {displayName || (
-                    <span className="invisible">Loading name</span>
-                  )}
+                <div className="font-semibold min-h-[18px]">
+                  {displayName}
                 </div>
-                <div
-                  className={`text-xs text-muted-foreground transition-opacity duration-300 min-h-[14px] ${!role ? "bg-muted rounded animate-pulse mt-1" : ""}`}
-                >
-                  {role || <span className="invisible">guest</span>}
+                <div className="text-xs text-muted-foreground min-h-[14px]">
+                  {role}
                 </div>
                 {email && (
-                  <div
-                    className={`text-xs text-muted-foreground transition-opacity duration-300 min-h-[14px] ${!email ? "bg-muted rounded animate-pulse mt-1" : ""}`}
-                  >
-                    ({email})
+                  <div className="text-xs text-muted-foreground min-h-[14px]">
+                    {`(${email})`}
                   </div>
                 )}
               </div>
@@ -438,11 +387,11 @@ export function UserNav() {
                 <div className="text-xs text-muted-foreground">{note}</div>
               )}
               <ThemeSwitcher />
-              <div
-                className={`transition-opacity duration-300 ${!user ? "opacity-50" : "opacity-100"}`}
-              >
-                <LogoutButtonUserWallet />
-              </div>
+              {user && (
+                <div className="transition-opacity duration-300">
+                  <LogoutButtonUserWallet />
+                </div>
+              )}
             </div>
           </div>
         </div>

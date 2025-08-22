@@ -7,8 +7,9 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { getCurrentUserWallet } from "@/actions/user-actions";
+import type { TeacherWithRelations } from "@/actions/teacher-actions";
 
 interface UserAuth {
   name: string | null;
@@ -26,6 +27,7 @@ interface UserWalletData {
   userAuth: UserAuth;
   role: string;
   wallet: Wallet;
+  teacher: TeacherWithRelations | null;
 }
 
 interface UserWalletContextType {
@@ -48,87 +50,68 @@ export function UserWalletProvider({
   initialUser,
 }: UserWalletProviderProps) {
   const [user, setUser] = useState<UserWalletData | null>(null);
-  const [loading, setLoading] = useState(!initialUser);
-  const supabase = createClient();
-  console.log("dev:User in UserWalletProvider:", initialUser);
-
-  const fetchUserWallet = async (
-    userId: string,
-  ): Promise<{ pk: string | null; role: string }> => {
-    try {
-      const { data, error } = await supabase
-        .from("user_wallet")
-        .select("pk, role")
-        .eq("sk", userId)
-        .single();
-
-      if (error || !data) {
-        return { pk: null, role: "guest" };
-      }
-
-      return {
-        pk: data.pk,
-        role: data.role || "guest",
-      };
-    } catch (error) {
-      console.error("Error fetching user wallet:", error);
-      return { pk: null, role: "guest" };
-    }
-  };
-
-  const transformUser = async (
-    supabaseUser: User | null,
-  ): Promise<UserWalletData | null> => {
-    if (!supabaseUser) return null;
-
-    const name =
-      supabaseUser.user_metadata?.full_name ||
-      supabaseUser.user_metadata?.name ||
-      null;
-    const email = supabaseUser.email || null;
-    const phone = supabaseUser.phone || null;
-    const avatar_url = supabaseUser.user_metadata?.avatar_url || null;
-
-    // Fetch pk and role from user_wallet table
-    const { pk, role } = await fetchUserWallet(supabaseUser.id);
-
-    return {
-      userAuth: {
-        name,
-        email,
-        phone,
-        avatar_url,
-      },
-      role,
-      wallet: {
-        pk,
-        sk: supabaseUser.id,
-      },
-    };
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If we have initial user from server, transform and set it
-    if (initialUser !== undefined) {
-      transformUser(initialUser).then((transformedUser) => {
-        setUser(transformedUser);
+    const resolveUser = async () => {
+      if (!initialUser) {
+        sessionStorage.removeItem("userWalletData");
+        setUser(null);
         setLoading(false);
-      });
-    }
+        return;
+      }
 
-    // Listen for auth state changes
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        const transformedUser = await transformUser(session?.user ?? null);
-        setUser(transformedUser);
-        setLoading(false);
-      },
-    );
+      const cacheKey = `userWalletData_${initialUser.id}`;
+      try {
+        const cachedData = sessionStorage.getItem(cacheKey);
+        if (cachedData) {
+          setUser(JSON.parse(cachedData));
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to parse cached user data:", error);
+        sessionStorage.removeItem(cacheKey); // Clear corrupted cache
+      }
 
-    return () => {
-      listener?.subscription.unsubscribe();
+      // If no valid cache, fetch from server
+      const { pk, role, teacher } = await getCurrentUserWallet();
+
+      const name =
+        initialUser.user_metadata?.full_name ||
+        initialUser.user_metadata?.name ||
+        null;
+      const email = initialUser.email || null;
+      const phone = initialUser.phone || null;
+      const avatar_url = initialUser.user_metadata?.avatar_url || null;
+
+      const transformedUser: UserWalletData = {
+        userAuth: {
+          name,
+          email,
+          phone,
+          avatar_url,
+        },
+        role,
+        wallet: {
+          pk,
+          sk: initialUser.id,
+        },
+        teacher,
+      };
+      
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(transformedUser));
+      } catch (error) {
+        console.error("Failed to cache user data:", error);
+      }
+
+      setUser(transformedUser);
+      setLoading(false);
     };
-  }, [supabase, initialUser]);
+
+    resolveUser();
+  }, [initialUser]);
 
   return (
     <UserWalletContext.Provider value={{ user, loading }}>
