@@ -71,6 +71,12 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
 
   const handleDateChange = (date: string) => {
+    // Validate the date before setting it
+    if (!date || isNaN(Date.parse(date))) {
+      console.error("Invalid date provided to handleDateChange:", date);
+      return;
+    }
+    
     setSelectedDate(date);
     setStoredDate(STORAGE_KEY, date);
   };
@@ -85,7 +91,18 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   // Load stored date after mount to avoid hydration issues
   useEffect(() => {
     const storedDate = getStoredDate(STORAGE_KEY);
-    setSelectedDate(storedDate);
+    
+    // Validate the stored date
+    const isValidDate = storedDate && !isNaN(Date.parse(storedDate));
+    
+    if (isValidDate) {
+      setSelectedDate(storedDate);
+    } else {
+      // If stored date is invalid, use today's date and clear storage
+      const today = getTodayDateString();
+      setSelectedDate(today);
+      setStoredDate(STORAGE_KEY, today);
+    }
   }, []);
 
 
@@ -107,6 +124,27 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
   // Filter data based on selected date and create WhiteboardClass instances
   const filteredData = useMemo(() => {
+    // Validate selectedDate before processing
+    if (!selectedDate || isNaN(Date.parse(selectedDate))) {
+      return {
+        bookings: [],
+        bookingClasses: [],
+        lessons: [],
+        events: [],
+        teacherSchedules: new Map(),
+        status: {
+          totalBookings: 0,
+          totalLessons: 0,
+          totalEvents: 0,
+          activeBookings: 0,
+          completableBookings: 0,
+          averageProgress: 0,
+          totalUsedMinutes: 0,
+          totalAvailableMinutes: 0,
+        },
+      };
+    }
+    
     const filterDate = new Date(selectedDate);
     filterDate.setHours(0, 0, 0, 0);
 

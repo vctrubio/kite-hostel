@@ -206,3 +206,49 @@ export async function updateBookingStatus(
     return { success: false, error: errorMessage };
   }
 }
+
+export async function deleteBooking(bookingId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    // Find all lessons related to the booking
+    const lessons = await db.select().from(Lesson).where(eq(Lesson.booking_id, bookingId));
+    const lessonIds = lessons.map(lesson => lesson.id);
+
+    if (lessonIds.length > 0) {
+      // Find all events related to these lessons
+      const events = await db.select().from(Event).where(and(...lessonIds.map(id => eq(Event.lesson_id, id))));
+      const eventIds = events.map(event => event.id);
+
+      if (eventIds.length > 0) {
+        // Delete all kite events related to these events
+        await db.delete(KiteEvent).where(and(...eventIds.map(id => eq(KiteEvent.event_id, id))));
+      }
+
+      // Delete all events related to these lessons
+      await db.delete(Event).where(and(...lessonIds.map(id => eq(Event.lesson_id, id))));
+    }
+
+    // Delete all lessons related to the booking
+    await db.delete(Lesson).where(eq(Lesson.booking_id, bookingId));
+
+    // Delete all booking-student associations
+    await db.delete(BookingStudent).where(eq(BookingStudent.booking_id, bookingId));
+
+    // Finally, delete the booking itself
+    await db.delete(Booking).where(eq(Booking.id, bookingId));
+
+    revalidatePath("/bookings");
+    revalidatePath("/whiteboard");
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to delete booking.";
+    console.error(
+      `Error deleting booking with ID ${bookingId}:`,
+      error,
+      "Full error object:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    );
+    return { success: false, error: errorMessage };
+  }
+}

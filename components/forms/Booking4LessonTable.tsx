@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { BookmarkIcon, HelmetIcon, HeadsetIcon } from "@/svgs";
@@ -9,8 +9,13 @@ import { Duration } from "@/components/formatters/Duration";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
+import { ViewTeacherLessonEvents } from "@/components/views/ViewTeacherLessonEvents";
 import { BookingWithRelations } from "@/backend/types";
 import { getUserWalletName } from "@/lib/getters";
+import { getTeachers } from "@/actions/teacher-actions";
+import { InferSelectModel } from "drizzle-orm";
+import { Teacher } from "@/drizzle/migrations/schema";
+import { toast } from "sonner";
 
 interface Booking4LessonTableProps {
   bookings: BookingWithRelations[];
@@ -29,6 +34,25 @@ export function Booking4LessonTable({
     null,
   );
   const [filter, setFilter] = useState<FilterType>("all");
+
+  const [teachers, setTeachers] = useState<InferSelectModel<typeof Teacher>[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(true);
+
+  const fetchTeachersData = async () => {
+    setLoadingTeachers(true);
+    const { data, error } = await getTeachers();
+    if (data) {
+      setTeachers(data);
+    } else if (error) {
+      console.error("Error fetching teachers:", error);
+      toast.error("Failed to load teachers.");
+    }
+    setLoadingTeachers(false);
+  };
+
+  useEffect(() => {
+    fetchTeachersData();
+  }, []);
 
   const filteredBookings = useMemo(() => {
     switch (filter) {
@@ -127,11 +151,9 @@ export function Booking4LessonTable({
                 </td>
               </tr>
             ) : (
-              //BUG: Each child in list shuold have unique key
               filteredBookings.map((booking) => (
-                <>
+                <React.Fragment key={booking.id}>
                   <tr
-                    key={booking.id}
                     className="border-b border-border hover:bg-muted/20"
                   >
                     <td className="py-3 px-4">
@@ -171,24 +193,19 @@ export function Booking4LessonTable({
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground italic">
-                          No lessons
-                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddLesson(booking.id)}
+                          className="text-xs"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Lesson
+                        </Button>
                       )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center gap-1">
-                        {(!booking.lessons || booking.lessons.length === 0) && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleAddLesson(booking.id)}
-                            className="text-xs"
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add Lesson
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -259,43 +276,23 @@ export function Booking4LessonTable({
                               <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                                 <HeadsetIcon className="w-4 h-4 text-cyan-500" />
                                 Lessons ({booking.lessons.length})
+                                {(() => {
+                                  const totalEvents = booking.lessons.reduce((sum: number, lesson: any) => 
+                                    sum + (lesson.events?.length || 0), 0
+                                  );
+                                  const totalMinutes = booking.lessons.reduce((sum: number, lesson: any) => 
+                                    sum + (lesson.events?.reduce((eventSum: number, event: any) => 
+                                      eventSum + event.duration, 0) || 0), 0
+                                  );
+                                  return totalEvents > 0 ? (
+                                    <span className="text-xs text-muted-foreground">
+                                      • {totalEvents} events • <Duration minutes={totalMinutes} />
+                                    </span>
+                                  ) : null;
+                                })()}
                               </h4>
-                              <div className="space-y-3">
-                                {booking.lessons.map((lesson: any) => (
-                                  <div
-                                    key={lesson.id}
-                                    className="flex items-center justify-between p-2 bg-background rounded border"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <span className="text-sm font-medium">
-                                        {lesson.teacher?.name ||
-                                          "Unassigned Teacher"}
-                                      </span>
-                                      <LessonStatusLabel
-                                        lessonId={lesson.id}
-                                        currentStatus={lesson.status}
-                                        lessonEvents={lesson.events || []}
-                                      />
-                                      {lesson.commission && (
-                                        <span className="text-xs text-muted-foreground">
-                                          €{lesson.commission.price_per_hour}/h
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      {lesson.events &&
-                                        lesson.events.length > 0 && (
-                                          <span className="text-xs text-muted-foreground">
-                                            {lesson.events.length} event
-                                            {lesson.events.length === 1
-                                              ? ""
-                                              : "s"}
-                                          </span>
-                                        )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                              
+                              <ViewTeacherLessonEvents lessons={booking.lessons} />
 
                               {/* Add Another Lesson Button */}
                               <div className="mt-3 pt-3 border-t border-border">
@@ -332,7 +329,7 @@ export function Booking4LessonTable({
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))
             )}
           </tbody>
@@ -346,11 +343,16 @@ export function Booking4LessonTable({
           onClose={() => {
             setIsModalOpen(false);
             setSelectedBookingId(null);
-            // Refresh the bookings after modal closes (lesson might have been created)
+            // Refresh the page after modal closes (lesson might have been created)
             if (onRefresh) {
               onRefresh();
+            } else {
+              // Server-side refresh when no onRefresh callback provided
+              window.location.reload();
             }
           }}
+          teachers={teachers}
+          onCommissionCreated={fetchTeachersData}
         />
       )}
     </div>

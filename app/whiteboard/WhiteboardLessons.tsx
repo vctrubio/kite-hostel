@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import FlagPicker from "@/components/pickers/flag-picker";
 import DurationSettings from "@/components/whiteboard-usage/duration-settings";
@@ -258,6 +258,17 @@ export default function WhiteboardLessons({
   const router = useRouter();
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0);
 
+  const handleSettingsChange = useCallback((settings) => {
+    if (onControllerChange) {
+      onControllerChange((prev: any) => ({
+        ...prev,
+        durationCapOne: settings.durationCapOne,
+        durationCapTwo: settings.durationCapTwo,
+        durationCapThree: settings.durationCapThree,
+      }));
+    }
+  }, [onControllerChange]);
+
   // Duration settings are now part of the controller state
 
   // Controller is now passed as props from parent
@@ -364,10 +375,15 @@ export default function WhiteboardLessons({
   // Update controller time to earliest time initially, but allow user to change it
   useEffect(() => {
     if (onControllerChange) {
-      onControllerChange((prev: any) => ({
-        ...prev,
-        submitTime: earliestTime,
-      }));
+      onControllerChange((prev: any) => {
+        if (prev.submitTime !== earliestTime) {
+          return {
+            ...prev,
+            submitTime: earliestTime,
+          };
+        }
+        return prev;
+      });
     }
   }, [earliestTime, onControllerChange]);
 
@@ -375,17 +391,7 @@ export default function WhiteboardLessons({
     <div className="space-y-6">
       {/* Duration Settings */}
       <DurationSettings
-        onSettingsChange={(settings) => {
-          console.log("Duration settings updated:", settings);
-          if (onControllerChange) {
-            onControllerChange((prev: any) => ({
-              ...prev,
-              durationCapOne: settings.durationCapOne,
-              durationCapTwo: settings.durationCapTwo, 
-              durationCapThree: settings.durationCapThree,
-            }));
-          }
-        }}
+        onSettingsChange={handleSettingsChange}
       />
 
       {/* Global Stats Header */}

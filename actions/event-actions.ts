@@ -26,9 +26,55 @@ interface QueueEventData {
   [key: string]: any; // Allow additional properties from queue
 }
 
-export async function createEvent(eventData: EventData) {
+export async function createEvent(eventData: EventData & { status?: "planned" | "completed" | "tbc" | "cancelled" }) {
   try {
     const supabase = await createClient();
+
+    // Validate that event date falls within booking date range
+    const { data: lessonData, error: lessonError } = await supabase
+      .from('lesson')
+      .select(`
+        id,
+        booking:booking_id (
+          id,
+          date_start,
+          date_end,
+          status
+        )
+      `)
+      .eq('id', eventData.lessonId)
+      .single();
+
+    if (lessonError || !lessonData?.booking) {
+      console.error('❌ Failed to fetch lesson/booking data:', lessonError);
+      return { success: false, error: 'Invalid lesson or booking not found' };
+    }
+
+    const booking = lessonData.booking;
+    const eventDate = new Date(eventData.date);
+    const bookingStartDate = new Date(booking.date_start);
+    const bookingEndDate = new Date(booking.date_end);
+
+    // Normalize dates for comparison (remove time component)
+    eventDate.setHours(0, 0, 0, 0);
+    bookingStartDate.setHours(0, 0, 0, 0);
+    bookingEndDate.setHours(0, 0, 0, 0);
+
+    // Validate event date is within booking range
+    if (eventDate < bookingStartDate || eventDate > bookingEndDate) {
+      return { 
+        success: false, 
+        error: `Event date must be between ${bookingStartDate.toISOString().split('T')[0]} and ${bookingEndDate.toISOString().split('T')[0]}` 
+      };
+    }
+
+    // Validate booking is active
+    if (booking.status !== 'active') {
+      return { 
+        success: false, 
+        error: `Cannot create event for ${booking.status} booking` 
+      };
+    }
 
     // Create UTC datetime using our timezone utility
     const eventDateTimeISO = toUTCString(createUTCDateTime(eventData.date, eventData.startTime));
@@ -41,7 +87,7 @@ export async function createEvent(eventData: EventData) {
         date: eventDateTimeISO,
         duration: eventData.durationMinutes,
         location: eventData.location,
-        status: 'planned'
+        status: eventData.status || 'planned'
       })
       .select()
       .single();
@@ -69,6 +115,53 @@ export async function createTeacherQueueEvents(events: QueueEventData[]) {
     // Process events sequentially to avoid database conflicts
     for (const eventData of events) {
       console.log('📝 Creating event:', eventData);
+      
+      // Validate that event date falls within booking date range
+      const { data: lessonData, error: lessonError } = await supabase
+        .from('lesson')
+        .select(`
+          id,
+          booking:booking_id (
+            id,
+            date_start,
+            date_end,
+            status
+          )
+        `)
+        .eq('id', eventData.lessonId)
+        .single();
+
+      if (lessonError || !lessonData?.booking) {
+        console.error('❌ Failed to fetch lesson/booking data for queue event:', lessonError);
+        results.push({ success: false, lessonId: eventData.lessonId, error: 'Invalid lesson or booking not found' });
+        continue;
+      }
+
+      const booking = lessonData.booking;
+      const eventDate = new Date(eventData.date);
+      const bookingStartDate = new Date(booking.date_start);
+      const bookingEndDate = new Date(booking.date_end);
+
+      // Normalize dates for comparison (remove time component)
+      eventDate.setHours(0, 0, 0, 0);
+      bookingStartDate.setHours(0, 0, 0, 0);
+      bookingEndDate.setHours(0, 0, 0, 0);
+
+      // Validate event date is within booking range
+      if (eventDate < bookingStartDate || eventDate > bookingEndDate) {
+        const errorMsg = `Event date must be between ${bookingStartDate.toISOString().split('T')[0]} and ${bookingEndDate.toISOString().split('T')[0]}`;
+        console.error('❌ Date validation failed for queue event:', errorMsg);
+        results.push({ success: false, lessonId: eventData.lessonId, error: errorMsg });
+        continue;
+      }
+
+      // Validate booking is active
+      if (booking.status !== 'active') {
+        const errorMsg = `Cannot create event for ${booking.status} booking`;
+        console.error('❌ Booking status validation failed for queue event:', errorMsg);
+        results.push({ success: false, lessonId: eventData.lessonId, error: errorMsg });
+        continue;
+      }
       
       // Create UTC datetime using our timezone utility
       const eventDateTimeISO = toUTCString(createUTCDateTime(eventData.date, eventData.startTime));

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { ChevronDown, ChevronUp, Send, Settings } from 'lucide-react';
+import { ChevronDown, ChevronUp, Send, Settings, Trash2 } from 'lucide-react';
 import { BookmarkIcon } from '@/svgs';
 import { type BookingData } from '@/backend/WhiteboardClass';
 import {
@@ -12,8 +12,9 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { BOOKING_STATUSES, type BookingStatus } from '@/lib/constants';
-import { updateBookingStatus } from '@/actions/booking-actions';
+import { updateBookingStatus, deleteBooking } from '@/actions/booking-actions';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface FooterDropdownProps {
   booking: BookingData;
@@ -22,9 +23,10 @@ interface FooterDropdownProps {
 export default function FooterDropdown({ booking }: FooterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
   const handleDropdownToggle = () => {
-    console.log('Dropdown toggle clicked', { isOpen: !isOpen, bookingId: booking.id });
     setIsOpen(!isOpen);
   };
 
@@ -38,12 +40,23 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
     startTransition(async () => {
       const { success, error } = await updateBookingStatus(booking.id, newStatus);
       if (success) {
-        console.log('Status updated successfully', { bookingId: booking.id, newStatus });
-        // Note: In a real app, you'd want to trigger a refresh or update local state
+        router.refresh();
       } else {
         console.error('Failed to update status:', error);
       }
     });
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteBooking(booking.id);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to delete booking:", error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Calculate package totals
@@ -75,6 +88,15 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
             title="Send booking"
           >
             <Send className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="p-2 text-muted-foreground hover:text-black dark:hover:text-white hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"
+            title="Delete booking"
+          >
+            <Trash2 className={`w-4 h-4 ${isDeleting ? 'animate-spin' : ''}`} />
           </button>
           
           <DropdownMenu>

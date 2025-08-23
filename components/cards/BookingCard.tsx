@@ -365,9 +365,10 @@ export default function BookingCard({
           lesson={selectedLessonForEvent}
           teacherSchedule={teacherScheduleForModal}
           controller={controller}
-          selectedDate={selectedDate}
+          date={selectedDate}
           onConfirm={handleConfirmEvent}
           remainingMinutes={selectedLessonForEvent.remainingMinutes}
+          allowDateEdit={false}
         />
       )}
 

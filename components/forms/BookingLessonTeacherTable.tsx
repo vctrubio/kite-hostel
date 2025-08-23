@@ -20,6 +20,7 @@ interface BookingLessonTeacherTableProps {
   selectedCommissionId: string | null;
   onSelectTeacher: (teacherId: string | null) => void;
   onSelectCommission: (commissionId: string | null) => void;
+  onCommissionCreated?: () => void;
 }
 
 export function BookingLessonTeacherTable({
@@ -28,6 +29,7 @@ export function BookingLessonTeacherTable({
   selectedCommissionId,
   onSelectTeacher,
   onSelectCommission,
+  onCommissionCreated,
 }: BookingLessonTeacherTableProps) {
   const [newCommissionRate, setNewCommissionRate] = useState<string>("");
   const [newCommissionDesc, setNewCommissionDesc] = useState<string>("");
@@ -139,8 +141,9 @@ export function BookingLessonTeacherTable({
             teacherId={selectedTeacher.id}
             onCommissionCreated={(commissionId) => {
               onSelectCommission(commissionId);
-              // Optionally, re-fetch teachers to update the list of commissions
-              // This would require passing a re-fetch function from the parent
+              if (onCommissionCreated) {
+                onCommissionCreated();
+              }
             }}
           />
         </div>

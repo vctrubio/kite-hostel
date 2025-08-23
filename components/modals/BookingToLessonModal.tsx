@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createLesson } from "@/actions/lesson-actions";
 import { BookingLessonTeacherTable } from "@/components/forms/BookingLessonTeacherTable";
 import { InferSelectModel } from "drizzle-orm";
-import { Teacher, Commission } from "@/drizzle/migrations/schema";
+import { Teacher } from "@/drizzle/migrations/schema";
 import { useRouter } from "next/navigation";
-import { getTeachers } from "@/actions/teacher-actions";
 
 interface BookingToLessonModalProps {
   bookingId: string;
@@ -24,32 +23,17 @@ interface BookingToLessonModalProps {
     note?: string;
   } | null;
   onClose: () => void;
+  teachers: InferSelectModel<typeof Teacher>[];
+  onCommissionCreated: () => void;
 }
 
 export function BookingToLessonModal({
   bookingId,
   bookingReference,
   onClose,
+  teachers,
+  onCommissionCreated,
 }: BookingToLessonModalProps) {
-  const [teachers, setTeachers] = useState<InferSelectModel<typeof Teacher>[]>(
-    [],
-  );
-  const [loadingTeachers, setLoadingTeachers] = useState(true);
-
-  useEffect(() => {
-    const fetchTeachersData = async () => {
-      setLoadingTeachers(true);
-      const { data, error } = await getTeachers();
-      if (data) {
-        setTeachers(data);
-      } else if (error) {
-        console.error("Error fetching teachers:", error);
-        toast.error("Failed to load teachers.");
-      }
-      setLoadingTeachers(false);
-    };
-    fetchTeachersData();
-  }, []);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(
     null,
   );
@@ -153,6 +137,7 @@ export function BookingToLessonModal({
             selectedCommissionId={selectedCommissionId}
             onSelectTeacher={setSelectedTeacherId}
             onSelectCommission={setSelectedCommissionId}
+            onCommissionCreated={onCommissionCreated}
           />
         </div>
 

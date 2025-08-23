@@ -5,7 +5,7 @@
 import { addMinutesToTime, timeToMinutes, minutesToTime, createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
 import { format } from 'date-fns';
 import { detectScheduleGaps, hasScheduleGaps, compactSchedule, findNextAvailableSlot, type ScheduleItem } from './ScheduleUtils';
-import { type TeacherStats, type ReorganizationOption } from './types';
+import { type TeacherStats, type ReorganizationOption, type BookingData } from './types';
 
 export type ScheduleItemType = 'event' | 'gap';
 
@@ -61,14 +61,16 @@ export class TeacherSchedule {
   private lessonQueue: QueuedLesson[] = []; // Add lesson queue
   private queueStartTime: string | null = null; // Preferred queue start time
   public lessons: any[] = [];
+  public booking: BookingData;
 
-  constructor(teacherId: string, teacherName: string, date: string) {
+  constructor(teacherId: string, teacherName: string, date: string, booking: BookingData) {
     this.schedule = {
       teacherId,
       teacherName,
       date,
       head: null
     };
+    this.booking = booking;
   }
 
   /**
@@ -95,7 +97,9 @@ export class TeacherSchedule {
     // Create schedule for each teacher
     teacherLessonsMap.forEach((teacherLessons, teacherId) => {
       const teacher = teacherLessons[0].teacher;
-      const schedule = new TeacherSchedule(teacherId, teacher.name, date);
+      // NOTE: This assumes all lessons for a teacher on a given day belong to the same booking.
+      const booking = teacherLessons[0].booking;
+      const schedule = new TeacherSchedule(teacherId, teacher.name, date, booking);
       schedule.lessons = teacherLessons;
       
       // Add existing events from lessons

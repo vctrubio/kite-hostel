@@ -11,7 +11,7 @@ import { getEntitySearchFunction } from "./DashboardGetSearchUtils";
 import { getEntityColumnHeaders, type TableHeader } from "./DashboardColumnHeaders";
 import { getEntitySorter, type SortConfig } from "./DashboardSorting";
 import { getEntityModal } from "./DashboardGetEntityModal";
-import { getEntityDropdownForm } from "./DashboardGetEntityDropdownForm";
+import { getEntityDropdownForm } from "./DashboardGetEntityDropdownForm.tsx";
 import { DashboardHeader } from "./DashboardHeader";
 
 interface Stat {

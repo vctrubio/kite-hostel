@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Send } from "lucide-react";
+import { ChevronDown, ChevronUp, Send, Trash2 } from "lucide-react";
 import { DateSince } from "@/components/formatters/DateSince";
 import { Duration } from "@/components/formatters/Duration";
 import { format } from "date-fns";
 import { getEventStatusColor } from "@/lib/constants";
+import { deleteEvent } from "@/actions/event-actions";
 
 interface EventRowProps {
   data: {
@@ -38,6 +39,7 @@ interface EventRowProps {
 }
 
 export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
   const isExpanded = expandedRow === event.id;
   const router = useRouter();
 
@@ -46,6 +48,20 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
       setExpandedRow(null);
     } else {
       setExpandedRow(event.id);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDeleting(true);
+    try {
+      await deleteEvent(event.id);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to delete event:", error);
+      // Optionally, show an error message to the user
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -106,6 +122,15 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
               className="h-8 w-8"
             >
               <Send className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="h-8 w-8"
+            >
+              <Trash2 className={`h-4 w-4 ${isDeleting ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </td>
