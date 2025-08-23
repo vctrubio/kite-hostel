@@ -144,12 +144,18 @@ function LessonTableRow({
         </td>
         <td className="py-3 px-4">
           <div className="flex items-center gap-2">
-            <HelmetIcon className="h-4 w-4 text-yellow-500" />
-            <span className="text-sm">
-              {lesson.booking.students
-                ?.map((bs: any) => bs.student.name)
-                .join(", ") || "No students"}
-            </span>
+            {lesson.booking.students && lesson.booking.students.length > 0 ? (
+              <>
+                {lesson.booking.students.map((_, index) => (
+                  <HelmetIcon key={index} className="h-4 w-4 text-yellow-500" />
+                ))}
+                <span className="text-sm">
+                  {lesson.booking.students.map((bs: any) => bs.student.name).join(", ")}
+                </span>
+              </>
+            ) : (
+              <span className="text-sm">No students</span>
+            )}
           </div>
         </td>
         <td className="py-3 px-4">
