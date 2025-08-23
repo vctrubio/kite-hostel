@@ -22,6 +22,8 @@ interface WhiteboardLessonsProps {
   lessons: any[];
   selectedDate: string;
   teacherSchedules: Map<string, TeacherSchedule>;
+  controller: any;
+  onControllerChange?: (controller: any) => void;
 }
 
 // Sub-component: Teacher Group
@@ -33,7 +35,6 @@ function TeacherGroup({
   teacherSchedule,
   selectedDate,
   controller,
-  durationSettings,
   queueUpdateTrigger,
   onQueueChange,
 }: {
@@ -43,7 +44,6 @@ function TeacherGroup({
   onBatchEventCreation: (events: any[]) => void;
   teacherSchedule?: TeacherSchedule;
   selectedDate: string;
-  durationSettings: any;
   controller: any;
   queueUpdateTrigger: number;
   onQueueChange: () => void;
@@ -169,7 +169,11 @@ function TeacherGroup({
           teacherName={teacherGroup.teacherName}
           teacherSchedule={teacherSchedule}
           selectedDate={selectedDate}
-          durationSettings={durationSettings}
+          durationSettings={{
+            durationCapOne: controller.durationCapOne,
+            durationCapTwo: controller.durationCapTwo,
+            durationCapThree: controller.durationCapThree,
+          }}
           controllerTime={controller.submitTime}
           onCreateEvents={onBatchEventCreation}
           queueUpdateTrigger={queueUpdateTrigger}
@@ -248,23 +252,15 @@ export default function WhiteboardLessons({
   lessons,
   selectedDate,
   teacherSchedules,
+  controller,
+  onControllerChange,
 }: WhiteboardLessonsProps) {
   const router = useRouter();
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0);
 
-  //this needs to be removed...... overcomplex, we have it inside the duration-settings
-  const [durationSettings, setDurationSettings] = useState({
-    durationCapOne: 120, // Will be set by DurationSettings component
-    durationCapTwo: 180, // Will be set by DurationSettings component
-    durationCapThree: 240, // Will be set by DurationSettings component
-  });
+  // Duration settings are now part of the controller state
 
-  // Local controller state for GlobalStatsHeader FlagPicker
-  const [controller, setController] = useState({
-    flag: false,
-    location: LOCATION_ENUM_VALUES[0],
-    submitTime: "11:00",
-  });
+  // Controller is now passed as props from parent
 
   const toggleLessonQueue = (lesson: any) => {
     const teacherSchedule = teacherSchedules.get(lesson.teacher?.id);
@@ -367,11 +363,13 @@ export default function WhiteboardLessons({
 
   // Update controller time to earliest time initially, but allow user to change it
   useEffect(() => {
-    setController((prev) => ({
-      ...prev,
-      submitTime: earliestTime,
-    }));
-  }, [earliestTime]);
+    if (onControllerChange) {
+      onControllerChange((prev: any) => ({
+        ...prev,
+        submitTime: earliestTime,
+      }));
+    }
+  }, [earliestTime, onControllerChange]);
 
   return (
     <div className="space-y-6">
@@ -379,7 +377,14 @@ export default function WhiteboardLessons({
       <DurationSettings
         onSettingsChange={(settings) => {
           console.log("Duration settings updated:", settings);
-          setDurationSettings(settings);
+          if (onControllerChange) {
+            onControllerChange((prev: any) => ({
+              ...prev,
+              durationCapOne: settings.durationCapOne,
+              durationCapTwo: settings.durationCapTwo, 
+              durationCapThree: settings.durationCapThree,
+            }));
+          }
         }}
       />
 
@@ -388,7 +393,7 @@ export default function WhiteboardLessons({
         <GlobalStatsHeader
           globalStats={globalStats}
           controller={controller}
-          onControllerChange={setController}
+          onControllerChange={onControllerChange}
           earliestTime={earliestTime}
         />
       </div>
@@ -406,7 +411,6 @@ export default function WhiteboardLessons({
                 onRemoveFromQueue={handleRemoveFromQueue}
                 onBatchEventCreation={handleBatchEventCreation}
                 selectedDate={selectedDate}
-                durationSettings={durationSettings}
                 controller={controller}
                 teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)}
                 queueUpdateTrigger={queueUpdateTrigger}

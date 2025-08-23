@@ -15,7 +15,8 @@ import {
   setStoredDate,
   getTodayDateString,
 } from "@/components/formatters/DateTime";
-import { type BookingStatusFilter, type LessonStatusFilter, type EventStatusFilter } from "@/lib/constants";
+import { type BookingStatusFilter, type LessonStatusFilter, type EventStatusFilter, LOCATION_ENUM_VALUES } from "@/lib/constants";
+import { type EventController } from "@/backend/types";
 
 const STORAGE_KEY = "whiteboard-selected-date";
 
@@ -56,6 +57,16 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     bookings: "all",
     lessons: "all", 
     events: "all"
+  });
+
+  // Controller state for event creation (includes duration settings)
+  const [controller, setController] = useState<EventController>({
+    flag: false,
+    location: LOCATION_ENUM_VALUES[0],
+    submitTime: "11:00",
+    durationCapOne: 120,     // Will be updated by DurationSettings component
+    durationCapTwo: 180,     // Will be updated by DurationSettings component  
+    durationCapThree: 240,   // Will be updated by DurationSettings component
   });
 
 
@@ -259,6 +270,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                     bookingClasses={filteredData.bookingClasses}
                     selectedDate={selectedDate}
                     teacherSchedules={filteredData.teacherSchedules}
+                    controller={controller}
                   />
                 )}
 
@@ -267,6 +279,8 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                     lessons={filteredData.lessons}
                     selectedDate={selectedDate}
                     teacherSchedules={filteredData.teacherSchedules}
+                    controller={controller}
+                    onControllerChange={setController}
                   />
                 )}
 
