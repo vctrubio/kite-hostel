@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState, useMemo } from "react";
 import {
@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import EventToTeacherModal from "@/components/modals/EventToTeacherModal";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { type EventController } from "@/backend/types";
-import FooterDropdown from "@/components/whiteboard-usage/FooterDropdown";
+import BookingCardFooterDropdown from "@/components/whiteboard-usage/BookingCardFooterDropdown";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 
 interface BookingCardProps {
@@ -34,10 +34,14 @@ interface BookingCardProps {
 }
 
 // Sub-component: Booking Header
-function BookingHeader({ booking, selectedDate, bookingClass }: { 
-  booking: BookingData, 
-  selectedDate: string, 
-  bookingClass?: WhiteboardClass 
+function BookingHeader({
+  booking,
+  selectedDate,
+  bookingClass,
+}: {
+  booking: BookingData;
+  selectedDate: string;
+  bookingClass?: WhiteboardClass;
 }) {
   return (
     <div className="grid grid-cols-12 gap-3 p-4 border-b border-border/50">
@@ -45,7 +49,7 @@ function BookingHeader({ booking, selectedDate, bookingClass }: {
       <div className="col-span-2 flex items-center justify-center">
         <BookingIcon className="w-8 h-8 text-blue-600" />
       </div>
-      
+
       {/* Date and Progress - 10 columns */}
       <div className="col-span-10 space-y-2">
         {/* Top row: Date */}
@@ -57,7 +61,7 @@ function BookingHeader({ booking, selectedDate, bookingClass }: {
             status={booking.status}
           />
         </div>
-        
+
         {/* Bottom row: Progress */}
         {bookingClass && (
           <div>
@@ -73,7 +77,13 @@ function BookingHeader({ booking, selectedDate, bookingClass }: {
 }
 
 // Sub-component: Students Section
-function StudentsSection({ booking, onStudentClick }: { booking: BookingData, onStudentClick: (id: string) => void }) {
+function StudentsSection({
+  booking,
+  onStudentClick,
+}: {
+  booking: BookingData;
+  onStudentClick: (id: string) => void;
+}) {
   return (
     <div className="bg-background/50 rounded-md p-3">
       <div className="flex items-center gap-3">
@@ -117,9 +127,15 @@ function StudentsSection({ booking, onStudentClick }: { booking: BookingData, on
                 )}
                 {booking.students.length > 4 && (
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: booking.students.length }, (_, index) => (
-                      <HelmetIcon key={index} className="w-5 h-5 text-amber-500" />
-                    ))}
+                    {Array.from(
+                      { length: booking.students.length },
+                      (_, index) => (
+                        <HelmetIcon
+                          key={index}
+                          className="w-5 h-5 text-amber-500"
+                        />
+                      ),
+                    )}
                   </div>
                 )}
               </div>
@@ -137,7 +153,9 @@ function StudentsSection({ booking, onStudentClick }: { booking: BookingData, on
                     {studentRelation.student.name}
                   </button>
                   {index < booking.students.length - 1 && (
-                    <span className="text-sm text-muted-foreground ml-1">,</span>
+                    <span className="text-sm text-muted-foreground ml-1">
+                      ,
+                    </span>
                   )}
                 </span>
               ))}
@@ -159,7 +177,11 @@ function StudentsSection({ booking, onStudentClick }: { booking: BookingData, on
 // Sub-component: Package Info
 function PackageInfo({ booking }: { booking: BookingData }) {
   if (!booking.package) return null;
-  const pricePerHour = Math.round((booking.package.price_per_student / (booking.package.duration / 60)) * 100) / 100;
+  const pricePerHour =
+    Math.round(
+      (booking.package.price_per_student / (booking.package.duration / 60)) *
+      100,
+    ) / 100;
   const durationHours = booking.package.duration / 60;
   return (
     <div className="flex items-center gap-3">
@@ -182,22 +204,31 @@ interface LessonsSectionProps {
   onAddEventClick: (lesson: any) => void;
 }
 
-function LessonsSection({ displayLessons, onAddEventClick }: LessonsSectionProps) {
+function LessonsSection({
+  displayLessons,
+  onAddEventClick,
+}: LessonsSectionProps) {
   const getHeadsetColor = (status: string) => {
     switch (status) {
-      case "planned": return "text-green-600";
-      case "delegated": return "text-orange-600";
-      case "cancelled": return "text-red-600";
-      case "rest": return "text-blue-600";
-      case "completed": return "text-gray-400";
-      default: return "text-gray-500";
+      case "planned":
+        return "text-green-600";
+      case "delegated":
+        return "text-orange-600";
+      case "cancelled":
+        return "text-red-600";
+      case "rest":
+        return "text-blue-600";
+      case "completed":
+        return "text-gray-400";
+      default:
+        return "text-gray-500";
     }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
     return `${day}-${month}`;
   };
 
@@ -206,21 +237,32 @@ function LessonsSection({ displayLessons, onAddEventClick }: LessonsSectionProps
   return (
     <div className="space-y-3">
       {displayLessons.map((lesson) => (
-        <div key={lesson.id} className="bg-background/50 rounded-md p-3 space-y-2">
+        <div
+          key={lesson.id}
+          className="bg-background/50 rounded-md p-3 space-y-2"
+        >
           <div className="flex items-center gap-3">
-            <HeadsetIcon className={`w-5 h-5 ${getHeadsetColor(lesson.status)}`} />
+            <HeadsetIcon
+              className={`w-5 h-5 ${getHeadsetColor(lesson.status)}`}
+            />
             <span className="text-sm font-medium flex-1">
               {lesson.teacher?.name || "Unassigned"}
             </span>
-            <LessonStatusLabel lessonId={lesson.id} currentStatus={lesson.status} />
+            <LessonStatusLabel
+              lessonId={lesson.id}
+              currentStatus={lesson.status}
+            />
             <button
               onClick={() => onAddEventClick(lesson)}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors ${lesson.canCreateEvent
+                ? "text-green-600 hover:bg-green-500/10 hover:text-green-700"
+                : "text-gray-400 cursor-not-allowed"
+                }`}
+              title={
                 lesson.canCreateEvent
-                  ? 'text-green-600 hover:bg-green-500/10 hover:text-green-700'
-                  : 'text-gray-400 cursor-not-allowed'
-              }`}
-              title={lesson.canCreateEvent ? "Add event for this lesson" : lesson.disabledReason}
+                  ? "Add event for this lesson"
+                  : lesson.disabledReason
+              }
               disabled={!lesson.canCreateEvent}
             >
               <Plus className="w-4 h-4" />
@@ -229,7 +271,10 @@ function LessonsSection({ displayLessons, onAddEventClick }: LessonsSectionProps
           {lesson.events && lesson.events.length > 0 && (
             <div className="ml-8 space-y-1">
               {lesson.events.map((event: any) => (
-                <div key={event.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div
+                  key={event.id}
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
                   <FlagIcon className="w-3 h-3" />
                   <Duration minutes={event.duration || 0} />
                   <span>{formatDate(event.date)}</span>
@@ -252,42 +297,49 @@ export default function BookingCard({
 }: BookingCardProps) {
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [selectedLessonForEvent, setSelectedLessonForEvent] = useState<any>(null);
+  const [selectedLessonForEvent, setSelectedLessonForEvent] =
+    useState<any>(null);
   const router = useRouter();
 
-  const localBookingClass = useMemo(() => new WhiteboardClass(booking), [booking]);
+  const localBookingClass = useMemo(
+    () => new WhiteboardClass(booking),
+    [booking],
+  );
 
   const displayLessons = useMemo(() => {
-    return localBookingClass
-      .getLessons()
-      .map(lesson => {
-        const hasEventOnDate = selectedDate
-          ? lesson.events?.some(event => event.date && event.date.startsWith(selectedDate))
-          : false;
+    return localBookingClass.getLessons().map((lesson) => {
+      const hasEventOnDate = selectedDate
+        ? lesson.events?.some(
+          (event) => event.date && event.date.startsWith(selectedDate),
+        )
+        : false;
 
-        let canCreateEvent = true;
-        let disabledReason = "";
+      let canCreateEvent = true;
+      let disabledReason = "";
 
-        if (booking.status !== 'active') {
-          canCreateEvent = false;
-          disabledReason = "Booking is not active";
-        } else if (lesson.status !== 'planned') {
-          canCreateEvent = false;
-          disabledReason = `Lesson is ${lesson.status}, not planned`;
-        } else if (hasEventOnDate) {
-          canCreateEvent = false;
-          disabledReason = "Lesson already has an event on this date";
-        }
+      if (booking.status !== "active") {
+        canCreateEvent = false;
+        disabledReason = "Booking is not active";
+      } else if (lesson.status !== "planned") {
+        canCreateEvent = false;
+        disabledReason = `Lesson is ${lesson.status}, not planned`;
+      } else if (hasEventOnDate) {
+        canCreateEvent = false;
+        disabledReason = "Lesson already has an event on this date";
+      }
 
-        return { ...lesson, canCreateEvent, disabledReason };
-      });
+      return { ...lesson, canCreateEvent, disabledReason };
+    });
   }, [localBookingClass, selectedDate, booking.status]);
 
-  const hasNonDelegatedActiveLessons = useMemo(() => 
-    localBookingClass
-      .getLessons()
-      .some((lesson) => lesson.status === "planned" || lesson.status === "rest"), 
-    [localBookingClass]
+  const hasNonDelegatedActiveLessons = useMemo(
+    () =>
+      localBookingClass
+        .getLessons()
+        .some(
+          (lesson) => lesson.status === "planned" || lesson.status === "rest",
+        ),
+    [localBookingClass],
   );
 
   const handleStudentClick = (studentId: string) => {
@@ -313,13 +365,18 @@ export default function BookingCard({
     router.refresh();
   };
 
-  const teacherScheduleForModal = selectedLessonForEvent && teacherSchedules
-    ? teacherSchedules.get(selectedLessonForEvent.teacher?.id || '')
-    : null;
+  const teacherScheduleForModal =
+    selectedLessonForEvent && teacherSchedules
+      ? teacherSchedules.get(selectedLessonForEvent.teacher?.id || "")
+      : null;
 
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
-      <BookingHeader booking={booking} selectedDate={selectedDate} bookingClass={bookingClass} />
+      <BookingHeader
+        booking={booking}
+        selectedDate={selectedDate}
+        bookingClass={bookingClass}
+      />
 
       <div className="p-4">
         <div className="space-y-3">
@@ -327,7 +384,7 @@ export default function BookingCard({
             booking={booking}
             onStudentClick={handleStudentClick}
           />
-          
+
           <LessonsSection
             displayLessons={displayLessons}
             onAddEventClick={handleOpenEventModal}
@@ -335,7 +392,7 @@ export default function BookingCard({
         </div>
       </div>
 
-      {!hasNonDelegatedActiveLessons && (
+      {!hasNonDelegatedActiveLessons && booking.status === "active" && (
         <div className="p-4 border-t border-border/50">
           <button
             onClick={() => setShowLessonModal(true)}
@@ -354,25 +411,28 @@ export default function BookingCard({
           onClose={() => setShowLessonModal(false)}
         />
       )}
-      
-      {selectedLessonForEvent && teacherScheduleForModal && selectedDate && controller && (
-        <EventToTeacherModal
-          isOpen={isEventModalOpen}
-          onClose={() => {
-            setIsEventModalOpen(false);
-            setSelectedLessonForEvent(null);
-          }}
-          lesson={selectedLessonForEvent}
-          teacherSchedule={teacherScheduleForModal}
-          controller={controller}
-          date={selectedDate}
-          onConfirm={handleConfirmEvent}
-          remainingMinutes={selectedLessonForEvent.remainingMinutes}
-          allowDateEdit={false}
-        />
-      )}
 
-      <FooterDropdown booking={booking} />
+      {selectedLessonForEvent &&
+        teacherScheduleForModal &&
+        selectedDate &&
+        controller && (
+          <EventToTeacherModal
+            isOpen={isEventModalOpen}
+            onClose={() => {
+              setIsEventModalOpen(false);
+              setSelectedLessonForEvent(null);
+            }}
+            lesson={selectedLessonForEvent}
+            teacherSchedule={teacherScheduleForModal}
+            controller={controller}
+            date={selectedDate}
+            onConfirm={handleConfirmEvent}
+            remainingMinutes={selectedLessonForEvent.remainingMinutes}
+            allowDateEdit={false}
+          />
+        )}
+
+      <BookingCardFooterDropdown booking={booking} />
     </div>
   );
 }

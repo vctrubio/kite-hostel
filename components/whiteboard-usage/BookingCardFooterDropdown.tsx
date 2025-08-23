@@ -1,26 +1,30 @@
-'use client';
+"use client";
 
-import React, { useState, useTransition } from 'react';
-import { ChevronDown, ChevronUp, Send, Settings, Trash2 } from 'lucide-react';
-import { BookmarkIcon } from '@/svgs';
-import { type BookingData } from '@/backend/WhiteboardClass';
+import React, { useState, useTransition } from "react";
+import { ChevronDown, ChevronUp, Send, Settings, Trash2 } from "lucide-react";
+import { BookmarkIcon } from "@/svgs";
+import { type BookingData } from "@/backend/WhiteboardClass";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { BOOKING_STATUSES, type BookingStatus } from '@/lib/constants';
-import { updateBookingStatus, deleteBooking } from '@/actions/booking-actions';
-import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+} from "@/components/ui/dropdown-menu";
+import { BOOKING_STATUSES, type BookingStatus } from "@/lib/constants";
+import { updateBookingStatus, deleteBooking } from "@/actions/booking-actions";
+import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface FooterDropdownProps {
   booking: BookingData;
+  onBookingComplete?: (bookingId: string) => void; //to implement back to parent, set lesson status of active lesson to compelte too
 }
 
-export default function FooterDropdown({ booking }: FooterDropdownProps) {
+export default function FooterDropdown({
+  booking,
+  onBookingComplete,
+}: FooterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -31,18 +35,24 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
   };
 
   const handleAirplaneSend = () => {
-    console.log('Airplane send clicked', { bookingId: booking.id, booking });
+    console.log("Airplane send clicked", { bookingId: booking.id, booking });
   };
 
   const handleStatusChange = (newStatus: BookingStatus) => {
     if (newStatus === booking.status) return;
 
     startTransition(async () => {
-      const { success, error } = await updateBookingStatus(booking.id, newStatus);
+      const { success, error } = await updateBookingStatus(
+        booking.id,
+        newStatus,
+      );
       if (success) {
+        if (newStatus === "completed" && onBookingComplete) {
+          onBookingComplete(booking.id);
+        }
         router.refresh();
       } else {
-        console.error('Failed to update status:', error);
+        console.error("Failed to update status:", error);
       }
     });
   };
@@ -61,8 +71,8 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
 
   // Calculate package totals
   const packageHours = booking.package ? booking.package.duration / 60 : 0;
-  const totalPrice = booking.package 
-    ? booking.package.price_per_student * booking.package.capacity_students 
+  const totalPrice = booking.package
+    ? booking.package.price_per_student * booking.package.capacity_students
     : 0;
 
   return (
@@ -80,7 +90,7 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
           )}
           <span className="text-sm">Details</span>
         </button>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={handleAirplaneSend}
@@ -96,15 +106,15 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
             className="p-2 text-muted-foreground hover:text-black dark:hover:text-white hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"
             title="Delete booking"
           >
-            <Trash2 className={`w-4 h-4 ${isDeleting ? 'animate-spin' : ''}`} />
+            <Trash2 className={`w-4 h-4 ${isDeleting ? "animate-spin" : ""}`} />
           </button>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
                   "p-2 text-muted-foreground hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-950/30 rounded-md transition-colors",
-                  isPending && "opacity-50 cursor-not-allowed"
+                  isPending && "opacity-50 cursor-not-allowed",
                 )}
                 title="Booking settings"
                 disabled={isPending}
@@ -124,7 +134,8 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
                   disabled={isPending}
                   className={cn(
                     "cursor-pointer",
-                    status === booking.status && "bg-accent text-accent-foreground"
+                    status === booking.status &&
+                    "bg-accent text-accent-foreground",
                   )}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -144,12 +155,14 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
               <BookmarkIcon className="w-4 h-4" />
               <span>Package Details</span>
             </div>
-            
+
             {booking.package && (
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Description:</span>
-                  <p className="font-medium">{booking.package.description || 'No description'}</p>
+                  <p className="font-medium">
+                    {booking.package.description || "No description"}
+                  </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Duration:</span>
@@ -157,15 +170,25 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Kite Capacity:</span>
-                  <p className="font-medium">{booking.package.capacity_kites} kites</p>
+                  <p className="font-medium">
+                    {booking.package.capacity_kites} kites
+                  </p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Price per Student:</span>
-                  <p className="font-medium">€{booking.package.price_per_student}</p>
+                  <span className="text-muted-foreground">
+                    Price per Student:
+                  </span>
+                  <p className="font-medium">
+                    €{booking.package.price_per_student}
+                  </p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Student Capacity:</span>
-                  <p className="font-medium">{booking.package.capacity_students} students</p>
+                  <span className="text-muted-foreground">
+                    Student Capacity:
+                  </span>
+                  <p className="font-medium">
+                    {booking.package.capacity_students} students
+                  </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Total Price:</span>
@@ -189,7 +212,9 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
                 {booking.reference.teacher && (
                   <div>
                     <span className="text-muted-foreground">Teacher:</span>
-                    <p className="font-medium">{booking.reference.teacher.name}</p>
+                    <p className="font-medium">
+                      {booking.reference.teacher.name}
+                    </p>
                   </div>
                 )}
               </div>
@@ -205,7 +230,9 @@ export default function FooterDropdown({ booking }: FooterDropdownProps) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Created:</span>
                 <span className="font-medium">
-                  {booking.created_at ? new Date(booking.created_at).toLocaleDateString() : 'N/A'}
+                  {booking.created_at
+                    ? new Date(booking.created_at).toLocaleDateString()
+                    : "N/A"}
                 </span>
               </div>
               <div className="flex justify-between">

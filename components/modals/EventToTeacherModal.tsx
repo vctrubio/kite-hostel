@@ -9,6 +9,7 @@ import { LOCATION_ENUM_VALUES, EVENT_STATUS_ENUM_VALUES, type Location, type Eve
 import { HelmetIcon, HeadsetIcon } from '@/svgs';
 import { createEvent } from '@/actions/event-actions';
 import { addMinutesToTime, timeToMinutes } from '@/components/formatters/TimeZone';
+import { Duration } from '@/components/formatters/Duration';
 
 interface EventToTeacherModalProps {
   isOpen: boolean;
@@ -139,25 +140,17 @@ function EventModalSummary({ students, startTime, duration, location, date, rema
 
       {/* Event Details Card */}
       <div className="bg-white dark:bg-card rounded-xl p-4 shadow-sm border">
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-2 gap-2 text-center">
           <div>
-            <div className="text-2xl font-bold">{startTime}</div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</div>
+            <div className="text-lg font-semibold sm:text-xl">{startTime}</div>
+            <div className="text-xs text-muted-foreground">Ends at {addMinutesToTime(startTime, duration)}</div>
           </div>
           <div>
-            <div className="text-2xl font-bold">{formatDuration(duration)}</div>
+            <div className="text-lg font-semibold sm:text-xl">+<Duration minutes={duration} /></div>
             <div className="text-xs text-muted-foreground uppercase tracking-wide">Duration</div>
           </div>
-          <div>
-            <div className="text-2xl font-bold">{location}</div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Location</div>
-          </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-border/50">
-          <div className="text-center text-sm text-muted-foreground">
-            Ends at {addMinutesToTime(startTime, duration)}
-          </div>
-        </div>
+        
       </div>
     </div>
   );
@@ -349,7 +342,7 @@ export default function EventToTeacherModal({
       if (startTimeMinutes < 9 * 60) defaultStartTime = '09:00';
       else if (startTimeMinutes > 21 * 60) defaultStartTime = '21:00';
 
-      setFormData({ startTime: defaultStartTime, duration: defaultDuration, location: controller.location as Location, status: 'planned' as EventStatus, date: selectedDate });
+      setFormData({ startTime: defaultStartTime, duration: defaultDuration, location: controller.location as Location, status: 'planned' as EventStatus, date: date });
       setSelectedAlternative(null);
     }
   }, [isOpen, controller, lesson, teacherSchedule]);
