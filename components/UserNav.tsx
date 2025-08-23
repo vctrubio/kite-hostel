@@ -92,7 +92,7 @@ function UserNavRoutes() {
       color: "text-gray-500",
       hoverColor: "hover:text-gray-700 hover:bg-gray-100",
       hasQuickAction: true,
-      quickActionHref: "/(tables)/bookings/form",
+      quickActionHref: "/bookings/form",
       quickActionIcon: Plus,
     },
     {
@@ -314,7 +314,9 @@ export function UserNav() {
       <div className="hidden md:block p-2">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <Avatar className={`h-8 w-8 transition-all duration-300 ${loading ? 'ring-2 ring-border ring-offset-2 ring-offset-background' : ''}`}>
+            <Avatar
+              className={`h-8 w-8 transition-all duration-300 ${loading ? "ring-2 ring-border ring-offset-2 ring-offset-background" : ""}`}
+            >
               <AvatarImage
                 src={avatar_url || "/logo-tkh.png"}
                 alt={displayName}
@@ -323,14 +325,12 @@ export function UserNav() {
               <AvatarFallback />
             </Avatar>
             <div className="text-sm">
-              <div className="font-semibold min-h-[16px]">
-                {displayName}
-              </div>
+              <div className="font-semibold min-h-[16px]">{displayName}</div>
               <div className="text-xs text-muted-foreground min-h-[12px]">
                 {role}
               </div>
               <div className="text-xs text-muted-foreground min-h-[12px]">
-                {email ? `(${email})` : ''}
+                {email ? `(${email})` : ""}
               </div>
             </div>
           </div>
@@ -359,7 +359,9 @@ export function UserNav() {
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Avatar className={`h-10 w-10 transition-all duration-300 ${loading ? 'ring-2 ring-border ring-offset-2 ring-offset-background' : ''}`}>
+              <Avatar
+                className={`h-10 w-10 transition-all duration-300 ${loading ? "ring-2 ring-border ring-offset-2 ring-offset-background" : ""}`}
+              >
                 <AvatarImage
                   src={avatar_url || "/logo-tkh.png"}
                   alt={displayName}
@@ -368,9 +370,7 @@ export function UserNav() {
                 <AvatarFallback />
               </Avatar>
               <div className="flex-1">
-                <div className="font-semibold min-h-[18px]">
-                  {displayName}
-                </div>
+                <div className="font-semibold min-h-[18px]">{displayName}</div>
                 <div className="text-xs text-muted-foreground min-h-[14px]">
                   {role}
                 </div>

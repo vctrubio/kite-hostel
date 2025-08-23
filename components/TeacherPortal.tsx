@@ -7,11 +7,7 @@ import { FlagIcon } from "@/svgs/FlagIcon";
 import { KiteIcon } from "@/svgs/KiteIcon";
 import { PaymentIcon } from "@/svgs/PaymentIcon";
 import { SeparatorIcon } from "@/svgs";
-import {
-  TeacherPortal as TeacherPortalClass,
-  type EventWithDetails,
-  type LessonWithDetails,
-} from "@/backend/TeacherPortal";
+import { TeacherPortal as TeacherPortalClass } from "@/backend/TeacherPortal";
 import { type TeacherPortalData } from "@/actions/teacher-actions";
 import TeacherEventCard from "@/components/cards/TeacherEventCard";
 import TeacherLessonCard from "@/components/cards/TeacherLessonCard";
@@ -92,7 +88,6 @@ const DailyView = ({
 }) => {
   const [filterEnabled, setFilterEnabled] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>(() => {
-    // Get today's date in YYYY-MM-DD format
     const today = new Date();
     return today.toISOString().split("T")[0];
   });
@@ -210,8 +205,6 @@ const StatsView = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Lesson Statistics</h3>
-
       {lessonsWithDetails.length > 0 ? (
         <div className="space-y-4">
           {lessonsWithDetails.map((lessonDetail) => {

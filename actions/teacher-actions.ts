@@ -3,7 +3,7 @@
 import db from "@/drizzle";
 import { InferSelectModel } from "drizzle-orm";
 import { Teacher, Commission, Lesson, TeacherKite, Payment, Kite, user_wallet, Event, Student, BookingStudent, Booking, PackageStudent, KiteEvent } from "@/drizzle/migrations/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 
