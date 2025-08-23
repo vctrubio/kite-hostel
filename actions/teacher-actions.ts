@@ -275,3 +275,145 @@ export async function getTeacherPortalById(id: string): Promise<{ data: TeacherP
     return { data: null, error: errorMessage };
   }
 }
+
+interface TeacherPortalUpdateParams {
+  eventId: string;
+  teacherId: string;
+  selectedKiteIds: string[];
+  duration: number;
+  continueTomorrow: boolean;
+}
+
+interface CancelEventParams {
+  eventId: string;
+  teacherId: string;
+}
+
+export async function teacherportalupdate({
+  eventId,
+  teacherId,
+  selectedKiteIds,
+  duration,
+  continueTomorrow,
+}: TeacherPortalUpdateParams): Promise<{ success: boolean; error: string | null }> {
+  try {
+    // Get event details and lesson info
+    const event = await db.query.Event.findFirst({
+      where: eq(Event.id, eventId),
+      with: {
+        lesson: {
+          with: {
+            booking: {
+              with: {
+                package: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!event) {
+      return { success: false, error: "Event not found" };
+    }
+
+    // Verify kite capacity matches package requirements
+    if (selectedKiteIds.length !== event.lesson.booking.package.capacity_kites) {
+      return { 
+        success: false, 
+        error: `Must select exactly ${event.lesson.booking.package.capacity_kites} kites for this package` 
+      };
+    }
+
+    // Verify teacher owns all selected kites
+    const teacherKites = await db.query.TeacherKite.findMany({
+      where: eq(TeacherKite.teacher_id, teacherId),
+    });
+    
+    const teacherKiteIds = teacherKites.map(tk => tk.kite_id);
+    const invalidKites = selectedKiteIds.filter(kiteId => !teacherKiteIds.includes(kiteId));
+    
+    if (invalidKites.length > 0) {
+      return { 
+        success: false, 
+        error: "Some selected kites are not assigned to this teacher" 
+      };
+    }
+
+    // Start transaction-like operations
+    // 1. Update event status to completed and duration
+    await db.update(Event)
+      .set({ 
+        status: "completed",
+        duration: duration,
+      })
+      .where(eq(Event.id, eventId));
+
+    // 2. Clear existing kite assignments and add new ones
+    await db.delete(KiteEvent).where(eq(KiteEvent.event_id, eventId));
+    
+    const kiteEventInserts = selectedKiteIds.map(kiteId => ({
+      event_id: eventId,
+      kite_id: kiteId,
+    }));
+    
+    if (kiteEventInserts.length > 0) {
+      await db.insert(KiteEvent).values(kiteEventInserts);
+    }
+
+    // 3. If not continuing tomorrow, set lesson status to rest
+    if (!continueTomorrow) {
+      await db.update(Lesson)
+        .set({ status: "rest" })
+        .where(eq(Lesson.id, event.lesson_id));
+    }
+
+    // Revalidate relevant paths
+    revalidatePath(`/teacher/${teacherId}`);
+    revalidatePath("/whiteboard");
+    
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error updating teacher portal:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function cancelTeacherEvent({
+  eventId,
+  teacherId,
+}: CancelEventParams): Promise<{ success: boolean; error: string | null }> {
+  try {
+    // Get event details to verify it belongs to this teacher
+    const event = await db.query.Event.findFirst({
+      where: eq(Event.id, eventId),
+      with: {
+        lesson: true,
+      },
+    });
+
+    if (!event) {
+      return { success: false, error: "Event not found" };
+    }
+
+    if (event.lesson.teacher_id !== teacherId) {
+      return { success: false, error: "Unauthorized: Event doesn't belong to this teacher" };
+    }
+
+    // Update event status to cancelled
+    await db.update(Event)
+      .set({ status: "cancelled" })
+      .where(eq(Event.id, eventId));
+
+    // Revalidate relevant paths
+    revalidatePath(`/teacher/${teacherId}`);
+    revalidatePath("/whiteboard");
+    
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error cancelling event:", error);
+    return { success: false, error: errorMessage };
+  }
+}

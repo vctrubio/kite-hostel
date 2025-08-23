@@ -59,10 +59,12 @@ export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null
       ) || []
     );
     
-    // Remove duplicate kites by ID
-    const uniqueKites = kites.filter((kite, index, self) => 
-      index === self.findIndex(k => k.id === kite.id)
-    );
+    // Remove duplicate kites by ID (filter out undefined/null kites first)
+    const uniqueKites = kites
+      .filter(kite => kite && kite.id) // Remove undefined/null kites
+      .filter((kite, index, self) => 
+        index === self.findIndex(k => k && k.id === kite.id)
+      );
     
     // Extract lessons from all bookings
     const lessons = rawBookings.flatMap(booking => 

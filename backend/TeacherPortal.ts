@@ -114,6 +114,14 @@ export class TeacherPortal {
     });
   }
 
+  getTBCEventsCount(): number {
+    return this.getAllEvents().filter(eventDetail => eventDetail.event.status === 'tbc').length;
+  }
+
+  getTBCEvents(): EventWithDetails[] {
+    return this.getAllEvents().filter(eventDetail => eventDetail.event.status === 'tbc');
+  }
+
   getLessonsWithDetails(): LessonWithDetails[] {
     return this.teacher.lessons.map(lesson => {
       const completedEvents = lesson.events.filter(event => event.status === 'completed');

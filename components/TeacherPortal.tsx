@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Eye, EyeOff, Share } from "lucide-react";
+import { Eye, EyeOff, Share, AlertTriangle } from "lucide-react";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import { KiteIcon } from "@/svgs/KiteIcon";
@@ -181,6 +181,8 @@ const DailyView = ({
             <TeacherEventCard
               key={eventDetail.event.id}
               eventDetail={eventDetail}
+              teacherId={teacherPortal.getTeacher().id}
+              teacherKites={teacherPortal.getTeacher().kites}
             />
           ))}
         </div>
@@ -235,6 +237,7 @@ export default function TeacherPortal({ teacherData }: TeacherPortalProps) {
     [teacherData],
   );
   const stats = teacherPortal.getStats();
+  const tbcCount = teacherPortal.getTBCEventsCount();
 
   return (
     <div className="space-y-6">
@@ -245,6 +248,20 @@ export default function TeacherPortal({ teacherData }: TeacherPortalProps) {
         totalDuration={stats.totalDuration}
         totalEarnings={stats.totalEarnings}
       />
+      
+      {/* TBC Events Notification */}
+      {tbcCount > 0 && (
+        <Card className="border-purple-200 bg-purple-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-purple-800">
+                You have {tbcCount} event{tbcCount > 1 ? 's' : ''} marked as TBC that need{tbcCount === 1 ? 's' : ''} completion
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex gap-2 border-b border-border">
         <button
