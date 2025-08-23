@@ -309,6 +309,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                     selectedDate={selectedDate}
                     teacherSchedules={filteredData.teacherSchedules}
                     controller={controller}
+                    teachers={data.teachers}
                   />
                 )}
 

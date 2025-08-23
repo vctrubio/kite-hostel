@@ -31,6 +31,7 @@ interface BookingCardProps {
   teacherSchedules?: Map<string, TeacherSchedule>;
   selectedDate: string;
   controller?: EventController;
+  teachers?: any[];
 }
 
 // Sub-component: Booking Header
@@ -294,6 +295,7 @@ export default function BookingCard({
   teacherSchedules,
   selectedDate,
   controller,
+  teachers,
 }: BookingCardProps) {
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -404,11 +406,16 @@ export default function BookingCard({
         </div>
       )}
 
-      {showLessonModal && (
+      {showLessonModal && teachers && (
         <BookingToLessonModal
           bookingId={booking.id}
           bookingReference={booking.reference}
           onClose={() => setShowLessonModal(false)}
+          teachers={teachers}
+          onCommissionCreated={() => {
+            // Refresh the page to update data after commission is created
+            router.refresh();
+          }}
         />
       )}
 

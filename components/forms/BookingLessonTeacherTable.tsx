@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
+import React from "react";
 import { CommissionForm } from "@/components/forms/CommissionForm";
 
 interface Teacher {
@@ -31,39 +30,7 @@ export function BookingLessonTeacherTable({
   onSelectCommission,
   onCommissionCreated,
 }: BookingLessonTeacherTableProps) {
-  const [newCommissionRate, setNewCommissionRate] = useState<string>("");
-  const [newCommissionDesc, setNewCommissionDesc] = useState<string>("");
-  const [showNewCommissionForm, setShowNewCommissionForm] = useState(false);
-
   const selectedTeacher = teachers.find((t) => t.id === selectedTeacherId);
-
-  const handleCreateNewCommission = async () => {
-    if (!selectedTeacherId) {
-      toast.error("Please select a teacher first.");
-      return;
-    }
-    const rate = parseInt(newCommissionRate);
-    if (isNaN(rate) || rate < 1 || rate >= 100) {
-      toast.error("Commission rate must be a whole number between 1 and 99.");
-      return;
-    }
-
-    const result = await createCommission({
-      teacher_id: selectedTeacherId,
-      rate: rate,
-      description: newCommissionDesc || null,
-    });
-
-    if (result.success) {
-      toast.success("New commission created successfully!");
-      onSelectCommission(result.commissionId || null); // Select the newly created commission
-      setNewCommissionRate("");
-      setNewCommissionDesc("");
-      setShowNewCommissionForm(false);
-    } else {
-      toast.error(result.error || "Failed to create new commission.");
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -73,16 +40,10 @@ export function BookingLessonTeacherTable({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
               </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Languages
               </th>
             </tr>
@@ -96,15 +57,14 @@ export function BookingLessonTeacherTable({
                   onSelectTeacher(
                     selectedTeacherId === teacher.id ? null : teacher.id,
                   );
-                  onSelectCommission(null); // Clear commission when teacher changes
-                  setShowNewCommissionForm(false);
+                  onSelectCommission(null);
                 }}
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {teacher.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {teacher.languages.join(", ")}
+                  {teacher.languages?.join(", ") || "N/A"}
                 </td>
               </tr>
             ))}
@@ -112,7 +72,7 @@ export function BookingLessonTeacherTable({
         </table>
       </div>
 
-      {/* Commission Selection / Creation */}
+      {/* Commission Selection */}
       {selectedTeacher && (
         <div className="space-y-3">
           <h3 className="text-md font-semibold mb-2">
@@ -121,14 +81,20 @@ export function BookingLessonTeacherTable({
           {selectedTeacher.commissions.length > 0 ? (
             <div className="grid grid-cols-1 gap-2">
               {selectedTeacher.commissions.map((commission) => (
-                <Button
+                <button
                   key={commission.id}
-                  variant="outline"
                   onClick={() => onSelectCommission(commission.id)}
-                  className={`justify-start ${selectedCommissionId === commission.id ? 'border-green-500' : ''}`}
+                  className={`justify-start text-left p-3 border rounded-md hover:bg-gray-50 transition-colors ${
+                    selectedCommissionId === commission.id 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-gray-200'
+                  }`}
                 >
-                  €{commission.price_per_hour.toFixed(0)}/h {commission.desc && `- ${commission.desc}`}
-                </Button>
+                  <div className="font-medium">€{commission.price_per_hour}/h</div>
+                  {commission.desc && (
+                    <div className="text-sm text-gray-500 mt-1">{commission.desc}</div>
+                  )}
+                </button>
               ))}
             </div>
           ) : (
@@ -136,7 +102,12 @@ export function BookingLessonTeacherTable({
               No commissions available for this teacher.
             </p>
           )}
+        </div>
+      )}
 
+      {/* Commission Creation Form */}
+      {selectedTeacher && (
+        <div className="border-t pt-4">
           <CommissionForm
             teacherId={selectedTeacher.id}
             onCommissionCreated={(commissionId) => {

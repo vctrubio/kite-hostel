@@ -1,6 +1,7 @@
 "use server";
 
 import { getBookings } from "./booking-actions";
+import { getTeachers } from "./teacher-actions";
 import { WhiteboardClass, createBookingClasses } from "@/backend/WhiteboardClass";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { type BookingData } from "@/backend/types";
@@ -11,6 +12,7 @@ export interface WhiteboardData {
   lessons: any[];
   events: any[];
   kites: any[];
+  teachers: any[]; // Added for BookingToLessonModal
   status: {
     totalBookings: number;
     totalLessons: number;
@@ -26,12 +28,16 @@ export interface WhiteboardData {
  */
 export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null; error: string | null }> {
   try {
-    // Get all bookings with full relations
+    // Get all bookings with full relations and teachers
     const bookingsResult = await getBookings();
+    const teachersResult = await getTeachers();
 
     // Check for errors
     if (bookingsResult.error) {
       return { data: null, error: `Bookings error: ${bookingsResult.error}` };
+    }
+    if (teachersResult.error) {
+      return { data: null, error: `Teachers error: ${teachersResult.error}` };
     }
 
     const rawBookings = (bookingsResult.data || []).sort((a, b) => {
@@ -104,6 +110,7 @@ export async function getWhiteboardData(): Promise<{ data: WhiteboardData | null
       lessons,
       events,
       kites: uniqueKites,
+      teachers: teachersResult.data || [],
       status: {
         totalBookings: rawBookings.length,
         totalLessons: lessons.length,

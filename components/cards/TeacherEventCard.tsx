@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { Duration } from "@/components/formatters/Duration";
 import { DateTime } from "@/components/formatters/DateTime";
+import { extractDateFromUTC } from "@/components/formatters/TimeZone";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
-import { Clock, MapPin, ChevronDown, ChevronUp, Euro, Phone, Send, Settings, X, Plus, Minus, Loader, ArrowRight, Calendar, CalendarX, Check } from "lucide-react";
+import { Clock, MapPin, Euro, Phone, Send, Settings, X, Plus, Minus, Loader, Check, CheckCircle } from "lucide-react";
 import { type EventWithDetails } from "@/backend/TeacherPortal";
 import { teacherportalupdate, cancelTeacherEvent } from "@/actions/teacher-actions";
 
@@ -28,6 +29,23 @@ const STATUS_COLORS = {
   completed: "bg-green-500",
   cancelled: "bg-orange-500",
 } as const;
+
+// DRY function to calculate booking date logic
+const calculateBookingDays = (selectedDate: string, bookingEndDate: string) => {
+  const currentDateStr = extractDateFromUTC(selectedDate);
+  const endDateStr = extractDateFromUTC(bookingEndDate);
+  
+  const currentDate = new Date(currentDateStr);
+  const endDate = new Date(endDateStr);
+  
+  const timeDiff = endDate.getTime() - currentDate.getTime();
+  const daysRemaining = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+  
+  return {
+    daysRemaining,
+    isLastDay: daysRemaining <= 0
+  };
+};
 
 const StudentsDisplay = ({ 
   students, 
@@ -126,7 +144,7 @@ const StudentDropdown = ({
       <div className="flex justify-between items-start mb-2">
         <h4 className="font-medium text-sm">{student.student.name}</h4>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          <ChevronUp className="w-4 h-4" />
+          <X className="w-4 h-4" />
         </button>
       </div>
       <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
@@ -181,12 +199,11 @@ const EventControlsDropdown = ({
   const [error, setError] = useState<string | null>(null);
   
   const requiredKites = eventDetail.packageInfo.capacity_kites;
+  const originalDuration = eventDetail.event.duration;
+  const durationDifference = duration - originalDuration;
   
-  // Calculate days until booking ends
-  const bookingEndDate = new Date(eventDetail.lesson.booking.date_end);
-  const eventDate = new Date(eventDetail.event.date);
-  const daysUntilEnd = Math.ceil((bookingEndDate.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
-  const isLastDay = daysUntilEnd <= 1;
+  // Use DRY function for consistent date calculation
+  const { isLastDay } = calculateBookingDays(eventDetail.event.date, eventDetail.lesson.booking.date_end);
   
   useEffect(() => {
     if (isLastDay) {
@@ -242,6 +259,10 @@ const EventControlsDropdown = ({
   };
 
   const handleCancel = async () => {
+    if (!confirm("Are you sure you want to cancel this event?")) {
+      return;
+    }
+    
     setIsSubmitting(true);
     setError(null);
     
@@ -264,131 +285,127 @@ const EventControlsDropdown = ({
   };
 
   return (
-    <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200">
-      <div className="flex justify-between items-start mb-4">
-        <h4 className="font-medium text-sm text-slate-800 dark:text-slate-200">Confirm Class</h4>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+    <div className="mt-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <h4 className="font-medium text-gray-900 dark:text-gray-100">Confirm Class</h4>
+        <button 
+          onClick={onClose} 
+          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Kite Selection */}
-      <div className="space-y-3 mb-4">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Select Kites ({selectedKiteIds.length}/{requiredKites})</label>
-          {selectedKiteIds.length === requiredKites && (
-            <span className="text-xs text-emerald-600 font-medium">✓ Complete</span>
-          )}
+      {/* Content */}
+      <div className="p-4 space-y-4">
+        
+        {/* Kite Selection */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-900 dark:text-gray-100">Select Kites ({selectedKiteIds.length}/{requiredKites})</label>
+          <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+            {teacherKites.map((teacherKite) => (
+              <button
+                key={teacherKite.kite.id}
+                onClick={() => handleKiteToggle(teacherKite.kite.id)}
+                disabled={!selectedKiteIds.includes(teacherKite.kite.id) && selectedKiteIds.length >= requiredKites}
+                className={`p-2 text-xs rounded border text-left ${
+                  selectedKiteIds.includes(teacherKite.kite.id)
+                    ? 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-200' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600'
+                }`}
+              >
+                <div className="font-medium text-gray-900 dark:text-gray-100">{teacherKite.kite.model}</div>
+                <div className="text-gray-500 dark:text-gray-400">{teacherKite.kite.size}m • {teacherKite.kite.serial_id}</div>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-          {teacherKites.map((teacherKite) => (
+
+        {/* Duration Adjustment */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-900 dark:text-gray-100">Duration</label>
+          <div className="flex items-center gap-2">
             <button
-              key={teacherKite.kite.id}
-              onClick={() => handleKiteToggle(teacherKite.kite.id)}
-              disabled={!selectedKiteIds.includes(teacherKite.kite.id) && selectedKiteIds.length >= requiredKites}
-              className={`p-2 text-xs rounded border text-left transition-colors ${
-                selectedKiteIds.includes(teacherKite.kite.id)
-                  ? 'bg-blue-50 border-blue-200 text-blue-800 shadow-sm'
-                  : 'bg-white border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed'
-              }`}
+              onClick={() => adjustDuration(-30)}
+              className="p-1 border border-gray-300 rounded hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
             >
-              <div className="font-medium">{teacherKite.kite.model}</div>
-              <div className="text-slate-500">{teacherKite.kite.size}m • {teacherKite.kite.serial_id}</div>
+              <Minus className="w-3 h-3 text-gray-600 dark:text-gray-400" />
             </button>
-          ))}
+            <div className="px-3 py-1 bg-white border border-gray-300 rounded min-w-20 text-center text-sm font-medium dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+              <Duration minutes={duration} />
+            </div>
+            <button
+              onClick={() => adjustDuration(30)}
+              className="p-1 border border-gray-300 rounded hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+            >
+              <Plus className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+            </button>
+            {durationDifference !== 0 && (
+              <div className={`text-xs px-2 py-1 rounded ${
+                durationDifference > 0 
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' 
+                  : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+              }`}>
+                {durationDifference > 0 ? '+' : ''}<Duration minutes={Math.abs(durationDifference)} />
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+            {error}
+          </div>
+        )}
       </div>
 
-      {/* Duration Adjustment */}
-      <div className="space-y-2 mb-4">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Duration</label>
+      {/* Footer Actions */}
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => adjustDuration(-30)}
-            className="p-1 border border-slate-200 rounded hover:bg-slate-50 transition-colors"
-          >
-            <Minus className="w-3 h-3 text-slate-600" />
-          </button>
-          <div className="px-3 py-1 bg-white border border-slate-200 rounded min-w-20 text-center text-sm font-medium">
-            <Duration minutes={duration} />
-          </div>
-          <button
-            onClick={() => adjustDuration(30)}
-            className="p-1 border border-slate-200 rounded hover:bg-slate-50 transition-colors"
-          >
-            <Plus className="w-3 h-3 text-slate-600" />
-          </button>
-        </div>
-      </div>
-
-      {!isLastDay && !continueTomorrow && (
-        <div className="mb-4 p-2 bg-amber-50 border border-amber-200 rounded">
-          <p className="text-xs text-amber-800">Class will be set to "rest" status - {daysUntilEnd} days left</p>
-        </div>
-      )}
-
-      {isLastDay && (
-        <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-xs text-blue-800">Final day of booking - class will complete</p>
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-4 p-2 bg-rose-50 border border-rose-200 rounded">
-          <p className="text-xs text-rose-600">{error}</p>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex gap-2">
-        <button
-          onClick={handleCancel}
-          disabled={isSubmitting}
-          className="px-4 py-2 bg-slate-600 text-white text-sm rounded-md hover:bg-slate-700 disabled:opacity-50 font-medium transition-colors"
-        >
-          Cancel
-        </button>
-        
-        {!isLastDay && (
-          <button
-            onClick={() => setContinueTomorrow(!continueTomorrow)}
+            onClick={handleCancel}
             disabled={isSubmitting}
-            className={`px-3 py-2 text-sm rounded-md font-medium transition-colors border ${
-              continueTomorrow 
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' 
-                : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
-            }`}
-            title={continueTomorrow ? 'Continue tomorrow (click to rest)' : 'Set to rest (click to continue)'}
+            className="px-3 py-2 text-sm text-red-600 hover:text-red-800 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
           >
-            {continueTomorrow ? <Calendar className="w-4 h-4" /> : <CalendarX className="w-4 h-4" />}
+            Cancel Lesson
           </button>
-        )}
-        
-        {isLastDay && (
-          <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
-            <Check className="w-4 h-4 text-blue-600" />
-          </div>
-        )}
-        
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || selectedKiteIds.length !== requiredKites}
-          className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm rounded-md hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex-1 font-medium transition-all shadow-sm"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader className="w-4 h-4 animate-spin" />
-              Confirming...
-            </>
-          ) : (
-            <>
-              <Check className="w-4 h-4" />
-              Confirm Class
-              <ArrowRight className="w-3 h-3 ml-auto" />
-            </>
+          
+          {!isLastDay && (
+            <button
+              onClick={() => setContinueTomorrow(!continueTomorrow)}
+              disabled={isSubmitting}
+              className={`flex items-center gap-1 px-3 py-2 text-sm rounded ${
+                continueTomorrow 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
+                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'
+              }`}
+            >
+              <CheckCircle className="w-4 h-4" />
+              Student will {continueTomorrow ? 'Continue' : 'Rest'}
+            </button>
           )}
-        </button>
+          
+          {isLastDay && (
+            <div className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-800 rounded text-sm dark:bg-blue-900/20 dark:text-blue-400">
+              <Check className="w-4 h-4" />
+              Last day of booking
+            </div>
+          )}
+          
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || selectedKiteIds.length !== requiredKites}
+            className="ml-auto p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600"
+          >
+            {isSubmitting ? (
+              <Loader className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

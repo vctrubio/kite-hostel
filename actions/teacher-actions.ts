@@ -361,12 +361,24 @@ export async function teacherportalupdate({
       await db.insert(KiteEvent).values(kiteEventInserts);
     }
 
-    // 3. If not continuing tomorrow, set lesson status to rest
-    if (!continueTomorrow) {
+    // 3. Update lesson status based on booking end date and continue tomorrow choice
+    const bookingEndDate = new Date(event.lesson.booking.date_end);
+    const eventDate = new Date(event.date);
+    const daysUntilEnd = Math.ceil((bookingEndDate.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
+    const isLastDay = daysUntilEnd <= 1;
+
+    if (isLastDay) {
+      // Final day of booking - complete the lesson
+      await db.update(Lesson)
+        .set({ status: "completed" })
+        .where(eq(Lesson.id, event.lesson_id));
+    } else if (!continueTomorrow) {
+      // Not final day but user chose not to continue - set to rest
       await db.update(Lesson)
         .set({ status: "rest" })
         .where(eq(Lesson.id, event.lesson_id));
     }
+    // If continuing tomorrow and not final day, keep lesson status unchanged (planned)
 
     // Revalidate relevant paths
     revalidatePath(`/teacher/${teacherId}`);

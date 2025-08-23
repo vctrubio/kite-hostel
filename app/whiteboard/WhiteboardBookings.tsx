@@ -16,6 +16,7 @@ interface WhiteboardBookingsProps {
   teacherSchedules: Map<string, TeacherSchedule>;
   selectedDate: string;
   controller?: EventController;
+  teachers: any[];
 }
 
 export default function WhiteboardBookings({
@@ -24,6 +25,7 @@ export default function WhiteboardBookings({
   teacherSchedules,
   selectedDate,
   controller,
+  teachers,
 }: WhiteboardBookingsProps) {
 
   // Get bookings ready for completion using business logic
@@ -65,6 +67,7 @@ export default function WhiteboardBookings({
                 teacherSchedules={teacherSchedules}
                 selectedDate={selectedDate}
                 controller={controller}
+                teachers={teachers}
               />
             );
           })}
