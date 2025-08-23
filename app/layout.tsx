@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: "Kite Hostel",
   description: "Tarifa Kite Hostel Management App",
+  icons: "/logo-tkh.png",
 };
 
 export default async function RootLayout({

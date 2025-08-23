@@ -2,7 +2,7 @@
 
 import db from "@/drizzle";
 import { InferSelectModel } from "drizzle-orm";
-import { Teacher, Commission, Lesson, TeacherKite, Payment, Kite, user_wallet } from "@/drizzle/migrations/schema";
+import { Teacher, Commission, Lesson, TeacherKite, Payment, Kite, user_wallet, Event, Student, BookingStudent, Booking, PackageStudent, KiteEvent } from "@/drizzle/migrations/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -61,6 +61,32 @@ export type TeacherWithRelations = InferSelectModel<typeof Teacher> & {
   kites: (InferSelectModel<typeof TeacherKite> & { kite: InferSelectModel<typeof Kite> })[];
   payments: InferSelectModel<typeof Payment>[];
   lessons: (InferSelectModel<typeof Lesson> & { events: InferSelectModel<typeof Event>[] })[];
+  user_wallet?: {
+    id: string;
+    role: string;
+    sk: string | null;
+    pk: string | null;
+    note: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    sk_email: string | null;
+    sk_full_name: string | null;
+  } | null;
+};
+
+export type TeacherPortalData = InferSelectModel<typeof Teacher> & {
+  commissions: InferSelectModel<typeof Commission>[];
+  kites: (InferSelectModel<typeof TeacherKite> & { kite: InferSelectModel<typeof Kite> })[];
+  payments: InferSelectModel<typeof Payment>[];
+  lessons: (InferSelectModel<typeof Lesson> & { 
+    events: (InferSelectModel<typeof Event> & {
+      kites: (InferSelectModel<typeof KiteEvent> & { kite: InferSelectModel<typeof Kite> })[];
+    })[];
+    booking: InferSelectModel<typeof Booking> & {
+      package: InferSelectModel<typeof PackageStudent>;
+      students: (InferSelectModel<typeof BookingStudent> & { student: InferSelectModel<typeof Student> })[];
+    };
+  })[];
   user_wallet?: {
     id: string;
     role: string;
@@ -165,6 +191,87 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error(`Error fetching teacher with ID ${id} with Drizzle:`, error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    return { data: null, error: errorMessage };
+  }
+}
+
+export async function getTeacherPortalById(id: string): Promise<{ data: TeacherPortalData | null; error: string | null }> {
+  try {
+    const teacher = await db.query.Teacher.findFirst({
+      where: eq(Teacher.id, id),
+      with: {
+        commissions: true,
+        kites: {
+          with: {
+            kite: true,
+          },
+        },
+        payments: true,
+        lessons: {
+          with: {
+            events: {
+              with: {
+                kites: {
+                  with: {
+                    kite: true,
+                  },
+                },
+              },
+            },
+            booking: {
+              with: {
+                package: true,
+                students: {
+                  with: {
+                    student: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!teacher) {
+      return { data: null, error: "Teacher not found." };
+    }
+
+    let sk_email = null;
+    let sk_full_name = null;
+    let userWalletData = null;
+
+    const associatedUserWallet = await db.query.user_wallet.findFirst({
+      where: eq(user_wallet.pk, teacher.id),
+    });
+
+    if (associatedUserWallet) {
+      userWalletData = associatedUserWallet;
+      if (userWalletData.sk) {
+        const supabaseAdmin = createAdminClient();
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userWalletData.sk);
+
+        if (authError) {
+          console.error("Error fetching auth user by ID for teacher wallet:", authError);
+        } else if (authUser.user) {
+          sk_email = authUser.user.email || null;
+          sk_full_name = authUser.user.user_metadata?.full_name || null;
+        }
+      }
+    }
+
+    const teacherPortalData: TeacherPortalData = {
+      ...teacher,
+      user_wallet: userWalletData ? { 
+        ...userWalletData, 
+        sk_email, 
+        sk_full_name,
+      } : null,
+    };
+    return { data: teacherPortalData, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(`Error fetching teacher portal data with ID ${id}:`, error);
     return { data: null, error: errorMessage };
   }
 }
