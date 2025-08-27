@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import ControllerSettings from "@/components/whiteboard-usage/ControllerSettings";
 import { useRouter } from "next/navigation";

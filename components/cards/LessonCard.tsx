@@ -152,15 +152,13 @@ export default function LessonCard({
 
   return (
     <div
-      className={`flex items-center justify-between p-3 bg-muted dark:bg-gray-700 rounded-lg transition-all duration-200 ${getBorderColor()} ${
-        lesson.status === "planned" && !lessonHasEvent
-          ? `cursor-pointer ${
-              isInQueue
-                ? "hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-600"
-                : "hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-600"
-            }`
-          : ""
-      } ${isInQueue ? "bg-gray-100 dark:bg-gray-600" : ""}`}
+      className={`flex items-center justify-between p-3 bg-muted dark:bg-gray-700 rounded-lg transition-all duration-200 ${getBorderColor()} ${lesson.status === "planned" && !lessonHasEvent
+        ? `cursor-pointer ${isInQueue
+          ? "hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-600"
+          : "hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-600"
+        }`
+        : ""
+        } ${isInQueue ? "bg-gray-100 dark:bg-gray-600" : ""}`}
       onClick={() => {
         // Only allow queue interaction if lesson is planned and has no event for selected date
         if (lesson.status === "planned" && !lessonHasEvent) {

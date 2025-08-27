@@ -1,12 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
 import { SingleDatePicker } from "@/components/pickers/single-date-picker";
 import { BookingIcon, HeadsetIcon, KiteIcon } from "@/svgs";
 import type { BookingStatusFilter } from "@/lib/constants";
-import BookingStatusFilter from "../../components/whiteboard-usage/BookingStatusFilter";
-import WhiteboardActions from "../../components/whiteboard-usage/WhiteboardActions";
 import type { WhiteboardActionHandler } from "@/backend/types";
+import BookingStatusFilter from "@/components/whiteboard-usage/BookingStatusFilter";
+import WhiteboardActions from "@/components/whiteboard-usage/WhiteboardActions";
 
 interface WhiteboardMiniNavProps {
   activeSection: string;
@@ -28,21 +27,21 @@ const NAV_ITEMS = [
     name: "Bookings",
     icon: BookingIcon,
     color: "text-blue-500",
-    bgColor: "bg-blue-500",
+    borderColor: "border-blue-500",
   },
   {
     id: "lessons",
     name: "Lessons",
     icon: HeadsetIcon,
     color: "text-green-500",
-    bgColor: "bg-green-500",
+    borderColor: "border-green-500",
   },
   {
     id: "events",
     name: "Events",
     icon: KiteIcon,
     color: "text-teal-500",
-    bgColor: "bg-teal-500",
+    borderColor: "border-teal-500",
   },
 ];
 
@@ -95,21 +94,9 @@ export default function WhiteboardMiniNav({
                 onClick={() => onSectionClick(item.id)}
                 className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 border-2 ${
                   isActive
-                    ? "bg-white shadow-lg"
+                    ? `bg-white shadow-lg ${item.borderColor}`
                     : "border-transparent hover:bg-white/50"
                 }`}
-                style={
-                  isActive
-                    ? {
-                        borderColor:
-                          item.color === "text-blue-500"
-                            ? "#3b82f6"
-                            : item.color === "text-green-500"
-                              ? "#22c55e"
-                              : "#14b8a6",
-                      }
-                    : {}
-                }
               >
                 <Icon className={`w-5 h-5 ${item.color}`} />
                 <span className="text-xs font-medium text-gray-700">

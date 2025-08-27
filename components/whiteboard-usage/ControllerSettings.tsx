@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Settings, ChevronDown, ChevronUp, Timer, MapPin, Flag } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { ChevronDown, ChevronUp, Timer, MapPin } from 'lucide-react';
 import { addMinutesToTime } from '@/components/formatters/TimeZone';
 import { FlagIcon } from '@/svgs/FlagIcon';
 import { formatHours } from '@/components/formatters/Duration';
