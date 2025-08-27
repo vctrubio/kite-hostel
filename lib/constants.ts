@@ -20,7 +20,7 @@ import {
   AdminIcon,
   EquipmentIcon,
 } from "@/svgs";
-import { UserCheck } from "lucide-react";
+import { UserCheck, Circle, Play, CheckCircle, XCircle } from "lucide-react";
 
 export const LESSON_STATUS_ENUM_VALUES = lessonStatusEnum.enumValues;
 export type LessonStatus = (typeof LESSON_STATUS_ENUM_VALUES)[number];
@@ -88,24 +88,28 @@ export const BOOKING_STATUS_FILTERS = [
   {
     value: "all" as const,
     label: "All",
+    icon: Circle,
     color:
       "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700",
   },
   {
     value: "active" as const,
     label: "Active",
+    icon: Play,
     color:
       "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50",
   },
   {
     value: "completed" as const,
-    label: "Completed",
+    label: "Done",
+    icon: CheckCircle,
     color:
       "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50",
   },
   {
     value: "cancelled" as const,
-    label: "Cancelled",
+    label: "Cancel",
+    icon: XCircle,
     color:
       "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50",
   },

@@ -1,14 +1,15 @@
 "use client";
 
+import { useMemo } from "react";
 import { SingleDatePicker } from "@/components/pickers/single-date-picker";
 import {
   BookingIcon,
   HeadsetIcon,
   KiteIcon,
 } from "@/svgs";
-import { type BookingStatusFilter } from "@/lib/constants";
-import BookingStatusFilter from "./components/BookingStatusFilter";
-import WhiteboardActions from "./components/WhiteboardActions";
+import type { BookingStatusFilter } from "@/lib/constants";
+import BookingStatusFilter from "../../components/whiteboard-usage/BookingStatusFilter";
+import WhiteboardActions from "../../components/whiteboard-usage/WhiteboardActions";
 import type { WhiteboardActionHandler } from "@/backend/types";
 
 interface WhiteboardMiniNavProps {
@@ -22,6 +23,7 @@ interface WhiteboardMiniNavProps {
   bookingFilter: BookingStatusFilter;
   onBookingFilterChange: (filter: BookingStatusFilter) => void;
   onActionClick: WhiteboardActionHandler;
+  children?: React.ReactNode;
 }
 
 const NAV_ITEMS = [
@@ -59,6 +61,7 @@ export default function WhiteboardMiniNav({
   bookingFilter,
   onBookingFilterChange,
   onActionClick,
+  children,
 }: WhiteboardMiniNavProps) {
   const getCount = (id: string) => {
     switch (id) {
@@ -129,6 +132,13 @@ export default function WhiteboardMiniNav({
         activeFilter={bookingFilter}
         onFilterChange={onBookingFilterChange}
       />
+
+      {/* Global Stats (if provided) */}
+      {children && (
+        <div className="p-3 border-t border-border">
+          {children}
+        </div>
+      )}
 
       {/* Actions */}
       <WhiteboardActions onActionClick={onActionClick} />

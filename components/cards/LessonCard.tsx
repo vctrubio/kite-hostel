@@ -2,10 +2,57 @@
 
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { HelmetIcon } from "@/svgs";
+import { FlagIcon } from "@/svgs/FlagIcon";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
 import { FileText } from "lucide-react";
 import { extractStudents, WhiteboardClass } from "@/backend/WhiteboardClass";
+import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
+
+// Sub-component: Event Details
+function EventDetails({ eventForSelectedDate }: { eventForSelectedDate: any }) {
+  if (!eventForSelectedDate) return null;
+
+  return (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <FlagIcon className="w-4 h-4" />
+      <span>{eventForSelectedDate.startTime}</span>
+      <span className="px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700 rounded-full border border-slate-200">
+        +<Duration minutes={eventForSelectedDate.duration} />
+      </span>
+    </div>
+  );
+}
+
+// Sub-component: Status Display
+function StatusDisplay({
+  isInQueue,
+  lesson,
+  lessonHasEvent,
+}: {
+  isInQueue: boolean;
+  lesson: any;
+  lessonHasEvent: boolean;
+}) {
+  if (isInQueue) {
+    return (
+      <div className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-full border border-gray-300 dark:border-gray-500">
+        IN QUEUE
+      </div>
+    );
+  }
+
+  return (
+    <div onClick={(e) => e.stopPropagation()}>
+      <LessonStatusLabel
+        lessonId={lesson.id}
+        currentStatus={lesson.status}
+        lessonEvents={lesson.events || []}
+        hasEventToday={lessonHasEvent}
+      />
+    </div>
+  );
+}
 
 interface LessonCardProps {
   lesson: any;
@@ -27,8 +74,6 @@ export default function LessonCard({
   // Create WhiteboardClass instance for booking calculations
   const bookingClass = new WhiteboardClass(lesson.booking);
   const students = extractStudents(lesson.booking);
-  const totalMinutes = bookingClass.getTotalMinutes();
-  const usedMinutes = bookingClass.getUsedMinutes();
 
   // Check for events on the selected date using TeacherSchedule
   let eventForSelectedDate = null;
@@ -54,22 +99,6 @@ export default function LessonCard({
     });
   }
 
-  // Calculate minutes for selected date's events
-  const selectedDateEventMinutes =
-    lesson.events?.reduce((total: number, event: any) => {
-      return total + (event.duration || 0);
-    }, 0) || 0;
-
-  // Calculate remaining minutes using business logic
-  const remainingMinutes =
-    bookingClass.getRemainingMinutes() - selectedDateEventMinutes;
-
-  // Get teacher availability if schedule is provided
-  const teacherAvailability = teacherSchedule
-    ? teacherSchedule.getAvailableSlots(remainingMinutes)
-    : [];
-
-  // Check if booking needs attention
   const bookingIssues = bookingClass.needsAttention();
 
   // Check if lesson is in the queue
@@ -123,13 +152,15 @@ export default function LessonCard({
 
   return (
     <div
-      className={`flex items-center justify-between p-3 bg-muted dark:bg-gray-700 rounded-lg transition-all duration-200 ${getBorderColor()} ${lesson.status === "planned" && !lessonHasEvent
-        ? `cursor-pointer ${isInQueue
-          ? "hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-600"
-          : "hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-600"
-        }`
-        : ""
-        } ${isInQueue ? "bg-gray-100 dark:bg-gray-600" : ""}`}
+      className={`flex items-center justify-between p-3 bg-muted dark:bg-gray-700 rounded-lg transition-all duration-200 ${getBorderColor()} ${
+        lesson.status === "planned" && !lessonHasEvent
+          ? `cursor-pointer ${
+              isInQueue
+                ? "hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-600"
+                : "hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-600"
+            }`
+          : ""
+      } ${isInQueue ? "bg-gray-100 dark:bg-gray-600" : ""}`}
       onClick={() => {
         // Only allow queue interaction if lesson is planned and has no event for selected date
         if (lesson.status === "planned" && !lessonHasEvent) {
@@ -172,43 +203,31 @@ export default function LessonCard({
               </span>
             ))}
           </div>
+          <EventDetails eventForSelectedDate={eventForSelectedDate} />
 
-          {/* Progress indicator */}
-          <div className="text-xs text-muted-foreground">
-            {bookingClass.getCompletionPercentage().toFixed(0)}% complete
-            {bookingIssues.hasIssues && (
-              <span className="ml-2 text-orange-600">⚠️ {bookingIssues.message}</span>
-            )}
-          </div>
+          {/* Issues display if any */}
+          {bookingIssues.hasIssues && (
+            <div className="text-xs text-orange-600">
+              ⚠️ {bookingIssues.issues.join(", ")}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Right side: Status, Duration, Availability, and Actions */}
+      {/* Right side: Status, Progress, and Actions */}
       <div className="flex items-center gap-3">
-        {/* Status and Duration Info */}
-        <div className="text-right">
-          {isInQueue ? (
-            <div className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-full border border-gray-300 dark:border-gray-500">
-              IN QUEUE
-            </div>
-          ) : (
-            <div onClick={(e) => e.stopPropagation()}>
-              <LessonStatusLabel
-                lessonId={lesson.id}
-                currentStatus={lesson.status}
-                lessonEvents={lesson.events || []}
-                hasEventToday={lessonHasEvent}
-              />
-            </div>
-          )}
-          <div className="text-sm text-muted-foreground dark:text-gray-400">
-            <Duration minutes={remainingMinutes} /> remaining
-            {selectedDateEventMinutes > 0 && eventForSelectedDate && (
-              <span className="ml-1 text-xs text-blue-500 dark:text-blue-400">
-                | {eventForSelectedDate.startTime} +{" "}
-                <Duration minutes={eventForSelectedDate.duration} />
-              </span>
-            )}
+        {/* Status and Progress Info */}
+        <div className="flex flex-col gap-2 items-end">
+          <StatusDisplay
+            isInQueue={isInQueue}
+            lesson={lesson}
+            lessonHasEvent={lessonHasEvent}
+          />
+          <div>
+            <BookingProgressBar
+              eventMinutes={bookingClass.calculateBookingLessonEventMinutes()}
+              totalMinutes={bookingClass.getTotalMinutes()}
+            />
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import WhiteboardMiniNav from "./WhiteboardMiniNav";
 import WhiteboardBookings from "./WhiteboardBookings";
 import WhiteboardLessons from "./WhiteboardLessons";
@@ -18,8 +18,10 @@ import {
 import { type BookingStatusFilter, LOCATION_ENUM_VALUES } from "@/lib/constants";
 import { type EventController, type WhiteboardActionHandler } from "@/backend/types";
 import { ShareUtils } from "@/backend/ShareUtils";
+import GlobalStatsHeader from "@/components/whiteboard-usage/GlobalStatsHeader";
 
 const STORAGE_KEY = "whiteboard-selected-date";
+
 
 const WHITEBOARD_SECTIONS = [
   {
@@ -288,6 +290,63 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     };
   }, [data, selectedDate, bookingFilter]);
 
+  // Calculate global stats from all teacher schedules - restored proper calculation
+  const globalStats = useMemo(() => {
+    let totalEvents = 0;
+    let totalLessons = 0;
+    let totalHours = 0;
+    let totalEarnings = 0;
+    let schoolRevenue = 0;
+
+    filteredData.teacherSchedules.forEach((schedule) => {
+      const stats = schedule.calculateTeacherStats();
+      totalEvents += stats.totalEvents;
+      totalLessons += stats.totalLessons;
+      totalHours += stats.totalHours;
+      totalEarnings += stats.totalEarnings;
+      schoolRevenue += stats.schoolRevenue;
+    });
+
+    return {
+      totalEvents,
+      totalLessons,
+      totalHours,
+      totalEarnings,
+      schoolRevenue,
+    };
+  }, [filteredData.teacherSchedules]);
+
+  // Calculate earliest time from all teacher schedules - restored functionality
+  const earliestTime = useMemo(() => {
+    let earliest = null;
+
+    filteredData.teacherSchedules.forEach((schedule) => {
+      const firstEventNode = schedule
+        .getNodes()
+        .find((node) => node.type === "event");
+      if (firstEventNode) {
+        if (!earliest || firstEventNode.startTime < earliest) {
+          earliest = firstEventNode.startTime;
+        }
+      }
+    });
+
+    return earliest || "11:00"; // Default to 11:00 if no events
+  }, [filteredData.teacherSchedules]);
+
+  // Initialize controller time to earliest time only on first load, allow user changes after
+  const [hasInitializedTime, setHasInitializedTime] = useState(false);
+  
+  useEffect(() => {
+    if (!hasInitializedTime && earliestTime && controller.submitTime === '11:00') {
+      setController((prev) => ({
+        ...prev,
+        submitTime: earliestTime,
+      }));
+      setHasInitializedTime(true);
+    }
+  }, [earliestTime, hasInitializedTime, controller.submitTime]);
+
 
   const handleSectionClick = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -309,7 +368,11 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
           bookingFilter={bookingFilter}
           onBookingFilterChange={handleBookingFilterChange}
           onActionClick={handleActionClick}
-        />
+        >
+          <GlobalStatsHeader
+            globalStats={globalStats}
+          />
+        </WhiteboardMiniNav>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 w-full px-4">
@@ -327,7 +390,11 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
               bookingFilter={bookingFilter}
               onBookingFilterChange={handleBookingFilterChange}
               onActionClick={handleActionClick}
-            />
+            >
+              <GlobalStatsHeader
+                globalStats={globalStats}
+              />
+            </WhiteboardMiniNav>
           </div>
         </div>
 

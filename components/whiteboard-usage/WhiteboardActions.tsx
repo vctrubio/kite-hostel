@@ -57,19 +57,16 @@ export default function WhiteboardActions({
         Actions
       </h3>
       <div className="grid grid-cols-4 gap-1">
-        {ACTION_BUTTONS.map((button) => {
-          const IconComponent = button.icon;
-          return (
-            <button
-              key={button.id}
-              onClick={() => handleActionClick(button.id)}
-              className="px-2 py-1 text-[10px] font-medium rounded transition-all duration-200 border border-transparent hover:border-gray-300 hover:bg-gray-50"
-              title={button.title}
-            >
-              {button.label}
-            </button>
-          );
-        })}
+        {ACTION_BUTTONS.map((button) => (
+          <button
+            key={button.id}
+            onClick={() => handleActionClick(button.id)}
+            className="px-2 py-1 text-[10px] font-medium rounded transition-all duration-200 border border-transparent hover:border-gray-300 hover:bg-gray-50"
+            title={button.title}
+          >
+            {button.label}
+          </button>
+        ))}
       </div>
     </div>
   );
