@@ -108,7 +108,7 @@ export const BOOKING_STATUS_FILTERS = [
   },
   {
     value: "cancelled" as const,
-    label: "Cancel",
+    label: "Cancelled",
     icon: XCircle,
     color:
       "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50",

@@ -23,6 +23,7 @@ interface TeacherLessonQueueProps {
   selectedDate: string;
   durationSettings: DurationSettings;
   controllerTime: string; // Time from the FlagPicker controller
+  location: string;
   onCreateEvents: (events: any[]) => void;
   onRef?: (ref: any) => void;
   queueUpdateTrigger?: number;
@@ -37,13 +38,14 @@ export default function TeacherLessonQueue({
   selectedDate,
   durationSettings,
   controllerTime,
+  location,
   onCreateEvents,
   onRef,
   queueUpdateTrigger,
   onQueueChange,
   editMode = false
 }: TeacherLessonQueueProps) {
-  const [queueLocation, setQueueLocation] = useState<string>(LOCATION_ENUM_VALUES[0]);
+  const [queueLocation, setQueueLocation] = useState<string>(location);
   const [queue, setQueue] = useState<TeacherQueuedLesson[]>([]);
 
   // Sync queue with TeacherSchedule

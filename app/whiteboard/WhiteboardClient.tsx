@@ -21,6 +21,7 @@ import { ShareUtils } from "@/backend/ShareUtils";
 import GlobalStatsHeader from "@/components/whiteboard-usage/GlobalStatsHeader";
 
 const STORAGE_KEY = "whiteboard-selected-date";
+const CONTROLLER_STORAGE_KEY = 'controller-settings';
 
 
 const WHITEBOARD_SECTIONS = [
@@ -55,14 +56,45 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   const [bookingFilter, setBookingFilter] = useState<BookingStatusFilter>("all");
 
   // Controller state for event creation (includes duration settings)
-  const [controller, setController] = useState<EventController>({
-    flag: false,
-    location: LOCATION_ENUM_VALUES[0],
-    submitTime: "11:00",
-    durationCapOne: 120,     // Will be updated by DurationSettings component
-    durationCapTwo: 180,     // Will be updated by DurationSettings component  
-    durationCapThree: 240,   // Will be updated by DurationSettings component
+  const [controller, setController] = useState<EventController>(() => {
+    const defaultSettings: EventController = {
+      flag: false,
+      location: LOCATION_ENUM_VALUES[0],
+      submitTime: "11:00",
+      durationCapOne: 120,
+      durationCapTwo: 180,
+      durationCapThree: 240,
+    };
+
+    if (typeof window === 'undefined') {
+      return defaultSettings;
+    }
+
+    try {
+      const savedSettings = localStorage.getItem(CONTROLLER_STORAGE_KEY);
+      if (savedSettings) {
+        return { ...defaultSettings, ...JSON.parse(savedSettings) };
+      }
+    } catch (error) {
+      console.error('Failed to parse controller settings from localStorage', error);
+    }
+    return defaultSettings;
   });
+
+  useEffect(() => {
+    try {
+      const settingsToSave = {
+        location: controller.location,
+        submitTime: controller.submitTime,
+        durationCapOne: controller.durationCapOne,
+        durationCapTwo: controller.durationCapTwo,
+        durationCapThree: controller.durationCapThree,
+      };
+      localStorage.setItem(CONTROLLER_STORAGE_KEY, JSON.stringify(settingsToSave));
+    } catch (error) {
+      console.error('Failed to save controller settings to localStorage', error);
+    }
+  }, [controller]);
 
 
   const handleDateChange = (date: string) => {

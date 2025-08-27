@@ -2,11 +2,7 @@
 
 import { useMemo } from "react";
 import { SingleDatePicker } from "@/components/pickers/single-date-picker";
-import {
-  BookingIcon,
-  HeadsetIcon,
-  KiteIcon,
-} from "@/svgs";
+import { BookingIcon, HeadsetIcon, KiteIcon } from "@/svgs";
 import type { BookingStatusFilter } from "@/lib/constants";
 import BookingStatusFilter from "../../components/whiteboard-usage/BookingStatusFilter";
 import WhiteboardActions from "../../components/whiteboard-usage/WhiteboardActions";
@@ -87,7 +83,7 @@ export default function WhiteboardMiniNav({
       </div>
 
       {/* Navigation Items */}
-      <div className="p-3 border-b border-border">
+      <div className="p-3">
         <div className="flex justify-around">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -97,20 +93,21 @@ export default function WhiteboardMiniNav({
               <button
                 key={item.id}
                 onClick={() => onSectionClick(item.id)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 border-2 ${isActive
-                  ? "bg-white shadow-lg"
-                  : "border-transparent hover:bg-white/50"
-                  }`}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 border-2 ${
+                  isActive
+                    ? "bg-white shadow-lg"
+                    : "border-transparent hover:bg-white/50"
+                }`}
                 style={
                   isActive
                     ? {
-                      borderColor:
-                        item.color === "text-blue-500"
-                          ? "#3b82f6"
-                          : item.color === "text-green-500"
-                            ? "#22c55e"
-                            : "#14b8a6",
-                    }
+                        borderColor:
+                          item.color === "text-blue-500"
+                            ? "#3b82f6"
+                            : item.color === "text-green-500"
+                              ? "#22c55e"
+                              : "#14b8a6",
+                      }
                     : {}
                 }
               >
@@ -118,27 +115,21 @@ export default function WhiteboardMiniNav({
                 <span className="text-xs font-medium text-gray-700">
                   {item.name}
                 </span>
-                <span className="text-xs font-mono text-gray-600">
-                  {count}
-                </span>
+                <span className="text-xs font-mono text-gray-600">{count}</span>
               </button>
             );
           })}
         </div>
       </div>
 
+      {/* Global Stats (if provided) */}
+      {children && <div className="p-3 border-t border-border">{children}</div>}
+
       {/* Booking Status Filter */}
-      <BookingStatusFilter 
+      <BookingStatusFilter
         activeFilter={bookingFilter}
         onFilterChange={onBookingFilterChange}
       />
-
-      {/* Global Stats (if provided) */}
-      {children && (
-        <div className="p-3 border-t border-border">
-          {children}
-        </div>
-      )}
 
       {/* Actions */}
       <WhiteboardActions onActionClick={onActionClick} />

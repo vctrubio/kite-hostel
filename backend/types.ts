@@ -30,6 +30,16 @@ export interface EventController {
   submitTime: string; // Start time for events (HH:MM format)
 }
 
+export interface QueueControllerSettings {
+  location: Location;
+  submitTime: string;
+  durationSettings: {
+    durationCapOne: number;
+    durationCapTwo: number;
+    durationCapThree: number;
+  };
+}
+
 // Database relation types
 export type BookingWithRelations = InferSelectModel<typeof Booking> & {
   lessons: (InferSelectModel<typeof Lesson> & {

@@ -19,41 +19,12 @@ const MIN_DURATION = 60; // 1 hour minimum
 const MAX_DURATION = 360; // 6 hours maximum  
 const DURATION_INCREMENT = 30; // 30 minute increments
 
-const STORAGE_KEY = 'controller-settings';
-
 export default function ControllerSettings({ 
   controller, 
   onControllerChange,
   teacherSchedules 
 }: ControllerSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
-
-  // Load settings from localStorage on mount
-  useEffect(() => {
-    const savedSettings = localStorage.getItem(STORAGE_KEY);
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        onControllerChange({
-          ...controller,
-          ...parsed
-        });
-      } catch (error) {
-        console.error('Failed to parse saved controller settings:', error);
-      }
-    }
-  }, []); // Remove controller dependency to prevent re-running
-
-  // Save settings to localStorage when changed
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      location: controller.location,
-      submitTime: controller.submitTime,
-      durationCapOne: controller.durationCapOne,
-      durationCapTwo: controller.durationCapTwo,
-      durationCapThree: controller.durationCapThree,
-    }));
-  }, [controller]);
 
   // Use useCallback to prevent re-renders
   const updateController = useCallback((updates: Partial<EventController>) => {

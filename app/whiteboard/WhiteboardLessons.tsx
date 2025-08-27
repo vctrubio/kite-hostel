@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import ControllerSettings from "@/components/whiteboard-usage/ControllerSettings";
-import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { HeadsetIcon } from "@/svgs";
@@ -13,6 +12,7 @@ import TeacherLessonQueue from "@/components/whiteboard-usage/TeacherLessonQueue
 import { createTeacherQueueEvents } from "@/actions/event-actions";
 import { reorganizeEventTimes } from "@/actions/kite-actions";
 import { groupLessonsByTeacher } from "@/backend/WhiteboardClass";
+import type { EventController, QueueControllerSettings } from "@/backend/types";
 
 interface WhiteboardLessonsProps {
   lessons: any[];
@@ -30,7 +30,7 @@ function TeacherGroup({
   onBatchEventCreation,
   teacherSchedule,
   selectedDate,
-  controller,
+  queueSettings,
   queueUpdateTrigger,
   onQueueChange,
 }: {
@@ -40,7 +40,7 @@ function TeacherGroup({
   onBatchEventCreation: (events: any[]) => void;
   teacherSchedule?: TeacherSchedule;
   selectedDate: string;
-  controller: EventController;
+  queueSettings: QueueControllerSettings;
   queueUpdateTrigger: number;
   onQueueChange: () => void;
 }) {
@@ -58,19 +58,22 @@ function TeacherGroup({
   }, [teacherSchedule]);
 
   // Create mapping from lesson ID to event ID for database updates
-  const createEventIdMap = useCallback((lessons: any[]): Map<string, string> => {
-    const map = new Map<string, string>();
-    lessons.forEach((lesson) => {
-      if (lesson?.events && Array.isArray(lesson.events)) {
-        lesson.events.forEach((event: any) => {
-          if (event?.id && lesson?.id) {
-            map.set(lesson.id, event.id);
-          }
-        });
-      }
-    });
-    return map;
-  }, []);
+  const createEventIdMap = useCallback(
+    (lessons: any[]): Map<string, string> => {
+      const map = new Map<string, string>();
+      lessons.forEach((lesson) => {
+        if (lesson?.events && Array.isArray(lesson.events)) {
+          lesson.events.forEach((event: any) => {
+            if (event?.id && lesson?.id) {
+              map.set(lesson.id, event.id);
+            }
+          });
+        }
+      });
+      return map;
+    },
+    [],
+  );
 
   // Handle full schedule reorganization using existing TeacherSchedule methods
   const handleFullScheduleReorganization = useCallback(async () => {
@@ -115,7 +118,13 @@ function TeacherGroup({
     } catch (error) {
       console.error("Error reorganizing full schedule:", error);
     }
-  }, [teacherSchedule, teacherGroup.lessons, selectedDate, onQueueChange, createEventIdMap]);
+  }, [
+    teacherSchedule,
+    teacherGroup.lessons,
+    selectedDate,
+    onQueueChange,
+    createEventIdMap,
+  ]);
 
   return (
     <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg">
@@ -165,12 +174,9 @@ function TeacherGroup({
           teacherName={teacherGroup.teacherName}
           teacherSchedule={teacherSchedule}
           selectedDate={selectedDate}
-          durationSettings={{
-            durationCapOne: controller.durationCapOne,
-            durationCapTwo: controller.durationCapTwo,
-            durationCapThree: controller.durationCapThree,
-          }}
-          controllerTime={controller.submitTime}
+          durationSettings={queueSettings.durationSettings}
+          controllerTime={queueSettings.submitTime}
+          location={queueSettings.location}
           onCreateEvents={onBatchEventCreation}
           queueUpdateTrigger={queueUpdateTrigger}
           onQueueChange={onQueueChange}
@@ -206,24 +212,27 @@ export default function WhiteboardLessons({
   const router = useRouter();
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0);
 
-  const toggleLessonQueue = useCallback((lesson: any) => {
-    const teacherSchedule = teacherSchedules.get(lesson.teacher?.id);
-    if (!teacherSchedule) return;
+  const toggleLessonQueue = useCallback(
+    (lesson: any) => {
+      const teacherSchedule = teacherSchedules.get(lesson.teacher?.id);
+      if (!teacherSchedule) return;
 
-    const isInQueue = teacherSchedule
-      .getLessonQueue()
-      .some((q) => q.lessonId === lesson.id);
+      const isInQueue = teacherSchedule
+        .getLessonQueue()
+        .some((q) => q.lessonId === lesson.id);
 
-    if (isInQueue) {
-      teacherSchedule.removeLessonFromQueue(lesson.id);
-    } else {
-      const queueRef = (window as any)[`queue_${lesson.teacher?.id}`];
-      if (queueRef && queueRef.addToQueue) {
-        queueRef.addToQueue(lesson);
+      if (isInQueue) {
+        teacherSchedule.removeLessonFromQueue(lesson.id);
+      } else {
+        const queueRef = (window as any)[`queue_${lesson.teacher?.id}`];
+        if (queueRef && queueRef.addToQueue) {
+          queueRef.addToQueue(lesson);
+        }
       }
-    }
-    setQueueUpdateTrigger((prev) => prev + 1);
-  }, [teacherSchedules]);
+      setQueueUpdateTrigger((prev) => prev + 1);
+    },
+    [teacherSchedules],
+  );
 
   const handleQueueChange = useCallback(() => {
     setQueueUpdateTrigger((prev) => prev + 1);
@@ -231,35 +240,41 @@ export default function WhiteboardLessons({
 
   const groupedLessons = groupLessonsByTeacher(lessons);
 
-  const handleRemoveFromQueue = useCallback((lessonId: string) => {
-    for (const teacherGroup of groupedLessons) {
-      const lesson = teacherGroup.lessons.find((l: any) => l.id === lessonId);
-      if (lesson) {
-        toggleLessonQueue(lesson);
-        break;
-      }
-    }
-  }, [groupedLessons, toggleLessonQueue]);
-
-  const handleBatchEventCreation = useCallback(async (events: any[]) => {
-    console.log("🚀 Creating teacher queue events:", events.length);
-    try {
-      const result = await createTeacherQueueEvents(events);
-      if (result.success) {
-        console.log("✅ All queue events created successfully");
-      } else {
-        console.error("❌ Some events failed to create:", result);
-        if (result.summary) {
-          console.log(
-            `📊 Summary: ${result.summary.successCount}/${result.summary.total} events created`,
-          );
+  const handleRemoveFromQueue = useCallback(
+    (lessonId: string) => {
+      for (const teacherGroup of groupedLessons) {
+        const lesson = teacherGroup.lessons.find((l: any) => l.id === lessonId);
+        if (lesson) {
+          toggleLessonQueue(lesson);
+          break;
         }
       }
-      router.refresh();
-    } catch (error) {
-      console.error("🔥 Error creating queue events:", error);
-    }
-  }, [router]);
+    },
+    [groupedLessons, toggleLessonQueue],
+  );
+
+  const handleBatchEventCreation = useCallback(
+    async (events: any[]) => {
+      console.log("🚀 Creating teacher queue events:", events.length);
+      try {
+        const result = await createTeacherQueueEvents(events);
+        if (result.success) {
+          console.log("✅ All queue events created successfully");
+        } else {
+          console.error("❌ Some events failed to create:", result);
+          if (result.summary) {
+            console.log(
+              `📊 Summary: ${result.summary.successCount}/${result.summary.total} events created`,
+            );
+          }
+        }
+        router.refresh();
+      } catch (error) {
+        console.error("🔥 Error creating queue events:", error);
+      }
+    },
+    [router],
+  );
 
   return (
     <div className="space-y-6">
@@ -283,7 +298,15 @@ export default function WhiteboardLessons({
                 onRemoveFromQueue={handleRemoveFromQueue}
                 onBatchEventCreation={handleBatchEventCreation}
                 selectedDate={selectedDate}
-                controller={controller}
+                queueSettings={{
+                  location: controller.location,
+                  submitTime: controller.submitTime,
+                  durationSettings: {
+                    durationCapOne: controller.durationCapOne,
+                    durationCapTwo: controller.durationCapTwo,
+                    durationCapThree: controller.durationCapThree,
+                  }
+                }}
                 teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)}
                 queueUpdateTrigger={queueUpdateTrigger}
                 onQueueChange={handleQueueChange}
