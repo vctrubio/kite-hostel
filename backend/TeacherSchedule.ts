@@ -1215,8 +1215,16 @@ export class TeacherSchedule {
 
       const lessonSchoolRevenue = lessonEvents.reduce((sum, event) => {
         const packagePrice = lesson.booking?.package?.price_per_student || 0;
+        const packageDurationMinutes = lesson.booking?.package?.duration || 1;
         const studentCount = lesson.booking?.students?.length || 0;
-        return sum + (packagePrice * studentCount);
+        const eventDurationMinutes = event.duration || 0;
+        
+        // Calculate hourly rate: (packagePrice / packageDurationHours)
+        const packageHourlyRate = (packagePrice * 60) / packageDurationMinutes;
+        const eventHours = eventDurationMinutes / 60;
+        const eventRevenue = packageHourlyRate * eventHours * studentCount;
+        
+        return sum + eventRevenue;
       }, 0);
       schoolRevenue += lessonSchoolRevenue;
     });
