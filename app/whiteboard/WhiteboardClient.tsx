@@ -15,8 +15,9 @@ import {
   setStoredDate,
   getTodayDateString,
 } from "@/components/formatters/DateTime";
-import { type BookingStatusFilter, type LessonStatusFilter, type EventStatusFilter, LOCATION_ENUM_VALUES } from "@/lib/constants";
-import { type EventController } from "@/backend/types";
+import { type BookingStatusFilter, LOCATION_ENUM_VALUES } from "@/lib/constants";
+import { type EventController, type WhiteboardActionHandler } from "@/backend/types";
+import { ShareUtils } from "@/backend/ShareUtils";
 
 const STORAGE_KEY = "whiteboard-selected-date";
 
@@ -48,16 +49,8 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   const [activeSection, setActiveSection] = useState("bookings");
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateString()); // Use consistent default
   
-  // Filter state
-  const [filters, setFilters] = useState<{
-    bookings: BookingStatusFilter;
-    lessons: LessonStatusFilter;
-    events: EventStatusFilter;
-  }>({
-    bookings: "all",
-    lessons: "all", 
-    events: "all"
-  });
+  // Filter state - simplified to only booking filter
+  const [bookingFilter, setBookingFilter] = useState<BookingStatusFilter>("all");
 
   // Controller state for event creation (includes duration settings)
   const [controller, setController] = useState<EventController>({
@@ -81,11 +74,45 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     setStoredDate(STORAGE_KEY, date);
   };
 
-  const handleFilterChange = (section: 'bookings' | 'lessons' | 'events', filter: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [section]: filter
-    }));
+  const handleBookingFilterChange = (filter: BookingStatusFilter) => {
+    setBookingFilter(filter);
+  };
+
+  const handleActionClick: WhiteboardActionHandler = async (actionId) => {
+    try {
+      const shareData = ShareUtils.extractShareData(
+        selectedDate,
+        filteredData.teacherSchedules,
+        filteredData.events
+      );
+      
+      switch (actionId) {
+        case "share":
+          const whatsappMessage = ShareUtils.generateWhatsAppMessage(shareData);
+          ShareUtils.shareToWhatsApp(whatsappMessage);
+          break;
+          
+        case "medical":
+          const { subject, body } = ShareUtils.generateMedicalEmail(selectedDate, filteredData.events);
+          ShareUtils.sendMedicalEmail(subject, body);
+          break;
+          
+        case "csv":
+          const csvData = ShareUtils.generateCSVData(shareData);
+          const csvFilename = `kite-schedule-${selectedDate}.csv`;
+          ShareUtils.downloadCSV(csvData, csvFilename);
+          break;
+          
+        case "print":
+          await ShareUtils.downloadPrintTable(shareData);
+          break;
+          
+        default:
+          console.warn(`Unknown action: ${actionId}`);
+      }
+    } catch (error) {
+      console.error(`Error executing ${actionId} action:`, error);
+    }
   };
 
   // Load stored date after mount to avoid hydration issues
@@ -122,7 +149,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
-  // Filter data based on selected date and create WhiteboardClass instances
+  // Filter data based on selected date and booking status filter using useMemo
   const filteredData = useMemo(() => {
     // Validate selectedDate before processing
     if (!selectedDate || isNaN(Date.parse(selectedDate))) {
@@ -149,7 +176,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     filterDate.setHours(0, 0, 0, 0);
 
     // Filter bookings by date - check if the selected date falls within booking date range
-    const filteredBookings = data.rawBookings.filter((booking) => {
+    const dateFilteredBookings = data.rawBookings.filter((booking) => {
       const bookingStart = new Date(booking.date_start);
       const bookingEnd = new Date(booking.date_end);
       bookingStart.setHours(0, 0, 0, 0);
@@ -159,8 +186,13 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       return filterDate >= bookingStart && filterDate <= bookingEnd;
     });
 
+    // Apply booking status filter
+    const statusFilteredBookings = bookingFilter === 'all' 
+      ? dateFilteredBookings
+      : dateFilteredBookings.filter(booking => booking.status === bookingFilter);
+
     // Create WhiteboardClass instances for enhanced business logic
-    const bookingClasses = filteredBookings.map(
+    const bookingClasses = statusFilteredBookings.map(
       (booking) => new WhiteboardClass(booking),
     );
 
@@ -173,7 +205,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     );
 
     // Extract lessons with proper date filtering (keeping original structure for compatibility)
-    const filteredLessons = filteredBookings.flatMap(
+    const filteredLessons = statusFilteredBookings.flatMap(
       (booking) =>
         booking.lessons?.map((lesson: any) => {
           // Keep all original events for border logic
@@ -217,7 +249,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
     // Enhanced statistics using business logic
     const enhancedStats = {
-      totalBookings: filteredBookings.length,
+      totalBookings: statusFilteredBookings.length,
       totalLessons: filteredLessons.length,
       totalEvents: filteredEvents.length,
       activeBookings: activeBookingClasses.length,
@@ -247,14 +279,14 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     );
 
     return {
-      bookings: filteredBookings,
+      bookings: statusFilteredBookings,
       bookingClasses, // Enhanced WhiteboardClass instances for business logic
       lessons: filteredLessons,
       events: filteredEvents,
       teacherSchedules, // Unified TeacherSchedule instances
       status: enhancedStats,
     };
-  }, [data, selectedDate]);
+  }, [data, selectedDate, bookingFilter]);
 
 
   const handleSectionClick = (sectionId: string) => {
@@ -264,8 +296,8 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Top Navigation */}
-      <div className="xl:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border p-2">
+      {/* Sidebar - Mobile: sticky top, Desktop: sticky sidebar */}
+      <div className="md:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border p-2">
         <WhiteboardMiniNav
           activeSection={activeSection}
           onSectionClick={handleSectionClick}
@@ -274,14 +306,15 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
           bookingsCount={filteredData.bookings.length}
           lessonsCount={filteredData.lessons.length}
           eventsCount={filteredData.events.length}
-          filters={filters}
-          onFilterChange={handleFilterChange}
+          bookingFilter={bookingFilter}
+          onBookingFilterChange={handleBookingFilterChange}
+          onActionClick={handleActionClick}
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 2xl:grid-cols-5 w-full px-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 w-full px-4">
         {/* Desktop Sidebar */}
-        <div className="hidden xl:block xl:col-span-1">
+        <div className="hidden md:block col-span-1">
           <div className="sticky top-4 p-4">
             <WhiteboardMiniNav
               activeSection={activeSection}
@@ -291,14 +324,15 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
               bookingsCount={filteredData.bookings.length}
               lessonsCount={filteredData.lessons.length}
               eventsCount={filteredData.events.length}
-              filters={filters}
-              onFilterChange={handleFilterChange}
+              bookingFilter={bookingFilter}
+              onBookingFilterChange={handleBookingFilterChange}
+              onActionClick={handleActionClick}
             />
           </div>
         </div>
 
         {/* Content */}
-        <div className="xl:col-span-3 2xl:col-span-4 pt-4">
+        <div className="md:col-span-3 xl:col-span-3 2xl:col-span-4 pt-4">
           <div className="bg-card">
             <div className="p-4">
               <div className="w-full">

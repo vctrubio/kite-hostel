@@ -117,3 +117,13 @@ export type DateFilterPreset =
   | 'last_6_months'
   | 'this_year'
   | 'custom_range';
+
+// Share data structure for whiteboard actions
+export interface WhiteboardShareData {
+  selectedDate: string;
+  teacherSchedules: Map<string, any>; // TeacherSchedule - avoiding circular import
+  events: any[];
+}
+
+// Action handler type for whiteboard actions
+export type WhiteboardActionHandler = (actionId: 'share' | 'medical' | 'csv' | 'print') => Promise<void> | void;
