@@ -310,6 +310,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     const teacherSchedules = TeacherSchedule.createSchedulesFromLessons(
       selectedDate,
       filteredLessons,
+      bookingClasses
     );
 
     return {

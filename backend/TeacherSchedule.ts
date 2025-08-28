@@ -6,6 +6,7 @@ import { addMinutesToTime, timeToMinutes, minutesToTime, createUTCDateTime, toUT
 import { format } from 'date-fns';
 import { detectScheduleGaps, hasScheduleGaps, compactSchedule, findNextAvailableSlot, type ScheduleItem } from './ScheduleUtils';
 import { type TeacherStats, type ReorganizationOption, type BookingData } from './types';
+import { WhiteboardClass } from './WhiteboardClass';
 
 export type ScheduleItemType = 'event' | 'gap';
 
@@ -62,8 +63,9 @@ export class TeacherSchedule {
   private queueStartTime: string | null = null; // Preferred queue start time
   public lessons: any[] = [];
   public booking: BookingData;
+  public whiteboard: WhiteboardClass; // Store whiteboard class reference (required)
 
-  constructor(teacherId: string, teacherName: string, date: string, booking: BookingData) {
+  constructor(teacherId: string, teacherName: string, date: string, booking: BookingData, whiteboard: WhiteboardClass) {
     this.schedule = {
       teacherId,
       teacherName,
@@ -71,12 +73,13 @@ export class TeacherSchedule {
       head: null
     };
     this.booking = booking;
+    this.whiteboard = whiteboard;
   }
 
   /**
    * Create multiple teacher schedules from lessons data
    */
-  static createSchedulesFromLessons(date: string, lessons: any[]): Map<string, TeacherSchedule> {
+  static createSchedulesFromLessons(date: string, lessons: any[], whiteboardClasses: WhiteboardClass[]): Map<string, TeacherSchedule> {
     const schedules = new Map<string, TeacherSchedule>();
     
     // Group lessons by teacher
@@ -99,7 +102,18 @@ export class TeacherSchedule {
       const teacher = teacherLessons[0].teacher;
       // NOTE: This assumes all lessons for a teacher on a given day belong to the same booking.
       const booking = teacherLessons[0].booking;
-      const schedule = new TeacherSchedule(teacherId, teacher.name, date, booking);
+      
+      // Find the corresponding WhiteboardClass instance - required!
+      const whiteboardClass = whiteboardClasses.find(wc => 
+        wc.booking.id === booking.id
+      );
+      
+      if (!whiteboardClass) {
+        console.error(`No WhiteboardClass found for booking ${booking.id}`);
+        return;
+      }
+      
+      const schedule = new TeacherSchedule(teacherId, teacher.name, date, booking, whiteboardClass);
       schedule.lessons = teacherLessons;
       
       // Add existing events from lessons

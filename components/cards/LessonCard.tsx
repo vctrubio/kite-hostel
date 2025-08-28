@@ -6,7 +6,7 @@ import { FlagIcon } from "@/svgs/FlagIcon";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
 import { FileText } from "lucide-react";
-import { extractStudents, WhiteboardClass } from "@/backend/WhiteboardClass";
+import { extractStudents } from "@/backend/WhiteboardClass";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 
 // Sub-component: Event Details
@@ -59,7 +59,7 @@ interface LessonCardProps {
   onLessonClick: (lesson: any) => void;
   onOpenModal?: (lesson: any) => void; // Add new prop for opening modal directly
   onRemoveFromQueue?: (lessonId: string) => void; // Add prop for removing from queue
-  teacherSchedule?: TeacherSchedule;
+  teacherSchedule: TeacherSchedule;
   selectedDate: string;
 }
 
@@ -71,21 +71,19 @@ export default function LessonCard({
   teacherSchedule,
   selectedDate,
 }: LessonCardProps) {
-  // Create WhiteboardClass instance for booking calculations
-  const bookingClass = new WhiteboardClass(lesson.booking);
+  // Use WhiteboardClass instance from TeacherSchedule
+  const bookingClass = teacherSchedule.whiteboard;
   const students = extractStudents(lesson.booking);
 
   // Check for events on the selected date using TeacherSchedule
   let eventForSelectedDate = null;
   let lessonHasEvent = false;
 
-  if (teacherSchedule) {
-    const scheduleNodes = teacherSchedule.getNodes();
-    eventForSelectedDate = scheduleNodes.find(
-      (node) => node.type === "event" && node.eventData?.lessonId === lesson.id,
-    );
-    lessonHasEvent = !!eventForSelectedDate;
-  }
+  const scheduleNodes = teacherSchedule.getNodes();
+  eventForSelectedDate = scheduleNodes.find(
+    (node) => node.type === "event" && node.eventData?.lessonId === lesson.id,
+  );
+  lessonHasEvent = !!eventForSelectedDate;
 
   // Fallback to checking lesson events directly if no schedule
   if (!lessonHasEvent && lesson.events) {
@@ -102,9 +100,7 @@ export default function LessonCard({
   const bookingIssues = bookingClass.needsAttention();
 
   // Check if lesson is in the queue
-  const isInQueue = teacherSchedule
-    ? teacherSchedule.getLessonQueue().some((q) => q.lessonId === lesson.id)
-    : false;
+  const isInQueue = teacherSchedule.getLessonQueue().some((q) => q.lessonId === lesson.id);
 
   // Get border color based on event status
   const getBorderColor = (): string => {

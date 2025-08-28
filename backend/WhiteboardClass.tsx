@@ -1,34 +1,9 @@
-/**
- * WhiteboardClass - Business Logic Controller for Kite Hostel Bookings
- * 
- * This class encapsulates all business rules and logic for managing:
- * - Bookings (date ranges, students, packages)
- * - Lessons (teachers, status progression)
- * - Events (kite sessions, duration tracking)
- * - Progress tracking and completion workflows
- */
-
 import { 
-  BookingStatus, 
-  LessonStatus, 
-  EventStatus, 
   COMPLETED_EVENT_STATUSES,
   PLANNED_EVENT_STATUSES
 } from '@/lib/constants';
-import { 
-  type BookingData,
-  type LessonData,
-  type EventData,
-  type StudentData
-} from '@/backend/types';
+import { type BookingData, type LessonData } from '@/backend/types';
 
-/**
- * WhiteboardClass - Main business logic controller
- * 
- * Each instance represents a single booking with all its associated
- * lessons and events. Provides methods for safe manipulation and
- * progress tracking while enforcing business rules.
- */
 export class WhiteboardClass {
   private booking: BookingData;
 
@@ -36,52 +11,18 @@ export class WhiteboardClass {
     this.booking = { ...bookingData };
   }
 
-  // ================================
-  // CORE GETTERS - Used by UI
-  // ================================
-
-  /**
-   * Get the booking ID
-   */
   getId(): string {
     return this.booking.id;
   }
 
-  /**
-   * Get current booking status
-   */
   getStatus(): string {
     return this.booking.status;
   }
 
-  /**
-   * Get all students assigned to this booking
-   */
-  getStudents(): StudentData[] {
-    return this.booking.students?.map(bs => bs.student) || [];
-  }
-
-  /**
-   * Get package information
-   */
-  getPackage() {
-    return this.booking.package;
-  }
-
-  /**
-   * Get all lessons for this booking
-   */
   getLessons(): LessonData[] {
     return this.booking.lessons || [];
   }
 
-  // ================================
-  // PROGRESS CALCULATION
-  // ================================
-
-  /**
-   * Calculate total minutes used from completed events
-   */
   getUsedMinutes(): number {
     const allEvents = this.getLessons().flatMap(lesson => lesson.events || []);
     const completedEvents = allEvents.filter(event => COMPLETED_EVENT_STATUSES.includes(event.status));
@@ -91,9 +32,6 @@ export class WhiteboardClass {
     );
   }
 
-  /**
-   * Calculate planned minutes from planned/TBC events
-   */
   getPlannedMinutes(): number {
     const allEvents = this.getLessons().flatMap(lesson => lesson.events || []);
     const plannedEvents = allEvents.filter(event => PLANNED_EVENT_STATUSES.includes(event.status));
@@ -103,10 +41,6 @@ export class WhiteboardClass {
     );
   }
 
-  /**
-   * Calculate minutes by event status for detailed progress tracking
-   * Returns breakdown of minutes for different event statuses
-   */
   calculateBookingLessonEventMinutes(): {
     completed: number;
     planned: number;
@@ -141,16 +75,10 @@ export class WhiteboardClass {
     };
   }
 
-  /**
-   * Get total package duration in minutes
-   */
   getTotalMinutes(): number {
     return this.booking.package?.duration || 0;
   }
 
-  /**
-   * Calculate completion percentage (0-100)
-   */
   getCompletionPercentage(): number {
     const total = this.getTotalMinutes();
     if (total === 0) return 0;
@@ -158,29 +86,15 @@ export class WhiteboardClass {
     return Math.min((this.getUsedMinutes() / total) * 100, 100);
   }
 
-  /**
-   * Check if booking is ready for completion
-   * (progress complete but status not yet completed)
-   */
   isReadyForCompletion(): boolean {
     const isProgressComplete = this.getUsedMinutes() >= this.getTotalMinutes() && this.getTotalMinutes() > 0;
     return isProgressComplete && this.booking.status !== 'completed';
   }
 
-  /**
-   * Get remaining minutes for the booking
-   */
   getRemainingMinutes(): number {
     return this.getTotalMinutes() - this.getUsedMinutes();
   }
 
-  // ================================
-  // ATTENTION/VALIDATION METHODS
-  // ================================
-
-  /**
-   * Check if booking needs attention (over-booked, ready for completion, etc.)
-   */
   needsAttention(): { hasIssues: boolean; issues: string[] } {
     const issues: string[] = [];
     
@@ -203,13 +117,6 @@ export class WhiteboardClass {
   }
 }
 
-// ================================
-// STATIC UTILITY FUNCTIONS - Used by UI
-// ================================
-
-/**
- * Group lessons by teacher for display purposes
- */
 export function groupLessonsByTeacher(lessons: any[]) {
   return lessons.reduce((acc: any[], lesson: any) => {
     const teacherId = lesson.teacher?.id || 'unassigned';
@@ -232,9 +139,6 @@ export function groupLessonsByTeacher(lessons: any[]) {
   }, []);
 }
 
-/**
- * Filter available lessons that don't have events for the selected date
- */
 export function getAvailableLessons(lessons: any[], selectedDate: string) {
   return lessons.filter(lesson => {
     // Only show planned lessons
@@ -254,31 +158,10 @@ export function getAvailableLessons(lessons: any[], selectedDate: string) {
   });
 }
 
-/**
- * Calculate simple statistics for lessons
- */
-export function calculateLessonStats(teacherLessons: any[]) {
-  const availableLessons = teacherLessons.filter(lesson => lesson.status === 'planned').length;
-  const lessonsWithEvents = teacherLessons.filter(lesson => 
-    lesson.status === 'planned' && lesson.events && lesson.events.length > 0
-  ).length;
-  
-  return {
-    availableLessons,
-    lessonsWithEvents
-  };
-}
-
-/**
- * Extract student names from booking data - DRY utility
- */
 export function extractStudentNames(booking: any): string {
   return booking?.students?.map((bs: any) => bs.student?.name).filter(Boolean).join(', ') || 'No students';
 }
 
-/**
- * Extract student objects from booking data - DRY utility
- */
 export function extractStudents(booking: any): Array<{id: string; name: string}> {
   return booking?.students?.map((s: any) => ({
     id: s.student?.id || '',
@@ -286,24 +169,6 @@ export function extractStudents(booking: any): Array<{id: string; name: string}>
   })) || [];
 }
 
-// ================================
-// FACTORY FUNCTIONS
-// ================================
-
-/**
- * Factory function to create WhiteboardClass instances from API data
- * This is used in the whiteboard-actions.ts
- */
 export function createBookingClasses(bookingsData: BookingData[]): WhiteboardClass[] {
   return bookingsData.map(booking => new WhiteboardClass(booking));
-}
-
-/**
- * Helper function to get a specific booking class by ID
- */
-export function getBookingClassById(
-  bookingClasses: WhiteboardClass[], 
-  bookingId: string
-): WhiteboardClass | null {
-  return bookingClasses.find(booking => booking.getId() === bookingId) || null;
 }

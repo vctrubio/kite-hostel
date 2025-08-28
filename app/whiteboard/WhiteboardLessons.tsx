@@ -38,19 +38,16 @@ function TeacherGroup({
   onLessonClick: (lesson: any) => void;
   onRemoveFromQueue: (lessonId: string) => void;
   onBatchEventCreation: (events: any[]) => void;
-  teacherSchedule?: TeacherSchedule;
+  teacherSchedule: TeacherSchedule;
   selectedDate: string;
   queueSettings: QueueControllerSettings;
   queueUpdateTrigger: number;
   onQueueChange: () => void;
 }) {
-  const canReorganize = teacherSchedule
-    ? teacherSchedule.canReorganizeSchedule()
-    : false;
+  const canReorganize = teacherSchedule.canReorganizeSchedule();
 
   // Get earliest time from teacher schedule using existing method
   const earliestTime = useMemo(() => {
-    if (!teacherSchedule) return null;
     const firstEventNode = teacherSchedule
       .getNodes()
       .find((node) => node.type === "event");
@@ -77,7 +74,6 @@ function TeacherGroup({
 
   // Handle full schedule reorganization using existing TeacherSchedule methods
   const handleFullScheduleReorganization = useCallback(async () => {
-    if (!teacherSchedule) return;
 
     try {
       // Create event ID mapping for database updates
@@ -106,7 +102,6 @@ function TeacherGroup({
           console.log(
             `Full schedule reorganized successfully. Updated ${dbResult.updatedCount} events in database.`,
           );
-          // Trigger queue update to refresh the UI
           onQueueChange();
         } else {
           console.error("Failed to update database:", dbResult.error);
@@ -150,11 +145,9 @@ function TeacherGroup({
             </div>
           )}
         </div>
-        {teacherSchedule && (
-          <TeacherLessonStats
-            teacherStats={teacherSchedule.calculateTeacherStats()}
-          />
-        )}
+        <TeacherLessonStats
+          teacherStats={teacherSchedule.calculateTeacherStats()}
+        />
       </div>
 
       <div className="p-4 space-y-3">
@@ -290,6 +283,13 @@ export default function WhiteboardLessons({
       ) : (
         <div className="space-y-4">
           {groupedLessons.map((teacherGroup) => {
+            const teacherSchedule = teacherSchedules.get(teacherGroup.teacherId);
+            
+            if (!teacherSchedule) {
+              console.error(`No teacher schedule found for teacher ${teacherGroup.teacherId}`);
+              return null;
+            }
+            
             return (
               <TeacherGroup
                 key={teacherGroup.teacherId}
@@ -307,12 +307,12 @@ export default function WhiteboardLessons({
                     durationCapThree: controller.durationCapThree,
                   }
                 }}
-                teacherSchedule={teacherSchedules.get(teacherGroup.teacherId)}
+                teacherSchedule={teacherSchedule}
                 queueUpdateTrigger={queueUpdateTrigger}
                 onQueueChange={handleQueueChange}
               />
             );
-          })}
+          }).filter(Boolean)}
         </div>
       )}
     </div>
