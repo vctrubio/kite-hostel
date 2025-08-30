@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { ChevronDown, ChevronUp, Send, Settings, Trash2 } from "lucide-react";
 import { BookmarkIcon } from "@/svgs";
-import { type BookingData } from "@/backend/WhiteboardClass";
+import type { BookingData } from "@/backend/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -135,7 +135,7 @@ export default function FooterDropdown({
                   className={cn(
                     "cursor-pointer",
                     status === booking.status &&
-                    "bg-accent text-accent-foreground",
+                      "bg-accent text-accent-foreground",
                   )}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}

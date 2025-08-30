@@ -1,23 +1,14 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  BookingIcon,
-  HelmetIcon,
-  HeadsetIcon,
-  BookmarkIcon,
-  FlagIcon,
-} from "@/svgs";
+import { BookingIcon, HelmetIcon, HeadsetIcon, FlagIcon } from "@/svgs";
 import { Plus } from "lucide-react";
 import { FormatedDateExp } from "@/components/label/FormatedDateExp";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
-import {
-  WhiteboardClass,
-  type BookingData,
-  extractStudents,
-} from "@/backend/WhiteboardClass";
+import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
+import type { BookingData } from "@/backend/types";
 import { useRouter } from "next/navigation";
 import EventToTeacherModal from "@/components/modals/EventToTeacherModal";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
@@ -48,7 +39,9 @@ function BookingHeader({
     <div className="grid grid-cols-12 gap-3 p-4 border-b border-border/50">
       {/* Icon - 2 columns */}
       <div className="col-span-2 flex items-center justify-center">
-        <BookingIcon className="w-8 h-8 text-blue-600" />
+        <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+          <BookingIcon className="w-8 h-8 text-blue-700 dark:text-blue-300" />
+        </div>
       </div>
 
       {/* Date and Progress - 10 columns */}
@@ -149,7 +142,7 @@ function StudentsSection({
                 >
                   <button
                     onClick={() => onStudentClick(studentRelation.student.id)}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                    className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors"
                   >
                     {studentRelation.student.name}
                   </button>
@@ -175,30 +168,6 @@ function StudentsSection({
   );
 }
 
-// Sub-component: Package Info
-function PackageInfo({ booking }: { booking: BookingData }) {
-  if (!booking.package) return null;
-  const pricePerHour =
-    Math.round(
-      (booking.package.price_per_student / (booking.package.duration / 60)) *
-      100,
-    ) / 100;
-  const durationHours = booking.package.duration / 60;
-  return (
-    <div className="flex items-center gap-3">
-      <BookmarkIcon className="w-5 h-5 text-amber-500" />
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded">
-          {durationHours}h
-        </span>
-        <span className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded">
-          €{pricePerHour}/h
-        </span>
-      </div>
-    </div>
-  );
-}
-
 // Sub-component: Lessons Section
 interface LessonsSectionProps {
   displayLessons: any[];
@@ -218,7 +187,7 @@ function LessonsSection({
       case "cancelled":
         return "text-red-600";
       case "rest":
-        return "text-blue-600";
+        return "text-blue-600 dark:text-blue-400";
       case "completed":
         return "text-gray-400";
       default:
@@ -255,10 +224,11 @@ function LessonsSection({
             />
             <button
               onClick={() => onAddEventClick(lesson)}
-              className={`p-1.5 rounded-md transition-colors ${lesson.canCreateEvent
-                ? "text-green-600 hover:bg-green-500/10 hover:text-green-700"
-                : "text-gray-400 cursor-not-allowed"
-                }`}
+              className={`p-1.5 rounded-md transition-colors ${
+                lesson.canCreateEvent
+                  ? "text-green-600 hover:bg-green-500/10 hover:text-green-700"
+                  : "text-gray-400 cursor-not-allowed"
+              }`}
               title={
                 lesson.canCreateEvent
                   ? "Add event for this lesson"
@@ -312,8 +282,8 @@ export default function BookingCard({
     return localBookingClass.getLessons().map((lesson) => {
       const hasEventOnDate = selectedDate
         ? lesson.events?.some(
-          (event) => event.date && event.date.startsWith(selectedDate),
-        )
+            (event) => event.date && event.date.startsWith(selectedDate),
+          )
         : false;
 
       let canCreateEvent = true;

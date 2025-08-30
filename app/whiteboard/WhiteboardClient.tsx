@@ -59,7 +59,7 @@ export interface WhiteboardMiniNavProps {
 const STORAGE_KEY = "whiteboard-selected-date";
 const CONTROLLER_STORAGE_KEY = "controller-settings";
 
-const SECTION_CONFIG = [
+const NAV_ITEMS = [
   {
     id: "bookings",
     name: "Bookings",
@@ -181,7 +181,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
           break;
         case "csv":
           const csvData = ShareUtils.generateCSVData(shareData);
-          const csvFilename = `kite-schedule-${selectedDate}.csv`;
+          const csvFilename = `tkh-${selectedDate}.csv`;
           ShareUtils.downloadCSV(csvData, csvFilename);
           break;
         case "print":
@@ -211,7 +211,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
-      if (hash && SECTION_CONFIG.some((section) => section.id === hash)) {
+      if (hash && NAV_ITEMS.some((section) => section.id === hash)) {
         setActiveSection(hash);
       }
     };
@@ -405,10 +405,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     window.location.hash = sectionId;
   };
 
-  const navItemsForMiniNav = SECTION_CONFIG.filter(
-    (item): item is NavItem => item.icon !== null,
-  );
-
   const miniNav = (
     <WhiteboardMiniNav
       activeSection={activeSection}
@@ -422,7 +418,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       onBookingFilterChange={handleBookingFilterChange}
       onActionClick={handleActionClick}
       globalStats={globalStats}
-      navItems={navItemsForMiniNav}
+      navItems={NAV_ITEMS}
     />
   );
 
@@ -435,47 +431,36 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
       {/* Main Content */}
       <main className="flex-grow">
-        <div className="bg-card">
-          <div className="p-4">
-            <div className="w-full">
-              {activeSection === "bookings" && (
-                <WhiteboardBookings
-                  bookings={filteredData.bookings}
-                  bookingClasses={filteredData.bookingClasses}
-                  selectedDate={selectedDate}
-                  teacherSchedules={filteredData.teacherSchedules}
-                  controller={controller}
-                  teachers={data.teachers}
-                />
-              )}
+        <div className="p-4">
+          <div className="w-full">
+            {activeSection === "bookings" && (
+              <WhiteboardBookings
+                bookings={filteredData.bookings}
+                bookingClasses={filteredData.bookingClasses}
+                selectedDate={selectedDate}
+                teacherSchedules={filteredData.teacherSchedules}
+                controller={controller}
+                teachers={data.teachers}
+              />
+            )}
 
-              {activeSection === "lessons" && (
-                <WhiteboardLessons
-                  lessons={filteredData.lessons}
-                  selectedDate={selectedDate}
-                  teacherSchedules={filteredData.teacherSchedules}
-                  controller={controller}
-                  onControllerChange={setController}
-                />
-              )}
+            {activeSection === "lessons" && (
+              <WhiteboardLessons
+                lessons={filteredData.lessons}
+                selectedDate={selectedDate}
+                teacherSchedules={filteredData.teacherSchedules}
+                controller={controller}
+                onControllerChange={setController}
+              />
+            )}
 
-              {activeSection === "events" && (
-                <WhiteboardEvents
-                  events={filteredData.events}
-                  selectedDate={selectedDate}
-                  teacherSchedules={filteredData.teacherSchedules}
-                />
-              )}
-
-              {activeSection === "status" && (
-                <WhiteboardStatus
-                  bookings={filteredData.bookings}
-                  lessons={filteredData.lessons}
-                  events={filteredData.events}
-                  kites={data.kites}
-                />
-              )}
-            </div>
+            {activeSection === "events" && (
+              <WhiteboardEvents
+                events={filteredData.events}
+                selectedDate={selectedDate}
+                teacherSchedules={filteredData.teacherSchedules}
+              />
+            )}
           </div>
         </div>
       </main>

@@ -37,10 +37,10 @@ export default function WhiteboardBookings({
     <div>
       {/* Enhanced Status Alerts */}
       {completableBookings.length > 0 && (
-        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg">
+        <div className="mb-4 p-3 bg-accent/20 border border-accent/30 rounded-lg">
           <div className="flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-            <span className="text-sm font-medium text-orange-800 dark:text-orange-200">
+            <CheckCircle className="w-4 h-4 text-accent-foreground/80" />
+            <span className="text-sm font-medium text-accent-foreground">
               {completableBookings.length} booking
               {completableBookings.length > 1 ? "s" : ""} ready for completion
             </span>

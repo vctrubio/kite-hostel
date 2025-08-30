@@ -30,7 +30,7 @@ export function BookingProgressBar({ eventMinutes, totalMinutes }: BookingProgre
   return (
     <div className="inline-flex items-center gap-2">
       <div
-        className="h-3 rounded-full overflow-hidden border border-gray-200 bg-gray-100 dark:bg-gray-800"
+        className="h-3 rounded-full overflow-hidden border border-border bg-gray-100 dark:bg-gray-800"
         style={{ width: "100px" }}
       >
         {/* Completed minutes - Green */}

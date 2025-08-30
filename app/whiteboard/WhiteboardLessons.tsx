@@ -74,7 +74,6 @@ function TeacherGroup({
 
   // Handle full schedule reorganization using existing TeacherSchedule methods
   const handleFullScheduleReorganization = useCallback(async () => {
-
     try {
       // Create event ID mapping for database updates
       const eventIdMap = createEventIdMap(teacherGroup.lessons);
@@ -282,37 +281,43 @@ export default function WhiteboardLessons({
         <EmptyState />
       ) : (
         <div className="space-y-4">
-          {groupedLessons.map((teacherGroup) => {
-            const teacherSchedule = teacherSchedules.get(teacherGroup.teacherId);
-            
-            if (!teacherSchedule) {
-              console.error(`No teacher schedule found for teacher ${teacherGroup.teacherId}`);
-              return null;
-            }
-            
-            return (
-              <TeacherGroup
-                key={teacherGroup.teacherId}
-                teacherGroup={teacherGroup}
-                onLessonClick={toggleLessonQueue}
-                onRemoveFromQueue={handleRemoveFromQueue}
-                onBatchEventCreation={handleBatchEventCreation}
-                selectedDate={selectedDate}
-                queueSettings={{
-                  location: controller.location,
-                  submitTime: controller.submitTime,
-                  durationSettings: {
-                    durationCapOne: controller.durationCapOne,
-                    durationCapTwo: controller.durationCapTwo,
-                    durationCapThree: controller.durationCapThree,
-                  }
-                }}
-                teacherSchedule={teacherSchedule}
-                queueUpdateTrigger={queueUpdateTrigger}
-                onQueueChange={handleQueueChange}
-              />
-            );
-          }).filter(Boolean)}
+          {groupedLessons
+            .map((teacherGroup) => {
+              const teacherSchedule = teacherSchedules.get(
+                teacherGroup.teacherId,
+              );
+
+              if (!teacherSchedule) {
+                console.error(
+                  `No teacher schedule found for teacher ${teacherGroup.teacherId}`,
+                );
+                return null;
+              }
+
+              return (
+                <TeacherGroup
+                  key={teacherGroup.teacherId}
+                  teacherGroup={teacherGroup}
+                  onLessonClick={toggleLessonQueue}
+                  onRemoveFromQueue={handleRemoveFromQueue}
+                  onBatchEventCreation={handleBatchEventCreation}
+                  selectedDate={selectedDate}
+                  queueSettings={{
+                    location: controller.location,
+                    submitTime: controller.submitTime,
+                    durationSettings: {
+                      durationCapOne: controller.durationCapOne,
+                      durationCapTwo: controller.durationCapTwo,
+                      durationCapThree: controller.durationCapThree,
+                    },
+                  }}
+                  teacherSchedule={teacherSchedule}
+                  queueUpdateTrigger={queueUpdateTrigger}
+                  onQueueChange={handleQueueChange}
+                />
+              );
+            })
+            .filter(Boolean)}
         </div>
       )}
     </div>

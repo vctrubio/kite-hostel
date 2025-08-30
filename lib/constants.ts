@@ -90,32 +90,44 @@ export const BOOKING_STATUS_FILTERS = [
     label: "All",
     icon: Circle,
     title: "All Bookings",
-    color:
-      "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700",
+    classes: {
+      base: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+      hover: "hover:bg-gray-200 dark:hover:bg-gray-700",
+      active: "bg-white text-black border-black/50 hover:bg-gray-200",
+    },
   },
   {
     value: "active" as const,
     label: "Active",
     icon: Play,
     title: "Active Bookings",
-    color:
-      "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50",
+    classes: {
+      base: "text-blue-700 dark:text-blue-300",
+      hover: "hover:bg-blue-100/50 dark:hover:bg-blue-900/20",
+      active: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-500/50",
+    },
   },
   {
     value: "completed" as const,
     label: "Done",
     icon: CheckCircle,
     title: "Completed Bookings",
-    color:
-      "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50",
+    classes: {
+      base: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+      hover: "hover:bg-green-200 dark:hover:bg-green-900/50",
+      active: "bg-green-200 dark:bg-green-900/50 border-green-600",
+    },
   },
   {
     value: "cancelled" as const,
     label: "Cancelled",
     icon: XCircle,
     title: "Cancelled Bookings",
-    color:
-      "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50",
+    classes: {
+      base: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+      hover: "hover:bg-red-200 dark:hover:bg-red-900/50",
+      active: "bg-red-200 dark:bg-red-900/50 border-red-500",
+    },
   },
 ] as const;
 
@@ -162,15 +174,15 @@ export type EventStatusFilter = (typeof EVENT_STATUS_FILTERS)[number]["value"];
 export const getStatusColors = (status: LessonStatus): string => {
   switch (status) {
     case "planned":
-      return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300";
+      return "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400";
     case "rest":
-      return "bg-yellow-100 dark:bg-yellow-900/30 text-stone-800 dark:text-stone-200";
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400";
     case "delegated":
-      return "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300";
+      return "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400";
     case "completed":
-      return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300";
+      return "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400";
     case "cancelled":
-      return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300";
+      return "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400";
     default:
       return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300";
   }

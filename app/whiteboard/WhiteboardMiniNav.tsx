@@ -57,15 +57,15 @@ export default function WhiteboardMiniNav({
                 onClick={() => onSectionClick(item.id)}
                 className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 border-2 ${
                   isActive
-                    ? `bg-white shadow-lg ${item.borderColor}`
-                    : "border-transparent hover:bg-white/50"
+                    ? `bg-background shadow-lg ${item.borderColor}`
+                    : "border-transparent hover:bg-muted/50"
                 }`}
               >
                 <Icon className={`w-5 h-5 ${item.color}`} />
-                <span className="text-xs font-medium text-gray-700">
+                <span className="text-xs font-medium text-foreground">
                   {item.name}
                 </span>
-                <span className="text-xs font-mono text-gray-600">{count}</span>
+                <span className="text-xs font-mono text-muted-foreground">{count}</span>
               </button>
             );
           })}
