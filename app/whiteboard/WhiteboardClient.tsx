@@ -434,62 +434,58 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="md:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border p-2">
-        {miniNav}
-      </div>
+    <div className="lg_custom:flex">
+      {/* Sidebar: sticky top on mobile, sticky left on desktop */}
+      <aside className="sticky top-0 z-20 p-2 bg-background/95 backdrop-blur-sm border-b border-border lg_custom:h-screen lg_custom:w-72 lg_custom:flex-shrink-0 lg_custom:p-4 lg_custom:bg-background lg_custom:backdrop-blur-none">
+        <div className="lg_custom:sticky lg_custom:top-4">{miniNav}</div>
+      </aside>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 w-full px-4">
-        <div className="hidden md:block col-span-1">
-          <div className="sticky top-4 p-4">{miniNav}</div>
-        </div>
+      {/* Main Content */}
+      <main className="flex-grow">
+        <div className="bg-card">
+          <div className="p-4">
+            <div className="w-full">
+              {activeSection === 'bookings' && (
+                <WhiteboardBookings
+                  bookings={filteredData.bookings}
+                  bookingClasses={filteredData.bookingClasses}
+                  selectedDate={selectedDate}
+                  teacherSchedules={filteredData.teacherSchedules}
+                  controller={controller}
+                  teachers={data.teachers}
+                />
+              )}
 
-        <div className="md:col-span-3 xl:col-span-3 2xl:col-span-4 pt-4">
-          <div className="bg-card">
-            <div className="p-4">
-              <div className="w-full">
-                {activeSection === 'bookings' && (
-                  <WhiteboardBookings
-                    bookings={filteredData.bookings}
-                    bookingClasses={filteredData.bookingClasses}
-                    selectedDate={selectedDate}
-                    teacherSchedules={filteredData.teacherSchedules}
-                    controller={controller}
-                    teachers={data.teachers}
-                  />
-                )}
+              {activeSection === 'lessons' && (
+                <WhiteboardLessons
+                  lessons={filteredData.lessons}
+                  selectedDate={selectedDate}
+                  teacherSchedules={filteredData.teacherSchedules}
+                  controller={controller}
+                  onControllerChange={setController}
+                />
+              )}
 
-                {activeSection === 'lessons' && (
-                  <WhiteboardLessons
-                    lessons={filteredData.lessons}
-                    selectedDate={selectedDate}
-                    teacherSchedules={filteredData.teacherSchedules}
-                    controller={controller}
-                    onControllerChange={setController}
-                  />
-                )}
+              {activeSection === 'events' && (
+                <WhiteboardEvents
+                  events={filteredData.events}
+                  selectedDate={selectedDate}
+                  teacherSchedules={filteredData.teacherSchedules}
+                />
+              )}
 
-                {activeSection === 'events' && (
-                  <WhiteboardEvents
-                    events={filteredData.events}
-                    selectedDate={selectedDate}
-                    teacherSchedules={filteredData.teacherSchedules}
-                  />
-                )}
-
-                {activeSection === 'status' && (
-                  <WhiteboardStatus
-                    bookings={filteredData.bookings}
-                    lessons={filteredData.lessons}
-                    events={filteredData.events}
-                    kites={data.kites}
-                  />
-                )}
-              </div>
+              {activeSection === 'status' && (
+                <WhiteboardStatus
+                  bookings={filteredData.bookings}
+                  lessons={filteredData.lessons}
+                  events={filteredData.events}
+                  kites={data.kites}
+                />
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
