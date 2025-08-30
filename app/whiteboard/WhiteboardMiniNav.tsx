@@ -6,6 +6,7 @@ import type { BookingStatusFilter } from "@/lib/constants";
 import type { WhiteboardActionHandler } from "@/backend/types";
 import BookingStatusFilter from "@/components/whiteboard-usage/BookingStatusFilter";
 import WhiteboardActions from "@/components/whiteboard-usage/WhiteboardActions";
+import GlobalStatsHeader from "@/components/whiteboard-usage/GlobalStatsHeader";
 
 interface WhiteboardMiniNavProps {
   activeSection: string;
@@ -18,7 +19,13 @@ interface WhiteboardMiniNavProps {
   bookingFilter: BookingStatusFilter;
   onBookingFilterChange: (filter: BookingStatusFilter) => void;
   onActionClick: WhiteboardActionHandler;
-  children?: React.ReactNode;
+  globalStats: {
+    totalEvents: number;
+    totalLessons: number;
+    totalHours: number;
+    totalEarnings: number;
+    schoolRevenue: number;
+  };
 }
 
 const NAV_ITEMS = [
@@ -56,7 +63,7 @@ export default function WhiteboardMiniNav({
   bookingFilter,
   onBookingFilterChange,
   onActionClick,
-  children,
+  globalStats,
 }: WhiteboardMiniNavProps) {
   const getCount = (id: string) => {
     switch (id) {
@@ -110,7 +117,9 @@ export default function WhiteboardMiniNav({
       </div>
 
       {/* Global Stats (if provided) */}
-      {children && <div className="p-3 border-t border-border">{children}</div>}
+      <div className="p-3 border-t border-border">
+        <GlobalStatsHeader globalStats={globalStats} />
+      </div>
 
       {/* Booking Status Filter */}
       <BookingStatusFilter

@@ -386,48 +386,34 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     window.location.hash = sectionId;
   };
 
+  const miniNav = (
+    <WhiteboardMiniNav
+      activeSection={activeSection}
+      onSectionClick={handleSectionClick}
+      selectedDate={selectedDate}
+      onDateChange={handleDateChange}
+      bookingsCount={filteredData.bookings.length}
+      lessonsCount={filteredData.lessons.length}
+      eventsCount={filteredData.events.length}
+      bookingFilter={bookingFilter}
+      onBookingFilterChange={handleBookingFilterChange}
+      onActionClick={handleActionClick}
+      globalStats={globalStats}
+    />
+  );
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar - Mobile: sticky top, Desktop: sticky sidebar */}
       <div className="md:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border p-2">
-        <WhiteboardMiniNav
-          activeSection={activeSection}
-          onSectionClick={handleSectionClick}
-          selectedDate={selectedDate}
-          onDateChange={handleDateChange}
-          bookingsCount={filteredData.bookings.length}
-          lessonsCount={filteredData.lessons.length}
-          eventsCount={filteredData.events.length}
-          bookingFilter={bookingFilter}
-          onBookingFilterChange={handleBookingFilterChange}
-          onActionClick={handleActionClick}
-        >
-          <GlobalStatsHeader
-            globalStats={globalStats}
-          />
-        </WhiteboardMiniNav>
+        {miniNav}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 w-full px-4">
         {/* Desktop Sidebar */}
         <div className="hidden md:block col-span-1">
           <div className="sticky top-4 p-4">
-            <WhiteboardMiniNav
-              activeSection={activeSection}
-              onSectionClick={handleSectionClick}
-              selectedDate={selectedDate}
-              onDateChange={handleDateChange}
-              bookingsCount={filteredData.bookings.length}
-              lessonsCount={filteredData.lessons.length}
-              eventsCount={filteredData.events.length}
-              bookingFilter={bookingFilter}
-              onBookingFilterChange={handleBookingFilterChange}
-              onActionClick={handleActionClick}
-            >
-              <GlobalStatsHeader
-                globalStats={globalStats}
-              />
-            </WhiteboardMiniNav>
+            {miniNav}
           </div>
         </div>
 
@@ -437,8 +423,8 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
             <div className="p-4">
               <div className="w-full">
                 {activeSection === "bookings" && (
-                  <WhiteboardBookings 
-                    bookings={filteredData.bookings} 
+                  <WhiteboardBookings
+                    bookings={filteredData.bookings}
                     bookingClasses={filteredData.bookingClasses}
                     selectedDate={selectedDate}
                     teacherSchedules={filteredData.teacherSchedules}
@@ -473,7 +459,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                     lon={-5.6081}
                   />
                 )}
-
 
                 {activeSection === "status" && (
                   <WhiteboardStatus
