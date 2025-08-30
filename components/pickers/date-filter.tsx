@@ -126,7 +126,7 @@ export function DateFilterPicker({ filter, onFilterChange }: DateFilterProps) {
     const [startYear, startMonth] = tempStartMonth.split('-').map(Number);
     const [endYear, endMonth] = tempEndMonth.split('-').map(Number);
     
-    let startDate, endDate;
+    const startDate, endDate;
     
     // Use specific day if provided, otherwise default to full month
     const startDay = tempStartDay ? parseInt(tempStartDay) : 1;

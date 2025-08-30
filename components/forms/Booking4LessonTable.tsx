@@ -179,6 +179,7 @@ export function Booking4LessonTable({
                             ? booking.students
                               .map((bs: any) => bs.student.name)
                               .join(", ")
+                            // eslint-disable-next-line react/no-unescaped-entities
                             : "No students"}
                         </span>
                       </div>

@@ -1,7 +1,3 @@
-/**
- * ShareUtils - Utilities for sharing whiteboard data in various formats
- */
-
 import { TeacherSchedule } from "./TeacherSchedule";
 import { format } from "date-fns";
 
@@ -71,7 +67,7 @@ export class ShareUtils {
             startTime: node.startTime,
             duration: node.duration,
             studentNames,
-            location: eventData.location || "Los Lances",
+            location: eventData.location || "N/A",
             date: eventData.date,
             teacherEarning: earning,
             schoolRevenue: revenue,
@@ -104,7 +100,7 @@ export class ShareUtils {
       (bookingStudent: any) =>
         bookingStudent.student?.name ||
         bookingStudent.student?.first_name ||
-        "Unknown Student",
+        "N/A",
     );
   }
 
@@ -301,7 +297,6 @@ export class ShareUtils {
         "** TOTAL **",
         totalTeacherEarningsFormatted,
         totalSchoolRevenueFormatted,
-        "",
       ].join(","),
     );
 
@@ -575,20 +570,6 @@ export class ShareUtils {
   }
 
   /**
-   * Calculate end time from start time and duration
-   */
-  private static calculateEndTime(
-    startTime: string,
-    durationMinutes: number,
-  ): string {
-    const [hours, minutes] = startTime.split(":").map(Number);
-    const totalMinutes = hours * 60 + minutes + durationMinutes;
-    const endHours = Math.floor(totalMinutes / 60);
-    const endMinutes = totalMinutes % 60;
-    return `${endHours.toString().padStart(2, "0")}:${endMinutes.toString().padStart(2, "0")}`;
-  }
-
-  /**
    * Share via WhatsApp Web API
    */
   static shareToWhatsApp(message: string): void {
@@ -628,116 +609,7 @@ export class ShareUtils {
   static async downloadPrintTable(shareData: ShareData): Promise<void> {
     try {
       const printData = this.generatePrintDocumentData(shareData);
-
-      // Try to use jsPDF if available for PDF generation
-      try {
-        const { jsPDF } = await import("jspdf");
-        await import("jspdf-autotable");
-
-        const doc = new jsPDF("l", "mm", "a4"); // Landscape, A4
-
-        // Add title and subtitle
-        doc.setFontSize(18);
-        doc.text(printData.title, 20, 20);
-        doc.setFontSize(14);
-        doc.text(printData.subtitle, 20, 35);
-
-        let currentY = 50;
-
-        if (printData.events.length === 0) {
-          doc.setFontSize(12);
-          doc.text("No lessons scheduled for this date.", 20, currentY);
-        } else {
-          // Group events by teacher
-          const eventsByTeacher = new Map<string, typeof printData.events>();
-          printData.events.forEach((event) => {
-            if (!eventsByTeacher.has(event.teacherName)) {
-              eventsByTeacher.set(event.teacherName, []);
-            }
-            eventsByTeacher.get(event.teacherName)!.push(event);
-          });
-
-          const sortedTeachers = Array.from(eventsByTeacher.keys()).sort();
-
-          sortedTeachers.forEach((teacherName, teacherIndex) => {
-            const teacherEvents = eventsByTeacher.get(teacherName)!;
-
-            // Check if we need a new page (landscape has more width)
-            if (currentY > 170) {
-              doc.addPage();
-              currentY = 20;
-            }
-
-            // Teacher header (clean name with headset icon)
-            doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
-            doc.text(`🎧 ${teacherName}`, 20, currentY);
-            currentY += 15;
-
-            // Events table for this teacher - optimized for landscape
-            const tableData = teacherEvents
-              .sort((a, b) => a.startTime.localeCompare(b.startTime))
-              .map((event) => {
-                const durationHours = Math.floor(event.duration / 60);
-                const durationMinutes = event.duration % 60;
-                let durationText = "";
-
-                if (durationHours > 0 && durationMinutes > 0) {
-                  durationText = `${durationHours}h ${durationMinutes}m`;
-                } else if (durationHours > 0) {
-                  durationText = `${durationHours}h`;
-                } else {
-                  durationText = `${durationMinutes}m`;
-                }
-
-                return [
-                  event.startTime,
-                  durationText,
-                  event.location,
-                  event.studentNames.join(", "),
-                ];
-              });
-
-            (doc as any).autoTable({
-              head: [["Time", "Duration", "Location", "Students"]],
-              body: tableData,
-              startY: currentY,
-              styles: {
-                fontSize: 9,
-                cellPadding: 2,
-                overflow: "linebreak",
-              },
-              headStyles: {
-                fillColor: [34, 197, 94],
-                textColor: 255,
-                fontStyle: "bold",
-                fontSize: 10,
-              },
-              columnStyles: {
-                0: { cellWidth: 30 }, // Time
-                1: { cellWidth: 25 }, // Duration
-                2: { cellWidth: 40 }, // Location
-                3: { cellWidth: 150 }, // Students (wider for landscape)
-              },
-              margin: { left: 20, right: 20 },
-              tableWidth: "auto",
-            });
-
-            currentY = (doc as any).lastAutoTable.finalY + 15;
-          });
-        }
-
-        // Download PDF
-        const filename = `kite-schedule-${format(new Date(shareData.date), "yyyy-MM-dd")}.pdf`;
-        doc.save(filename);
-      } catch (pdfError) {
-        console.warn(
-          "PDF generation failed, falling back to browser print:",
-          pdfError,
-        );
-        // Fallback: use browser's print functionality with styled HTML
-        this.printHTMLDocument(printData.htmlContent);
-      }
+      this.printHTMLDocument(printData.htmlContent);
     } catch (error) {
       console.error("Failed to generate print document:", error);
       throw error;

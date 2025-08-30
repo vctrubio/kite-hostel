@@ -254,7 +254,7 @@ export function Dashboard({
     }
 
     return filtered;
-  }, [data, selectedMonth, filterEnabled, searchTerm, customFilter, customFilters, searchFunction, sortConfig, sorter, isFilterRangeSelected]);
+  }, [data, selectedMonth, filterEnabled, searchTerm, customFilter, customFilters, searchFunction, sortConfig, sorter, isFilterRangeSelected, entityName]);
 
   const handleToggleFilter = () => {
     setFilterEnabled(!filterEnabled);

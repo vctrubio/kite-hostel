@@ -141,7 +141,7 @@ export function TeacherForm({
             }
 
             const createdTeacher = result.data!;
-            let createdCommissions: any[] = [];
+              const createdCommissions: Commission[] = [];
 
             // Create commissions if any exist
             if (commissions.length > 0) {
@@ -159,7 +159,7 @@ export function TeacherForm({
             }
 
             // Create detailed success message
-            let successMessage = `Teacher "${data.name}" created successfully!`;
+            const successMessage = `Teacher "${data.name}" created successfully!`;
             let description = `Teacher ID: ${createdTeacher.id}`;
             
             if (createdCommissions.length > 0) {

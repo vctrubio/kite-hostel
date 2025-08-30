@@ -345,7 +345,7 @@ export default function EventToTeacherModal({
       setFormData({ startTime: defaultStartTime, duration: defaultDuration, location: controller.location as Location, status: 'planned' as EventStatus, date: date });
       setSelectedAlternative(null);
     }
-  }, [isOpen, controller, lesson, teacherSchedule]);
+  }, [isOpen, controller, lesson, teacherSchedule, date]);
 
   useEffect(() => {
     if (isOpen) {

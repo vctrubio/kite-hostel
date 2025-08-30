@@ -39,9 +39,7 @@ function BookingHeader({
     <div className="grid grid-cols-12 gap-3 p-4 border-b border-border/50">
       {/* Icon - 2 columns */}
       <div className="col-span-2 flex items-center justify-center">
-        <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
-          <BookingIcon className="w-8 h-8 text-blue-700 dark:text-blue-300" />
-        </div>
+        <BookingIcon className="w-8 h-8 text-blue-700 dark:text-blue-300" />
       </div>
 
       {/* Date and Progress - 10 columns */}
@@ -224,11 +222,10 @@ function LessonsSection({
             />
             <button
               onClick={() => onAddEventClick(lesson)}
-              className={`p-1.5 rounded-md transition-colors ${
-                lesson.canCreateEvent
-                  ? "text-green-600 hover:bg-green-500/10 hover:text-green-700"
-                  : "text-gray-400 cursor-not-allowed"
-              }`}
+              className={`p-1.5 rounded-md transition-colors ${lesson.canCreateEvent
+                ? "text-green-600 hover:bg-green-500/10 hover:text-green-700"
+                : "text-gray-400 cursor-not-allowed"
+                }`}
               title={
                 lesson.canCreateEvent
                   ? "Add event for this lesson"
@@ -282,8 +279,8 @@ export default function BookingCard({
     return localBookingClass.getLessons().map((lesson) => {
       const hasEventOnDate = selectedDate
         ? lesson.events?.some(
-            (event) => event.date && event.date.startsWith(selectedDate),
-          )
+          (event) => event.date && event.date.startsWith(selectedDate),
+        )
         : false;
 
       let canCreateEvent = true;

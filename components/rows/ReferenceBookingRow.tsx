@@ -29,10 +29,10 @@ interface ReferenceBookingRowProps {
   setExpandedRow: (id: string | null) => void;
 }
 
-export function ReferenceBookingRow({ 
-  data: booking, 
-  expandedRow, 
-  setExpandedRow 
+export function ReferenceBookingRow({
+  data: booking,
+  expandedRow,
+  setExpandedRow
 }: ReferenceBookingRowProps) {
   const isExpanded = expandedRow === booking.bookingId;
   
@@ -98,9 +98,11 @@ export function ReferenceBookingRow({
                   <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-sm font-medium">
                     €{booking.packageDuration ? Math.round((booking.packagePrice / (booking.packageDuration / 60)) * 100) / 100 : 0}/h
                   </span>
+                  // eslint-disable-next-line react/no-unescaped-entities
                   <span className="text-sm text-muted-foreground">Students: {booking.packageCapacity}</span>
                   <span className="text-sm text-muted-foreground">Booking: <DateTime dateString={booking.bookingStartDate} formatType="date" /></span>
                   {booking.packageDescription && (
+                    // eslint-disable-next-line react/no-unescaped-entities
                     <span className="text-sm text-muted-foreground italic">"{booking.packageDescription}"</span>
                   )}
                 </div>

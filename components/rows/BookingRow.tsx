@@ -63,7 +63,8 @@ export function BookingRow({
               {booking.students.map((bs: any) => bs.student.name).join(", ")}
             </span>
           ) : (
-            <span>No students</span>
+                                    // eslint-disable-next-line react/no-unescaped-entities
+                                    <span>No students</span>
           )}
         </td>
         <td className="py-2 px-4 text-left">
@@ -207,13 +208,11 @@ export function BookingRow({
                               ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300"
                               : lesson.status === "completed"
                                 ? "bg-gray-100 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300"
-                                : lesson.status === "cancelled"
-                                  ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300"
-                                  : lesson.status === "rest"
-                                    ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                                    : lesson.status === "delegated"
-                                      ? "bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
-                                      : "bg-gray-100 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300"
+                                : lesson.status === "rest"
+                                  ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                                  : lesson.status === "delegated"
+                                    ? "bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
+                                    : "bg-gray-100 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300"
                               }`}
                           >
                             {lesson.status}
