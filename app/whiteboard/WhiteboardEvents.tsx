@@ -1,23 +1,29 @@
-'use client';
+"use client";
 
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import EventCard, { GapCard } from "@/components/cards/EventCard";
 import TeacherEventQueue from "@/components/whiteboard-usage/TeacherEventQueue";
-import { HeadsetIcon, Zap, ChevronLeft, ChevronRight, Wind, ChevronDown } from "lucide-react";
-import { FlagIcon } from "@/svgs/FlagIcon";
+import {
+  HeadsetIcon,
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+  Wind,
+  ChevronDown,
+  Flag,
+  FlagOff,
+} from "lucide-react";
 import { TeacherSchedule, ScheduleNode } from "@/backend/TeacherSchedule";
 import { type ReorganizationOption } from "@/backend/types";
-import { TeacherEventsUtils, type TeacherEventGroupData } from "@/backend/TeacherEventsUtils";
+import {
+  TeacherEventsUtils,
+  type TeacherEventGroupData,
+} from "@/backend/TeacherEventsUtils";
 import { reorganizeEventTimes } from "@/actions/kite-actions";
 import { updateEvent, deleteEvent } from "@/actions/event-actions";
-import {
-  timeToMinutes,
-  minutesToTime,
-  createUTCDateTime,
-  toUTCString,
-} from "@/components/formatters/TimeZone";
-import { extractStudentNames } from '@/backend/WhiteboardClass';
+import { timeToMinutes, minutesToTime } from "@/components/formatters/TimeZone";
+import { extractStudentNames } from "@/backend/WhiteboardClass";
 
 interface WhiteboardEventsProps {
   events: any[];
@@ -95,60 +101,8 @@ function TimeAdjustmentFlag({
       className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 cursor-pointer transition-colors"
       title="Click to adjust start time and switch to queue view"
     >
-      <FlagIcon className="w-4 h-4" />
+      <Flag className="w-4 h-4" />
       <span>{displayTime}</span>
-    </div>
-  );
-}
-
-// Sub-component: Parent Time Adjustment Flag
-interface ParentTimeAdjustmentFlagProps {
-  parentTimeAdjustmentMode: boolean;
-  parentGlobalTime: string | null;
-  earliestTime: string | null;
-  onParentTimeAdjustment: (minutesOffset: number) => void;
-  onParentFlagClick: () => void;
-}
-
-function ParentTimeAdjustmentFlag({
-  parentTimeAdjustmentMode,
-  parentGlobalTime,
-  earliestTime,
-  onParentTimeAdjustment,
-  onParentFlagClick,
-}: ParentTimeAdjustmentFlagProps) {
-  if (parentTimeAdjustmentMode) {
-    return (
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onParentTimeAdjustment(-30)}
-          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-          title="Move all schedules back 30 minutes"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <span className="min-w-[60px] text-center font-mono">
-          {parentGlobalTime || "No events"}
-        </span>
-        <button
-          onClick={() => onParentTimeAdjustment(30)}
-          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-          title="Move all schedules forward 30 minutes"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      onClick={onParentFlagClick}
-      className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 cursor-pointer transition-colors"
-      title="Click to adjust all schedules globally"
-    >
-      <FlagIcon className="w-4 h-4" />
-      <span>{earliestTime || "No events"}</span>
     </div>
   );
 }
@@ -178,9 +132,16 @@ function TeacherEventsGroup({
   const [viewMode, setViewMode] = useState<"event" | "queue">("event");
 
   // Computed values
-  const scheduleNodes = useMemo(() => teacherSchedule.getNodes(), [teacherSchedule]);
-  const eventNodes = useMemo(() => scheduleNodes.filter((node) => node.type === "event"), [scheduleNodes]);
-  const [editableScheduleNodes, setEditableScheduleNodes] = useState(scheduleNodes);
+  const scheduleNodes = useMemo(
+    () => teacherSchedule.getNodes(),
+    [teacherSchedule],
+  );
+  const eventNodes = useMemo(
+    () => scheduleNodes.filter((node) => node.type === "event"),
+    [scheduleNodes],
+  );
+  const [editableScheduleNodes, setEditableScheduleNodes] =
+    useState(scheduleNodes);
   const schedule = teacherSchedule.getSchedule();
   const canReorganize = teacherSchedule.canReorganizeSchedule();
   const router = useRouter();
@@ -193,15 +154,24 @@ function TeacherEventsGroup({
       const teacherId = teacherSchedule.getSchedule().teacherId;
       onTeacherEditModeChange?.(teacherId, true);
     }
-  }, [parentTimeAdjustmentMode, viewMode]);
+  }, [
+    parentTimeAdjustmentMode,
+    viewMode,
+    onTeacherEditModeChange,
+    teacherSchedule,
+  ]);
 
-  // Parent time application effect  
+  // Parent time application effect
   useEffect(() => {
-    const teacherId = teacherSchedule.getSchedule().teacherId;
-
     if (parentTimeAdjustmentMode && parentGlobalTime) {
-      const updatedNodes = TeacherEventsUtils.applyParentTimeToSchedule(scheduleNodes, parentGlobalTime);
-      const timeOffset = TeacherEventsUtils.calculateTimeOffset(teacherSchedule, parentGlobalTime);
+      const updatedNodes = TeacherEventsUtils.applyParentTimeToSchedule(
+        scheduleNodes,
+        parentGlobalTime,
+      );
+      const timeOffset = TeacherEventsUtils.calculateTimeOffset(
+        teacherSchedule,
+        parentGlobalTime,
+      );
       setEditableScheduleNodes(updatedNodes);
       setGlobalTimeOffset(timeOffset);
     } else if (!parentTimeAdjustmentMode) {
@@ -210,7 +180,12 @@ function TeacherEventsGroup({
       setTimeAdjustmentMode(false);
       setViewMode("event");
     }
-  }, [parentTimeAdjustmentMode, parentGlobalTime, scheduleNodes, teacherSchedule]);
+  }, [
+    parentTimeAdjustmentMode,
+    parentGlobalTime,
+    scheduleNodes,
+    teacherSchedule,
+  ]);
 
   // Sync with original schedule
   useEffect(() => {
@@ -218,43 +193,67 @@ function TeacherEventsGroup({
   }, [scheduleNodes]);
 
   // Handler functions (using backend utilities)
-  const handleAdjustDuration = useCallback((lessonId: string, increment: boolean) => {
-    setEditableScheduleNodes((currentNodes) => 
-      TeacherEventsUtils.adjustLessonDuration(currentNodes, lessonId, increment)
-    );
-  }, []);
+  const handleAdjustDuration = useCallback(
+    (lessonId: string, increment: boolean) => {
+      setEditableScheduleNodes((currentNodes) =>
+        TeacherEventsUtils.adjustLessonDuration(
+          currentNodes,
+          lessonId,
+          increment,
+        ),
+      );
+    },
+    [],
+  );
 
-  const handleAdjustTime = useCallback((lessonId: string, increment: boolean) => {
-    setEditableScheduleNodes((currentNodes) => {
-      const { nodes, globalOffsetDelta } = TeacherEventsUtils.adjustLessonTime(currentNodes, lessonId, increment);
-      setGlobalTimeOffset(prev => prev + globalOffsetDelta);
-      return nodes;
-    });
-  }, []);
+  const handleAdjustTime = useCallback(
+    (lessonId: string, increment: boolean) => {
+      setEditableScheduleNodes((currentNodes) => {
+        const { nodes, globalOffsetDelta } =
+          TeacherEventsUtils.adjustLessonTime(
+            currentNodes,
+            lessonId,
+            increment,
+          );
+        setGlobalTimeOffset((prev) => prev + globalOffsetDelta);
+        return nodes;
+      });
+    },
+    [],
+  );
 
-  const handleRemoveFromQueue = useCallback((lessonId: string) => {
-    setEditableScheduleNodes((currentNodes) => {
-      const { nodes, newGlobalOffset } = TeacherEventsUtils.removeLessonFromQueue(currentNodes, scheduleNodes, lessonId);
-      setGlobalTimeOffset(newGlobalOffset);
-      return nodes;
-    });
-  }, [scheduleNodes]);
+  const handleRemoveFromQueue = useCallback(
+    (lessonId: string) => {
+      setEditableScheduleNodes((currentNodes) => {
+        const { nodes, newGlobalOffset } =
+          TeacherEventsUtils.removeLessonFromQueue(
+            currentNodes,
+            scheduleNodes,
+            lessonId,
+          );
+        setGlobalTimeOffset(newGlobalOffset);
+        return nodes;
+      });
+    },
+    [scheduleNodes],
+  );
 
-  const handleRemoveGap = useCallback((lessonId: string) => {
-    if (!teacherSchedule) return;
-    teacherSchedule.removeGapForLesson(lessonId);
-    const updatedNodes = teacherSchedule.getNodes();
-    setEditableScheduleNodes(updatedNodes);
-  }, [teacherSchedule]);
-
-  const handleMoveInQueue = useCallback((lessonId: string, direction: 'up' | 'down') => {
-    setEditableScheduleNodes(currentNodes => 
-      TeacherEventsUtils.moveLessonInQueue(currentNodes, lessonId, direction)
-    );
-  }, []);
+  const handleMoveInQueue = useCallback(
+    (lessonId: string, direction: "up" | "down") => {
+      setEditableScheduleNodes((currentNodes) =>
+        TeacherEventsUtils.moveLessonInQueue(currentNodes, lessonId, direction),
+      );
+    },
+    [],
+  );
 
   const handleSubmitQueueChanges = useCallback(async () => {
-    await TeacherEventsUtils.submitQueueChanges(scheduleNodes, editableScheduleNodes, events, selectedDate);
+    await TeacherEventsUtils.submitQueueChanges(
+      scheduleNodes,
+      editableScheduleNodes,
+      events,
+      selectedDate,
+    );
   }, [scheduleNodes, editableScheduleNodes, events, selectedDate]);
 
   const handleResetQueue = useCallback(() => {
@@ -263,16 +262,21 @@ function TeacherEventsGroup({
 
   const handleCancelQueue = useCallback(() => {
     const teacherId = teacherSchedule.getSchedule().teacherId;
-    
+
     if (parentTimeAdjustmentMode) {
       setEditableScheduleNodes(scheduleNodes);
     } else {
       setViewMode("event");
       setEditableScheduleNodes(scheduleNodes);
     }
-    
+
     onTeacherEditModeChange?.(teacherId, false);
-  }, [scheduleNodes, teacherSchedule, onTeacherEditModeChange, parentTimeAdjustmentMode]);
+  }, [
+    scheduleNodes,
+    teacherSchedule,
+    onTeacherEditModeChange,
+    parentTimeAdjustmentMode,
+  ]);
 
   const handleSubmitAndExit = useCallback(async () => {
     await handleSubmitQueueChanges();
@@ -280,28 +284,43 @@ function TeacherEventsGroup({
   }, [handleSubmitQueueChanges]);
 
   const handleFullScheduleReorganization = useCallback(async () => {
-    const success = await TeacherEventsUtils.performFullScheduleReorganization(teacherSchedule, events, selectedDate);
+    const success = await TeacherEventsUtils.performFullScheduleReorganization(
+      teacherSchedule,
+      events,
+      selectedDate,
+    );
     if (success) {
       router.refresh();
     }
   }, [teacherSchedule, events, selectedDate, router]);
 
-  const handleTimeAdjustment = useCallback((minutesOffset: number) => {
-    const newOffset = globalTimeOffset + minutesOffset;
-    setGlobalTimeOffset(newOffset);
+  const handleTimeAdjustment = useCallback(
+    (minutesOffset: number) => {
+      const newOffset = globalTimeOffset + minutesOffset;
+      setGlobalTimeOffset(newOffset);
 
-    if (newOffset === 0) {
-      setEditableScheduleNodes(scheduleNodes);
-      return;
-    }
+      if (newOffset === 0) {
+        setEditableScheduleNodes(scheduleNodes);
+        return;
+      }
 
-    const updatedNodes = TeacherEventsUtils.applyGlobalTimeOffset(scheduleNodes, newOffset);
-    setEditableScheduleNodes(updatedNodes);
-  }, [globalTimeOffset, scheduleNodes]);
+      const updatedNodes = TeacherEventsUtils.applyGlobalTimeOffset(
+        scheduleNodes,
+        newOffset,
+      );
+      setEditableScheduleNodes(updatedNodes);
+    },
+    [globalTimeOffset, scheduleNodes],
+  );
 
   const handleAcceptTimeAdjustment = useCallback(async () => {
-    const result = await TeacherEventsUtils.acceptTimeAdjustment(teacherSchedule, globalTimeOffset, events, selectedDate);
-    
+    const result = await TeacherEventsUtils.acceptTimeAdjustment(
+      teacherSchedule,
+      globalTimeOffset,
+      events,
+      selectedDate,
+    );
+
     if (result.success) {
       if (result.updatedNodes) {
         setEditableScheduleNodes(result.updatedNodes);
@@ -314,15 +333,28 @@ function TeacherEventsGroup({
     } else {
       setEditableScheduleNodes(scheduleNodes);
     }
-  }, [teacherSchedule, globalTimeOffset, events, selectedDate, parentTimeAdjustmentMode, scheduleNodes]);
+  }, [
+    teacherSchedule,
+    globalTimeOffset,
+    events,
+    selectedDate,
+    parentTimeAdjustmentMode,
+    scheduleNodes,
+  ]);
 
-  const handleStatusChange = useCallback(async (eventId: string, newStatus: "planned" | "completed" | "tbc" | "cancelled") => {
-    await TeacherEventsUtils.changeEventStatus(eventId, newStatus);
-  }, []);
+  const handleStatusChange = useCallback(
+    async (
+      eventId: string,
+      newStatus: "planned" | "completed" | "tbc" | "cancelled",
+    ) => {
+      await TeacherEventsUtils.changeEventStatus(eventId, newStatus);
+    },
+    [],
+  );
 
   const handleCancelTimeAdjustment = useCallback(() => {
     const teacherId = teacherSchedule.getSchedule().teacherId;
-    
+
     if (parentTimeAdjustmentMode) {
       setTimeAdjustmentMode(false);
       setGlobalTimeOffset(0);
@@ -333,9 +365,14 @@ function TeacherEventsGroup({
       setEditableScheduleNodes(scheduleNodes);
       setViewMode("event");
     }
-    
+
     onTeacherEditModeChange?.(teacherId, false);
-  }, [scheduleNodes, teacherSchedule, onTeacherEditModeChange, parentTimeAdjustmentMode]);
+  }, [
+    scheduleNodes,
+    teacherSchedule,
+    onTeacherEditModeChange,
+    parentTimeAdjustmentMode,
+  ]);
 
   // Render event cards
   const renderEventCards = () => {
@@ -352,15 +389,22 @@ function TeacherEventsGroup({
         );
       }
 
-      const eventData = events.find((e) => e.lesson?.id === node.eventData?.lessonId);
+      const eventData = events.find(
+        (e) => e.lesson?.id === node.eventData?.lessonId,
+      );
       if (!eventData) return null;
 
-      const studentNames = eventData.booking ? extractStudentNames(eventData.booking) : "No students";
+      const studentNames = eventData.booking
+        ? extractStudentNames(eventData.booking)
+        : "No students";
 
-      // Find next event in this teacher's schedule
-      const currentIndex = scheduleNodes.findIndex(n => n.id === node.id);
-      const nextEventNode = scheduleNodes.slice(currentIndex + 1).find(n => n.type === "event");
-      const nextEventData = nextEventNode ? events.find(e => e.lesson?.id === nextEventNode.eventData?.lessonId) : null;
+      const currentIndex = scheduleNodes.findIndex((n) => n.id === node.id);
+      const nextEventNode = scheduleNodes
+        .slice(currentIndex + 1)
+        .find((n) => n.type === "event");
+      const nextEventData = nextEventNode
+        ? events.find((e) => e.lesson?.id === nextEventNode.eventData?.lessonId)
+        : null;
 
       return (
         <div key={`event-${node.id}-${eventData.id}`}>
@@ -374,18 +418,29 @@ function TeacherEventsGroup({
             lessonId={eventData.lesson?.id}
             selectedDate={selectedDate}
             teacherSchedule={teacherSchedule}
-            nextEvent={nextEventData ? {
-              id: nextEventData.id,
-              startTime: nextEventNode?.startTime || "00:00",
-              duration: nextEventData.duration || 0,
-              lessonId: nextEventData.lesson?.id
-            } : undefined}
+            nextEvent={
+              nextEventData
+                ? {
+                    id: nextEventData.id,
+                    startTime: nextEventNode?.startTime || "00:00",
+                    duration: nextEventData.duration || 0,
+                    lessonId: nextEventData.lesson?.id,
+                  }
+                : undefined
+            }
             reorganizationOptions={pendingReorganizations.get(eventData.id)}
-            onDelete={() => console.log("🗑️ EventCard onDelete called for event:", eventData.id)}
+            onDelete={() =>
+              console.log(
+                "🗑️ EventCard onDelete called for event:",
+                eventData.id,
+              )
+            }
             onReorganize={() => {}}
             onDismissReorganization={() => {}}
             onCancelReorganization={() => {}}
-            onStatusChange={(newStatus) => handleStatusChange(eventData.id, newStatus)}
+            onStatusChange={(newStatus) =>
+              handleStatusChange(eventData.id, newStatus)
+            }
           />
         </div>
       );
@@ -438,23 +493,47 @@ function TeacherEventsGroup({
           ) : (
             <>
               <button
-                onClick={timeAdjustmentMode ? handleAcceptTimeAdjustment : handleSubmitAndExit}
+                onClick={
+                  timeAdjustmentMode
+                    ? handleAcceptTimeAdjustment
+                    : handleSubmitAndExit
+                }
                 className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
-                title={timeAdjustmentMode ? "Accept time changes" : "Submit queue changes"}
+                title={
+                  timeAdjustmentMode
+                    ? "Accept time changes"
+                    : "Submit queue changes"
+                }
               >
                 Submit
               </button>
               <button
-                onClick={timeAdjustmentMode ? handleCancelTimeAdjustment : handleResetQueue}
+                onClick={
+                  timeAdjustmentMode
+                    ? handleCancelTimeAdjustment
+                    : handleResetQueue
+                }
                 className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
-                title={timeAdjustmentMode ? "Cancel time changes" : "Reset all changes made to the queue"}
+                title={
+                  timeAdjustmentMode
+                    ? "Cancel time changes"
+                    : "Reset all changes made to the queue"
+                }
               >
                 Reset
               </button>
               <button
-                onClick={timeAdjustmentMode ? handleCancelTimeAdjustment : handleCancelQueue}
+                onClick={
+                  timeAdjustmentMode
+                    ? handleCancelTimeAdjustment
+                    : handleCancelQueue
+                }
                 className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
-                title={timeAdjustmentMode ? "Cancel time changes" : "Cancel editing and discard all changes"}
+                title={
+                  timeAdjustmentMode
+                    ? "Cancel time changes"
+                    : "Cancel editing and discard all changes"
+                }
               >
                 Cancel
               </button>
@@ -485,17 +564,182 @@ function TeacherEventsGroup({
   );
 }
 
+// Sub-component: No Wind Button
+function NoWindButton({
+  events,
+  onAllEventsDeleted,
+}: {
+  events: any[];
+  onAllEventsDeleted: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleNoWind = async () => {
+    if (events.length === 0) return;
+
+    try {
+      let deletedCount = 0;
+      for (const event of events) {
+        const result = await deleteEvent(event.id);
+        if (result.success) deletedCount++;
+      }
+      onAllEventsDeleted();
+    } catch (error) {
+      console.error("❌ Error deleting events:", error);
+    }
+  };
+
+  if (events.length === 0) return null;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded hover:bg-red-200 border border-red-300 flex items-center gap-1"
+        title="Cancel all events due to unsafe wind conditions"
+      >
+        <Wind className="w-3 h-3" />
+        <span>NO WIND</span>
+        <ChevronDown className="w-3 h-3" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-1 bg-white border border-red-300 rounded shadow-lg p-3 z-10 w-64">
+          <div className="text-sm text-red-800 font-medium mb-2">
+            Delete all {events.length} events?
+          </div>
+          <div className="text-xs text-red-600 mb-3">
+            This will cancel all events for today. This action cannot be undone.
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleNoWind}
+              className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded"
+            >
+              Delete All
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Sub-component: Parent Control Flag
+function ParentControlFlag({
+  events,
+  selectedDate,
+  earliestTime,
+  parentTimeAdjustmentMode,
+  parentGlobalTime,
+  onParentTimeAdjustment,
+  onParentAcceptTimeAdjustment,
+  onParentCancelTimeAdjustment,
+  onParentFlagClick,
+  onAllEventsDeleted,
+}: {
+  events: any[];
+  selectedDate: string;
+  earliestTime: string | null;
+  parentTimeAdjustmentMode: boolean;
+  parentGlobalTime: string | null;
+  onParentTimeAdjustment: (minutesOffset: number) => void;
+  onParentAcceptTimeAdjustment: () => void;
+  onParentCancelTimeAdjustment: () => void;
+  onParentFlagClick: () => void;
+  onAllEventsDeleted: () => void;
+}) {
+  const dayOfWeek = useMemo(
+    () =>
+      new Date(selectedDate).toLocaleDateString("en-US", { weekday: "long" }),
+    [selectedDate],
+  );
+
+  return (
+    <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg p-4">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <h3 className="text-lg font-medium text-foreground dark:text-white">
+            {dayOfWeek}
+          </h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onParentFlagClick}
+              title="Toggle Global Time Adjustment"
+            >
+              {parentTimeAdjustmentMode ? (
+                <FlagOff className="w-5 h-5 text-blue-500" />
+              ) : (
+                <Flag className="w-5 h-5 text-muted-foreground" />
+              )}
+            </button>
+
+            {parentTimeAdjustmentMode ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onParentTimeAdjustment(-30)}
+                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title="Move all schedules back 30 minutes"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="min-w-[60px] text-center font-mono">
+                  {parentGlobalTime || "No Lessons Set"}
+                </span>
+                <button
+                  onClick={() => onParentTimeAdjustment(30)}
+                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title="Move all schedules forward 30 minutes"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={onParentAcceptTimeAdjustment}
+                  className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
+                  title="Apply global time adjustment to all teachers"
+                >
+                  Submit All
+                </button>
+                <button
+                  onClick={onParentCancelTimeAdjustment}
+                  className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
+                  title="Cancel global time adjustment"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <span>{earliestTime || "No Lessons Set"}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        <NoWindButton events={events} onAllEventsDeleted={onAllEventsDeleted} />
+      </div>
+    </div>
+  );
+}
+
 export default function WhiteboardEvents({
   events,
   selectedDate,
   teacherSchedules,
 }: WhiteboardEventsProps) {
   // State
-  const [parentTimeAdjustmentMode, setParentTimeAdjustmentMode] = useState(false);
+  const [parentTimeAdjustmentMode, setParentTimeAdjustmentMode] =
+    useState(false);
   const [parentGlobalTime, setParentGlobalTime] = useState<string | null>(null);
   const teachersInEditModeRef = useRef<Set<string>>(new Set());
-  const [teachersNotInEditMode, setTeachersNotInEditMode] = useState<Set<string>>(new Set());
-  const [noWindDropdownOpen, setNoWindDropdownOpen] = useState(false);
+  const [teachersNotInEditMode, setTeachersNotInEditMode] = useState<
+    Set<string>
+  >(new Set());
   const router = useRouter();
 
   // Computed values
@@ -520,23 +764,30 @@ export default function WhiteboardEvents({
       .filter((group) => group.teacherSchedule) as TeacherEventGroupData[];
   }, [events, teacherSchedules]);
 
-  const earliestTime = useMemo(() => 
-    TeacherEventsUtils.findEarliestTime(teacherEventGroups), 
-    [teacherEventGroups]
+  const earliestTime = useMemo(
+    () => TeacherEventsUtils.findEarliestTime(teacherEventGroups),
+    [teacherEventGroups],
   );
 
   // Handlers
-  const handleParentTimeAdjustment = useCallback((minutesOffset: number) => {
-    if (!parentGlobalTime) {
-      if (earliestTime) {
-        const newTime = minutesToTime(timeToMinutes(earliestTime) + minutesOffset);
+  const handleParentTimeAdjustment = useCallback(
+    (minutesOffset: number) => {
+      if (!parentGlobalTime) {
+        if (earliestTime) {
+          const newTime = minutesToTime(
+            timeToMinutes(earliestTime) + minutesOffset,
+          );
+          setParentGlobalTime(newTime);
+        }
+      } else {
+        const newTime = minutesToTime(
+          timeToMinutes(parentGlobalTime) + minutesOffset,
+        );
         setParentGlobalTime(newTime);
       }
-    } else {
-      const newTime = minutesToTime(timeToMinutes(parentGlobalTime) + minutesOffset);
-      setParentGlobalTime(newTime);
-    }
-  }, [parentGlobalTime, earliestTime]);
+    },
+    [parentGlobalTime, earliestTime],
+  );
 
   const handleParentAcceptTimeAdjustment = useCallback(async () => {
     if (!parentGlobalTime) {
@@ -548,17 +799,30 @@ export default function WhiteboardEvents({
 
     teacherEventGroups.forEach((group) => {
       const teacherSchedule = group.teacherSchedule;
-      if (teacherSchedule && teachersInEditModeRef.current.has(group.teacherId) && !teachersNotInEditMode.has(group.teacherId)) {
-        const firstEventNode = teacherSchedule.getNodes().find(n => n.type === "event");
+      if (
+        teacherSchedule &&
+        teachersInEditModeRef.current.has(group.teacherId) &&
+        !teachersNotInEditMode.has(group.teacherId)
+      ) {
+        const firstEventNode = teacherSchedule
+          .getNodes()
+          .find((n) => n.type === "event");
         if (firstEventNode) {
           const originalStartTime = timeToMinutes(firstEventNode.startTime);
           const targetStartTime = timeToMinutes(parentGlobalTime);
           const timeOffset = targetStartTime - originalStartTime;
-          
-          const success = teacherSchedule.shiftFirstEventAndReorganize(timeOffset);
+
+          const success =
+            teacherSchedule.shiftFirstEventAndReorganize(timeOffset);
           if (success) {
-            const eventIdMap = TeacherEventsUtils.createEventIdMap(group.events);
-            const databaseUpdates = teacherSchedule.getDatabaseUpdatesForShiftedSchedule(selectedDate, eventIdMap);
+            const eventIdMap = TeacherEventsUtils.createEventIdMap(
+              group.events,
+            );
+            const databaseUpdates =
+              teacherSchedule.getDatabaseUpdatesForShiftedSchedule(
+                selectedDate,
+                eventIdMap,
+              );
             if (databaseUpdates.length > 0) {
               updatePromises.push(reorganizeEventTimes(databaseUpdates));
             }
@@ -568,20 +832,21 @@ export default function WhiteboardEvents({
     });
 
     if (updatePromises.length > 0) {
-      const results = await Promise.all(updatePromises);
-      const failures = results.filter((r) => !r.success);
-      if (failures.length === 0) {
-        console.log(`Parent time adjustment applied successfully. Updated ${results.length} teachers.`);
-      } else {
-        console.error("Some parent time updates failed:", failures);
-      }
+      await Promise.all(updatePromises);
     }
 
     setParentTimeAdjustmentMode(false);
     setParentGlobalTime(null);
     teachersInEditModeRef.current.clear();
     setTeachersNotInEditMode(new Set());
-  }, [parentGlobalTime, teacherEventGroups, selectedDate, teachersNotInEditMode]);
+    router.refresh();
+  }, [
+    parentGlobalTime,
+    teacherEventGroups,
+    selectedDate,
+    teachersNotInEditMode,
+    router,
+  ]);
 
   const handleParentCancelTimeAdjustment = useCallback(() => {
     setParentTimeAdjustmentMode(false);
@@ -590,151 +855,54 @@ export default function WhiteboardEvents({
     setTeachersNotInEditMode(new Set());
   }, []);
 
-  const handleTeacherEditModeChange = useCallback((teacherId: string, inEditMode: boolean) => {
-    if (inEditMode) {
-      teachersInEditModeRef.current.add(teacherId);
-    } else {
-      teachersInEditModeRef.current.delete(teacherId);
-    }
-  }, []);
+  const handleTeacherEditModeChange = useCallback(
+    (teacherId: string, inEditMode: boolean) => {
+      if (inEditMode) {
+        teachersInEditModeRef.current.add(teacherId);
+      } else {
+        teachersInEditModeRef.current.delete(teacherId);
+      }
+    },
+    [],
+  );
 
   const handleParentFlagClick = useCallback(() => {
-    setParentTimeAdjustmentMode(true);
-    setParentGlobalTime(earliestTime);
-    const allTeacherIds = teacherEventGroups.map(group => group.teacherId);
-    teachersInEditModeRef.current = new Set(allTeacherIds);
-  }, [earliestTime, teacherEventGroups]);
-
-  const handleNoWind = useCallback(async () => {
-    if (events.length === 0) return;
-    
-    try {
-      let deletedCount = 0;
-      for (const event of events) {
-        console.log(`🗑️ Deleting event ${event.id} due to NO WIND`);
-        const result = await deleteEvent(event.id);
-        if (result.success) {
-          deletedCount++;
-        } else {
-          console.error(`❌ Failed to delete event ${event.id}:`, result.error);
-        }
-      }
-      
-      console.log(`✅ ${deletedCount}/${events.length} events deleted due to NO WIND conditions`);
-      setNoWindDropdownOpen(false);
-      router.refresh();
-    } catch (error) {
-      console.error('❌ Error deleting events:', error);
+    const newMode = !parentTimeAdjustmentMode;
+    setParentTimeAdjustmentMode(newMode);
+    if (newMode) {
+      setParentGlobalTime(earliestTime);
+      const allTeacherIds = teacherEventGroups.map((group) => group.teacherId);
+      teachersInEditModeRef.current = new Set(allTeacherIds);
+    } else {
+      handleParentCancelTimeAdjustment();
     }
-  }, [events, router]);
+  }, [
+    parentTimeAdjustmentMode,
+    earliestTime,
+    teacherEventGroups,
+    handleParentCancelTimeAdjustment,
+  ]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (noWindDropdownOpen && !(event.target as Element)?.closest('.relative')) {
-        setNoWindDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [noWindDropdownOpen]);
+  const handleAllEventsDeleted = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   return (
     <div className="space-y-6">
+      <ParentControlFlag
+        events={events}
+        selectedDate={selectedDate}
+        earliestTime={earliestTime}
+        parentTimeAdjustmentMode={parentTimeAdjustmentMode}
+        parentGlobalTime={parentGlobalTime}
+        onParentTimeAdjustment={handleParentTimeAdjustment}
+        onParentAcceptTimeAdjustment={handleParentAcceptTimeAdjustment}
+        onParentCancelTimeAdjustment={handleParentCancelTimeAdjustment}
+        onParentFlagClick={handleParentFlagClick}
+        onAllEventsDeleted={handleAllEventsDeleted}
+      />
+
       {teacherEventGroups.length > 0 && (
-        <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg p-4">
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <HeadsetIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <h3 className="text-lg font-medium text-foreground dark:text-white">
-                  Global Schedule Control
-                </h3>
-                <ParentTimeAdjustmentFlag
-                  parentTimeAdjustmentMode={parentTimeAdjustmentMode}
-                  parentGlobalTime={parentGlobalTime}
-                  earliestTime={earliestTime}
-                  onParentTimeAdjustment={handleParentTimeAdjustment}
-                  onParentFlagClick={handleParentFlagClick}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                {parentTimeAdjustmentMode && (
-                  <>
-                    <button
-                      onClick={handleParentAcceptTimeAdjustment}
-                      className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
-                      title="Apply global time adjustment to all teachers"
-                    >
-                      Submit All
-                    </button>
-                    <button
-                      onClick={handleParentCancelTimeAdjustment}
-                      className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
-                      title="Cancel global time adjustment"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* NO WIND Button - Emergency Cancel All Events - Separate row */}
-            {events.length > 0 && (
-              <div className="flex justify-end">
-                <div className="relative">
-                  <button
-                    onClick={() => setNoWindDropdownOpen(!noWindDropdownOpen)}
-                    className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded hover:bg-red-200 border border-red-300 flex items-center gap-1"
-                    title="Cancel all events due to unsafe wind conditions"
-                  >
-                    <Wind className="w-3 h-3" />
-                    <span>NO WIND</span>
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                  
-                  {noWindDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-1 bg-white border border-red-300 rounded shadow-lg p-3 z-10 w-64">
-                      <div className="text-sm text-red-800 font-medium mb-2">
-                        Delete all {events.length} events?
-                      </div>
-                      <div className="text-xs text-red-600 mb-3">
-                        This will cancel all events for today due to unsafe wind conditions. This action cannot be undone.
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={handleNoWind}
-                          className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded"
-                        >
-                          Delete All
-                        </button>
-                        <button
-                          onClick={() => setNoWindDropdownOpen(false)}
-                          className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {teacherEventGroups.length === 0 ? (
-        <div className="p-8 bg-muted dark:bg-gray-800 rounded-lg text-center">
-          <p className="text-muted-foreground dark:text-gray-400">
-            No events found for this date
-          </p>
-        </div>
-      ) : (
         <div className="space-y-4">
           {teacherEventGroups.map((group) => (
             <TeacherEventsGroup
