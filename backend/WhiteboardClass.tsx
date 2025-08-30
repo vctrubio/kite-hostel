@@ -5,7 +5,7 @@ import {
 import { type BookingData, type LessonData } from '@/backend/types';
 
 export class WhiteboardClass {
-  private booking: BookingData;
+  public booking: BookingData; // Make public so TeacherSchedule can access it
 
   constructor(bookingData: BookingData) {
     this.booking = { ...bookingData };
@@ -139,24 +139,6 @@ export function groupLessonsByTeacher(lessons: any[]) {
   }, []);
 }
 
-export function getAvailableLessons(lessons: any[], selectedDate: string) {
-  return lessons.filter(lesson => {
-    // Only show planned lessons
-    if (lesson.status !== 'planned') return false;
-    
-    // Check if lesson already has event for selected date
-    const hasEventForDate = lesson.events?.some((event: any) => {
-      if (!event.date) return false;
-      const eventDate = new Date(event.date);
-      const filterDate = new Date(selectedDate);
-      eventDate.setHours(0, 0, 0, 0);
-      filterDate.setHours(0, 0, 0, 0);
-      return eventDate.getTime() === filterDate.getTime();
-    });
-    
-    return !hasEventForDate;
-  });
-}
 
 export function extractStudentNames(booking: any): string {
   return booking?.students?.map((bs: any) => bs.student?.name).filter(Boolean).join(', ') || 'No students';

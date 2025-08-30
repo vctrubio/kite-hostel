@@ -181,14 +181,14 @@ export class TeacherSchedule {
    * Insert node in chronological order
    */
   private insertNode(newNode: ScheduleNode): void {
-    if (!this.schedule.head || this.timeToMinutes(newNode.startTime) < this.timeToMinutes(this.schedule.head.startTime)) {
+    if (!this.schedule.head || timeToMinutes(newNode.startTime) < timeToMinutes(this.schedule.head.startTime)) {
       newNode.next = this.schedule.head;
       this.schedule.head = newNode;
       return;
     }
 
     let current = this.schedule.head;
-    while (current.next && this.timeToMinutes(current.next.startTime) < this.timeToMinutes(newNode.startTime)) {
+    while (current.next && timeToMinutes(current.next.startTime) < timeToMinutes(newNode.startTime)) {
       current = current.next;
     }
 
@@ -222,7 +222,7 @@ export class TeacherSchedule {
     
     // Sort events by start time
     const sortedEvents = [...eventNodes].sort((a, b) => 
-      this.timeToMinutes(a.startTime) - this.timeToMinutes(b.startTime)
+      timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
     );
 
     // Check gaps between events
@@ -230,13 +230,13 @@ export class TeacherSchedule {
       const currentEvent = sortedEvents[i];
       const nextEvent = sortedEvents[i + 1];
       
-      const currentEnd = this.timeToMinutes(currentEvent.startTime) + currentEvent.duration;
-      const nextStart = this.timeToMinutes(nextEvent.startTime);
+      const currentEnd = timeToMinutes(currentEvent.startTime) + currentEvent.duration;
+      const nextStart = timeToMinutes(nextEvent.startTime);
       const gapDuration = nextStart - currentEnd;
 
       if (gapDuration >= minimumDuration) {
         slots.push({
-          startTime: this.minutesToTime(currentEnd),
+          startTime: minutesToTime(currentEnd),
           endTime: nextEvent.startTime,
           duration: gapDuration
         });
@@ -250,13 +250,13 @@ export class TeacherSchedule {
    * Check for conflicts when adding a new item
    */
   checkConflict(startTime: string, duration: number): ConflictInfo {
-    const proposedStart = this.timeToMinutes(startTime);
+    const proposedStart = timeToMinutes(startTime);
     const proposedEnd = proposedStart + duration;
     const conflictingNodes: ScheduleNode[] = [];
 
     let current = this.schedule.head;
     while (current) {
-      const nodeStart = this.timeToMinutes(current.startTime);
+      const nodeStart = timeToMinutes(current.startTime);
       const nodeEnd = nodeStart + current.duration;
 
       // Check for overlap
@@ -467,7 +467,7 @@ export class TeacherSchedule {
             if (option.timeSaved) {
               // Calculate the earliest time any of the nodes to move currently has
               const earliestTime = Math.min(...option.nodesToMove.map(node => 
-                this.timeToMinutes(node.startTime)
+                timeToMinutes(node.startTime)
               ));
               
               // Move everything back by the time saved (which is the duration of deleted node)
@@ -476,15 +476,15 @@ export class TeacherSchedule {
               // Normal compacting - just start after the previous node
               const nodeBeforeFirst = this.findNodeBefore(firstNodeToMove.id);
               if (nodeBeforeFirst) {
-                nextStartTime = this.timeToMinutes(nodeBeforeFirst.startTime) + nodeBeforeFirst.duration;
+                nextStartTime = timeToMinutes(nodeBeforeFirst.startTime) + nodeBeforeFirst.duration;
               } else {
-                nextStartTime = this.timeToMinutes(firstNodeToMove.startTime);
+                nextStartTime = timeToMinutes(firstNodeToMove.startTime);
               }
             }
             
             // Compact all nodes to move sequentially
             option.nodesToMove.forEach(node => {
-              node.startTime = this.minutesToTime(Math.max(0, nextStartTime));
+              node.startTime = minutesToTime(Math.max(0, nextStartTime));
               nextStartTime += node.duration; // Next event starts after this one ends
             });
             
@@ -520,7 +520,7 @@ export class TeacherSchedule {
       
       if (option.type === 'compact_schedule' && option.nodesToMove) {
         // Start from the deleted event's time slot
-        let nextStartTime = this.timeToMinutes(nodeToRemove.startTime);
+        let nextStartTime = timeToMinutes(nodeToRemove.startTime);
         
         // Generate updates for each node that needs to move
         option.nodesToMove.forEach(node => {
@@ -531,7 +531,7 @@ export class TeacherSchedule {
           const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
           
           if (eventId && lessonId) {
-            const newStartTime = this.minutesToTime(nextStartTime);
+            const newStartTime = minutesToTime(nextStartTime);
             const newDateTime = this.combineDateTime(selectedDate, newStartTime);
             
             updates.push({
@@ -586,10 +586,10 @@ export class TeacherSchedule {
             let nextStartTime: number;
             if (nodeBeforeFirst) {
               // Start right after the previous node ends
-              nextStartTime = this.timeToMinutes(nodeBeforeFirst.startTime) + nodeBeforeFirst.duration;
+              nextStartTime = timeToMinutes(nodeBeforeFirst.startTime) + nodeBeforeFirst.duration;
             } else {
               // If no previous node, keep the original start time of first node to move
-              nextStartTime = this.timeToMinutes(firstNodeToMove.startTime);
+              nextStartTime = timeToMinutes(firstNodeToMove.startTime);
             }
             
             // Generate updates for each node, placing them sequentially
@@ -598,7 +598,7 @@ export class TeacherSchedule {
               const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
               
               if (eventId && lessonId) {
-                const newStartTime = this.minutesToTime(nextStartTime);
+                const newStartTime = minutesToTime(nextStartTime);
                 const newDateTime = this.combineDateTime(selectedDate, newStartTime);
                 
                 updates.push({
@@ -686,7 +686,7 @@ export class TeacherSchedule {
 
     // Convert to array, sort, and rebuild linked list
     const nodes = this.getStoredNodes();
-    nodes.sort((a, b) => this.timeToMinutes(a.startTime) - this.timeToMinutes(b.startTime));
+    nodes.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
     // Rebuild the linked list
     this.schedule.head = null;
@@ -696,14 +696,6 @@ export class TeacherSchedule {
     });
   }
 
-  // Utility methods
-  private timeToMinutes(time: string): number {
-    return timeToMinutes(time);
-  }
-
-  private minutesToTime(minutes: number): string {
-    return minutesToTime(minutes);
-  }
 
   static isSameDate(date1: string, date2: string): boolean {
     return new Date(date1).toDateString() === new Date(date2).toDateString();
@@ -844,8 +836,8 @@ export class TeacherSchedule {
       
       // Check if after adjustment, this lesson would end exactly when next lesson starts
       if (lesson.scheduledStartTime && nextLesson.scheduledStartTime) {
-        const currentEndTime = this.timeToMinutes(lesson.scheduledStartTime) + lesson.duration;
-        const nextStartTime = this.timeToMinutes(nextLesson.scheduledStartTime);
+        const currentEndTime = timeToMinutes(lesson.scheduledStartTime) + lesson.duration;
+        const nextStartTime = timeToMinutes(nextLesson.scheduledStartTime);
         const gap = nextStartTime - currentEndTime;
         
         // If gap is exactly 30 minutes (the adjustment we just made), close it
@@ -867,8 +859,6 @@ export class TeacherSchedule {
     this.recalculateQueueSchedule(this.queueStartTime);
   }
 
-  // Set queue gap - REMOVED: Now hardcoded to 15 minutes
-  // setQueueGap method removed - gap is always 15 minutes
 
   // Set preferred start time for queue
   setQueueStartTime(startTime: string): void {
@@ -881,8 +871,6 @@ export class TeacherSchedule {
     return [...this.lessonQueue];
   }
 
-  // Get queue gap - REMOVED: Always returns 15
-  // getQueueGap method removed - gap is always 15 minutes
 
   // Clear entire queue
   clearQueue(): void {
@@ -925,9 +913,9 @@ export class TeacherSchedule {
     }
 
     // Calculate if moving 30 minutes earlier would overlap with previous lesson
-    const currentStartMinutes = this.timeToMinutes(currentLesson.scheduledStartTime);
+    const currentStartMinutes = timeToMinutes(currentLesson.scheduledStartTime);
     const proposedStartMinutes = currentStartMinutes - 30;
-    const previousEndMinutes = this.timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
+    const previousEndMinutes = timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
     
     // Check if moving 30 minutes earlier would overlap with previous lesson (no gap required)
     return proposedStartMinutes >= previousEndMinutes;
@@ -958,12 +946,12 @@ export class TeacherSchedule {
       if (hasConflict) {
         const nextSlot = this.calculatePossibleSlot(queuedLesson.duration);
         if (nextSlot) {
-          currentTime = this.timeToMinutes(nextSlot.startTime);
+          currentTime = timeToMinutes(nextSlot.startTime);
         }
       }
 
       // Set the calculated start time
-      queuedLesson.scheduledStartTime = this.minutesToTime(currentTime);
+      queuedLesson.scheduledStartTime = minutesToTime(currentTime);
 
       // Move to next time slot - back-to-back lessons
       currentTime += queuedLesson.duration;
@@ -989,8 +977,8 @@ export class TeacherSchedule {
       }
 
       // Calculate when this lesson should start (immediately after previous lesson ends)
-      const previousEndTime = this.timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
-      const actualStartTime = this.timeToMinutes(queuedLesson.scheduledStartTime);
+      const previousEndTime = timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
+      const actualStartTime = timeToMinutes(queuedLesson.scheduledStartTime);
       
       // There's a gap if the actual start time is later than when it should start
       const gapMinutes = actualStartTime - previousEndTime;
@@ -1016,8 +1004,8 @@ export class TeacherSchedule {
     if (!lesson.scheduledStartTime || !previousLesson.scheduledStartTime) return;
 
     // Calculate where this lesson should start (immediately after previous lesson ends)
-    const previousEndTime = this.timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
-    const currentStartTime = this.timeToMinutes(lesson.scheduledStartTime);
+    const previousEndTime = timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
+    const currentStartTime = timeToMinutes(lesson.scheduledStartTime);
     const gapMinutes = currentStartTime - previousEndTime;
 
     if (gapMinutes > 0) {
@@ -1028,8 +1016,8 @@ export class TeacherSchedule {
       const originalStartTime = this.findOriginalScheduledTime(lessonIndex);
       
       // Calculate the adjustment needed to place it exactly after previous lesson
-      const targetStartTime = this.minutesToTime(previousEndTime);
-      const adjustmentNeeded = previousEndTime - this.timeToMinutes(originalStartTime);
+      const targetStartTime = minutesToTime(previousEndTime);
+      const adjustmentNeeded = previousEndTime - timeToMinutes(originalStartTime);
       
       // Set the precise time adjustment
       lesson.timeAdjustment = adjustmentNeeded;
@@ -1074,15 +1062,15 @@ export class TeacherSchedule {
     
     if (existingEvents.length === 0) {
       // No existing events, use preferred time or 9 AM
-      return preferredStartTime ? this.timeToMinutes(preferredStartTime) : 9 * 60;
+      return preferredStartTime ? timeToMinutes(preferredStartTime) : 9 * 60;
     }
 
     // Find the latest event end time
     const latestEndTime = Math.max(...existingEvents.map(event => 
-      this.timeToMinutes(event.startTime) + event.duration
+      timeToMinutes(event.startTime) + event.duration
     ));
 
-    const preferredTime = preferredStartTime ? this.timeToMinutes(preferredStartTime) : 9 * 60;
+    const preferredTime = preferredStartTime ? timeToMinutes(preferredStartTime) : 9 * 60;
     
     // Return the later of preferred time or after latest event (no gap)
     return Math.max(preferredTime, latestEndTime);
@@ -1094,7 +1082,7 @@ export class TeacherSchedule {
     const proposedEnd = startTimeMinutes + duration;
 
     return existingEvents.some(event => {
-      const eventStart = this.timeToMinutes(event.startTime);
+      const eventStart = timeToMinutes(event.startTime);
       const eventEnd = eventStart + event.duration;
       
       return startTimeMinutes < eventEnd && proposedEnd > eventStart;
@@ -1192,8 +1180,8 @@ export class TeacherSchedule {
       }
 
       const previousNode = eventNodes[index - 1];
-      const previousEndTime = this.timeToMinutes(previousNode.startTime) + previousNode.duration;
-      const currentStartTime = this.timeToMinutes(node.startTime);
+      const previousEndTime = timeToMinutes(previousNode.startTime) + previousNode.duration;
+      const currentStartTime = timeToMinutes(node.startTime);
       const gapMinutes = currentStartTime - previousEndTime;
 
       return {

@@ -225,7 +225,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       ? dateFilteredBookings
       : dateFilteredBookings.filter(booking => booking.status === bookingFilter);
 
-    // Create WhiteboardClass instances for enhanced business logic
+    // Create WhiteboardClass instances for enhanced business logic (only once)
     const bookingClasses = statusFilteredBookings.map(
       (booking) => new WhiteboardClass(booking),
     );
@@ -462,7 +462,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                     events={filteredData.events}
                     selectedDate={selectedDate}
                     teacherSchedules={filteredData.teacherSchedules}
-                    viewAs="admin"
                   />
                 )}
 

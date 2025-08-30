@@ -23,7 +23,6 @@ interface WhiteboardEventsProps {
   events: any[];
   selectedDate: string;
   teacherSchedules: Map<string, TeacherSchedule>;
-  viewAs?: "admin" | "teacher" | "student";
 }
 
 // Sub-component: Time Adjustment Flag
@@ -159,7 +158,6 @@ function TeacherEventsGroup({
   teacherSchedule,
   events,
   selectedDate,
-  viewAs = "admin",
   parentTimeAdjustmentMode = false,
   parentGlobalTime = null,
   onTeacherEditModeChange,
@@ -167,7 +165,6 @@ function TeacherEventsGroup({
   teacherSchedule: TeacherSchedule;
   events: any[];
   selectedDate: string;
-  viewAs?: "admin" | "teacher" | "student";
   parentTimeAdjustmentMode?: boolean;
   parentGlobalTime?: string | null;
   onTeacherEditModeChange?: (teacherId: string, inEditMode: boolean) => void;
@@ -360,17 +357,28 @@ function TeacherEventsGroup({
 
       const studentNames = eventData.booking ? extractStudentNames(eventData.booking) : "No students";
 
+      // Find next event in this teacher's schedule
+      const currentIndex = scheduleNodes.findIndex(n => n.id === node.id);
+      const nextEventNode = scheduleNodes.slice(currentIndex + 1).find(n => n.type === "event");
+      const nextEventData = nextEventNode ? events.find(e => e.lesson?.id === nextEventNode.eventData?.lessonId) : null;
+
       return (
         <div key={`event-${node.id}-${eventData.id}`}>
           <EventCard
             students={studentNames}
             location={eventData?.location || "No location"}
-            duration={node.duration}
+            duration={eventData?.duration || node.duration}
             date={new Date(`${selectedDate}T${node.startTime}`).toISOString()}
             status={eventData?.status || "No status"}
-            viewAs={viewAs}
+            eventId={eventData.id}
+            teacherSchedule={teacherSchedule}
+            nextEvent={nextEventData ? {
+              id: nextEventData.id,
+              startTime: nextEventNode?.startTime || "00:00",
+              duration: nextEventData.duration || 0
+            } : undefined}
             reorganizationOptions={pendingReorganizations.get(eventData.id)}
-            onDelete={() => {}}
+            onDelete={() => console.log("🗑️ EventCard onDelete called for event:", eventData.id)}
             onReorganize={() => {}}
             onDismissReorganization={() => {}}
             onCancelReorganization={() => {}}
@@ -404,7 +412,7 @@ function TeacherEventsGroup({
         <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-400">
           {viewMode === "event" ? (
             <>
-              {canReorganize && viewAs === "admin" && (
+              {canReorganize && (
                 <button
                   onClick={handleFullScheduleReorganization}
                   className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
@@ -478,7 +486,6 @@ export default function WhiteboardEvents({
   events,
   selectedDate,
   teacherSchedules,
-  viewAs = "admin",
 }: WhiteboardEventsProps) {
   // State
   const [parentTimeAdjustmentMode, setParentTimeAdjustmentMode] = useState(false);
@@ -732,7 +739,6 @@ export default function WhiteboardEvents({
               teacherSchedule={group.teacherSchedule}
               events={group.events}
               selectedDate={selectedDate}
-              viewAs={viewAs}
               parentTimeAdjustmentMode={parentTimeAdjustmentMode}
               parentGlobalTime={parentGlobalTime}
               onTeacherEditModeChange={handleTeacherEditModeChange}
