@@ -89,6 +89,7 @@ export const BOOKING_STATUS_FILTERS = [
     value: "all" as const,
     label: "All",
     icon: Circle,
+    title: "All Bookings",
     color:
       "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700",
   },
@@ -96,6 +97,7 @@ export const BOOKING_STATUS_FILTERS = [
     value: "active" as const,
     label: "Active",
     icon: Play,
+    title: "Active Bookings",
     color:
       "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50",
   },
@@ -103,6 +105,7 @@ export const BOOKING_STATUS_FILTERS = [
     value: "completed" as const,
     label: "Done",
     icon: CheckCircle,
+    title: "Completed Bookings",
     color:
       "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50",
   },
@@ -110,6 +113,7 @@ export const BOOKING_STATUS_FILTERS = [
     value: "cancelled" as const,
     label: "Cancelled",
     icon: XCircle,
+    title: "Cancelled Bookings",
     color:
       "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50",
   },

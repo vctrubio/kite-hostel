@@ -1,47 +1,98 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo } from "react";
-import WhiteboardMiniNav from "./WhiteboardMiniNav";
-import WhiteboardBookings from "./WhiteboardBookings";
-import WhiteboardLessons from "./WhiteboardLessons";
-import WhiteboardEvents from "./WhiteboardEvents";
-import WhiteboardStatus from "./WhiteboardStatus";
-import WhiteboardWeather from "./WhiteboardWeather";
-import { WhiteboardData } from "@/actions/whiteboard-actions";
-import { WhiteboardClass } from "@/backend/WhiteboardClass";
-import { TeacherSchedule } from "@/backend/TeacherSchedule";
+import { useState, useEffect, useMemo } from 'react';
+import WhiteboardMiniNav from './WhiteboardMiniNav';
+import WhiteboardBookings from './WhiteboardBookings';
+import WhiteboardLessons from './WhiteboardLessons';
+import WhiteboardEvents from './WhiteboardEvents';
+import WhiteboardStatus from './WhiteboardStatus';
+import { WhiteboardData } from '@/actions/whiteboard-actions';
+import { WhiteboardClass } from '@/backend/WhiteboardClass';
+import { TeacherSchedule } from '@/backend/TeacherSchedule';
 import {
   getStoredDate,
   setStoredDate,
   getTodayDateString,
-} from "@/components/formatters/DateTime";
-import { type BookingStatusFilter, LOCATION_ENUM_VALUES } from "@/lib/constants";
-import { type EventController, type WhiteboardActionHandler } from "@/backend/types";
-import { ShareUtils } from "@/backend/ShareUtils";
-import GlobalStatsHeader from "@/components/whiteboard-usage/GlobalStatsHeader";
+} from '@/components/formatters/DateTime';
+import {
+  type BookingStatusFilter,
+  LOCATION_ENUM_VALUES,
+} from '@/lib/constants';
+import {
+  type EventController,
+  type WhiteboardActionHandler,
+} from '@/backend/types';
+import { ShareUtils } from '@/backend/ShareUtils';
+import { BookingIcon, HeadsetIcon, KiteIcon } from '@/svgs';
 
-const STORAGE_KEY = "whiteboard-selected-date";
+// The shape of the items that will be passed in for navigation
+export interface NavItem {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly icon: React.ElementType | null;
+  readonly color: string;
+  readonly borderColor: string;
+}
+
+// Props for the MiniNav component, centralized here
+export interface WhiteboardMiniNavProps {
+  activeSection: string;
+  onSectionClick: (sectionId: string) => void;
+  selectedDate: string | null;
+  onDateChange: (date: string) => void;
+  bookingsCount: number;
+  lessonsCount: number;
+  eventsCount: number;
+  bookingFilter: BookingStatusFilter;
+  onBookingFilterChange: (filter: BookingStatusFilter) => void;
+  onActionClick: WhiteboardActionHandler;
+  globalStats: {
+    totalEvents: number;
+    totalLessons: number;
+    totalHours: number;
+    totalEarnings: number;
+    schoolRevenue: number;
+  };
+  navItems: readonly NavItem[];
+}
+
+const STORAGE_KEY = 'whiteboard-selected-date';
 const CONTROLLER_STORAGE_KEY = 'controller-settings';
 
-
-const WHITEBOARD_SECTIONS = [
+const NAV_ITEMS = [
   {
-    id: "bookings",
-    name: "Bookings",
-    description: "See all available bookings",
+    id: 'bookings',
+    name: 'Bookings',
+    description: 'See all available bookings',
+    icon: BookingIcon,
+    color: 'text-blue-500',
+    borderColor: 'border-blue-500',
   },
   {
-    id: "lessons",
-    name: "Lessons",
-    description: "See all teachers with lessons",
+    id: 'lessons',
+    name: 'Lessons',
+    description: 'See all teachers with lessons',
+    icon: HeadsetIcon,
+    color: 'text-green-500',
+    borderColor: 'border-green-500',
   },
-  { id: "events", name: "Events", description: "See all ongoing lessons" },
   {
-    id: "weather",
-    name: "Weather",
-    description: "See forecast at 3PM for planning",
+    id: 'events',
+    name: 'Events',
+    description: 'See all ongoing lessons',
+    icon: KiteIcon,
+    color: 'text-teal-500',
+    borderColor: 'border-teal-500',
   },
-  { id: "status", name: "Status", description: "See all stats & more..." },
+  {
+    id: 'status',
+    name: 'Status',
+    description: 'See all stats & more...',
+    icon: null,
+    color: '',
+    borderColor: '',
+  },
 ] as const;
 
 interface WhiteboardClientProps {
@@ -49,18 +100,17 @@ interface WhiteboardClientProps {
 }
 
 export default function WhiteboardClient({ data }: WhiteboardClientProps) {
-  const [activeSection, setActiveSection] = useState("bookings");
-  const [selectedDate, setSelectedDate] = useState(() => getTodayDateString()); // Use consistent default
-  
-  // Filter state - simplified to only booking filter
-  const [bookingFilter, setBookingFilter] = useState<BookingStatusFilter>("all");
+  const [activeSection, setActiveSection] = useState('bookings');
+  const [selectedDate, setSelectedDate] = useState(() => getTodayDateString());
 
-  // Controller state for event creation (includes duration settings)
+  const [bookingFilter, setBookingFilter] =
+    useState<BookingStatusFilter>('all');
+
   const [controller, setController] = useState<EventController>(() => {
     const defaultSettings: EventController = {
       flag: false,
       location: LOCATION_ENUM_VALUES[0],
-      submitTime: "11:00",
+      submitTime: '11:00',
       durationCapOne: 120,
       durationCapTwo: 180,
       durationCapThree: 240,
@@ -76,7 +126,10 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         return { ...defaultSettings, ...JSON.parse(savedSettings) };
       }
     } catch (error) {
-      console.error('Failed to parse controller settings from localStorage', error);
+      console.error(
+        'Failed to parse controller settings from localStorage',
+        error,
+      );
     }
     return defaultSettings;
   });
@@ -90,20 +143,23 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         durationCapTwo: controller.durationCapTwo,
         durationCapThree: controller.durationCapThree,
       };
-      localStorage.setItem(CONTROLLER_STORAGE_KEY, JSON.stringify(settingsToSave));
+      localStorage.setItem(
+        CONTROLLER_STORAGE_KEY,
+        JSON.stringify(settingsToSave),
+      );
     } catch (error) {
-      console.error('Failed to save controller settings to localStorage', error);
+      console.error(
+        'Failed to save controller settings to localStorage',
+        error,
+      );
     }
   }, [controller]);
 
-
   const handleDateChange = (date: string) => {
-    // Validate the date before setting it
     if (!date || isNaN(Date.parse(date))) {
-      console.error("Invalid date provided to handleDateChange:", date);
+      console.error('Invalid date provided to handleDateChange:', date);
       return;
     }
-    
     setSelectedDate(date);
     setStoredDate(STORAGE_KEY, date);
   };
@@ -117,30 +173,29 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       const shareData = ShareUtils.extractShareData(
         selectedDate,
         filteredData.teacherSchedules,
-        filteredData.events
+        filteredData.events,
       );
-      
+
       switch (actionId) {
-        case "share":
+        case 'share':
           const whatsappMessage = ShareUtils.generateWhatsAppMessage(shareData);
           ShareUtils.shareToWhatsApp(whatsappMessage);
           break;
-          
-        case "medical":
-          const { subject, body } = ShareUtils.generateMedicalEmail(selectedDate, filteredData.events);
+        case 'medical':
+          const { subject, body } = ShareUtils.generateMedicalEmail(
+            selectedDate,
+            filteredData.events,
+          );
           ShareUtils.sendMedicalEmail(subject, body);
           break;
-          
-        case "csv":
+        case 'csv':
           const csvData = ShareUtils.generateCSVData(shareData);
           const csvFilename = `kite-schedule-${selectedDate}.csv`;
           ShareUtils.downloadCSV(csvData, csvFilename);
           break;
-          
-        case "print":
+        case 'print':
           await ShareUtils.downloadPrintTable(shareData);
           break;
-          
         default:
           console.warn(`Unknown action: ${actionId}`);
       }
@@ -149,43 +204,33 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     }
   };
 
-  // Load stored date after mount to avoid hydration issues
   useEffect(() => {
     const storedDate = getStoredDate(STORAGE_KEY);
-    
-    // Validate the stored date
     const isValidDate = storedDate && !isNaN(Date.parse(storedDate));
-    
+
     if (isValidDate) {
       setSelectedDate(storedDate);
     } else {
-      // If stored date is invalid, use today's date and clear storage
       const today = getTodayDateString();
       setSelectedDate(today);
       setStoredDate(STORAGE_KEY, today);
     }
   }, []);
 
-
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace("#", "");
-      if (hash && WHITEBOARD_SECTIONS.some((section) => section.id === hash)) {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && NAV_ITEMS.some((section) => section.id === hash)) {
         setActiveSection(hash);
       }
     };
 
-    // Set initial state from URL hash
     handleHashChange();
-
-    // Listen for hash changes
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Filter data based on selected date and booking status filter using useMemo
   const filteredData = useMemo(() => {
-    // Validate selectedDate before processing
     if (!selectedDate || isNaN(Date.parse(selectedDate))) {
       return {
         bookings: [],
@@ -205,53 +250,43 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         },
       };
     }
-    
+
     const filterDate = new Date(selectedDate);
     filterDate.setHours(0, 0, 0, 0);
 
-    // Filter bookings by date - check if the selected date falls within booking date range
     const dateFilteredBookings = data.rawBookings.filter((booking) => {
       const bookingStart = new Date(booking.date_start);
       const bookingEnd = new Date(booking.date_end);
       bookingStart.setHours(0, 0, 0, 0);
       bookingEnd.setHours(23, 59, 59, 999);
-
-      // Check if selected date falls within booking date range
       return filterDate >= bookingStart && filterDate <= bookingEnd;
     });
 
-    // Apply booking status filter
-    const statusFilteredBookings = bookingFilter === 'all' 
-      ? dateFilteredBookings
-      : dateFilteredBookings.filter(booking => booking.status === bookingFilter);
+    const statusFilteredBookings =
+      bookingFilter === 'all'
+        ? dateFilteredBookings
+        : dateFilteredBookings.filter(
+            (booking) => booking.status === bookingFilter,
+          );
 
-    // Create WhiteboardClass instances for enhanced business logic (only once)
     const bookingClasses = statusFilteredBookings.map(
       (booking) => new WhiteboardClass(booking),
     );
 
-    // Enhanced filtering using business logic
     const activeBookingClasses = bookingClasses.filter(
-      (bc) => bc.getStatus() === "active",
+      (bc) => bc.getStatus() === 'active',
     );
     const completableBookingClasses = bookingClasses.filter((bc) =>
       bc.isReadyForCompletion(),
     );
 
-    // Extract lessons with proper date filtering (keeping original structure for compatibility)
     const filteredLessons = statusFilteredBookings.flatMap(
       (booking) =>
         booking.lessons?.map((lesson: any) => {
-          // Keep all original events for border logic
           const originalEvents = lesson.events || [];
-
-          // Filter events for the selected date (for the Events section)
           const eventsForSelectedDate =
             lesson.events?.filter((event: any) => {
-              // If event has no date, include it (it's part of the lesson/booking period)
               if (!event.date) return true;
-
-              // If event has a date, check if it matches the selected date
               const eventDate = new Date(event.date);
               eventDate.setHours(0, 0, 0, 0);
               return eventDate.getTime() === filterDate.getTime();
@@ -262,12 +297,11 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
             originalEvents: originalEvents,
             events: eventsForSelectedDate,
             selectedDate: selectedDate,
-            booking: booking, // Direct reference to booking with all relations
+            booking: booking,
           };
         }) || [],
     );
 
-    // Create events array from filtered lessons
     const filteredEvents = filteredLessons.flatMap(
       (lesson) =>
         lesson.events?.map((event: any) => ({
@@ -281,21 +315,18 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         })) || [],
     );
 
-    // Enhanced statistics using business logic
     const enhancedStats = {
       totalBookings: statusFilteredBookings.length,
       totalLessons: filteredLessons.length,
       totalEvents: filteredEvents.length,
       activeBookings: activeBookingClasses.length,
       completableBookings: completableBookingClasses.length,
-      // Calculate total progress across all bookings
       averageProgress: Math.round(
         bookingClasses.reduce(
           (sum, bc) => sum + bc.getCompletionPercentage(),
           0,
         ) / (bookingClasses.length || 1),
       ),
-      // Calculate utilization rates
       totalUsedMinutes: bookingClasses.reduce(
         (sum, bc) => sum + bc.getUsedMinutes(),
         0,
@@ -306,24 +337,22 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       ),
     };
 
-    // Create unified TeacherSchedule instances for both lessons and events
     const teacherSchedules = TeacherSchedule.createSchedulesFromLessons(
       selectedDate,
       filteredLessons,
-      bookingClasses
+      bookingClasses,
     );
 
     return {
       bookings: statusFilteredBookings,
-      bookingClasses, // Enhanced WhiteboardClass instances for business logic
+      bookingClasses,
       lessons: filteredLessons,
       events: filteredEvents,
-      teacherSchedules, // Unified TeacherSchedule instances
+      teacherSchedules,
       status: enhancedStats,
     };
   }, [data, selectedDate, bookingFilter]);
 
-  // Calculate global stats from all teacher schedules - restored proper calculation
   const globalStats = useMemo(() => {
     let totalEvents = 0;
     let totalLessons = 0;
@@ -349,29 +378,29 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     };
   }, [filteredData.teacherSchedules]);
 
-  // Calculate earliest time from all teacher schedules - restored functionality
   const earliestTime = useMemo(() => {
     let earliest = null;
-
     filteredData.teacherSchedules.forEach((schedule) => {
       const firstEventNode = schedule
         .getNodes()
-        .find((node) => node.type === "event");
+        .find((node) => node.type === 'event');
       if (firstEventNode) {
         if (!earliest || firstEventNode.startTime < earliest) {
           earliest = firstEventNode.startTime;
         }
       }
     });
-
-    return earliest || "11:00"; // Default to 11:00 if no events
+    return earliest || '11:00';
   }, [filteredData.teacherSchedules]);
 
-  // Initialize controller time to earliest time only on first load, allow user changes after
   const [hasInitializedTime, setHasInitializedTime] = useState(false);
-  
+
   useEffect(() => {
-    if (!hasInitializedTime && earliestTime && controller.submitTime === '11:00') {
+    if (
+      !hasInitializedTime &&
+      earliestTime &&
+      controller.submitTime === '11:00'
+    ) {
       setController((prev) => ({
         ...prev,
         submitTime: earliestTime,
@@ -380,11 +409,12 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
     }
   }, [earliestTime, hasInitializedTime, controller.submitTime]);
 
-
   const handleSectionClick = (sectionId: string) => {
     setActiveSection(sectionId);
     window.location.hash = sectionId;
   };
+
+  const navItemsForMiniNav = NAV_ITEMS.filter((item) => item.icon);
 
   const miniNav = (
     <WhiteboardMiniNav
@@ -399,30 +429,26 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       onBookingFilterChange={handleBookingFilterChange}
       onActionClick={handleActionClick}
       globalStats={globalStats}
+      navItems={navItemsForMiniNav as any}
     />
   );
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sidebar - Mobile: sticky top, Desktop: sticky sidebar */}
       <div className="md:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border p-2">
         {miniNav}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 w-full px-4">
-        {/* Desktop Sidebar */}
         <div className="hidden md:block col-span-1">
-          <div className="sticky top-4 p-4">
-            {miniNav}
-          </div>
+          <div className="sticky top-4 p-4">{miniNav}</div>
         </div>
 
-        {/* Content */}
         <div className="md:col-span-3 xl:col-span-3 2xl:col-span-4 pt-4">
           <div className="bg-card">
             <div className="p-4">
               <div className="w-full">
-                {activeSection === "bookings" && (
+                {activeSection === 'bookings' && (
                   <WhiteboardBookings
                     bookings={filteredData.bookings}
                     bookingClasses={filteredData.bookingClasses}
@@ -433,7 +459,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                   />
                 )}
 
-                {activeSection === "lessons" && (
+                {activeSection === 'lessons' && (
                   <WhiteboardLessons
                     lessons={filteredData.lessons}
                     selectedDate={selectedDate}
@@ -443,7 +469,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                   />
                 )}
 
-                {activeSection === "events" && (
+                {activeSection === 'events' && (
                   <WhiteboardEvents
                     events={filteredData.events}
                     selectedDate={selectedDate}
@@ -451,16 +477,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
                   />
                 )}
 
-                {activeSection === "weather" && (
-                  <WhiteboardWeather
-                    selectedDate={selectedDate}
-                    location="Tarifa, Spain"
-                    lat={36.0128}
-                    lon={-5.6081}
-                  />
-                )}
-
-                {activeSection === "status" && (
+                {activeSection === 'status' && (
                   <WhiteboardStatus
                     bookings={filteredData.bookings}
                     lessons={filteredData.lessons}

@@ -29,7 +29,7 @@ export default function BookingStatusFilter({
                 ? `${filter.color.replace("hover:", "").replace("100", "200").replace("900/30", "900/50")} border-current`
                 : `${filter.color} border-transparent hover:border-current/30`
                 }`}
-              title={filter.value === 'all' ? 'All Bookings' : filter.value === 'active' ? 'Active Bookings' : filter.value === 'completed' ? 'Completed Bookings' : 'Cancelled Bookings'}
+              title={filter.title}
             >
               <IconComponent className="w-3 h-3" />
               <span className="hidden sm:inline">{filter.label}</span>

@@ -1491,6 +1491,40 @@ export class TeacherSchedule {
     return updates;
   }
 
+  getEventStats(event: any): { earning: number; revenue: number; packageDescription: string } {
+    const lessonForEvent = this.lessons.find(l => l.id === event.lesson?.id);
+
+    if (!lessonForEvent) {
+      return { earning: 0, revenue: 0, packageDescription: "" };
+    }
+
+    const eventDurationMinutes = event.duration || 0;
+    const eventHours = eventDurationMinutes / 60;
+
+    let earning = 0;
+    if (lessonForEvent.commission?.price_per_hour) {
+      earning = eventHours * lessonForEvent.commission.price_per_hour;
+    }
+
+    const booking = lessonForEvent.booking;
+    let revenue = 0;
+    let packageDescription = "";
+
+    if (booking?.package) {
+        const packagePrice = booking.package.price_per_student || 0;
+        const packageDurationMinutes = booking.package.duration || 1;
+        const studentCount = booking.students?.length || 0;
+        packageDescription = booking.package.description || "";
+
+        if (packageDurationMinutes > 0) {
+            const packageHourlyRate = (packagePrice * 60) / packageDurationMinutes;
+            revenue = packageHourlyRate * eventHours * studentCount;
+        }
+    }
+
+    return { earning, revenue, packageDescription };
+  }
+
   calculateTeacherStats(): TeacherStats {
     let totalHours = 0;
     let totalEvents = 0;

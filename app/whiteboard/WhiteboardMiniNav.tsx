@@ -1,56 +1,10 @@
 "use client";
 
 import { SingleDatePicker } from "@/components/pickers/single-date-picker";
-import { BookingIcon, HeadsetIcon, KiteIcon } from "@/svgs";
-import type { BookingStatusFilter } from "@/lib/constants";
-import type { WhiteboardActionHandler } from "@/backend/types";
 import BookingStatusFilter from "@/components/whiteboard-usage/BookingStatusFilter";
 import WhiteboardActions from "@/components/whiteboard-usage/WhiteboardActions";
 import GlobalStatsHeader from "@/components/whiteboard-usage/GlobalStatsHeader";
-
-interface WhiteboardMiniNavProps {
-  activeSection: string;
-  onSectionClick: (sectionId: string) => void;
-  selectedDate: string | null;
-  onDateChange: (date: string) => void;
-  bookingsCount: number;
-  lessonsCount: number;
-  eventsCount: number;
-  bookingFilter: BookingStatusFilter;
-  onBookingFilterChange: (filter: BookingStatusFilter) => void;
-  onActionClick: WhiteboardActionHandler;
-  globalStats: {
-    totalEvents: number;
-    totalLessons: number;
-    totalHours: number;
-    totalEarnings: number;
-    schoolRevenue: number;
-  };
-}
-
-const NAV_ITEMS = [
-  {
-    id: "bookings",
-    name: "Bookings",
-    icon: BookingIcon,
-    color: "text-blue-500",
-    borderColor: "border-blue-500",
-  },
-  {
-    id: "lessons",
-    name: "Lessons",
-    icon: HeadsetIcon,
-    color: "text-green-500",
-    borderColor: "border-green-500",
-  },
-  {
-    id: "events",
-    name: "Events",
-    icon: KiteIcon,
-    color: "text-teal-500",
-    borderColor: "border-teal-500",
-  },
-];
+import type { WhiteboardMiniNavProps } from "./WhiteboardClient";
 
 export default function WhiteboardMiniNav({
   activeSection,
@@ -64,6 +18,7 @@ export default function WhiteboardMiniNav({
   onBookingFilterChange,
   onActionClick,
   globalStats,
+  navItems,
 }: WhiteboardMiniNavProps) {
   const getCount = (id: string) => {
     switch (id) {
@@ -91,8 +46,9 @@ export default function WhiteboardMiniNav({
       {/* Navigation Items */}
       <div className="p-3">
         <div className="flex justify-around">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
+            if (!Icon) return null; // Should not happen with filtered items, but good practice
             const count = getCount(item.id);
             const isActive = activeSection === item.id;
             return (
