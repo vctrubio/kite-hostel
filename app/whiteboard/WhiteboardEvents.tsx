@@ -1,6 +1,14 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+} from "react";
 import { useRouter } from "next/navigation";
 import EventCard, { GapCard } from "@/components/cards/EventCard";
 import TeacherEventQueue from "@/components/whiteboard-usage/TeacherEventQueue";
@@ -15,13 +23,11 @@ import {
   FlagOff,
 } from "lucide-react";
 import { TeacherSchedule, ScheduleNode } from "@/backend/TeacherSchedule";
-import { type ReorganizationOption } from "@/backend/types";
 import {
   TeacherEventsUtils,
   type TeacherEventGroupData,
 } from "@/backend/TeacherEventsUtils";
-import { reorganizeEventTimes } from "@/actions/kite-actions";
-import { updateEvent, deleteEvent } from "@/actions/event-actions";
+import { deleteEvent } from "@/actions/event-actions";
 import { timeToMinutes, minutesToTime } from "@/components/formatters/TimeZone";
 import { extractStudentNames } from "@/backend/WhiteboardClass";
 
@@ -38,8 +44,6 @@ interface TimeAdjustmentFlagProps {
   editableScheduleNodes: ScheduleNode[];
   parentTimeAdjustmentMode?: boolean;
   onTimeAdjustment: (minutesOffset: number) => void;
-  onAcceptTimeAdjustment: () => void;
-  onCancelTimeAdjustment: () => void;
   onSetTimeAdjustmentMode: (mode: boolean) => void;
   onSetViewMode: (mode: "event" | "queue") => void;
 }
@@ -50,8 +54,6 @@ function TimeAdjustmentFlag({
   editableScheduleNodes,
   parentTimeAdjustmentMode = false,
   onTimeAdjustment,
-  onAcceptTimeAdjustment,
-  onCancelTimeAdjustment,
   onSetTimeAdjustmentMode,
   onSetViewMode,
 }: TimeAdjustmentFlagProps) {
@@ -107,61 +109,81 @@ function TimeAdjustmentFlag({
   );
 }
 
-// Sub-component: Teacher Events Group using TeacherSchedule
-function TeacherEventsGroup({
-  teacherSchedule,
-  events,
-  selectedDate,
-  parentTimeAdjustmentMode = false,
-  parentGlobalTime = null,
-  onTeacherEditModeChange,
-}: {
+interface TeacherEventsGroupProps {
   teacherSchedule: TeacherSchedule;
   events: any[];
   selectedDate: string;
   parentTimeAdjustmentMode?: boolean;
   parentGlobalTime?: string | null;
-  onTeacherEditModeChange?: (teacherId: string, inEditMode: boolean) => void;
-}) {
-  // State management
-  const [pendingReorganizations, setPendingReorganizations] = useState<
-    Map<string, ReorganizationOption[]>
-  >(new Map());
+  isPendingParentUpdate: boolean;
+  onCompleteOrOptOut?: (teacherId: string) => void;
+  onOptInToParentUpdate?: (teacherId: string) => void;
+}
+
+export interface TeacherEventsGroupHandle {
+  submit: () => Promise<void>;
+}
+
+const TeacherEventsGroup = forwardRef<
+  TeacherEventsGroupHandle,
+  TeacherEventsGroupProps
+>((props, ref) => {
+  const {
+    teacherSchedule,
+    events,
+    selectedDate,
+    parentTimeAdjustmentMode = false,
+    parentGlobalTime = null,
+    isPendingParentUpdate,
+    onCompleteOrOptOut,
+    onOptInToParentUpdate,
+  } = props;
+
   const [timeAdjustmentMode, setTimeAdjustmentMode] = useState(false);
   const [globalTimeOffset, setGlobalTimeOffset] = useState(0);
   const [viewMode, setViewMode] = useState<"event" | "queue">("event");
 
-  // Computed values
   const scheduleNodes = useMemo(
     () => teacherSchedule.getNodes(),
     [teacherSchedule],
-  );
-  const eventNodes = useMemo(
-    () => scheduleNodes.filter((node) => node.type === "event"),
-    [scheduleNodes],
   );
   const [editableScheduleNodes, setEditableScheduleNodes] =
     useState(scheduleNodes);
   const schedule = teacherSchedule.getSchedule();
   const canReorganize = teacherSchedule.canReorganizeSchedule();
   const router = useRouter();
+  const teacherId = schedule.teacherId;
 
-  // Parent mode auto-switch effect
+  const wasPendingParentUpdate = useRef(isPendingParentUpdate);
+
   useEffect(() => {
-    if (parentTimeAdjustmentMode && viewMode === "event") {
+    if (isPendingParentUpdate && !wasPendingParentUpdate.current) {
       setViewMode("queue");
       setTimeAdjustmentMode(true);
-      const teacherId = teacherSchedule.getSchedule().teacherId;
-      onTeacherEditModeChange?.(teacherId, true);
     }
-  }, [
-    parentTimeAdjustmentMode,
-    viewMode,
-    onTeacherEditModeChange,
-    teacherSchedule,
-  ]);
+    if (!isPendingParentUpdate && wasPendingParentUpdate.current) {
+      setViewMode("event");
+      setTimeAdjustmentMode(false);
+      setGlobalTimeOffset(0);
+      setEditableScheduleNodes(scheduleNodes);
+    }
+    wasPendingParentUpdate.current = isPendingParentUpdate;
+  }, [isPendingParentUpdate, scheduleNodes]);
 
-  // Parent time application effect
+  useImperativeHandle(ref, () => ({
+    submit: async () => {
+      const result = await TeacherEventsUtils.acceptTimeAdjustment(
+        teacherSchedule,
+        globalTimeOffset,
+        events,
+        selectedDate,
+      );
+      if (!result.success) {
+        throw new Error(`Failed to submit for teacher ${teacherId}`);
+      }
+    },
+  }));
+
   useEffect(() => {
     if (parentTimeAdjustmentMode && parentGlobalTime) {
       const updatedNodes = TeacherEventsUtils.applyParentTimeToSchedule(
@@ -178,7 +200,6 @@ function TeacherEventsGroup({
       setEditableScheduleNodes(scheduleNodes);
       setGlobalTimeOffset(0);
       setTimeAdjustmentMode(false);
-      setViewMode("event");
     }
   }, [
     parentTimeAdjustmentMode,
@@ -187,12 +208,14 @@ function TeacherEventsGroup({
     teacherSchedule,
   ]);
 
-  // Sync with original schedule
   useEffect(() => {
     setEditableScheduleNodes(scheduleNodes);
   }, [scheduleNodes]);
 
-  // Handler functions (using backend utilities)
+  const exitAndOptOut = useCallback(() => {
+    onCompleteOrOptOut?.(teacherId);
+  }, [onCompleteOrOptOut, teacherId]);
+
   const handleAdjustDuration = useCallback(
     (lessonId: string, increment: boolean) => {
       setEditableScheduleNodes((currentNodes) =>
@@ -254,29 +277,31 @@ function TeacherEventsGroup({
       events,
       selectedDate,
     );
-  }, [scheduleNodes, editableScheduleNodes, events, selectedDate]);
+    if (parentTimeAdjustmentMode) {
+      onCompleteOrOptOut?.(teacherId);
+    }
+  }, [
+    scheduleNodes,
+    editableScheduleNodes,
+    events,
+    selectedDate,
+    parentTimeAdjustmentMode,
+    onCompleteOrOptOut,
+    teacherId,
+  ]);
 
   const handleResetQueue = useCallback(() => {
     setEditableScheduleNodes(scheduleNodes);
   }, [scheduleNodes]);
 
   const handleCancelQueue = useCallback(() => {
-    const teacherId = teacherSchedule.getSchedule().teacherId;
-
     if (parentTimeAdjustmentMode) {
-      setEditableScheduleNodes(scheduleNodes);
+      exitAndOptOut();
     } else {
       setViewMode("event");
       setEditableScheduleNodes(scheduleNodes);
     }
-
-    onTeacherEditModeChange?.(teacherId, false);
-  }, [
-    scheduleNodes,
-    teacherSchedule,
-    onTeacherEditModeChange,
-    parentTimeAdjustmentMode,
-  ]);
+  }, [parentTimeAdjustmentMode, exitAndOptOut, scheduleNodes]);
 
   const handleSubmitAndExit = useCallback(async () => {
     await handleSubmitQueueChanges();
@@ -322,12 +347,14 @@ function TeacherEventsGroup({
     );
 
     if (result.success) {
-      if (result.updatedNodes) {
-        setEditableScheduleNodes(result.updatedNodes);
-      }
-      setTimeAdjustmentMode(false);
-      setGlobalTimeOffset(0);
-      if (!parentTimeAdjustmentMode) {
+      if (parentTimeAdjustmentMode) {
+        onCompleteOrOptOut?.(teacherId);
+      } else {
+        if (result.updatedNodes) {
+          setEditableScheduleNodes(result.updatedNodes);
+        }
+        setTimeAdjustmentMode(false);
+        setGlobalTimeOffset(0);
         setViewMode("event");
       }
     } else {
@@ -340,6 +367,8 @@ function TeacherEventsGroup({
     selectedDate,
     parentTimeAdjustmentMode,
     scheduleNodes,
+    onCompleteOrOptOut,
+    teacherId,
   ]);
 
   const handleStatusChange = useCallback(
@@ -353,30 +382,18 @@ function TeacherEventsGroup({
   );
 
   const handleCancelTimeAdjustment = useCallback(() => {
-    const teacherId = teacherSchedule.getSchedule().teacherId;
-
     if (parentTimeAdjustmentMode) {
-      setTimeAdjustmentMode(false);
-      setGlobalTimeOffset(0);
-      setEditableScheduleNodes(scheduleNodes);
+      exitAndOptOut();
     } else {
       setTimeAdjustmentMode(false);
       setGlobalTimeOffset(0);
       setEditableScheduleNodes(scheduleNodes);
       setViewMode("event");
     }
+  }, [parentTimeAdjustmentMode, exitAndOptOut, scheduleNodes]);
 
-    onTeacherEditModeChange?.(teacherId, false);
-  }, [
-    scheduleNodes,
-    teacherSchedule,
-    onTeacherEditModeChange,
-    parentTimeAdjustmentMode,
-  ]);
-
-  // Render event cards
   const renderEventCards = () => {
-    return scheduleNodes.map((node) => {
+    return scheduleNodes.map((node, currentIndex) => {
       if (node.type === "gap") {
         return (
           <div key={`gap-${node.id}`}>
@@ -398,13 +415,27 @@ function TeacherEventsGroup({
         ? extractStudentNames(eventData.booking)
         : "No students";
 
-      const currentIndex = scheduleNodes.findIndex((n) => n.id === node.id);
+      let nextEventProp = undefined;
       const nextEventNode = scheduleNodes
         .slice(currentIndex + 1)
         .find((n) => n.type === "event");
-      const nextEventData = nextEventNode
-        ? events.find((e) => e.lesson?.id === nextEventNode.eventData?.lessonId)
-        : null;
+      if (nextEventNode) {
+        const nextEventData = events.find(
+          (e) => e.lesson?.id === nextEventNode.eventData?.lessonId,
+        );
+        if (
+          nextEventData &&
+          nextEventData.id &&
+          typeof nextEventData.duration === "number"
+        ) {
+          nextEventProp = {
+            id: nextEventData.id,
+            startTime: nextEventNode.startTime,
+            duration: nextEventData.duration,
+            lessonId: nextEventData.lesson?.id,
+          };
+        }
+      }
 
       return (
         <div key={`event-${node.id}-${eventData.id}`}>
@@ -418,17 +449,8 @@ function TeacherEventsGroup({
             lessonId={eventData.lesson?.id}
             selectedDate={selectedDate}
             teacherSchedule={teacherSchedule}
-            nextEvent={
-              nextEventData
-                ? {
-                    id: nextEventData.id,
-                    startTime: nextEventNode?.startTime || "00:00",
-                    duration: nextEventData.duration || 0,
-                    lessonId: nextEventData.lesson?.id,
-                  }
-                : undefined
-            }
-            reorganizationOptions={pendingReorganizations.get(eventData.id)}
+            nextEvent={nextEventProp}
+            reorganizationOptions={undefined}
             onDelete={() =>
               console.log(
                 "🗑️ EventCard onDelete called for event:",
@@ -461,8 +483,6 @@ function TeacherEventsGroup({
             editableScheduleNodes={editableScheduleNodes}
             parentTimeAdjustmentMode={parentTimeAdjustmentMode}
             onTimeAdjustment={handleTimeAdjustment}
-            onAcceptTimeAdjustment={handleAcceptTimeAdjustment}
-            onCancelTimeAdjustment={handleCancelTimeAdjustment}
             onSetTimeAdjustmentMode={setTimeAdjustmentMode}
             onSetViewMode={setViewMode}
           />
@@ -483,7 +503,13 @@ function TeacherEventsGroup({
                 </button>
               )}
               <button
-                onClick={() => setViewMode("queue")}
+                onClick={() => {
+                  if (parentTimeAdjustmentMode && !isPendingParentUpdate) {
+                    onOptInToParentUpdate?.(teacherId);
+                  } else {
+                    setViewMode("queue");
+                  }
+                }}
                 className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 border border-blue-300"
                 title="Edit schedule in queue view"
               >
@@ -562,9 +588,9 @@ function TeacherEventsGroup({
       </div>
     </div>
   );
-}
+});
+TeacherEventsGroup.displayName = "TeacherEventsGroup";
 
-// Sub-component: No Wind Button
 function NoWindButton({
   events,
   onAllEventsDeleted,
@@ -578,10 +604,8 @@ function NoWindButton({
     if (events.length === 0) return;
 
     try {
-      let deletedCount = 0;
       for (const event of events) {
-        const result = await deleteEvent(event.id);
-        if (result.success) deletedCount++;
+        await deleteEvent(event.id);
       }
       onAllEventsDeleted();
     } catch (error) {
@@ -631,7 +655,6 @@ function NoWindButton({
   );
 }
 
-// Sub-component: Parent Control Flag
 function ParentControlFlag({
   events,
   selectedDate,
@@ -732,17 +755,16 @@ export default function WhiteboardEvents({
   selectedDate,
   teacherSchedules,
 }: WhiteboardEventsProps) {
-  // State
   const [parentTimeAdjustmentMode, setParentTimeAdjustmentMode] =
     useState(false);
   const [parentGlobalTime, setParentGlobalTime] = useState<string | null>(null);
-  const teachersInEditModeRef = useRef<Set<string>>(new Set());
-  const [teachersNotInEditMode, setTeachersNotInEditMode] = useState<
-    Set<string>
-  >(new Set());
+  const [pendingParentUpdateTeachers, setPendingParentUpdateTeachers] =
+    useState<Set<string>>(new Set());
   const router = useRouter();
+  const teacherGroupRefs = useRef<Map<string, TeacherEventsGroupHandle | null>>(
+    new Map(),
+  );
 
-  // Computed values
   const teacherEventGroups: TeacherEventGroupData[] = useMemo(() => {
     const groups = new Map<string, any[]>();
     events
@@ -769,20 +791,27 @@ export default function WhiteboardEvents({
     [teacherEventGroups],
   );
 
-  // Handlers
+  const handleParentCancelTimeAdjustment = useCallback(() => {
+    setParentTimeAdjustmentMode(false);
+    setParentGlobalTime(null);
+    setPendingParentUpdateTeachers(new Set());
+  }, []);
+
+  useEffect(() => {
+    if (parentTimeAdjustmentMode && pendingParentUpdateTeachers.size === 0) {
+      handleParentCancelTimeAdjustment();
+    }
+  }, [
+    parentTimeAdjustmentMode,
+    pendingParentUpdateTeachers,
+    handleParentCancelTimeAdjustment,
+  ]);
+
   const handleParentTimeAdjustment = useCallback(
     (minutesOffset: number) => {
-      if (!parentGlobalTime) {
-        if (earliestTime) {
-          const newTime = minutesToTime(
-            timeToMinutes(earliestTime) + minutesOffset,
-          );
-          setParentGlobalTime(newTime);
-        }
-      } else {
-        const newTime = minutesToTime(
-          timeToMinutes(parentGlobalTime) + minutesOffset,
-        );
+      const baseTime = parentGlobalTime || earliestTime;
+      if (baseTime) {
+        const newTime = minutesToTime(timeToMinutes(baseTime) + minutesOffset);
         setParentGlobalTime(newTime);
       }
     },
@@ -790,81 +819,39 @@ export default function WhiteboardEvents({
   );
 
   const handleParentAcceptTimeAdjustment = useCallback(async () => {
-    if (!parentGlobalTime) {
-      setParentTimeAdjustmentMode(false);
-      return;
-    }
-
-    const updatePromises: Promise<any>[] = [];
-
-    teacherEventGroups.forEach((group) => {
-      const teacherSchedule = group.teacherSchedule;
-      if (
-        teacherSchedule &&
-        teachersInEditModeRef.current.has(group.teacherId) &&
-        !teachersNotInEditMode.has(group.teacherId)
-      ) {
-        const firstEventNode = teacherSchedule
-          .getNodes()
-          .find((n) => n.type === "event");
-        if (firstEventNode) {
-          const originalStartTime = timeToMinutes(firstEventNode.startTime);
-          const targetStartTime = timeToMinutes(parentGlobalTime);
-          const timeOffset = targetStartTime - originalStartTime;
-
-          const success =
-            teacherSchedule.shiftFirstEventAndReorganize(timeOffset);
-          if (success) {
-            const eventIdMap = TeacherEventsUtils.createEventIdMap(
-              group.events,
-            );
-            const databaseUpdates =
-              teacherSchedule.getDatabaseUpdatesForShiftedSchedule(
-                selectedDate,
-                eventIdMap,
-              );
-            if (databaseUpdates.length > 0) {
-              updatePromises.push(reorganizeEventTimes(databaseUpdates));
-            }
-          }
-        }
+    const submitPromises: Promise<void>[] = [];
+    pendingParentUpdateTeachers.forEach((teacherId) => {
+      const teacherGroup = teacherGroupRefs.current.get(teacherId);
+      if (teacherGroup) {
+        submitPromises.push(teacherGroup.submit());
       }
     });
 
-    if (updatePromises.length > 0) {
-      await Promise.all(updatePromises);
+    try {
+      await Promise.all(submitPromises);
+    } catch (error) {
+      console.error("Error submitting one or more teacher schedules:", error);
     }
 
-    setParentTimeAdjustmentMode(false);
-    setParentGlobalTime(null);
-    teachersInEditModeRef.current.clear();
-    setTeachersNotInEditMode(new Set());
+    handleParentCancelTimeAdjustment();
     router.refresh();
-  }, [
-    parentGlobalTime,
-    teacherEventGroups,
-    selectedDate,
-    teachersNotInEditMode,
-    router,
-  ]);
+  }, [pendingParentUpdateTeachers, handleParentCancelTimeAdjustment, router]);
 
-  const handleParentCancelTimeAdjustment = useCallback(() => {
-    setParentTimeAdjustmentMode(false);
-    setParentGlobalTime(null);
-    teachersInEditModeRef.current.clear();
-    setTeachersNotInEditMode(new Set());
+  const handleTeacherUpdateCompletion = useCallback((teacherId: string) => {
+    setPendingParentUpdateTeachers((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(teacherId);
+      return newSet;
+    });
   }, []);
 
-  const handleTeacherEditModeChange = useCallback(
-    (teacherId: string, inEditMode: boolean) => {
-      if (inEditMode) {
-        teachersInEditModeRef.current.add(teacherId);
-      } else {
-        teachersInEditModeRef.current.delete(teacherId);
-      }
-    },
-    [],
-  );
+  const handleTeacherOptIn = useCallback((teacherId: string) => {
+    setPendingParentUpdateTeachers((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(teacherId);
+      return newSet;
+    });
+  }, []);
 
   const handleParentFlagClick = useCallback(() => {
     const newMode = !parentTimeAdjustmentMode;
@@ -872,7 +859,7 @@ export default function WhiteboardEvents({
     if (newMode) {
       setParentGlobalTime(earliestTime);
       const allTeacherIds = teacherEventGroups.map((group) => group.teacherId);
-      teachersInEditModeRef.current = new Set(allTeacherIds);
+      setPendingParentUpdateTeachers(new Set(allTeacherIds));
     } else {
       handleParentCancelTimeAdjustment();
     }
@@ -907,12 +894,19 @@ export default function WhiteboardEvents({
           {teacherEventGroups.map((group) => (
             <TeacherEventsGroup
               key={group.teacherId}
+              ref={(el: TeacherEventsGroupHandle | null) =>
+                teacherGroupRefs.current.set(group.teacherId, el)
+              }
               teacherSchedule={group.teacherSchedule}
               events={group.events}
               selectedDate={selectedDate}
               parentTimeAdjustmentMode={parentTimeAdjustmentMode}
               parentGlobalTime={parentGlobalTime}
-              onTeacherEditModeChange={handleTeacherEditModeChange}
+              isPendingParentUpdate={pendingParentUpdateTeachers.has(
+                group.teacherId,
+              )}
+              onCompleteOrOptOut={handleTeacherUpdateCompletion}
+              onOptInToParentUpdate={handleTeacherOptIn}
             />
           ))}
         </div>
