@@ -371,11 +371,14 @@ function TeacherEventsGroup({
             date={new Date(`${selectedDate}T${node.startTime}`).toISOString()}
             status={eventData?.status || "No status"}
             eventId={eventData.id}
+            lessonId={eventData.lesson?.id}
+            selectedDate={selectedDate}
             teacherSchedule={teacherSchedule}
             nextEvent={nextEventData ? {
               id: nextEventData.id,
               startTime: nextEventNode?.startTime || "00:00",
-              duration: nextEventData.duration || 0
+              duration: nextEventData.duration || 0,
+              lessonId: nextEventData.lesson?.id
             } : undefined}
             reorganizationOptions={pendingReorganizations.get(eventData.id)}
             onDelete={() => console.log("🗑️ EventCard onDelete called for event:", eventData.id)}

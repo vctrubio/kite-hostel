@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { type ReorganizationOption } from "@/backend/types";
 import { deleteEvent, updateEvent } from "@/actions/event-actions";
+import { reorganizeEventTimes } from "@/actions/kite-actions";
 
 interface EventCardProps {
   students: string;
@@ -27,11 +28,14 @@ interface EventCardProps {
   date: string;
   status: string;
   eventId?: string;
+  lessonId?: string; // Add lessonId to identify the lesson in TeacherSchedule
+  selectedDate?: string; // Add selectedDate for database updates
   teacherSchedule?: any; // TeacherSchedule - contains all the info we need
   nextEvent?: {
     id: string;
     startTime: string;
     duration: number;
+    lessonId?: string; // Add lessonId for next event too
   };
   onDelete?: () => void;
   onStatusChange?: (
@@ -344,15 +348,22 @@ const CompletionDropdown = ({
 // Enhanced Delete Dropdown Component
 const EnhancedDeleteDropdown = ({
   eventId,
+  lessonId,
+  selectedDate,
   nextEvent,
+  teacherSchedule,
   onDeleteComplete,
 }: {
   eventId: string;
+  lessonId?: string;
+  selectedDate?: string;
   nextEvent?: {
     id: string;
     startTime: string;
     duration: number;
+    lessonId?: string;
   };
+  teacherSchedule?: any;
   onDeleteComplete: () => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -361,9 +372,60 @@ const EnhancedDeleteDropdown = ({
     if (!eventId) return;
     
     setIsLoading(true);
-    console.log("🗑️ Deleting event:", eventId);
+    console.log("🗑️ Deleting event:", eventId, "lessonId:", lessonId);
     
     try {
+      if (moveNextEvent && teacherSchedule && lessonId && selectedDate) {
+        console.log("🔄 Starting shift operation - will move ALL subsequent events");
+        
+        // STEP 1: Build complete eventIdMap for ALL events in teacher schedule
+        const allScheduleNodes = teacherSchedule.getStoredNodes();
+        const allEventNodes = allScheduleNodes.filter((node: any) => node.type === 'event');
+        
+        console.log(`📋 Found ${allEventNodes.length} total events in schedule`);
+        
+        // Create eventIdMap by finding corresponding events in the events array passed from parent
+        // TODO: We need access to the full events array from WhiteboardEvents to map all lessonIds to eventIds
+        // For now, we'll create a simplified version
+        const eventIdMap = new Map<string, string>();
+        eventIdMap.set(lessonId, eventId);
+        if (nextEvent?.lessonId) {
+          eventIdMap.set(nextEvent.lessonId, nextEvent.id);
+        }
+        
+        console.log(`🗺️ EventIdMap has ${eventIdMap.size} entries (this may be incomplete)`);
+        
+        // STEP 2: Apply the shift operation to TeacherSchedule
+        const result = teacherSchedule.removeEventAndShiftNodes(lessonId);
+        
+        if (result.success) {
+          console.log(`✅ TeacherSchedule shift completed:`);
+          console.log(`  • Removed event start time: ${result.removedEventStartTime}`);
+          console.log(`  • Shifted ${result.shiftedEventIds?.length || 0} events: [${result.shiftedEventIds?.join(', ')}]`);
+          
+          // STEP 3: Get database updates AFTER the schedule modification
+          const updates = teacherSchedule.getDatabaseUpdatesForShiftNodes(lessonId, selectedDate, eventIdMap);
+          console.log(`📡 Generated ${updates.length} database updates`);
+          
+          // STEP 4: Apply database updates for all shifted events
+          if (updates.length > 0) {
+            console.log("🔄 Applying database updates for shifted events...");
+            const reorganizeResult = await reorganizeEventTimes(updates);
+            
+            if (reorganizeResult.success) {
+              console.log("✅ All database updates applied successfully");
+            } else {
+              console.error("❌ Database update failed:", reorganizeResult.error);
+            }
+          } else {
+            console.warn("⚠️ No database updates generated - eventIdMap may be incomplete");
+          }
+        } else {
+          console.error("❌ TeacherSchedule shift operation failed");
+        }
+      }
+
+      // Always delete the event from database
       const deleteResult = await deleteEvent(eventId);
       
       if (!deleteResult.success) {
@@ -373,23 +435,6 @@ const EnhancedDeleteDropdown = ({
       }
 
       console.log("✅ Event deleted successfully");
-
-      // If we have a next event and user wants to move it
-      if (nextEvent && moveNextEvent) {
-        console.log("🔄 Moving next event to fill gap:", nextEvent.id);
-        
-        const updateResult = await updateEvent(nextEvent.id, {
-          // Move the next event to start when this event was supposed to start
-          date: new Date().toISOString(), // This should be the current event's start time
-        });
-
-        if (updateResult.success) {
-          console.log("✅ Next event moved successfully");
-        } else {
-          console.error("❌ Failed to move next event:", updateResult.error);
-        }
-      }
-
       onDeleteComplete();
     } catch (error) {
       console.error("🔥 Error during delete operation:", error);
@@ -474,6 +519,8 @@ const DropdownCard = ({
   showDeleteDropdown,
   showCompletionDropdown,
   eventId,
+  lessonId,
+  selectedDate,
   duration,
   date,
   teacherSchedule,
@@ -487,6 +534,8 @@ const DropdownCard = ({
   showDeleteDropdown?: boolean;
   showCompletionDropdown?: boolean;
   eventId?: string;
+  lessonId?: string;
+  selectedDate?: string;
   duration?: number;
   date?: string;
   teacherSchedule?: any;
@@ -494,6 +543,7 @@ const DropdownCard = ({
     id: string;
     startTime: string;
     duration: number;
+    lessonId?: string;
   };
   onDeleteComplete?: () => void;
   onCompletionComplete?: () => void;
@@ -519,7 +569,10 @@ const DropdownCard = ({
     return (
       <EnhancedDeleteDropdown
         eventId={eventId}
+        lessonId={lessonId}
+        selectedDate={selectedDate}
         nextEvent={nextEvent}
+        teacherSchedule={teacherSchedule}
         onDeleteComplete={onDeleteComplete}
       />
     );
@@ -730,6 +783,8 @@ export default function EventCard({
   date,
   status,
   eventId,
+  lessonId,
+  selectedDate,
   teacherSchedule,
   nextEvent,
   onDelete,
@@ -798,6 +853,8 @@ export default function EventCard({
         showDeleteDropdown={showDeleteDropdown}
         showCompletionDropdown={showCompletionDropdown}
         eventId={eventId}
+        lessonId={lessonId}
+        selectedDate={selectedDate}
         duration={duration}
         date={date}
         teacherSchedule={teacherSchedule}

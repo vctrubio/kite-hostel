@@ -1192,6 +1192,148 @@ export class TeacherSchedule {
     });
   }
 
+  /**
+   * Remove an event and shift ALL subsequent nodes to fill the gap
+   * This is specifically for the "Move next lesson here" functionality
+   */
+  removeEventAndShiftNodes(eventIdToRemove: string): { 
+    success: boolean; 
+    shiftedEventIds?: string[]; 
+    removedEventStartTime?: string;
+    databaseUpdates?: Array<{ eventId: string; newDateTime: string }>;
+  } {
+    try {
+      const nodes = this.getStoredNodes();
+      const eventNodes = nodes.filter(node => node.type === 'event');
+      
+      // Find the event to remove
+      let eventToRemoveIndex = -1;
+      let eventToRemove: ScheduleNode | null = null;
+      
+      for (let i = 0; i < eventNodes.length; i++) {
+        const node = eventNodes[i];
+        if (node.eventData?.lessonId === eventIdToRemove) {
+          eventToRemoveIndex = i;
+          eventToRemove = node;
+          break;
+        }
+      }
+      
+      if (!eventToRemove || eventToRemoveIndex === -1) {
+        console.error(`Event with ID ${eventIdToRemove} not found`);
+        return { success: false };
+      }
+      
+      const removedEventStartTime = eventToRemove.startTime;
+      const shiftedEventIds: string[] = [];
+      
+      // Check if there are events after the one to remove
+      if (eventToRemoveIndex + 1 >= eventNodes.length) {
+        console.log("No events after this one - just removing the event");
+        this.removeNode(eventToRemove.id);
+        return { 
+          success: true,
+          removedEventStartTime,
+          shiftedEventIds: []
+        };
+      }
+      
+      console.log(`🔄 Shifting ALL ${eventNodes.length - eventToRemoveIndex - 1} events after removed event to fill gap`);
+      
+      // Remove the target event from the schedule
+      this.removeNode(eventToRemove.id);
+      
+      // Shift ALL subsequent events - each one moves up to fill the gap
+      let currentTime = timeToMinutes(removedEventStartTime);
+      
+      for (let i = eventToRemoveIndex + 1; i < eventNodes.length; i++) {
+        const eventToShift = eventNodes[i];
+        const previousStartTime = eventToShift.startTime;
+        
+        // Shift this event to the current time slot
+        eventToShift.startTime = minutesToTime(currentTime);
+        
+        // Track which events were shifted
+        if (eventToShift.eventData?.lessonId) {
+          shiftedEventIds.push(eventToShift.eventData.lessonId);
+        }
+        
+        console.log(`  • Shifted ${eventToShift.eventData?.lessonId}: ${previousStartTime} → ${eventToShift.startTime}`);
+        
+        // Move to next time slot (this event's duration)
+        currentTime += eventToShift.duration;
+      }
+      
+      // Resort the schedule to maintain order
+      this.resortSchedule();
+      
+      return {
+        success: true,
+        shiftedEventIds,
+        removedEventStartTime
+      };
+      
+    } catch (error) {
+      console.error('Error in removeEventAndShiftNodes:', error);
+      return { success: false };
+    }
+  }
+
+  /**
+   * Get database updates for removeEventAndShiftNodes operation
+   */
+  getDatabaseUpdatesForShiftNodes(
+    eventIdToRemove: string, 
+    selectedDate: string, 
+    eventIdMap: Map<string, string>
+  ): Array<{ eventId: string; newDateTime: string }> {
+    const updates: Array<{ eventId: string; newDateTime: string }> = [];
+    
+    try {
+      const nodes = this.getStoredNodes();
+      const eventNodes = nodes.filter(node => node.type === 'event');
+      
+      // Find the event to remove
+      let eventToRemoveIndex = -1;
+      for (let i = 0; i < eventNodes.length; i++) {
+        if (eventNodes[i].eventData?.lessonId === eventIdToRemove) {
+          eventToRemoveIndex = i;
+          break;
+        }
+      }
+      
+      if (eventToRemoveIndex === -1) return updates;
+      
+      const eventToRemove = eventNodes[eventToRemoveIndex];
+      const removedEventStartTime = eventToRemove.startTime;
+      
+      // Generate updates for all events after the removed one
+      let currentTime = timeToMinutes(removedEventStartTime);
+      
+      for (let i = eventToRemoveIndex + 1; i < eventNodes.length; i++) {
+        const event = eventNodes[i];
+        const lessonId = event.eventData?.lessonId;
+        const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
+        
+        if (eventId && lessonId) {
+          const newStartTime = minutesToTime(currentTime);
+          const newDateTime = this.combineDateTime(selectedDate, newStartTime);
+          
+          updates.push({
+            eventId,
+            newDateTime
+          });
+        }
+        
+        currentTime += event.duration;
+      }
+    } catch (error) {
+      console.error('Error generating shift nodes updates:', error);
+    }
+    
+    return updates;
+  }
+
   calculateTeacherStats(): TeacherStats {
     let totalHours = 0;
     let totalEvents = 0;
