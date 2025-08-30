@@ -2,13 +2,28 @@
  * TeacherSchedule - Simple linked list for teacher daily schedules
  */
 
-import { addMinutesToTime, timeToMinutes, minutesToTime, createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
-import { format } from 'date-fns';
-import { detectScheduleGaps, hasScheduleGaps, compactSchedule, findNextAvailableSlot, type ScheduleItem } from './ScheduleUtils';
-import { type TeacherStats, type ReorganizationOption, type BookingData } from './types';
-import { WhiteboardClass } from './WhiteboardClass';
+import {
+  timeToMinutes,
+  minutesToTime,
+  createUTCDateTime,
+  toUTCString,
+} from "@/components/formatters/TimeZone";
+import { format } from "date-fns";
+import {
+  detectScheduleGaps,
+  hasScheduleGaps,
+  compactSchedule,
+  findNextAvailableSlot,
+  type ScheduleItem,
+} from "./ScheduleUtils";
+import {
+  type TeacherStats,
+  type ReorganizationOption,
+  type BookingData,
+} from "./types";
+import { WhiteboardClass } from "./WhiteboardClass";
 
-export type ScheduleItemType = 'event' | 'gap';
+export type ScheduleItemType = "event" | "gap";
 
 export interface QueuedLesson {
   lessonId: string;
@@ -27,7 +42,7 @@ export interface ScheduleNode extends ScheduleItem {
   startTime: string; // HH:MM format
   duration: number; // minutes
   next: ScheduleNode | null;
-  
+
   // Event-specific data (only when type === 'event')
   eventData?: {
     lessonId: string;
@@ -56,7 +71,6 @@ export interface ConflictInfo {
   suggestedAlternatives: AvailableSlot[];
 }
 
-
 export class TeacherSchedule {
   private schedule: TeacherDaySchedule;
   private lessonQueue: QueuedLesson[] = []; // Add lesson queue
@@ -65,12 +79,18 @@ export class TeacherSchedule {
   public booking: BookingData;
   public whiteboard: WhiteboardClass; // Store whiteboard class reference (required)
 
-  constructor(teacherId: string, teacherName: string, date: string, booking: BookingData, whiteboard: WhiteboardClass) {
+  constructor(
+    teacherId: string,
+    teacherName: string,
+    date: string,
+    booking: BookingData,
+    whiteboard: WhiteboardClass,
+  ) {
     this.schedule = {
       teacherId,
       teacherName,
       date,
-      head: null
+      head: null,
     };
     this.booking = booking;
     this.whiteboard = whiteboard;
@@ -79,15 +99,19 @@ export class TeacherSchedule {
   /**
    * Create multiple teacher schedules from lessons data
    */
-  static createSchedulesFromLessons(date: string, lessons: any[], whiteboardClasses: WhiteboardClass[]): Map<string, TeacherSchedule> {
+  static createSchedulesFromLessons(
+    date: string,
+    lessons: any[],
+    whiteboardClasses: WhiteboardClass[],
+  ): Map<string, TeacherSchedule> {
     const schedules = new Map<string, TeacherSchedule>();
-    
+
     // Group lessons by teacher
     const teacherLessonsMap = new Map<string, any[]>();
-    
+
     lessons
-      .filter(lesson => lesson != null) // Filter out null/undefined lessons
-      .forEach(lesson => {
+      .filter((lesson) => lesson != null) // Filter out null/undefined lessons
+      .forEach((lesson) => {
         if (lesson.teacher?.id) {
           const teacherId = lesson.teacher.id;
           if (!teacherLessonsMap.has(teacherId)) {
@@ -102,53 +126,69 @@ export class TeacherSchedule {
       const teacher = teacherLessons[0].teacher;
       // NOTE: This assumes all lessons for a teacher on a given day belong to the same booking.
       const booking = teacherLessons[0].booking;
-      
+
       // Find the corresponding WhiteboardClass instance - required!
-      const whiteboardClass = whiteboardClasses.find(wc => 
-        wc.booking.id === booking.id
+      const whiteboardClass = whiteboardClasses.find(
+        (wc) => wc.booking.id === booking.id,
       );
-      
+
       if (!whiteboardClass) {
         console.error(`No WhiteboardClass found for booking ${booking.id}`);
         return;
       }
-      
-      const schedule = new TeacherSchedule(teacherId, teacher.name, date, booking, whiteboardClass);
+
+      const schedule = new TeacherSchedule(
+        teacherId,
+        teacher.name,
+        date,
+        booking,
+        whiteboardClass,
+      );
       schedule.lessons = teacherLessons;
-      
+
       // Add existing events from lessons
-      teacherLessons.forEach(lesson => {
+      teacherLessons.forEach((lesson) => {
         // Add safety check for lesson existence
         if (!lesson || !lesson.events) return;
-        
+
         lesson.events
           .filter((event: any) => event != null) // Filter out null/undefined events
           .forEach((event: any) => {
             // Add proper null/undefined checks
-            if (event && event.date && TeacherSchedule.isSameDate(event.date, date)) {
+            if (
+              event &&
+              event.date &&
+              TeacherSchedule.isSameDate(event.date, date)
+            ) {
               // Convert UTC timestamp to local time using the same method as EventCard
-              const localTime = format(new Date(event.date), 'HH:mm');
-              
+              const localTime = format(new Date(event.date), "HH:mm");
+
               // Extract student names from booking.students (BookingStudent relations)
               let studentNames: string[] = [];
-              if (lesson.booking?.students && Array.isArray(lesson.booking.students)) {
-                studentNames = lesson.booking.students.map((bookingStudent: any) => 
-                  bookingStudent.student?.name || bookingStudent.student?.first_name || 'Unknown'
+              if (
+                lesson.booking?.students &&
+                Array.isArray(lesson.booking.students)
+              ) {
+                studentNames = lesson.booking.students.map(
+                  (bookingStudent: any) =>
+                    bookingStudent.student?.name ||
+                    bookingStudent.student?.first_name ||
+                    "Unknown",
                 );
               }
-              
+
               schedule.addEvent(
                 localTime,
                 event.duration || 120,
                 lesson.id,
-                event.location || 'Los Lances',
+                event.location || "Los Lances",
                 lesson.booking?.students?.length || 1,
-                studentNames.length > 0 ? studentNames : undefined
+                studentNames.length > 0 ? studentNames : undefined,
               );
             }
           });
       });
-      
+
       schedules.set(teacherId, schedule);
     });
 
@@ -158,10 +198,17 @@ export class TeacherSchedule {
   /**
    * Add an event to the linked list (sorted by start time)
    */
-  addEvent(startTime: string, duration: number, lessonId: string, location: string, studentCount: number, studentNames?: string[]): ScheduleNode {
+  addEvent(
+    startTime: string,
+    duration: number,
+    lessonId: string,
+    location: string,
+    studentCount: number,
+    studentNames?: string[],
+  ): ScheduleNode {
     const node: ScheduleNode = {
       id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'event',
+      type: "event",
       startTime,
       duration,
       next: null,
@@ -169,8 +216,8 @@ export class TeacherSchedule {
         lessonId,
         location,
         studentCount,
-        studentNames
-      }
+        studentNames,
+      },
     };
 
     this.insertNode(node);
@@ -181,14 +228,21 @@ export class TeacherSchedule {
    * Insert node in chronological order
    */
   private insertNode(newNode: ScheduleNode): void {
-    if (!this.schedule.head || timeToMinutes(newNode.startTime) < timeToMinutes(this.schedule.head.startTime)) {
+    if (
+      !this.schedule.head ||
+      timeToMinutes(newNode.startTime) <
+        timeToMinutes(this.schedule.head.startTime)
+    ) {
       newNode.next = this.schedule.head;
       this.schedule.head = newNode;
       return;
     }
 
     let current = this.schedule.head;
-    while (current.next && timeToMinutes(current.next.startTime) < timeToMinutes(newNode.startTime)) {
+    while (
+      current.next &&
+      timeToMinutes(current.next.startTime) < timeToMinutes(newNode.startTime)
+    ) {
       current = current.next;
     }
 
@@ -201,8 +255,8 @@ export class TeacherSchedule {
    */
   calculatePossibleSlot(requestedDuration: number): AvailableSlot | null {
     const storedNodes = this.getStoredNodes();
-    const eventNodes = storedNodes.filter(node => node.type === 'event');
-    
+    const eventNodes = storedNodes.filter((node) => node.type === "event");
+
     // Use the utility function to find next available slot
     return findNextAvailableSlot(eventNodes, requestedDuration);
   }
@@ -212,25 +266,26 @@ export class TeacherSchedule {
    */
   getAvailableSlots(minimumDuration: number = 60): AvailableSlot[] {
     const storedNodes = this.getStoredNodes();
-    const eventNodes = storedNodes.filter(node => node.type === 'event');
-    
+    const eventNodes = storedNodes.filter((node) => node.type === "event");
+
     if (eventNodes.length === 0) {
       return []; // No events scheduled, return empty slots
     }
 
     const slots: AvailableSlot[] = [];
-    
+
     // Sort events by start time
-    const sortedEvents = [...eventNodes].sort((a, b) => 
-      timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+    const sortedEvents = [...eventNodes].sort(
+      (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
     );
 
     // Check gaps between events
     for (let i = 0; i < sortedEvents.length - 1; i++) {
       const currentEvent = sortedEvents[i];
       const nextEvent = sortedEvents[i + 1];
-      
-      const currentEnd = timeToMinutes(currentEvent.startTime) + currentEvent.duration;
+
+      const currentEnd =
+        timeToMinutes(currentEvent.startTime) + currentEvent.duration;
       const nextStart = timeToMinutes(nextEvent.startTime);
       const gapDuration = nextStart - currentEnd;
 
@@ -238,7 +293,7 @@ export class TeacherSchedule {
         slots.push({
           startTime: minutesToTime(currentEnd),
           endTime: nextEvent.startTime,
-          duration: gapDuration
+          duration: gapDuration,
         });
       }
     }
@@ -269,7 +324,7 @@ export class TeacherSchedule {
 
     const hasConflict = conflictingNodes.length > 0;
     let suggestedAlternatives: AvailableSlot[] = [];
-    
+
     if (hasConflict) {
       const nextSlot = this.calculatePossibleSlot(duration);
       if (nextSlot) {
@@ -280,7 +335,7 @@ export class TeacherSchedule {
     return {
       hasConflict,
       conflictingNodes,
-      suggestedAlternatives
+      suggestedAlternatives,
     };
   }
 
@@ -296,8 +351,8 @@ export class TeacherSchedule {
    */
   getNodes(): ScheduleNode[] {
     const storedNodes = this.getStoredNodes();
-    const eventNodes = storedNodes.filter(node => node.type === 'event');
-    
+    const eventNodes = storedNodes.filter((node) => node.type === "event");
+
     // Use the utility function to detect gaps
     return detectScheduleGaps(eventNodes) as ScheduleNode[];
   }
@@ -308,12 +363,12 @@ export class TeacherSchedule {
   getStoredNodes(): ScheduleNode[] {
     const nodes: ScheduleNode[] = [];
     let current = this.schedule.head;
-    
+
     while (current) {
       nodes.push(current);
       current = current.next;
     }
-    
+
     return nodes;
   }
 
@@ -355,11 +410,11 @@ export class TeacherSchedule {
     const subsequentNodes = this.getNodesAfter(nodeIdToRemove);
     if (subsequentNodes.length > 0) {
       options.push({
-        type: 'compact_schedule',
+        type: "compact_schedule",
         description: `Compact schedule by moving ${subsequentNodes.length} events earlier`,
         nodesToMove: subsequentNodes,
         timeSaved: removedDuration,
-        feasible: true
+        feasible: true,
       });
     }
 
@@ -371,8 +426,8 @@ export class TeacherSchedule {
    */
   canReorganizeSchedule(): boolean {
     const nodes = this.getStoredNodes();
-    const eventNodes = nodes.filter(node => node.type === 'event');
-    
+    const eventNodes = nodes.filter((node) => node.type === "event");
+
     // Use the utility function to check for gaps
     return hasScheduleGaps(eventNodes, 15); // 15+ minute gaps
   }
@@ -383,23 +438,23 @@ export class TeacherSchedule {
   performCompactReorganization(): boolean {
     try {
       const nodes = this.getStoredNodes();
-      const eventNodes = nodes.filter(node => node.type === 'event');
-      
+      const eventNodes = nodes.filter((node) => node.type === "event");
+
       if (eventNodes.length < 2) return false;
 
       // Use the utility function to compact the schedule
       const compactedEvents = compactSchedule(eventNodes);
-      
+
       // Update the actual nodes with the compacted times
       compactedEvents.forEach((compactedEvent, index) => {
         eventNodes[index].startTime = compactedEvent.startTime;
       });
-      
+
       // Resort the schedule to maintain order
       this.resortSchedule();
       return true;
     } catch (error) {
-      console.error('Error performing compact reorganization:', error);
+      console.error("Error performing compact reorganization:", error);
       return false;
     }
   }
@@ -407,34 +462,40 @@ export class TeacherSchedule {
   /**
    * Get database updates for full schedule compaction
    */
-  getDatabaseUpdatesForCompactReorganization(selectedDate: string, eventIdMap: Map<string, string>): Array<{
+  getDatabaseUpdatesForCompactReorganization(
+    selectedDate: string,
+    eventIdMap: Map<string, string>,
+  ): Array<{
     eventId: string;
     newDateTime: string;
   }> {
     const updates: Array<{ eventId: string; newDateTime: string }> = [];
-    
+
     try {
       const nodes = this.getStoredNodes();
-      const eventNodes = nodes.filter(node => node.type === 'event');
-      
+      const eventNodes = nodes.filter((node) => node.type === "event");
+
       // Update all events except the first one (which stays in place)
       for (let i = 1; i < eventNodes.length; i++) {
         const node = eventNodes[i];
         const lessonId = node.eventData?.lessonId;
         const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
-        
+
         if (eventId && lessonId) {
-          const newDateTime = this.combineDateTime(selectedDate, node.startTime);
+          const newDateTime = this.combineDateTime(
+            selectedDate,
+            node.startTime,
+          );
           updates.push({
             eventId,
-            newDateTime
+            newDateTime,
           });
         }
       }
     } catch (error) {
-      console.error('Error generating compact reorganization updates:', error);
+      console.error("Error generating compact reorganization updates:", error);
     }
-    
+
     return updates;
   }
 
@@ -444,10 +505,12 @@ export class TeacherSchedule {
   reorganizeTeacherEvents(option: ReorganizationOption): boolean {
     try {
       switch (option.type) {
-        case 'shift_next':
+        case "shift_next":
           if (option.nodeToMove && option.newStartTime) {
             // Find next available slot for the node to move
-            const nextSlot = this.calculatePossibleSlot(option.nodeToMove.duration);
+            const nextSlot = this.calculatePossibleSlot(
+              option.nodeToMove.duration,
+            );
             if (nextSlot) {
               option.nodeToMove.startTime = nextSlot.startTime;
               this.resortSchedule();
@@ -456,38 +519,42 @@ export class TeacherSchedule {
           }
           break;
 
-        case 'compact_schedule':
+        case "compact_schedule":
           if (option.nodesToMove) {
             // For reorganization after deletion, we want to use the deleted node's time slot
             // The first node to move should start at the time the deleted node was at
             const firstNodeToMove = option.nodesToMove[0];
-            
+
             // If we have timeSaved, it means we removed a node and want to shift everything up
             let nextStartTime: number;
             if (option.timeSaved) {
               // Calculate the earliest time any of the nodes to move currently has
-              const earliestTime = Math.min(...option.nodesToMove.map(node => 
-                timeToMinutes(node.startTime)
-              ));
-              
+              const earliestTime = Math.min(
+                ...option.nodesToMove.map((node) =>
+                  timeToMinutes(node.startTime),
+                ),
+              );
+
               // Move everything back by the time saved (which is the duration of deleted node)
               nextStartTime = earliestTime - option.timeSaved;
             } else {
               // Normal compacting - just start after the previous node
               const nodeBeforeFirst = this.findNodeBefore(firstNodeToMove.id);
               if (nodeBeforeFirst) {
-                nextStartTime = timeToMinutes(nodeBeforeFirst.startTime) + nodeBeforeFirst.duration;
+                nextStartTime =
+                  timeToMinutes(nodeBeforeFirst.startTime) +
+                  nodeBeforeFirst.duration;
               } else {
                 nextStartTime = timeToMinutes(firstNodeToMove.startTime);
               }
             }
-            
+
             // Compact all nodes to move sequentially
-            option.nodesToMove.forEach(node => {
+            option.nodesToMove.forEach((node) => {
               node.startTime = minutesToTime(Math.max(0, nextStartTime));
               nextStartTime += node.duration; // Next event starts after this one ends
             });
-            
+
             this.resortSchedule();
             return true;
           }
@@ -495,7 +562,7 @@ export class TeacherSchedule {
       }
       return false;
     } catch (error) {
-      console.error('Error reorganizing schedule:', error);
+      console.error("Error reorganizing schedule:", error);
       return false;
     }
   }
@@ -505,108 +572,123 @@ export class TeacherSchedule {
    * This simulates the reorganization without actually modifying the schedule
    */
   getDatabaseUpdatesAfterNodeRemoval(
-    nodeIdToRemove: string, 
-    option: ReorganizationOption, 
-    selectedDate: string, 
-    eventIdMap: Map<string, string>
-  ): Array<{ eventId: string; newDateTime: string; }> {
+    nodeIdToRemove: string,
+    option: ReorganizationOption,
+    selectedDate: string,
+    eventIdMap: Map<string, string>,
+  ): Array<{ eventId: string; newDateTime: string }> {
     const updates: Array<{ eventId: string; newDateTime: string }> = [];
-    
+
     try {
       // Get the nodes that would remain after removal
       const allNodes = this.getStoredNodes();
-      const nodeToRemove = allNodes.find(n => n.id === nodeIdToRemove);
+      const nodeToRemove = allNodes.find((n) => n.id === nodeIdToRemove);
       if (!nodeToRemove) return updates;
-      
-      if (option.type === 'compact_schedule' && option.nodesToMove) {
+
+      if (option.type === "compact_schedule" && option.nodesToMove) {
         // Start from the deleted event's time slot
         let nextStartTime = timeToMinutes(nodeToRemove.startTime);
-        
+
         // Generate updates for each node that needs to move
-        option.nodesToMove.forEach(node => {
+        option.nodesToMove.forEach((node) => {
           // Skip if this is the node being removed
           if (node.id === nodeIdToRemove) return;
-          
+
           const lessonId = node.eventData?.lessonId;
           const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
-          
+
           if (eventId && lessonId) {
             const newStartTime = minutesToTime(nextStartTime);
-            const newDateTime = this.combineDateTime(selectedDate, newStartTime);
-            
+            const newDateTime = this.combineDateTime(
+              selectedDate,
+              newStartTime,
+            );
+
             updates.push({
               eventId,
-              newDateTime
+              newDateTime,
             });
           }
-          
+
           // Next event starts after this one ends (account for duration)
           nextStartTime += node.duration;
         });
       }
     } catch (error) {
-      console.error('Error generating updates after node removal:', error);
+      console.error("Error generating updates after node removal:", error);
     }
-    
+
     return updates;
   }
 
   /**
    * Get database update information for reorganization
    */
-  getDatabaseUpdatesForReorganization(option: ReorganizationOption, selectedDate: string, eventIdMap: Map<string, string>): Array<{
+  getDatabaseUpdatesForReorganization(
+    option: ReorganizationOption,
+    selectedDate: string,
+    eventIdMap: Map<string, string>,
+  ): Array<{
     eventId: string;
     newDateTime: string;
   }> {
     const updates: Array<{ eventId: string; newDateTime: string }> = [];
-    
+
     try {
       switch (option.type) {
-        case 'shift_next':
+        case "shift_next":
           if (option.nodeToMove && option.newStartTime) {
             const lessonId = option.nodeToMove.eventData?.lessonId;
             const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
-            
+
             if (eventId && lessonId) {
-              const newDateTime = this.combineDateTime(selectedDate, option.newStartTime);
+              const newDateTime = this.combineDateTime(
+                selectedDate,
+                option.newStartTime,
+              );
               updates.push({
                 eventId,
-                newDateTime
+                newDateTime,
               });
             }
           }
           break;
 
-        case 'compact_schedule':
+        case "compact_schedule":
           if (option.nodesToMove && option.timeSaved) {
             // Find the node that comes before the nodes to move
             const firstNodeToMove = option.nodesToMove[0];
             const nodeBeforeFirst = this.findNodeBefore(firstNodeToMove.id);
-            
+
             let nextStartTime: number;
             if (nodeBeforeFirst) {
               // Start right after the previous node ends
-              nextStartTime = timeToMinutes(nodeBeforeFirst.startTime) + nodeBeforeFirst.duration;
+              nextStartTime =
+                timeToMinutes(nodeBeforeFirst.startTime) +
+                nodeBeforeFirst.duration;
             } else {
               // If no previous node, keep the original start time of first node to move
               nextStartTime = timeToMinutes(firstNodeToMove.startTime);
             }
-            
+
             // Generate updates for each node, placing them sequentially
-            option.nodesToMove.forEach(node => {
+            option.nodesToMove.forEach((node) => {
               const lessonId = node.eventData?.lessonId;
               const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
-              
+
               if (eventId && lessonId) {
                 const newStartTime = minutesToTime(nextStartTime);
-                const newDateTime = this.combineDateTime(selectedDate, newStartTime);
-                
+                const newDateTime = this.combineDateTime(
+                  selectedDate,
+                  newStartTime,
+                );
+
                 updates.push({
                   eventId,
-                  newDateTime
+                  newDateTime,
                 });
               }
-              
+
               // Next event starts after this one ends (account for duration)
               nextStartTime += node.duration;
             });
@@ -614,9 +696,9 @@ export class TeacherSchedule {
           break;
       }
     } catch (error) {
-      console.error('Error generating database updates:', error);
+      console.error("Error generating database updates:", error);
     }
-    
+
     return updates;
   }
 
@@ -686,16 +768,17 @@ export class TeacherSchedule {
 
     // Convert to array, sort, and rebuild linked list
     const nodes = this.getStoredNodes();
-    nodes.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+    nodes.sort(
+      (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+    );
 
     // Rebuild the linked list
     this.schedule.head = null;
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       node.next = null; // Reset next pointer
       this.insertNode(node);
     });
   }
-
 
   static isSameDate(date1: string, date2: string): boolean {
     return new Date(date1).toDateString() === new Date(date2).toDateString();
@@ -703,70 +786,75 @@ export class TeacherSchedule {
 
   static extractTimeFromDate(dateString: string): string {
     // Convert UTC timestamp to local time using the same method as EventCard
-    return format(new Date(dateString), 'HH:mm');
+    return format(new Date(dateString), "HH:mm");
   }
 
   /**
    * Shift the first event's start time and reorganize all subsequent events
    */
   shiftFirstEventAndReorganize(minutesOffset: number): boolean {
-    if (!this.schedule.head || this.schedule.head.type !== 'event') {
+    if (!this.schedule.head || this.schedule.head.type !== "event") {
       return false; // No events to shift
     }
 
     const firstNode = this.schedule.head;
     const currentStartMinutes = timeToMinutes(firstNode.startTime);
     const newStartMinutes = currentStartMinutes + minutesOffset;
-    
+
     // Check if new time is valid (not negative)
     if (newStartMinutes < 0) {
       return false; // Cannot shift to negative time
     }
 
     const newStartTime = minutesToTime(newStartMinutes);
-    
+
     // Update the first event's time
     firstNode.startTime = newStartTime;
-    
+
     // Reorganize all subsequent events to remove gaps
     let currentNode = firstNode;
     let nextEventStartTime = newStartMinutes + firstNode.duration;
-    
+
     while (currentNode.next) {
       const nextNode = currentNode.next;
-      
-      if (nextNode.type === 'event') {
+
+      if (nextNode.type === "event") {
         nextNode.startTime = minutesToTime(nextEventStartTime);
         nextEventStartTime += nextNode.duration;
       }
-      
+
       currentNode = nextNode;
     }
-    
+
     return true;
   }
 
   /**
    * Get database updates for shifted first event and reorganized schedule
    */
-  getDatabaseUpdatesForShiftedSchedule(selectedDate: string, eventIdMap: Map<string, string>): Array<{ eventId: string; newDateTime: string }> {
+  getDatabaseUpdatesForShiftedSchedule(
+    selectedDate: string,
+    eventIdMap: Map<string, string>,
+  ): Array<{ eventId: string; newDateTime: string }> {
     const updates: Array<{ eventId: string; newDateTime: string }> = [];
-    
+
     let current = this.schedule.head;
     while (current) {
-      if (current.type === 'event' && current.eventData?.lessonId) {
+      if (current.type === "event" && current.eventData?.lessonId) {
         const eventId = eventIdMap.get(current.eventData.lessonId);
         if (eventId) {
-          const newDateTime = toUTCString(createUTCDateTime(selectedDate, current.startTime));
+          const newDateTime = toUTCString(
+            createUTCDateTime(selectedDate, current.startTime),
+          );
           updates.push({
             eventId,
-            newDateTime
+            newDateTime,
           });
         }
       }
       current = current.next;
     }
-    
+
     return updates;
   }
 
@@ -775,13 +863,19 @@ export class TeacherSchedule {
    */
 
   // Add lesson to queue
-  addLessonToQueue(lessonId: string, duration: number, students: string[], remainingMinutes: number, lessonStatus?: string): void {
+  addLessonToQueue(
+    lessonId: string,
+    duration: number,
+    students: string[],
+    remainingMinutes: number,
+    lessonStatus?: string,
+  ): void {
     // Only allow adding if lesson is planned
-    if (lessonStatus && lessonStatus !== 'planned') {
+    if (lessonStatus && lessonStatus !== "planned") {
       return;
     }
     // Check if lesson already in queue
-    if (this.lessonQueue.some(q => q.lessonId === lessonId)) {
+    if (this.lessonQueue.some((q) => q.lessonId === lessonId)) {
       return;
     }
 
@@ -789,7 +883,7 @@ export class TeacherSchedule {
       lessonId,
       duration,
       students,
-      remainingMinutes
+      remainingMinutes,
     };
 
     this.lessonQueue.push(queuedLesson);
@@ -798,13 +892,13 @@ export class TeacherSchedule {
 
   // Remove lesson from queue
   removeLessonFromQueue(lessonId: string): void {
-    this.lessonQueue = this.lessonQueue.filter(q => q.lessonId !== lessonId);
+    this.lessonQueue = this.lessonQueue.filter((q) => q.lessonId !== lessonId);
     this.recalculateQueueSchedule(this.queueStartTime);
   }
 
   // Update lesson duration in queue
   updateQueueLessonDuration(lessonId: string, newDuration: number): void {
-    const lesson = this.lessonQueue.find(q => q.lessonId === lessonId);
+    const lesson = this.lessonQueue.find((q) => q.lessonId === lessonId);
     if (lesson) {
       lesson.duration = Math.min(newDuration, lesson.remainingMinutes);
       this.recalculateQueueSchedule(this.queueStartTime);
@@ -812,37 +906,48 @@ export class TeacherSchedule {
   }
 
   // Update lesson start time adjustment in queue
-  updateQueueLessonStartTime(lessonId: string, timeAdjustmentMinutes: number): void {
-    const lessonIndex = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+  updateQueueLessonStartTime(
+    lessonId: string,
+    timeAdjustmentMinutes: number,
+  ): void {
+    const lessonIndex = this.lessonQueue.findIndex(
+      (q) => q.lessonId === lessonId,
+    );
     if (lessonIndex < 0) return;
-    
+
     const lesson = this.lessonQueue[lessonIndex];
-    
+
     // Initialize timeAdjustment if it doesn't exist
     if (!lesson.timeAdjustment) {
       lesson.timeAdjustment = 0;
     }
     lesson.timeAdjustment += timeAdjustmentMinutes;
-    
+
     // If moving later (+30 minutes) and there's a next lesson, check for gap closure
-    if (timeAdjustmentMinutes > 0 && lessonIndex < this.lessonQueue.length - 1) {
+    if (
+      timeAdjustmentMinutes > 0 &&
+      lessonIndex < this.lessonQueue.length - 1
+    ) {
       const nextLesson = this.lessonQueue[lessonIndex + 1];
-      
+
       // Store original adjustments before recalculation
-      const originalAdjustments = this.lessonQueue.map(q => q.timeAdjustment || 0);
-      
+      const originalAdjustments = this.lessonQueue.map(
+        (q) => q.timeAdjustment || 0,
+      );
+
       // Recalculate to get current state
       this.recalculateQueueSchedule(this.queueStartTime);
-      
+
       // Check if after adjustment, this lesson would end exactly when next lesson starts
       if (lesson.scheduledStartTime && nextLesson.scheduledStartTime) {
-        const currentEndTime = timeToMinutes(lesson.scheduledStartTime) + lesson.duration;
+        const currentEndTime =
+          timeToMinutes(lesson.scheduledStartTime) + lesson.duration;
         const nextStartTime = timeToMinutes(nextLesson.scheduledStartTime);
         const gap = nextStartTime - currentEndTime;
-        
+
         // If gap is exactly 30 minutes (the adjustment we just made), close it
         if (gap === 30) {
-          // Instead of modifying timeAdjustment (which affects display), 
+          // Instead of modifying timeAdjustment (which affects display),
           // we'll handle this in recalculateQueueSchedule by tracking gap closure
           for (let i = lessonIndex + 1; i < this.lessonQueue.length; i++) {
             const subsequentLesson = this.lessonQueue[i];
@@ -855,10 +960,9 @@ export class TeacherSchedule {
         }
       }
     }
-    
+
     this.recalculateQueueSchedule(this.queueStartTime);
   }
-
 
   // Set preferred start time for queue
   setQueueStartTime(startTime: string): void {
@@ -871,7 +975,6 @@ export class TeacherSchedule {
     return [...this.lessonQueue];
   }
 
-
   // Clear entire queue
   clearQueue(): void {
     this.lessonQueue = [];
@@ -879,44 +982,53 @@ export class TeacherSchedule {
 
   // Move lesson up in queue (swap with previous)
   moveQueueLessonUp(lessonId: string): void {
-    const index = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    const index = this.lessonQueue.findIndex((q) => q.lessonId === lessonId);
     if (index > 0) {
       // Swap with previous lesson
-      [this.lessonQueue[index - 1], this.lessonQueue[index]] = 
-      [this.lessonQueue[index], this.lessonQueue[index - 1]];
+      [this.lessonQueue[index - 1], this.lessonQueue[index]] = [
+        this.lessonQueue[index],
+        this.lessonQueue[index - 1],
+      ];
       this.recalculateQueueSchedule(this.queueStartTime);
     }
   }
 
   // Move lesson down in queue (swap with next)
   moveQueueLessonDown(lessonId: string): void {
-    const index = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    const index = this.lessonQueue.findIndex((q) => q.lessonId === lessonId);
     if (index >= 0 && index < this.lessonQueue.length - 1) {
       // Swap with next lesson
-      [this.lessonQueue[index], this.lessonQueue[index + 1]] = 
-      [this.lessonQueue[index + 1], this.lessonQueue[index]];
+      [this.lessonQueue[index], this.lessonQueue[index + 1]] = [
+        this.lessonQueue[index + 1],
+        this.lessonQueue[index],
+      ];
       this.recalculateQueueSchedule(this.queueStartTime);
     }
   }
 
   // Check if lesson can move earlier without overlap
   canMoveQueueLessonEarlier(lessonId: string): boolean {
-    const index = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    const index = this.lessonQueue.findIndex((q) => q.lessonId === lessonId);
     if (index < 0) return false; // Not found
     if (index === 0) return true; // First lesson can always move earlier - no previous lesson to overlap
-    
+
     const currentLesson = this.lessonQueue[index];
     const previousLesson = this.lessonQueue[index - 1];
-    
-    if (!currentLesson.scheduledStartTime || !previousLesson.scheduledStartTime) {
+
+    if (
+      !currentLesson.scheduledStartTime ||
+      !previousLesson.scheduledStartTime
+    ) {
       return false;
     }
 
     // Calculate if moving 30 minutes earlier would overlap with previous lesson
     const currentStartMinutes = timeToMinutes(currentLesson.scheduledStartTime);
     const proposedStartMinutes = currentStartMinutes - 30;
-    const previousEndMinutes = timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
-    
+    const previousEndMinutes =
+      timeToMinutes(previousLesson.scheduledStartTime) +
+      previousLesson.duration;
+
     // Check if moving 30 minutes earlier would overlap with previous lesson (no gap required)
     return proposedStartMinutes >= previousEndMinutes;
   }
@@ -934,15 +1046,18 @@ export class TeacherSchedule {
       if (queuedLesson.timeAdjustment) {
         currentTime += queuedLesson.timeAdjustment;
       }
-      
+
       // Apply gap closure adjustment if specified
       if (queuedLesson.gapClosureAdjustment) {
         currentTime += queuedLesson.gapClosureAdjustment;
       }
 
       // Check if there's a conflict with existing events
-      const hasConflict = this.hasConflictAtTime(currentTime, queuedLesson.duration);
-      
+      const hasConflict = this.hasConflictAtTime(
+        currentTime,
+        queuedLesson.duration,
+      );
+
       if (hasConflict) {
         const nextSlot = this.calculatePossibleSlot(queuedLesson.duration);
         if (nextSlot) {
@@ -971,19 +1086,24 @@ export class TeacherSchedule {
       }
 
       const previousLesson = this.lessonQueue[index - 1];
-      if (!previousLesson.scheduledStartTime || !queuedLesson.scheduledStartTime) {
+      if (
+        !previousLesson.scheduledStartTime ||
+        !queuedLesson.scheduledStartTime
+      ) {
         queuedLesson.hasGap = false;
         return;
       }
 
       // Calculate when this lesson should start (immediately after previous lesson ends)
-      const previousEndTime = timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
+      const previousEndTime =
+        timeToMinutes(previousLesson.scheduledStartTime) +
+        previousLesson.duration;
       const actualStartTime = timeToMinutes(queuedLesson.scheduledStartTime);
-      
+
       // There's a gap if the actual start time is later than when it should start
       const gapMinutes = actualStartTime - previousEndTime;
       queuedLesson.hasGap = gapMinutes > 0;
-      
+
       // Optional: Store gap duration for debugging or display
       if (queuedLesson.hasGap) {
         (queuedLesson as any).gapDuration = gapMinutes;
@@ -995,33 +1115,39 @@ export class TeacherSchedule {
 
   // Remove gap for a specific lesson by setting exact start time
   removeGapForLesson(lessonId: string): void {
-    const lessonIndex = this.lessonQueue.findIndex(q => q.lessonId === lessonId);
+    const lessonIndex = this.lessonQueue.findIndex(
+      (q) => q.lessonId === lessonId,
+    );
     if (lessonIndex <= 0) return; // Can't remove gap for first lesson or lesson not found
 
     const lesson = this.lessonQueue[lessonIndex];
     const previousLesson = this.lessonQueue[lessonIndex - 1];
-    
-    if (!lesson.scheduledStartTime || !previousLesson.scheduledStartTime) return;
+
+    if (!lesson.scheduledStartTime || !previousLesson.scheduledStartTime)
+      return;
 
     // Calculate where this lesson should start (immediately after previous lesson ends)
-    const previousEndTime = timeToMinutes(previousLesson.scheduledStartTime) + previousLesson.duration;
+    const previousEndTime =
+      timeToMinutes(previousLesson.scheduledStartTime) +
+      previousLesson.duration;
     const currentStartTime = timeToMinutes(lesson.scheduledStartTime);
     const gapMinutes = currentStartTime - previousEndTime;
 
     if (gapMinutes > 0) {
       // Reset timeAdjustment and calculate the exact adjustment needed
       lesson.timeAdjustment = 0;
-      
+
       // Calculate what the original scheduled start time would be without any adjustments
       const originalStartTime = this.findOriginalScheduledTime(lessonIndex);
-      
+
       // Calculate the adjustment needed to place it exactly after previous lesson
       const targetStartTime = minutesToTime(previousEndTime);
-      const adjustmentNeeded = previousEndTime - timeToMinutes(originalStartTime);
-      
+      const adjustmentNeeded =
+        previousEndTime - timeToMinutes(originalStartTime);
+
       // Set the precise time adjustment
       lesson.timeAdjustment = adjustmentNeeded;
-      
+
       // Move all subsequent lessons by the same gap amount to maintain spacing
       for (let i = lessonIndex + 1; i < this.lessonQueue.length; i++) {
         const subsequentLesson = this.lessonQueue[i];
@@ -1030,7 +1156,7 @@ export class TeacherSchedule {
         }
         subsequentLesson.timeAdjustment -= gapMinutes;
       }
-      
+
       // Recalculate to apply changes
       this.recalculateQueueSchedule(this.queueStartTime);
     }
@@ -1039,59 +1165,81 @@ export class TeacherSchedule {
   // Helper method to find original scheduled time without adjustments
   private findOriginalScheduledTime(lessonIndex: number): string {
     // Temporarily remove adjustments and recalculate to get base time
-    const originalAdjustments = this.lessonQueue.map(q => q.timeAdjustment || 0);
-    
+    const originalAdjustments = this.lessonQueue.map(
+      (q) => q.timeAdjustment || 0,
+    );
+
     // Clear all adjustments
-    this.lessonQueue.forEach(q => { q.timeAdjustment = 0; q.gapClosureAdjustment = 0; });
-    
+    this.lessonQueue.forEach((q) => {
+      q.timeAdjustment = 0;
+      q.gapClosureAdjustment = 0;
+    });
+
     // Recalculate to get base scheduled times
     this.recalculateQueueSchedule(this.queueStartTime);
-    
+
     // Get the base time for the target lesson
-    const baseTime = this.lessonQueue[lessonIndex].scheduledStartTime || '09:00';
-    
+    const baseTime =
+      this.lessonQueue[lessonIndex].scheduledStartTime || "09:00";
+
     // Restore original adjustments
-    this.lessonQueue.forEach((q, i) => { q.timeAdjustment = originalAdjustments[i]; });
-    
+    this.lessonQueue.forEach((q, i) => {
+      q.timeAdjustment = originalAdjustments[i];
+    });
+
     return baseTime;
   }
 
   // Find next available time considering controller submit time
   private findNextAvailableTime(preferredStartTime?: string): number {
-    const existingEvents = this.getStoredNodes().filter(node => node.type === 'event');
-    
+    const existingEvents = this.getStoredNodes().filter(
+      (node) => node.type === "event",
+    );
+
     if (existingEvents.length === 0) {
       // No existing events, use preferred time or 9 AM
       return preferredStartTime ? timeToMinutes(preferredStartTime) : 9 * 60;
     }
 
     // Find the latest event end time
-    const latestEndTime = Math.max(...existingEvents.map(event => 
-      timeToMinutes(event.startTime) + event.duration
-    ));
+    const latestEndTime = Math.max(
+      ...existingEvents.map(
+        (event) => timeToMinutes(event.startTime) + event.duration,
+      ),
+    );
 
-    const preferredTime = preferredStartTime ? timeToMinutes(preferredStartTime) : 9 * 60;
-    
+    const preferredTime = preferredStartTime
+      ? timeToMinutes(preferredStartTime)
+      : 9 * 60;
+
     // Return the later of preferred time or after latest event (no gap)
     return Math.max(preferredTime, latestEndTime);
   }
 
   // Check if there's a conflict at a specific time
-  private hasConflictAtTime(startTimeMinutes: number, duration: number): boolean {
-    const existingEvents = this.getStoredNodes().filter(node => node.type === 'event');
+  private hasConflictAtTime(
+    startTimeMinutes: number,
+    duration: number,
+  ): boolean {
+    const existingEvents = this.getStoredNodes().filter(
+      (node) => node.type === "event",
+    );
     const proposedEnd = startTimeMinutes + duration;
 
-    return existingEvents.some(event => {
+    return existingEvents.some((event) => {
       const eventStart = timeToMinutes(event.startTime);
       const eventEnd = eventStart + event.duration;
-      
+
       return startTimeMinutes < eventEnd && proposedEnd > eventStart;
     });
   }
 
   // Get total queue duration
   getQueueTotalDuration(): number {
-    return this.lessonQueue.reduce((total, lesson) => total + lesson.duration, 0);
+    return this.lessonQueue.reduce(
+      (total, lesson) => total + lesson.duration,
+      0,
+    );
   }
 
   // Check if queue can be scheduled - always allow scheduling
@@ -1101,7 +1249,10 @@ export class TeacherSchedule {
   }
 
   // Create events from queue
-  createEventsFromQueue(location: string, selectedDate: string): Array<{
+  createEventsFromQueue(
+    location: string,
+    selectedDate: string,
+  ): Array<{
     lessonId: string;
     teacherId: string;
     startTime: string;
@@ -1115,15 +1266,15 @@ export class TeacherSchedule {
       return [];
     }
 
-    const events = this.lessonQueue.map(queuedLesson => ({
+    const events = this.lessonQueue.map((queuedLesson) => ({
       lessonId: queuedLesson.lessonId,
       teacherId: this.schedule.teacherId,
-      startTime: queuedLesson.scheduledStartTime || '09:00',
+      startTime: queuedLesson.scheduledStartTime || "09:00",
       duration: queuedLesson.duration,
       location,
       studentCount: queuedLesson.students.length,
       students: queuedLesson.students,
-      date: selectedDate
+      date: selectedDate,
     }));
 
     return events;
@@ -1135,29 +1286,29 @@ export class TeacherSchedule {
    */
   getEarliestTime(): string | null {
     const scheduleNodes = this.getStoredNodes();
-    const eventNodes = scheduleNodes.filter(node => node.type === 'event');
+    const eventNodes = scheduleNodes.filter((node) => node.type === "event");
     const queuedLessons = this.getLessonQueue();
-    
+
     const allTimes: string[] = [];
-    
+
     // Add existing event times
-    eventNodes.forEach(node => {
+    eventNodes.forEach((node) => {
       allTimes.push(node.startTime);
     });
-    
+
     // Add queued lesson times
-    queuedLessons.forEach(lesson => {
+    queuedLessons.forEach((lesson) => {
       if (lesson.scheduledStartTime) {
         allTimes.push(lesson.scheduledStartTime);
       }
     });
-    
+
     if (allTimes.length === 0) return null;
-    
+
     // Use existing utility to find earliest time
-    const timeMinutes = allTimes.map(time => timeToMinutes(time));
+    const timeMinutes = allTimes.map((time) => timeToMinutes(time));
     const earliest = Math.min(...timeMinutes);
-    
+
     return minutesToTime(earliest);
   }
 
@@ -1166,11 +1317,13 @@ export class TeacherSchedule {
    * @param scheduleNodes - Array of schedule nodes to analyze
    * @returns Array of nodes with gap information added
    */
-  analyzeScheduleGaps(scheduleNodes: ScheduleNode[]): Array<ScheduleNode & { hasGap?: boolean; gapDuration?: number }> {
-    const eventNodes = scheduleNodes.filter(node => node.type === 'event');
-    
+  analyzeScheduleGaps(
+    scheduleNodes: ScheduleNode[],
+  ): Array<ScheduleNode & { hasGap?: boolean; gapDuration?: number }> {
+    const eventNodes = scheduleNodes.filter((node) => node.type === "event");
+
     if (eventNodes.length <= 1) {
-      return eventNodes.map(node => ({ ...node, hasGap: false }));
+      return eventNodes.map((node) => ({ ...node, hasGap: false }));
     }
 
     // Map back to original nodes with gap information
@@ -1180,14 +1333,15 @@ export class TeacherSchedule {
       }
 
       const previousNode = eventNodes[index - 1];
-      const previousEndTime = timeToMinutes(previousNode.startTime) + previousNode.duration;
+      const previousEndTime =
+        timeToMinutes(previousNode.startTime) + previousNode.duration;
       const currentStartTime = timeToMinutes(node.startTime);
       const gapMinutes = currentStartTime - previousEndTime;
 
       return {
         ...node,
         hasGap: gapMinutes > 0,
-        gapDuration: gapMinutes > 0 ? gapMinutes : undefined
+        gapDuration: gapMinutes > 0 ? gapMinutes : undefined,
       };
     });
   }
@@ -1196,20 +1350,20 @@ export class TeacherSchedule {
    * Remove an event and shift ALL subsequent nodes to fill the gap
    * This is specifically for the "Move next lesson here" functionality
    */
-  removeEventAndShiftNodes(eventIdToRemove: string): { 
-    success: boolean; 
-    shiftedEventIds?: string[]; 
+  removeEventAndShiftNodes(eventIdToRemove: string): {
+    success: boolean;
+    shiftedEventIds?: string[];
     removedEventStartTime?: string;
     databaseUpdates?: Array<{ eventId: string; newDateTime: string }>;
   } {
     try {
       const nodes = this.getStoredNodes();
-      const eventNodes = nodes.filter(node => node.type === 'event');
-      
+      const eventNodes = nodes.filter((node) => node.type === "event");
+
       // Find the event to remove
       let eventToRemoveIndex = -1;
       let eventToRemove: ScheduleNode | null = null;
-      
+
       for (let i = 0; i < eventNodes.length; i++) {
         const node = eventNodes[i];
         if (node.eventData?.lessonId === eventIdToRemove) {
@@ -1218,63 +1372,66 @@ export class TeacherSchedule {
           break;
         }
       }
-      
+
       if (!eventToRemove || eventToRemoveIndex === -1) {
         console.error(`Event with ID ${eventIdToRemove} not found`);
         return { success: false };
       }
-      
+
       const removedEventStartTime = eventToRemove.startTime;
       const shiftedEventIds: string[] = [];
-      
+
       // Check if there are events after the one to remove
       if (eventToRemoveIndex + 1 >= eventNodes.length) {
         console.log("No events after this one - just removing the event");
         this.removeNode(eventToRemove.id);
-        return { 
+        return {
           success: true,
           removedEventStartTime,
-          shiftedEventIds: []
+          shiftedEventIds: [],
         };
       }
-      
-      console.log(`🔄 Shifting ALL ${eventNodes.length - eventToRemoveIndex - 1} events after removed event to fill gap`);
-      
+
+      console.log(
+        `🔄 Shifting ALL ${eventNodes.length - eventToRemoveIndex - 1} events after removed event to fill gap`,
+      );
+
       // Remove the target event from the schedule
       this.removeNode(eventToRemove.id);
-      
+
       // Shift ALL subsequent events - each one moves up to fill the gap
       let currentTime = timeToMinutes(removedEventStartTime);
-      
+
       for (let i = eventToRemoveIndex + 1; i < eventNodes.length; i++) {
         const eventToShift = eventNodes[i];
         const previousStartTime = eventToShift.startTime;
-        
+
         // Shift this event to the current time slot
         eventToShift.startTime = minutesToTime(currentTime);
-        
+
         // Track which events were shifted
         if (eventToShift.eventData?.lessonId) {
           shiftedEventIds.push(eventToShift.eventData.lessonId);
         }
-        
-        console.log(`  • Shifted ${eventToShift.eventData?.lessonId}: ${previousStartTime} → ${eventToShift.startTime}`);
-        
+
+        console.log(
+          `  • Shifted ${eventToShift.eventData?.lessonId}: ${previousStartTime} → ${eventToShift.startTime}`,
+        );
+
         // Move to next time slot (this event's duration)
         currentTime += eventToShift.duration;
       }
-      
+
       // Resort the schedule to maintain order
       this.resortSchedule();
-      
+
       return {
         success: true,
         shiftedEventIds,
-        removedEventStartTime
+        removedEventStartTime,
       };
-      
     } catch (error) {
-      console.error('Error in removeEventAndShiftNodes:', error);
+      console.error("Error in removeEventAndShiftNodes:", error);
       return { success: false };
     }
   }
@@ -1283,16 +1440,16 @@ export class TeacherSchedule {
    * Get database updates for removeEventAndShiftNodes operation
    */
   getDatabaseUpdatesForShiftNodes(
-    eventIdToRemove: string, 
-    selectedDate: string, 
-    eventIdMap: Map<string, string>
+    eventIdToRemove: string,
+    selectedDate: string,
+    eventIdMap: Map<string, string>,
   ): Array<{ eventId: string; newDateTime: string }> {
     const updates: Array<{ eventId: string; newDateTime: string }> = [];
-    
+
     try {
       const nodes = this.getStoredNodes();
-      const eventNodes = nodes.filter(node => node.type === 'event');
-      
+      const eventNodes = nodes.filter((node) => node.type === "event");
+
       // Find the event to remove
       let eventToRemoveIndex = -1;
       for (let i = 0; i < eventNodes.length; i++) {
@@ -1301,36 +1458,36 @@ export class TeacherSchedule {
           break;
         }
       }
-      
+
       if (eventToRemoveIndex === -1) return updates;
-      
+
       const eventToRemove = eventNodes[eventToRemoveIndex];
       const removedEventStartTime = eventToRemove.startTime;
-      
+
       // Generate updates for all events after the removed one
       let currentTime = timeToMinutes(removedEventStartTime);
-      
+
       for (let i = eventToRemoveIndex + 1; i < eventNodes.length; i++) {
         const event = eventNodes[i];
         const lessonId = event.eventData?.lessonId;
         const eventId = lessonId ? eventIdMap.get(lessonId) : undefined;
-        
+
         if (eventId && lessonId) {
           const newStartTime = minutesToTime(currentTime);
           const newDateTime = this.combineDateTime(selectedDate, newStartTime);
-          
+
           updates.push({
             eventId,
-            newDateTime
+            newDateTime,
           });
         }
-        
+
         currentTime += event.duration;
       }
     } catch (error) {
-      console.error('Error generating shift nodes updates:', error);
+      console.error("Error generating shift nodes updates:", error);
     }
-    
+
     return updates;
   }
 
@@ -1340,15 +1497,18 @@ export class TeacherSchedule {
     let totalEarnings = 0;
     let schoolRevenue = 0;
 
-    const plannedLessons = this.lessons.filter(l => l.status === 'planned');
+    const plannedLessons = this.lessons.filter((l) => l.status === "planned");
     const totalLessons = plannedLessons.length;
 
-    plannedLessons.forEach(lesson => {
+    plannedLessons.forEach((lesson) => {
       const lessonEvents = lesson.events || [];
-      
-      const totalMinutes = lessonEvents.reduce((sum, event) => sum + (event.duration || 0), 0);
+
+      const totalMinutes = lessonEvents.reduce(
+        (sum, event) => sum + (event.duration || 0),
+        0,
+      );
       const hours = totalMinutes / 60;
-      
+
       totalHours += hours;
       totalEvents += lessonEvents.length;
 
@@ -1362,12 +1522,12 @@ export class TeacherSchedule {
         const packageDurationMinutes = lesson.booking?.package?.duration || 1;
         const studentCount = lesson.booking?.students?.length || 0;
         const eventDurationMinutes = event.duration || 0;
-        
+
         // Calculate hourly rate: (packagePrice / packageDurationHours)
         const packageHourlyRate = (packagePrice * 60) / packageDurationMinutes;
         const eventHours = eventDurationMinutes / 60;
         const eventRevenue = packageHourlyRate * eventHours * studentCount;
-        
+
         return sum + eventRevenue;
       }, 0);
       schoolRevenue += lessonSchoolRevenue;
@@ -1378,7 +1538,7 @@ export class TeacherSchedule {
       totalEvents,
       totalEarnings,
       schoolRevenue,
-      totalLessons
+      totalLessons,
     };
   }
 }
