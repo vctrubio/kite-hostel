@@ -25,7 +25,7 @@ export default {
   theme: {
     extend: {
       screens: {
-        'lg_custom': '1100px',
+        'desktop': '1100px',
       },
       gridTemplateColumns: {
         '13': 'repeat(13, minmax(0, 1fr))'

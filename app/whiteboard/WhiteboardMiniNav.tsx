@@ -72,18 +72,15 @@ export default function WhiteboardMiniNav({
         </div>
       </div>
 
-      {/* Global Stats (if provided) */}
       <div className="p-3 border-t border-border">
         <GlobalStatsHeader globalStats={globalStats} />
       </div>
 
-      {/* Booking Status Filter */}
       <BookingStatusFilter
         activeFilter={bookingFilter}
         onFilterChange={onBookingFilterChange}
       />
 
-      {/* Actions */}
       <WhiteboardActions onActionClick={onActionClick} />
     </div>
   );
