@@ -456,7 +456,7 @@ const EnhancedDeleteDropdown = ({
         {nextEvent ? (
           <div className="space-y-3">
             <p className="text-xs text-red-700 mb-3">
-              There&apos;s a lesson scheduled after this one. What should happen to it?
+              There's a lesson scheduled after this one. What should happen to it?
             </p>
             <div className="space-y-2">
               <button
