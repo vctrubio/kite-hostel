@@ -241,6 +241,7 @@ export const ENTITY_DATA = [
     icon: HelmetIcon,
     color: "text-yellow-500",
     bgColor: "bg-yellow-500",
+    hoverColor: "#fef3c7", // yellow-100
     link: "/students",
     description: [
       "Students create bookings.",
@@ -252,6 +253,7 @@ export const ENTITY_DATA = [
     icon: HeadsetIcon,
     color: "text-green-500",
     bgColor: "bg-green-500",
+    hoverColor: "#d1fae5", // green-100
     link: "/teachers",
     description: [
       "Our employees, each has a commission rate for a lesson and earn money.",
@@ -272,6 +274,7 @@ export const ENTITY_DATA = [
     icon: BookmarkIcon,
     color: "text-orange-500",
     bgColor: "bg-orange-500",
+    hoverColor: "#fed7aa", // orange-100
     link: "/packages",
     description: [
       "Determines the duration, capacity, and kites for the booking.",
@@ -282,6 +285,7 @@ export const ENTITY_DATA = [
     icon: BookingIcon,
     color: "text-blue-500",
     bgColor: "bg-blue-500",
+    hoverColor: "#dbeafe", // blue-100
     link: "/bookings",
     description: [
       "Has a start date and end date.",
@@ -302,6 +306,7 @@ export const ENTITY_DATA = [
     icon: FlagIcon,
     color: "text-cyan-500",
     bgColor: "bg-cyan-500",
+    hoverColor: "#cffafe", // cyan-100
     link: "/lessons",
     description: [
       "Represents a scheduled lesson, linked to a teacher, booking, and commission.",
@@ -312,6 +317,7 @@ export const ENTITY_DATA = [
     icon: KiteIcon,
     color: "text-teal-500",
     bgColor: "bg-teal-500",
+    hoverColor: "#ccfbf1", // teal-100
     link: "/events",
     description: [
       "Must be derived from a lesson.",
@@ -332,6 +338,7 @@ export const ENTITY_DATA = [
     icon: EquipmentIcon,
     color: "text-purple-500",
     bgColor: "bg-purple-500",
+    hoverColor: "#e9d5ff", // purple-100
     link: "/kites",
     description: ["Added and used for tracking of usage in each event."],
   },
@@ -340,6 +347,7 @@ export const ENTITY_DATA = [
     icon: PaymentIcon,
     color: "text-amber-500",
     bgColor: "bg-amber-500",
+    hoverColor: "#fef3c7", // amber-100
     link: "/payments",
     description: ["Records payments made to teachers."],
   },
@@ -359,6 +367,7 @@ export const ENTITY_DATA = [
     icon: UserCheck,
     color: "text-gray-500",
     bgColor: "bg-gray-500",
+    hoverColor: "#f1f5f9", // slate-100
     link: "/references",
     description: [
       "Referenced bookings and user notes.",
