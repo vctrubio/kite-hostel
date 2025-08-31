@@ -14,7 +14,8 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
       return [
         { title: "Select", key: "select", sortable: false },
         { title: "Date", key: "created_at", sortable: true },
-        { title: "Name", key: "name", sortable: true },
+        { title: "First Name", key: "name", sortable: true },
+        { title: "Last Name", key: "last_name", sortable: true },
         { title: "Description", key: "desc", sortable: false },
         { title: "Bookings", key: "bookings", sortable: true },
         { 

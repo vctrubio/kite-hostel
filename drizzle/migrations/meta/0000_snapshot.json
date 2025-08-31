@@ -1,5 +1,5 @@
 {
-  "id": "35ae6355-1271-46e1-83d3-46ba8bedfe20",
+  "id": "80a8a4d9-d26d-42a8-8546-29cd451a238b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -808,6 +808,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "languages": {
           "name": "languages",
           "type": "languages[]",
@@ -1188,6 +1194,18 @@
           "type": "uuid",
           "primaryKey": true,
           "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_metadata": {
+          "name": "user_metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1215,7 +1233,7 @@
       "schema": "public",
       "values": [
         "active",
-        "cancelled",
+        "uncomplete",
         "completed"
       ]
     },

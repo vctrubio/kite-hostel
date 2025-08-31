@@ -53,7 +53,7 @@ export const locationEnum = pgEnum("location", [
 
 export const bookingStatusEnum = pgEnum("booking_status", [
   "active",
-  "cancelled",
+  "uncomplete",
   "completed",
 ]);
 
@@ -71,6 +71,7 @@ export const Student = pgTable(
   {
     id: uuid().defaultRandom().primaryKey().notNull(),
     name: text().notNull(),
+    last_name: text(),
     languages: languagesEnum().array().notNull(),
     passport_number: text(),
     country: text(),

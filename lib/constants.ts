@@ -119,10 +119,10 @@ export const BOOKING_STATUS_FILTERS = [
     },
   },
   {
-    value: "cancelled" as const,
-    label: "Cancelled",
+    value: "uncomplete" as const,
+    label: "Uncomplete",
     icon: XCircle,
-    title: "Cancelled Bookings",
+    title: "Uncomplete Bookings",
     classes: {
       base: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
       hover: "hover:bg-red-200 dark:hover:bg-red-900/50",
@@ -195,7 +195,7 @@ export const getBookingStatusColor = (status: BookingStatus): string => {
       return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300";
     case "completed":
       return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300";
-    case "cancelled":
+    case "uncomplete":
       return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300";
     default:
       return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300";

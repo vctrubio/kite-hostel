@@ -185,7 +185,7 @@ export async function createBooking({
 
 export async function updateBookingStatus(
   bookingId: string,
-  status: "active" | "cancelled" | "completed",
+  status: "active" | "uncomplete" | "completed",
 ): Promise<{ success: boolean; error: string | null }> {
   try {
     await db

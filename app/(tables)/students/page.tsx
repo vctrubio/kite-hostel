@@ -23,8 +23,8 @@ export default async function StudentsPage() {
     s.bookings?.some((b: any) => b.status === "completed")
   ).length;
   
-  const studentsWithCancelledBookings = students.filter((s) => 
-    s.bookings?.some((b: any) => b.status === "cancelled")
+  const studentsWithUncompleteBookings = students.filter((s) => 
+    s.bookings?.some((b: any) => b.status === "uncomplete")
   ).length;
 
   const stats = [
@@ -41,7 +41,7 @@ export default async function StudentsPage() {
       value: studentsWithActiveBookings,
       subStats: [
         { label: "Completed Bookings", value: studentsWithCompletedBookings },
-        { label: "Cancelled Bookings", value: studentsWithCancelledBookings },
+        { label: "Uncomplete Bookings", value: studentsWithUncompleteBookings },
       ],
     },
   ];

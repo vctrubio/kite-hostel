@@ -297,22 +297,14 @@ export async function getEvents() {
         description: PackageStudent.description,
         price_per_student: PackageStudent.price_per_student,
         duration: PackageStudent.duration,
+        capacity_kites: PackageStudent.capacity_kites,
       },
       kite: {
         model: Kite.model,
         serial_id: Kite.serial_id,
+        size: Kite.size,
       },
-      students: sql`
-        (SELECT json_agg(s.name)
-         FROM booking_student bs
-         JOIN student s ON bs.student_id = s.id
-         WHERE bs.booking_id = ${Booking.id})
-      `.as("students"),
-      student_count: sql`
-        (SELECT COUNT(*)
-         FROM booking_student bs
-         WHERE bs.booking_id = ${Booking.id})
-      `.as("student_count"),
+      booking_id: Booking.id,
     })
     .from(Event)
     .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
@@ -323,7 +315,37 @@ export async function getEvents() {
     .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
     .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
 
-    return { data: events, error: null };
+    // Now fetch students for each event using Drizzle subqueries
+    const eventsWithStudents = await Promise.all(
+      events.map(async (event) => {
+        if (!event.booking_id) {
+          return {
+            ...event,
+            students: [],
+            student_count: 0,
+          };
+        }
+
+        const students = await db
+          .select({
+            id: Student.id,
+            name: Student.name,
+            last_name: Student.last_name,
+          })
+          .from(Student)
+          .innerJoin(BookingStudent, eq(Student.id, BookingStudent.student_id))
+          .where(eq(BookingStudent.booking_id, event.booking_id));
+
+        return {
+          ...event,
+          students,
+          student_count: students.length,
+          booking_id: undefined, // Remove booking_id from final result
+        };
+      })
+    );
+
+    return { data: eventsWithStudents, error: null };
   } catch (error: any) {
     console.error("Error fetching events:", error);
     return { data: null, error: error.message };
@@ -344,12 +366,8 @@ export async function getEventCsv() {
       packageDuration: PackageStudent.duration,
       kiteModel: Kite.model,
       kiteSerialId: Kite.serial_id,
-      students: sql`
-        (SELECT json_agg(s.name)
-         FROM booking_student bs
-         JOIN student s ON bs.student_id = s.id
-         WHERE bs.booking_id = ${Booking.id})
-      `.as("students"),
+      kiteSize: Kite.size,
+      booking_id: Booking.id,
     })
     .from(Event)
     .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
@@ -360,7 +378,28 @@ export async function getEventCsv() {
     .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
     .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
 
-    const formattedEvents = events.map((event) => {
+    // Fetch students for each event using proper Drizzle queries
+    const eventsWithStudents = await Promise.all(
+      events.map(async (event) => {
+        let students: Array<{id: string, name: string, last_name: string | null}> = [];
+        
+        if (event.booking_id) {
+          students = await db
+            .select({
+              id: Student.id,
+              name: Student.name,
+              last_name: Student.last_name,
+            })
+            .from(Student)
+            .innerJoin(BookingStudent, eq(Student.id, BookingStudent.student_id))
+            .where(eq(BookingStudent.booking_id, event.booking_id));
+        }
+
+        return { ...event, students };
+      })
+    );
+
+    const formattedEvents = eventsWithStudents.map((event) => {
       if (!event.packagePricePerStudent || !event.packageDuration || !event.teacher || 
           !event.eventLocation || !event.commissionPerHour) {
         throw new Error(`Missing required data for event ${event.eventId}`);
@@ -368,21 +407,36 @@ export async function getEventCsv() {
 
       const eventDate = new Date(event.eventDate);
       const formattedDate = format(eventDate, "dd-MM-yy | HH:mm");
-      const studentsList = Array.isArray(event.students) ? event.students.join(", ") : "";
-      const kiteInfo = event.kiteModel && event.kiteSerialId ? `${event.kiteModel} (${event.kiteSerialId})` : "No kite assigned";
       
-      // Calculate price per hour from package
-      const pricePerHour = (event.packagePricePerStudent / (event.packageDuration / 60)).toFixed(2);
+      // Format student names properly
+      const studentsList = event.students.map(student => 
+        `${student.name} ${student.last_name || ''}`).join(", ");
+      
+      // Format kite info
+      const kiteInfo = event.kiteModel && event.kiteSerialId 
+        ? `${event.kiteModel} ${event.kiteSize}m (${event.kiteSerialId})` 
+        : "No kite assigned";
+      
+      // Calculate price per hour per student and format cleanly
+      const pricePerHour = event.packagePricePerStudent / (event.packageDuration / 60);
+      const formattedPricePerHour = pricePerHour % 1 === 0 ? pricePerHour.toString() : pricePerHour.toFixed(2);
+      
+      // Format commission per hour cleanly  
+      const formattedCommission = event.commissionPerHour % 1 === 0 ? event.commissionPerHour.toString() : event.commissionPerHour.toFixed(2);
+      
+      // Convert duration to hours
+      const durationInHours = event.eventDuration / 60;
+      const formattedDuration = durationInHours % 1 === 0 ? `${durationInHours}h` : `${durationInHours.toFixed(2)}h`;
 
       return {
         date: formattedDate,
-        duration: `${event.eventDuration} min`,
         teacher: event.teacher,
         students: studentsList,
         location: event.eventLocation,
+        duration: formattedDuration,
         kite: kiteInfo,
-        pricePerHour: `${pricePerHour}€`,
-        commissionPerHour: `${event.commissionPerHour}€`,
+        pricePerHourPerStudent: `€${formattedPricePerHour}/h`,
+        commissionPerHour: `€${formattedCommission}/h`,
       };
     });
 

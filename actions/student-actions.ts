@@ -112,7 +112,16 @@ export async function getStudents(): Promise<{
       const activeBooking = student.bookings.find(
         (bs) => bs.booking.status === "active",
       );
-      const isAvailable = !activeBooking; // If there's an active booking, the student is not available
+      // Student is available if no active booking AND last booking is not active
+      let isAvailable = !activeBooking;
+      if (isAvailable && student.bookings.length > 0) {
+        // Sort bookings by creation date to get the latest one
+        const sortedBookings = student.bookings.sort((a, b) => 
+          new Date(b.booking.created_at).getTime() - new Date(a.booking.created_at).getTime()
+        );
+        const lastBooking = sortedBookings[0];
+        isAvailable = lastBooking.booking.status !== "active";
+      }
 
       // Calculate event count and total hours from all booking lessons
       let eventCount = 0;
@@ -199,7 +208,16 @@ export async function getStudentById(
     const activeBooking = student.bookings.find(
       (bs) => bs.booking.status === "active",
     );
-    const isAvailable = !activeBooking;
+    // Student is available if no active booking AND last booking is not active
+    let isAvailable = !activeBooking;
+    if (isAvailable && student.bookings.length > 0) {
+      // Sort bookings by creation date to get the latest one
+      const sortedBookings = student.bookings.sort((a, b) => 
+        new Date(b.booking.created_at).getTime() - new Date(a.booking.created_at).getTime()
+      );
+      const lastBooking = sortedBookings[0];
+      isAvailable = lastBooking.booking.status !== "active";
+    }
 
     // Calculate event count and total hours from all booking lessons
     let eventCount = 0;

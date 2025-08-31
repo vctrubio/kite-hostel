@@ -15,6 +15,7 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: initialStudent.name,
+    last_name: initialStudent.last_name,
     languages: initialStudent.languages,
     passport_number: initialStudent.passport_number,
     country: initialStudent.country,
@@ -45,6 +46,7 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
   const handleCancel = () => {
     setFormData({
       name: student.name,
+      last_name: student.last_name,
       languages: student.languages,
       passport_number: student.passport_number,
       country: student.country,
@@ -61,15 +63,23 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{student.name}</h1>
+      <h1 className="text-2xl font-bold mb-4">{student.name} {student.last_name || ''}</h1>
       <div className="p-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="font-semibold text-lg mb-1">Name:</p>
+            <p className="font-semibold text-lg mb-1">First Name:</p>
             {editMode ? (
               <Input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full" />
             ) : (
               <p className="text-base">{student.name}</p>
+            )}
+          </div>
+          <div>
+            <p className="font-semibold text-lg mb-1">Last Name:</p>
+            {editMode ? (
+              <Input type="text" name="last_name" value={formData.last_name || ''} onChange={handleChange} className="w-full" />
+            ) : (
+              <p className="text-base">{student.last_name || 'N/A'}</p>
             )}
           </div>
           <div>

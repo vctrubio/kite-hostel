@@ -7,7 +7,11 @@ import { createKite, assignKiteToTeacher } from "@/actions/kite-actions";
 
 export async function seedCreateStudent() {
   try {
-    const randomName = `Student ${Math.floor(Math.random() * 10000)}`;
+    const firstNames = ["John", "Jane", "Mike", "Sarah", "David", "Emma", "Alex", "Lisa", "Chris", "Maria"];
+    const lastNames = ["Smith", "Johnson", "Brown", "Davis", "Wilson", "Miller", "Taylor", "Anderson", "Thomas", "Jackson"];
+    const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const randomLastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    
     const languages = ["English", "Spanish", "French", "German", "Italian"] as const;
     const randomLanguage = languages[Math.floor(Math.random() * languages.length)];
     const countries = {
@@ -30,7 +34,8 @@ export async function seedCreateStudent() {
     const newStudent = await db
       .insert(Student)
       .values({
-        name: randomName,
+        name: randomFirstName,
+        last_name: randomLastName,
         languages: [randomLanguage],
         passport_number: `PN${Math.floor(Math.random() * 1000000)}`,
         country: randomCountry,

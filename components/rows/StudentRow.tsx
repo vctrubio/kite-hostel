@@ -21,6 +21,7 @@ interface StudentRowProps {
     id: string;
     created_at: string;
     name: string;
+    last_name: string | null;
     desc: string;
     languages: string[];
     passport_number: string | null;
@@ -63,6 +64,7 @@ export function StudentRow({ data: student, expandedRow, setExpandedRow, isSelec
         </td>
         <td className="py-2 px-4 text-left"><DateSince dateString={student.created_at} /></td>
         <td className="py-2 px-4 text-left">{student.name}</td>
+        <td className="py-2 px-4 text-left">{student.last_name || 'N/A'}</td>
         <td className="py-2 px-4 text-left">{student.desc}</td>
         <td className="py-2 px-4 text-left">{student.totalBookings || student.bookings?.length || 0}</td>
         <td className="py-2 px-4 text-left">
@@ -98,7 +100,7 @@ export function StudentRow({ data: student, expandedRow, setExpandedRow, isSelec
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={7} className="py-4 px-4 bg-background/30">
+          <td colSpan={8} className="py-4 px-4 bg-background/30">
             <div className="w-full space-y-3">
               {/* Student Details - First Line */}
               <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-yellow-500">

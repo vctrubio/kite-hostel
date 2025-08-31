@@ -15,6 +15,7 @@ import { createStudent } from "@/actions/student-actions";
 
 interface StudentFormData {
   name: string;
+  last_name: string;
   languages: string[];
   passport_number: string;
   country: string;
@@ -32,7 +33,8 @@ interface FormFieldDescriptor {
 }
 
 const FORM_FIELDS: FormFieldDescriptor[] = [
-    { key: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Full name' },
+    { key: 'name', label: 'First Name', type: 'text', required: true, placeholder: 'First name' },
+    { key: 'last_name', label: 'Last Name', type: 'text', required: false, placeholder: 'Last name' },
     { key: 'passport_number', label: 'Passport Number', type: 'text', required: false, placeholder: 'ABC123456' },
     { key: 'phone', label: 'Phone', type: 'tel', required: false, placeholder: 'Phone number' },
     { key: 'size', label: 'Size', type: 'text', required: false, placeholder: 'M, L, XL' },
@@ -49,6 +51,7 @@ export function StudentForm({
     const [selectedCountryCode, setSelectedCountryCode] = useState('ES'); // Spain's country code
     const [formData, setFormData] = useState<StudentFormData>({
         name: '',
+        last_name: '',
         passport_number: '',
         phone: '',
         country: 'Spain',
@@ -64,6 +67,7 @@ export function StudentForm({
     const resetForm = () => {
         setFormData({
             name: '',
+            last_name: '',
             passport_number: '',
             phone: '',
             country: 'Spain',
@@ -114,6 +118,7 @@ export function StudentForm({
         try {
             const data = {
                 name: formData.name,
+                last_name: formData.last_name || null,
                 passport_number: formData.passport_number || null,
                 country: formData.country || null,
                 phone: formData.phone || null,
@@ -186,12 +191,12 @@ export function StudentForm({
                             </div>
                         )}
 
-                        {/* First Row: Name, Country, Phone, Passport, Size, Languages */}
+                        {/* First Row: Name, Last Name, Country, Phone, Passport, Size, Languages */}
                         <div className="flex flex-wrap gap-4">
-                            {/* Name - takes more space */}
-                            <div className="flex-1 min-w-[200px] flex flex-col gap-2">
+                            {/* First Name */}
+                            <div className="flex-1 min-w-[150px] flex flex-col gap-2">
                                 <Label htmlFor="name" className="text-xs font-medium">
-                                    Name<span className="text-red-500">*</span>
+                                    First Name<span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     id="name"
@@ -202,7 +207,24 @@ export function StudentForm({
                                     value={formData.name || ''}
                                     onChange={(e) => handleInputChange('name', e.target.value)}
                                     className="h-9 text-sm"
-                                    placeholder="Full name"
+                                    placeholder="First name"
+                                />
+                            </div>
+
+                            {/* Last Name */}
+                            <div className="flex-1 min-w-[150px] flex flex-col gap-2">
+                                <Label htmlFor="last_name" className="text-xs font-medium">
+                                    Last Name
+                                </Label>
+                                <Input
+                                    id="last_name"
+                                    name="last_name"
+                                    type="text"
+                                    disabled={isLoading}
+                                    value={formData.last_name || ''}
+                                    onChange={(e) => handleInputChange('last_name', e.target.value)}
+                                    className="h-9 text-sm"
+                                    placeholder="Last name"
                                 />
                             </div>
 

@@ -9,6 +9,7 @@ import { Duration } from "@/components/formatters/Duration";
 import { format } from "date-fns";
 import { getEventStatusColor } from "@/lib/constants";
 import { deleteEvent } from "@/actions/event-actions";
+import { HelmetIcon } from "@/svgs/HelmetIcon";
 
 interface EventRowProps {
   data: {
@@ -30,7 +31,11 @@ interface EventRowProps {
       size: number | null;
       serial_id: string | null;
     } | null;
-    students: string[] | null;
+    students: Array<{
+      id: string;
+      name: string;
+      last_name: string | null;
+    }> | null;
     student_count: number | null;
   };
   expandedRow: string | null;
@@ -90,7 +95,16 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
         </td>
         <td className="py-2 px-4 text-left">{event.teacher?.name || "N/A"}</td>
         <td className="py-2 px-4 text-left">
-          {event.students?.join(", ") || "N/A"}
+          {event.students && event.students.length > 0 ? (
+            event.students.map((student, index) => (
+              <span key={student.id}>
+                {student.name} {student.last_name || ''}
+                {index < event.students.length - 1 && ", "}
+              </span>
+            ))
+          ) : (
+            "N/A"
+          )}
         </td>
         <td className="py-2 px-4 text-left">{event.location}</td>
         <td className="py-2 px-4 text-left">
@@ -142,6 +156,16 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
               <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-teal-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <div>
+                    <span className="text-sm text-muted-foreground">Package: </span>
+                    <span className="text-sm font-medium">{event.package?.description || "N/A"}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Package Duration: </span>
+                    <span className="text-sm font-medium">
+                      <Duration minutes={event.package?.duration || 0} />
+                    </span>
+                  </div>
+                  <div>
                     <span className="text-sm text-muted-foreground">Kite: </span>
                     <span className="text-sm font-medium">
                       {event.kite?.model && event.kite?.serial_id 
@@ -151,25 +175,39 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
                     </span>
                   </div>
                   <div>
-                    <span className="text-sm text-muted-foreground">Package: </span>
-                    <span className="text-sm font-medium">{event.package?.description || "N/A"}</span>
+                    <span className="text-sm text-muted-foreground">Kite Capacity: </span>
+                    <span className="text-sm font-medium">{event.package?.capacity_kites || 'N/A'}</span>
                   </div>
                   <div>
-                    <span className="text-sm text-muted-foreground">Price per Hour: </span>
+                    <span className="text-sm text-muted-foreground">Price per Hour per Student: </span>
                     <span className="text-sm font-medium">€{pricePerHour}/h</span>
                   </div>
                   <div>
                     <span className="text-sm text-muted-foreground">Commission per Hour: </span>
                     <span className="text-sm font-medium">€{event.commission_per_hour || 0}/h</span>
                   </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Student Count: </span>
-                    <span className="text-sm font-medium">{event.student_count || 0}</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Created: </span>
+                  <div className="md:col-span-2">
+                    <span className="text-sm text-muted-foreground">Students: </span>
                     <span className="text-sm font-medium">
-                      <DateSince dateString={event.created_at} />
+                      {event.students && event.students.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {event.students.map((student) => (
+                            <button
+                              key={student.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/students/${student.id}`);
+                              }}
+                              className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs hover:bg-yellow-200 transition-colors flex items-center gap-1"
+                            >
+                              <HelmetIcon className="w-3 h-3" />
+                              {student.name} {student.last_name || ''}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        "No students"
+                      )}
                     </span>
                   </div>
                 </div>

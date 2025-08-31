@@ -111,7 +111,7 @@ export function generateEntityActionButtons(
             { label: "Location", key: "location" },
             { label: "Duration", key: "duration" },
             { label: "Kite", key: "kite" },
-            { label: "Price Per Hour", key: "pricePerHour" },
+            { label: "Price Per Hour Per Student", key: "pricePerHourPerStudent" },
             { label: "Commission Per Hour", key: "commissionPerHour" },
           ];
           
@@ -171,15 +171,23 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
         defaultFilter: "all",
         filterFunction: (student: any, filterValue: string) => {
           if (filterValue === "available") {
-            // Available means no active bookings
-            return !student.bookings?.some((b: any) => b.status === "active");
-          }
-          if (filterValue === "complete") {
-            // Complete means latest booking is completed
+            // Available means no active bookings AND last booking is not active
+            const hasActiveBooking = student.bookings?.some((b: any) => b.status === "active");
+            if (hasActiveBooking) return false;
+            
+            // Check if last booking is not active
             const sortedBookings = student.bookings?.sort((a: any, b: any) => 
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             );
-            return sortedBookings?.[0]?.status === "completed";
+            const lastBooking = sortedBookings?.[0];
+            return !lastBooking || lastBooking.status !== "active";
+          }
+          if (filterValue === "complete") {
+            // Complete means latest booking is uncomplete
+            const sortedBookings = student.bookings?.sort((a: any, b: any) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+            return sortedBookings?.[0]?.status === "uncomplete";
           }
           return true;
         },
