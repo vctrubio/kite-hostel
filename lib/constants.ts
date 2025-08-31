@@ -102,9 +102,9 @@ export const BOOKING_STATUS_FILTERS = [
     icon: Play,
     title: "Active Bookings",
     classes: {
-      base: "text-blue-700 dark:text-blue-300",
-      hover: "hover:bg-blue-100/50 dark:hover:bg-blue-900/20",
-      active: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-500/50",
+      base: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200",
+      hover: "hover:bg-blue-200 dark:hover:bg-blue-900",
+      active: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-500/50",
     },
   },
   {

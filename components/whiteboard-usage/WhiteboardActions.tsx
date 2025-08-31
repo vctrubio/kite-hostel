@@ -14,24 +14,44 @@ const ACTION_BUTTONS = [
     label: "Share",
     icon: Share2Icon,
     title: "Share to WhatsApp",
+    classes: {
+      base: "text-foreground",
+      hover: "hover:bg-muted/50",
+      active: "bg-muted text-foreground",
+    },
   },
   {
     id: "medical",
     label: "Medical",
     icon: StethoscopeIcon,
     title: "Generate Medical Email",
+    classes: {
+      base: "text-foreground",
+      hover: "hover:bg-muted/50",
+      active: "bg-muted text-foreground",
+    },
   },
   {
     id: "csv",
     label: "CSV",
     icon: FileTextIcon,
     title: "Export CSV",
+    classes: {
+      base: "text-foreground",
+      hover: "hover:bg-muted/50",
+      active: "bg-muted text-foreground",
+    },
   },
   {
     id: "print",
     label: "Print",
     icon: PrinterIcon,
     title: "Print Lesson Plan",
+    classes: {
+      base: "text-foreground",
+      hover: "hover:bg-muted/50",
+      active: "bg-muted text-foreground",
+    },
   },
 ] as const;
 
@@ -57,16 +77,20 @@ export default function WhiteboardActions({
         Actions
       </h3>
       <div className="grid grid-cols-4 gap-1">
-        {ACTION_BUTTONS.map((button) => (
-          <button
-            key={button.id}
-            onClick={() => handleActionClick(button.id)}
-            className="px-2 py-1 text-[10px] font-medium rounded transition-all duration-200 border border-transparent hover:border-gray-300 hover:bg-gray-50"
-            title={button.title}
-          >
-            {button.label}
-          </button>
-        ))}
+        {ACTION_BUTTONS.map((button) => {
+          const IconComponent = button.icon;
+          return (
+            <button
+              key={button.id}
+              onClick={() => handleActionClick(button.id)}
+              className={`px-2 py-1 text-[10px] font-medium rounded transition-all duration-200 border flex items-center justify-center gap-1 ${button.classes.base} ${button.classes.hover} border-transparent`}
+              title={button.title}
+            >
+              <IconComponent className="w-3 h-3" />
+              <span className="hidden sm:inline">{button.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
