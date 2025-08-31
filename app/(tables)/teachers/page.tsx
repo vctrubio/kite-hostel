@@ -1,9 +1,9 @@
-import { getTeachers } from "@/actions/teacher-actions";
+import { getTeachersWithMetrics } from "@/actions/teacher-actions";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { TeacherRow } from "@/components/rows/TeacherRow";
 
 export default async function TeachersPage() {
-  const { data: teachers, error } = await getTeachers();
+  const { data: teachers, error } = await getTeachersWithMetrics();
 
   if (error) {
     return <div>Error loading teachers: {error}</div>;

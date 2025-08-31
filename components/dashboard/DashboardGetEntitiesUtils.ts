@@ -205,16 +205,16 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
       return {
         options: [
           { label: "All", value: "all" },
-          { label: "With Commissions", value: "with_commissions" },
-          { label: "Without Commissions", value: "without_commissions" },
+          { label: "Active Teachers", value: "active_teachers" },
+          { label: "Non Active Teachers", value: "non_active_teachers" },
         ],
         defaultFilter: "all",
         filterFunction: (teacher: any, filterValue: string) => {
-          if (filterValue === "with_commissions") {
-            return teacher.commissions?.length > 0;
+          if (filterValue === "active_teachers") {
+            return teacher.isActive;
           }
-          if (filterValue === "without_commissions") {
-            return !teacher.commissions?.length;
+          if (filterValue === "non_active_teachers") {
+            return !teacher.isActive;
           }
           return true;
         },

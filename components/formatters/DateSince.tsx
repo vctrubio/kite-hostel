@@ -22,7 +22,7 @@ export function DateSince({ dateString }: DateSinceProps) {
   let relativeTime = "";
 
   if (daysDiff === 0) {
-    bgColorClass = "bg-green-500"; // Today
+    bgColorClass = "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"; // Today
     relativeTime = "Today";
   } else if (daysDiff < 0) {
     bgColorClass = "bg-gray-200 text-gray-800"; // Past - Light grey-green

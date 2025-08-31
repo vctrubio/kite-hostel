@@ -1,5 +1,9 @@
+import React from 'react';
+import { FlagIcon } from '@/svgs/FlagIcon';
+import { KiteIcon } from '@/svgs/KiteIcon';
+
 export interface TableHeader {
-  title: string;
+  title: string | React.ReactElement;
   key: string;
   sortable?: boolean;
 }
@@ -20,8 +24,25 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
       return [
         { title: "Date", key: "created_at", sortable: true },
         { title: "Name", key: "name", sortable: true },
-        { title: "Phone", key: "phone", sortable: false },
-        { title: "Commissions", key: "commissions", sortable: true },
+        { 
+          title: React.createElement('div', 
+            { className: 'flex items-center gap-2' },
+            React.createElement(FlagIcon, { className: 'w-5 h-5' }),
+            'Lessons'
+          ), 
+          key: "lessonCount", 
+          sortable: true 
+        },
+        { 
+          title: React.createElement('div', 
+            { className: 'flex items-center gap-2' },
+            React.createElement(KiteIcon, { className: 'w-5 h-5' }),
+            'Events'
+          ), 
+          key: "eventsAndHours", 
+          sortable: true 
+        },
+        { title: "Status", key: "status", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
     case 'package':

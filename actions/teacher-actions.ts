@@ -114,6 +114,83 @@ export async function getTeachers() {
   }
 }
 
+export type TeacherWithMetrics = InferSelectModel<typeof Teacher> & {
+  commissions: InferSelectModel<typeof Commission>[];
+  lessonCount: number;
+  eventCount: number;
+  totalEventHours: number;
+  activeLessonCount: number;
+  isActive: boolean;
+  lessonsByStatus: {
+    planned: number;
+    rest: number;
+    delegated: number;
+    completed: number;
+    cancelled: number;
+  };
+};
+
+export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetrics[]; error: string | null }> {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayString = today.toISOString().split('T')[0];
+
+    const teachers = await db.query.Teacher.findMany({
+      with: {
+        commissions: true,
+        lessons: {
+          with: {
+            events: true,
+            booking: true,
+          },
+        },
+      },
+    });
+
+    const teachersWithMetrics: TeacherWithMetrics[] = teachers.map(teacher => {
+      const lessonCount = teacher.lessons.length;
+      const eventCount = teacher.lessons.reduce((count, lesson) => count + lesson.events.length, 0);
+      const totalEventHours = teacher.lessons.reduce((total, lesson) => {
+        return total + lesson.events.reduce((eventTotal, event) => {
+          return eventTotal + (event.duration || 0);
+        }, 0);
+      }, 0);
+
+      // Group lessons by status
+      const lessonsByStatus = teacher.lessons.reduce((acc, lesson) => {
+        const status = lesson.status as 'planned' | 'rest' | 'delegated' | 'completed' | 'cancelled';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {
+        planned: 0,
+        rest: 0,
+        delegated: 0,
+        completed: 0,
+        cancelled: 0,
+      });
+
+      const activeLessonCount = lessonsByStatus.planned;
+      const isActive = activeLessonCount > 0;
+
+      return {
+        ...teacher,
+        lessonCount,
+        eventCount,
+        totalEventHours,
+        activeLessonCount,
+        isActive,
+        lessonsByStatus,
+      };
+    });
+
+    return { data: teachersWithMetrics, error: null };
+  } catch (error: any) {
+    console.error("Error fetching teachers with metrics:", error);
+    return { data: [], error: error.message };
+  }
+}
+
 export async function fetchUserBySk(sk: string): Promise<{ data: TeacherWithRelations | null; error: string | null }> {
   try {
     const userWallet = await db.query.user_wallet.findFirst({
