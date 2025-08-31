@@ -26,6 +26,21 @@ export function getEntitySorter(entityName: string): Sorter {
           if (aLength > bLength) return sortConfig.direction === 'asc' ? 1 : -1;
           return 0;
         }
+        if (key === 'eventsAndHours') {
+          const aEventCount = a.eventCount || 0;
+          const bEventCount = b.eventCount || 0;
+          // Primary sort by event count
+          if (aEventCount !== bEventCount) {
+            if (aEventCount < bEventCount) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aEventCount > bEventCount) return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          // Secondary sort by total hours if event counts are equal
+          const aHours = a.totalEventHours || 0;
+          const bHours = b.totalEventHours || 0;
+          if (aHours < bHours) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aHours > bHours) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
         return defaultSorter(a, b, sortConfig);
       };
     case 'teacher':
@@ -36,6 +51,21 @@ export function getEntitySorter(entityName: string): Sorter {
           const bLength = b.commissions?.length || 0;
           if (aLength < bLength) return sortConfig.direction === 'asc' ? -1 : 1;
           if (aLength > bLength) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        }
+        if (key === 'eventsAndHours') {
+          const aEventCount = a.eventCount || 0;
+          const bEventCount = b.eventCount || 0;
+          // Primary sort by event count
+          if (aEventCount !== bEventCount) {
+            if (aEventCount < bEventCount) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aEventCount > bEventCount) return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          // Secondary sort by total hours if event counts are equal
+          const aHours = a.totalEventHours || 0;
+          const bHours = b.totalEventHours || 0;
+          if (aHours < bHours) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aHours > bHours) return sortConfig.direction === 'asc' ? 1 : -1;
           return 0;
         }
         return defaultSorter(a, b, sortConfig);

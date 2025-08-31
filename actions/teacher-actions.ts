@@ -153,7 +153,7 @@ export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetri
       const eventCount = teacher.lessons.reduce((count, lesson) => count + lesson.events.length, 0);
       const totalEventHours = teacher.lessons.reduce((total, lesson) => {
         return total + lesson.events.reduce((eventTotal, event) => {
-          return eventTotal + (event.duration || 0);
+          return eventTotal + ((event.duration || 0) / 60); // Convert minutes to hours
         }, 0);
       }, 0);
 

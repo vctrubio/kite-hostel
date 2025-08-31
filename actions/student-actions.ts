@@ -10,6 +10,8 @@ type StudentWithRelations = InferSelectModel<typeof Student> & {
   totalBookings: number;
   isAvailable: boolean;
   bookings: BookingWithRelations[];
+  eventCount: number;
+  totalEventHours: number;
 };
 
 export async function createStudent(
@@ -112,10 +114,27 @@ export async function getStudents(): Promise<{
       );
       const isAvailable = !activeBooking; // If there's an active booking, the student is not available
 
+      // Calculate event count and total hours from all booking lessons
+      let eventCount = 0;
+      let totalEventHours = 0;
+      
+      student.bookings.forEach((bs) => {
+        bs.booking.lessons?.forEach((lesson) => {
+          if (lesson.events) {
+            eventCount += lesson.events.length;
+            lesson.events.forEach((event) => {
+              totalEventHours += (event.duration || 0) / 60; // Convert minutes to hours
+            });
+          }
+        });
+      });
+
       return {
         ...student,
         totalBookings,
         isAvailable,
+        eventCount,
+        totalEventHours,
         bookings: student.bookings.map((bs) => bs.booking), // Extract the actual booking objects
       };
     });
@@ -182,10 +201,27 @@ export async function getStudentById(
     );
     const isAvailable = !activeBooking;
 
+    // Calculate event count and total hours from all booking lessons
+    let eventCount = 0;
+    let totalEventHours = 0;
+    
+    student.bookings.forEach((bs) => {
+      bs.booking.lessons?.forEach((lesson) => {
+        if (lesson.events) {
+          eventCount += lesson.events.length;
+          lesson.events.forEach((event) => {
+            totalEventHours += (event.duration || 0) / 60; // Convert minutes to hours
+          });
+        }
+      });
+    });
+
     const studentWithRelations: StudentWithRelations = {
       ...student,
       totalBookings,
       isAvailable,
+      eventCount,
+      totalEventHours,
       bookings: student.bookings.map((bs) => bs.booking),
     };
 

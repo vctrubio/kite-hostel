@@ -27,6 +27,7 @@ interface EventRowProps {
     } | null;
     kite: {
       model: string | null;
+      size: number | null;
       serial_id: string | null;
     } | null;
     students: string[] | null;
@@ -95,13 +96,12 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
         <td className="py-2 px-4 text-left">
           <Duration minutes={event.duration} />
         </td>
-        <td className="py-2 px-4 text-left">
-          {event.kite?.model && event.kite?.serial_id 
-            ? `${event.kite.model} (${event.kite.serial_id})`
-            : "N/A"
-          }
-        </td>
         <td className="py-2 px-4 text-left">€{total}</td>
+        <td className="py-2 px-4 text-left">
+          <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getEventStatusColor(event.status as any)}`}>
+            {event.status}
+          </span>
+        </td>
         <td className="py-2 px-4">
           <div className="flex items-center gap-2">
             <Button 
@@ -142,9 +142,12 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
               <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-teal-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <div>
-                    <span className="text-sm text-muted-foreground">Status: </span>
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getEventStatusColor(event.status as any)}`}>
-                      {event.status}
+                    <span className="text-sm text-muted-foreground">Kite: </span>
+                    <span className="text-sm font-medium">
+                      {event.kite?.model && event.kite?.serial_id 
+                        ? `${event.kite.model} ${event.kite.size}m (${event.kite.serial_id})`
+                        : "N/A"
+                      }
                     </span>
                   </div>
                   <div>

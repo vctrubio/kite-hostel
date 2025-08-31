@@ -9,6 +9,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { InferSelectModel } from "drizzle-orm";
 import { Booking } from "@/drizzle/migrations/schema";
 import { BookingView } from "@/components/views/BookingView";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface StudentRowProps {
   data: {
@@ -22,6 +28,8 @@ interface StudentRowProps {
     phone: string | null;
     totalBookings: number;
     bookings: InferSelectModel<typeof Booking>[];
+    eventCount?: number;
+    totalEventHours?: number;
     isAvailable?: boolean;
   };
   expandedRow: string | null;
@@ -58,11 +66,11 @@ export function StudentRow({ data: student, expandedRow, setExpandedRow, isSelec
         <td className="py-2 px-4 text-left">{student.desc}</td>
         <td className="py-2 px-4 text-left">{student.totalBookings || student.bookings?.length || 0}</td>
         <td className="py-2 px-4 text-left">
-          {student.bookings && student.bookings.length > 0 ? (
-            <BookingView booking={student.bookings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]} />
-          ) : (
-            "N/A"
-          )}
+          <div className="flex items-center gap-2">
+            <span>{student.eventCount || 0}</span>
+            <span>•</span>
+            <span>{student.totalEventHours || 0} h</span>
+          </div>
         </td>
         <td className="py-2 px-4">
           <div className="flex items-center gap-2">
@@ -113,6 +121,23 @@ export function StudentRow({ data: student, expandedRow, setExpandedRow, isSelec
                   </div>
                 </div>
               </div>
+              
+              {/* All Bookings Section */}
+              {student.bookings && student.bookings.length > 0 && (
+                <div className="p-3 bg-background/50 rounded-md border-l-4 border-blue-500">
+                  <div className="text-sm text-muted-foreground mb-2">All Bookings:</div>
+                  <div className="space-y-2">
+                    {student.bookings
+                      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                      .map((booking) => (
+                        <div key={booking.id} className="flex items-center gap-2">
+                          <BookingView booking={booking} />
+                        </div>
+                      ))
+                    }
+                  </div>
+                </div>
+              )}
             </div>
           </td>
         </tr>

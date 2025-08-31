@@ -235,13 +235,13 @@ export function Dashboard({
 
   // All handlers at the top
   const handleSort = (key: string) => {
-    let direction: "asc" | "desc" = "asc";
+    let direction: "asc" | "desc" = "desc";
     if (
       sortConfig &&
       sortConfig.key === key &&
-      sortConfig.direction === "asc"
+      sortConfig.direction === "desc"
     ) {
-      direction = "desc";
+      direction = "asc";
     }
     setSortConfig({ key, direction });
   };

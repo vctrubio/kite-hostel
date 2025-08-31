@@ -17,7 +17,15 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Name", key: "name", sortable: true },
         { title: "Description", key: "desc", sortable: false },
         { title: "Bookings", key: "bookings", sortable: true },
-        { title: "Active Booking", key: "active_booking", sortable: false },
+        { 
+          title: React.createElement('div', 
+            { className: 'flex items-center gap-2' },
+            React.createElement(KiteIcon, { className: 'w-5 h-5' }),
+            'Events'
+          ), 
+          key: "eventsAndHours", 
+          sortable: true 
+        },
         { title: "Actions", key: "actions", sortable: false },
       ];
     case 'teacher':
@@ -81,8 +89,8 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Student", key: "students", sortable: false },
         { title: "Location", key: "location", sortable: true },
         { title: "Duration", key: "duration", sortable: true },
-        { title: "Kite", key: "kite", sortable: false },
         { title: "Total", key: "total", sortable: true },
+        { title: "Status", key: "status", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
     case 'lesson':
