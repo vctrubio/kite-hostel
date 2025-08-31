@@ -126,14 +126,12 @@ export function DateFilterPicker({ filter, onFilterChange }: DateFilterProps) {
     const [startYear, startMonth] = tempStartMonth.split('-').map(Number);
     const [endYear, endMonth] = tempEndMonth.split('-').map(Number);
     
-    const startDate, endDate;
-    
     // Use specific day if provided, otherwise default to full month
     const startDay = tempStartDay ? parseInt(tempStartDay) : 1;
     const endDay = tempEndDay ? parseInt(tempEndDay) : new Date(endYear, endMonth, 0).getDate(); // Last day of month
     
-    startDate = new Date(startYear, startMonth - 1, startDay).toISOString().split('T')[0];
-    endDate = new Date(endYear, endMonth - 1, endDay).toISOString().split('T')[0];
+    const startDate = new Date(startYear, startMonth - 1, startDay).toISOString().split('T')[0];
+    const endDate = new Date(endYear, endMonth - 1, endDay).toISOString().split('T')[0];
     
     onFilterChange({
       type: 'range',

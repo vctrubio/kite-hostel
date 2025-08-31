@@ -1,6 +1,4 @@
 
-"use client";
-
 import { Duration } from "@/components/formatters/Duration";
 
 interface PackageDetailsProps {
