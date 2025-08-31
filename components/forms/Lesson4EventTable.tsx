@@ -10,6 +10,7 @@ import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import EventToTeacherModal from "@/components/modals/EventToTeacherModal";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
+import { WhiteboardClass } from "@/backend/WhiteboardClass";
 import { getUserWalletName } from "@/lib/getters";
 import { LessonStatus, type Location } from "@/lib/constants";
 import { type LessonWithDetails } from "@/actions/lesson-actions";
@@ -389,7 +390,14 @@ export function Lesson4EventTable({
 
   const allTeacherSchedules = useMemo(() => {
     const todayDate = new Date().toISOString().split("T")[0];
-    return TeacherSchedule.createSchedulesFromLessons(todayDate, lessons);
+    
+    // Create WhiteboardClass instances from lesson bookings
+    const bookingClasses = lessons
+      .map((lesson) => lesson.booking)
+      .filter(Boolean)
+      .map((booking) => new WhiteboardClass(booking));
+    
+    return TeacherSchedule.createSchedulesFromLessons(todayDate, lessons, bookingClasses);
   }, [lessons]);
 
   const filteredLessons = useMemo(() => {
