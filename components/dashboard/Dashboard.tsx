@@ -130,14 +130,19 @@ function DataTable({
                   >
                     <div className="flex items-center space-x-2">
                       <span>{header.title}</span>
-                      {header.sortable &&
-                        sortConfig &&
-                        sortConfig.key === header.key &&
-                        (sortConfig.direction === "asc" ? (
-                          <ArrowUp className="h-4 w-4" />
+                      {header.sortable && (
+                        sortConfig && sortConfig.key === header.key ? (
+                          sortConfig.direction === "asc" ? (
+                            <ArrowUp className="h-4 w-4" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4" />
+                          )
                         ) : (
-                          <ArrowDown className="h-4 w-4" />
-                        ))}
+                          <div className="h-4 w-4 opacity-30">
+                            <ArrowUp className="h-3 w-3" />
+                          </div>
+                        )
+                      )}
                     </div>
                   </th>
                 ))}

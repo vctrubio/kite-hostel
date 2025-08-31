@@ -53,6 +53,7 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Duration", key: "duration", sortable: true },
         { title: "Price", key: "price_per_student", sortable: true },
         { title: "Rate/h", key: "hourly_rate", sortable: true },
+        { title: "Revenue", key: "revenue", sortable: true },
         { title: "Bookings", key: "bookingCount", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];

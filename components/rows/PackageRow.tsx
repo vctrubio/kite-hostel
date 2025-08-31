@@ -60,6 +60,9 @@ export function PackageRow({
           €{(pkg.price_per_student / (pkg.duration / 60)).toFixed(2)}/h
         </td>
         <td onClick={toggleExpand} className="py-2 px-4 text-left">
+          €{pkg.price_per_student * pkg.capacity_students}
+        </td>
+        <td onClick={toggleExpand} className="py-2 px-4 text-left">
           {pkg.bookingCount}
         </td>
         <td className="py-2 px-4 text-right">
