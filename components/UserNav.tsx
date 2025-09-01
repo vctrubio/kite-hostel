@@ -2,12 +2,12 @@
 
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import { useState } from "react";
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogoutButtonUserWallet } from "@/components/users/LogoutButtonUserWallet";
 import { ThemeSwitcher } from "@/components/supabase-init/theme-switcher";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Tv, FileText, UserPlus, ChevronDown, Plus, LogIn } from "lucide-react";
+import { Tv, FileText, UserPlus, ChevronDown, Plus, LogIn, Home } from "lucide-react";
 import { ENTITY_DATA } from "@/lib/constants";
 
 function RouteButton({
@@ -205,16 +205,18 @@ function UserProfile({
 }) {
   return (
     <div className="flex items-center space-x-3">
-      <Avatar
-        className={`${isMobile ? "h-10 w-10" : "h-8 w-8"} transition-all duration-300 ${loading ? "ring-2 ring-border ring-offset-2 ring-offset-background" : ""}`}
-      >
-        <AvatarImage
-          src={avatar_url || "/logo-tkh.png"}
-          alt={displayName}
-          className="transition-opacity duration-300"
-        />
-        <AvatarFallback />
-      </Avatar>
+      <Link href="/home">
+        <Avatar
+          className={`${isMobile ? "h-10 w-10" : "h-8 w-8"} transition-all duration-300 ${loading ? "ring-2 ring-border ring-offset-2 ring-offset-background" : ""}`}
+        >
+          <AvatarImage
+            src={avatar_url || "/logo-tkh.png"}
+            alt={displayName}
+            className="transition-opacity duration-300"
+          />
+          <AvatarFallback />
+        </Avatar>
+      </Link>
       <div className={isMobile ? "flex-1" : "text-sm"}>
         <div
           className={`font-semibold ${isMobile ? "min-h-[18px]" : "min-h-[16px]"}`}
@@ -253,7 +255,8 @@ function ActionButtons({ user, note }: { user: any; note: string }) {
   );
 }
 
-function UserNavRoutes() {
+// Admin navigation routes (for admin and teacherAdmin roles)
+function AdminNavRoutes() {
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -400,6 +403,39 @@ function UserNavRoutes() {
   );
 }
 
+// Teacher navigation (home only)
+function TeacherNavRoutes() {
+  return (
+    <div className="flex items-center space-x-3">
+      <Link href="/teachers" className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">
+        <Home className="h-4 w-4" />
+        <span>Home</span>
+      </Link>
+    </div>
+  );
+}
+
+// Reference navigation (home only)
+function ReferenceNavRoutes() {
+  return (
+    <div className="flex items-center space-x-3">
+      <Link href="/user" className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">
+        <Home className="h-4 w-4" />
+        <span>Home</span>
+      </Link>
+    </div>
+  );
+}
+
+// Locked account message
+function LockedNavRoutes() {
+  return (
+    <div className="p-4 bg-red-100 text-red-800 rounded-md">
+      Your account has been temporarily locked. Please contact the administrator.
+    </div>
+  );
+}
+
 export function UserNav() {
   const { user, loading } = useUserWallet();
 
@@ -422,7 +458,10 @@ export function UserNav() {
             loading={loading}
           />
           <div className="flex items-center space-x-4">
-            <UserNavRoutes />
+            {user && ['admin', 'teacherAdmin'].includes(role) && <AdminNavRoutes />}
+            {user && role === 'teacher' && <TeacherNavRoutes />}
+            {user && role === 'reference' && <ReferenceNavRoutes />}
+            {user && role === 'locked' && <LockedNavRoutes />}
             <ActionButtons user={user} note={note} />
           </div>
         </div>
@@ -442,8 +481,11 @@ export function UserNav() {
             />
             <ActionButtons user={user} note={note} />
           </div>
-          <div className="order-2">
-            <UserNavRoutes />
+          <div className="order-2 flex items-center space-x-3 justify-center mx-auto">
+            {user && ['admin', 'teacherAdmin'].includes(role) && <AdminNavRoutes />}
+            {user && role === 'teacher' && <TeacherNavRoutes />}
+            {user && role === 'reference' && <ReferenceNavRoutes />}
+            {user && role === 'locked' && <LockedNavRoutes />}
           </div>
         </div>
       </div>

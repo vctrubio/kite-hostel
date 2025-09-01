@@ -382,7 +382,7 @@ function Footer() {
                     className="flex-shrink-0"
                 />
                 <div className="flex-1 text-slate-800 dark:text-slate-200">
-                    <h3 className="text-lg font-bold mb-2">Tarifa Kite School Management App</h3>
+                    <h3 className="text-lg font-bold mb-2">A Prototype Kite School Management App</h3>
                     <p className="mb-2"><span className="font-semibold">Mission:</span> To synchronize daily operations seamlessly, empowering kite schools to focus on what matters.</p>
                     <p className="mb-2"><span className="font-semibold">How:</span> By connecting teachers, students, lessons, and analytics in one unified platform.</p>
                     <p className="mb-2"><span className="font-semibold">Features:</span></p>
