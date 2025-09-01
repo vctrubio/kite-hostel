@@ -1,8 +1,8 @@
 import { ENTITY_DATA } from "@/lib/constants";
-import { Plus, LucideIcon, PlusCircle, Package, UserPlus, Download as DownloadIcon } from "lucide-react";
+import { Plus, LucideIcon, PlusCircle, Package, UserPlus } from "lucide-react";
 import { seedCreateStudent, seedCreateTeacher } from "@/actions/seed-actions";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { exportEventsToCsv, exportStudentsToCsv, exportTeachersToCsv, exportPackagesToCsv, exportBookingsToCsv, exportLessonsToCsv } from "./DashboardExportUtils";
+import { exportEventsToCsv, exportStudentsToCsv, exportTeachersToCsv, exportPackagesToCsv, exportBookingsToCsv, exportLessonsToCsv, exportKitesToCsv, exportPaymentsToCsv } from "./DashboardExportUtils";
 
 export interface EntityConfig {
   name: string;
@@ -37,6 +37,33 @@ export function getEntityConfig(entityName: string): EntityConfig {
 }
 
 /**
+ * Get the correct export function based on entity name
+ */
+export function getEntityExportFunction(entityName: string) {
+  const entityLower = entityName.toLowerCase();
+  switch (entityLower) {
+    case "student":
+      return exportStudentsToCsv;
+    case "teacher":
+      return exportTeachersToCsv;
+    case "package":
+      return exportPackagesToCsv;
+    case "booking":
+      return exportBookingsToCsv;
+    case "lesson":
+      return exportLessonsToCsv;
+    case "kite":
+      return exportKitesToCsv;
+    case "event":
+      return exportEventsToCsv;
+    case "payment":
+      return exportPaymentsToCsv;
+    default:
+      return null;
+  }
+}
+
+/**
  * Generate action buttons for an entity
  */
 export function generateEntityActionButtons(
@@ -46,8 +73,6 @@ export function generateEntityActionButtons(
   openModal?: () => void,
   openDropdownForm?: () => void,
   isDropdownFormOpen?: boolean,
-  data?: any[],
-  exportFileName?: string,
 ): ActionButton[] {
   // For complex forms (lesson, event), always go to route instead of dropdown
   const useRoute = entityName.toLowerCase() === 'lesson' || entityName.toLowerCase() === 'event';
@@ -81,11 +106,6 @@ export function generateEntityActionButtons(
       action: openModal || (() => {}),
       disabled: !selectedIds || selectedIds.length === 0
     });
-    actions.push({
-      icon: DownloadIcon,
-      label: "Export CSV",
-      action: () => exportStudentsToCsv(data || [], exportFileName)
-    });
   }
 
   if (entityName.toLowerCase() === 'teacher') {
@@ -96,43 +116,6 @@ export function generateEntityActionButtons(
         await seedCreateTeacher();
         router.refresh();
       }
-    });
-    actions.push({
-      icon: DownloadIcon,
-      label: "Export CSV",
-      action: () => exportTeachersToCsv(data || [], exportFileName)
-    });
-  }
-
-  if (entityName.toLowerCase() === 'package') {
-    actions.push({
-      icon: DownloadIcon,
-      label: "Export CSV",
-      action: () => exportPackagesToCsv(data || [], exportFileName)
-    });
-  }
-
-  if (entityName.toLowerCase() === 'booking') {
-    actions.push({
-      icon: DownloadIcon,
-      label: "Export CSV",
-      action: () => exportBookingsToCsv(data || [], exportFileName)
-    });
-  }
-
-  if (entityName.toLowerCase() === 'lesson') {
-    actions.push({
-      icon: DownloadIcon,
-      label: "Export CSV",
-      action: () => exportLessonsToCsv(data || [], exportFileName)
-    });
-  }
-
-  if (entityName.toLowerCase() === 'event') {
-    actions.push({
-      icon: DownloadIcon,
-      label: "Export CSV",
-      action: () => exportEventsToCsv(data || [], exportFileName)
     });
   }
 

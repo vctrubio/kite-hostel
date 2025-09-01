@@ -130,8 +130,8 @@ function DataTable({
                   >
                     <div className="flex items-center space-x-2">
                       <span>{header.title}</span>
-                      {header.sortable && (
-                        sortConfig && sortConfig.key === header.key ? (
+                      {header.sortable &&
+                        (sortConfig && sortConfig.key === header.key ? (
                           sortConfig.direction === "asc" ? (
                             <ArrowUp className="h-4 w-4" />
                           ) : (
@@ -141,8 +141,7 @@ function DataTable({
                           <div className="h-4 w-4 opacity-30">
                             <ArrowUp className="h-3 w-3" />
                           </div>
-                        )
-                      )}
+                        ))}
                     </div>
                   </th>
                 ))}
@@ -317,7 +316,8 @@ export function Dashboard({
   ]);
 
   const exportFileName = useMemo(() => {
-    const datePart = filterEnabled && isFilterRangeSelected ? selectedMonth : 'ALL';
+    const datePart =
+      filterEnabled && isFilterRangeSelected ? selectedMonth : "ALL";
     return `tkh-${entityName.toLowerCase()}s-${datePart}.csv`;
   }, [entityName, filterEnabled, isFilterRangeSelected, selectedMonth]);
 
@@ -328,8 +328,6 @@ export function Dashboard({
     () => setIsModalOpen(true),
     isDropdown ? () => setIsDropdownFormOpen(!isDropdownFormOpen) : undefined,
     isDropdownFormOpen,
-    filteredData,
-    exportFileName,
   );
 
   const dynamicStats = useMemo(() => {
@@ -373,6 +371,8 @@ export function Dashboard({
           selectedMonth={selectedMonth}
           setSelectedMonth={handleMonthChange}
           showDateFilter={isFilterRangeSelected}
+          data={filteredData}
+          exportFileName={exportFileName}
         />
 
         <StatsGrid stats={dynamicStats} />

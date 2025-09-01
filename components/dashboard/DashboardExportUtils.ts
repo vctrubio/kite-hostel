@@ -1,3 +1,5 @@
+"use client";
+
 export function exportEventsToCsv(data: any[], fileName: string = 'events.csv') {
   if (!data || data.length === 0) {
     alert("No data to export");
@@ -286,6 +288,84 @@ export function exportLessonsToCsv(data: any[], fileName: string = 'lessons.csv'
           packageDescription: lesson.booking?.package?.description || '',
           eventCount: lesson.events?.length || 0,
           totalEventHours: parseFloat(totalEventHours.toFixed(2)),
+      };
+  });
+  
+  const csvContent = [
+    headers.map(h => h.label).join(','),
+    ...csvData.map(row => headers.map(h => `"${row[h.key as keyof typeof row] || ''}"`).join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+export function exportKitesToCsv(data: any[], fileName: string = 'kites.csv') {
+  if (!data || data.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const headers = [
+    { label: "Model", key: "model" },
+    { label: "Size (m)", key: "size" },
+    { label: "Serial ID", key: "serial_id" },
+    { label: "Assigned Teachers", key: "assignedTeachers" },
+    { label: "Event Count", key: "eventCount" },
+    { label: "Total Event Hours", key: "totalEventHours" },
+  ];
+
+  const csvData = data.map(kite => {
+      const totalEventMinutes = kite.events?.reduce((sum: number, event: any) => sum + event.duration, 0) || 0;
+      const totalEventHours = totalEventMinutes / 60;
+
+      return {
+          model: kite.model || '',
+          size: kite.size || 0,
+          serial_id: kite.serial_id || '',
+          assignedTeachers: kite.assignedTeachers?.map((t: any) => t.name).join(', ') || 'No teachers',
+          eventCount: kite.events?.length || 0,
+          totalEventHours: parseFloat(totalEventHours.toFixed(2)),
+      };
+  });
+  
+  const csvContent = [
+    headers.map(h => h.label).join(','),
+    ...csvData.map(row => headers.map(h => `"${row[h.key as keyof typeof row] || ''}"`).join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+export function exportPaymentsToCsv(data: any[], fileName: string = 'payments.csv') {
+  if (!data || data.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const headers = [
+    { label: "Date", key: "date" },
+    { label: "Amount", key: "amount" },
+    { label: "Teacher", key: "teacherName" },
+  ];
+
+  const csvData = data.map(payment => {
+      const paymentDate = payment.created_at ? new Date(payment.created_at) : null;
+      return {
+          date: paymentDate ? paymentDate.toLocaleDateString() : '',
+          amount: payment.amount || 0,
+          teacherName: payment.teacher?.name || '',
       };
   });
   

@@ -11,6 +11,7 @@ import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import EventToTeacherModal from "@/components/modals/EventToTeacherModal";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { WhiteboardClass } from "@/backend/WhiteboardClass";
+import { createTeacherSchedulesFromLessons } from "@/app/whiteboard/WhiteboardMethods";
 import { getUserWalletName } from "@/lib/getters";
 import { LessonStatus, type Location } from "@/lib/constants";
 import { type LessonWithDetails } from "@/actions/lesson-actions";
@@ -27,6 +28,8 @@ interface LessonFilterControlsProps {
   onFilterChange: (filter: FilterType) => void;
   lessonsCount: number;
   filteredLessonsCount: number;
+  selectedDate: string;
+  onDateChange: (date: string) => void;
 }
 
 function LessonFilterControls({
@@ -34,6 +37,8 @@ function LessonFilterControls({
   onFilterChange,
   lessonsCount,
   filteredLessonsCount,
+  selectedDate,
+  onDateChange,
 }: LessonFilterControlsProps) {
   return (
     <div className="px-4 py-3 border-b border-border">
@@ -49,6 +54,15 @@ function LessonFilterControls({
         </div>
 
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => onDateChange(e.target.value)}
+              className="text-sm border border-border rounded px-2 py-1 bg-background"
+            />
+          </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <select
@@ -387,86 +401,18 @@ export function Lesson4EventTable({
   const [selectedLesson, setSelectedLesson] =
     useState<LessonWithDetails | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
+  const [selectedDate, setSelectedDate] = useState(() => 
+    new Date().toISOString().split("T")[0]
+  );
 
   const allTeacherSchedules = useMemo(() => {
-    const todayDate = new Date().toISOString().split("T")[0];
-    const teacherSchedules = new Map<string, TeacherSchedule>();
-    
-    // Create WhiteboardClass instances from lesson bookings
     const bookingClasses = lessons
       .map((lesson) => lesson.booking)
       .filter(Boolean)
       .map((booking) => new WhiteboardClass(booking));
-
-    // First pass: Create TeacherSchedule instances and add lessons
-    lessons
-      .filter((lesson) => lesson != null)
-      .forEach((lesson) => {
-        if (!lesson.teacher?.id) return;
-        
-        const teacherId = lesson.teacher.id;
-        const teacherName = lesson.teacher.name;
-        
-        // Get or create teacher schedule
-        let teacherSchedule = teacherSchedules.get(teacherId);
-        if (!teacherSchedule) {
-          teacherSchedule = new TeacherSchedule(teacherId, teacherName, todayDate);
-          teacherSchedules.set(teacherId, teacherSchedule);
-        }
-        
-        // Add lesson to schedule
-        teacherSchedule.lessons.push(lesson);
-        
-        // Add events from this lesson
-        if (lesson.events) {
-          lesson.events
-            .filter((event: any) => event != null && event.date)
-            .forEach((event: any) => {
-              if (TeacherSchedule.isSameDate(event.date, todayDate)) {
-                const localTime = TeacherSchedule.extractTimeFromDate(event.date);
-                
-                // Extract student names from booking
-                let studentNames: string[] = [];
-                if (lesson.booking?.students?.length > 0) {
-                  studentNames = lesson.booking.students.map(
-                    (bookingStudent: any) =>
-                      bookingStudent.student?.name ||
-                      bookingStudent.student?.first_name ||
-                      "Unknown",
-                  );
-                }
-
-                teacherSchedule.addEvent(
-                  localTime,
-                  event.duration,
-                  lesson.id,
-                  event.location,
-                  lesson.booking?.students?.length || 1,
-                  studentNames.length > 0 ? studentNames : undefined,
-                );
-              }
-            });
-        }
-      });
-
-    // Second pass: Add booking classes to each teacher schedule
-    bookingClasses.forEach((bookingClass) => {
-      const relevantLessons = lessons.filter(lesson => lesson.booking.id === bookingClass.getId());
-      
-      relevantLessons.forEach((lesson) => {
-        if (!lesson.teacher?.id) return;
-        
-        const teacherId = lesson.teacher.id;
-        const teacherSchedule = teacherSchedules.get(teacherId);
-        
-        if (teacherSchedule) {
-          teacherSchedule.addBookingClass(bookingClass);
-        }
-      });
-    });
-
-    return teacherSchedules;
-  }, [lessons]);
+    
+    return createTeacherSchedulesFromLessons(lessons, bookingClasses, selectedDate);
+  }, [lessons, selectedDate]);
 
   const filteredLessons = useMemo(() => {
     switch (filter) {
@@ -496,6 +442,10 @@ export function Lesson4EventTable({
     setIsModalOpen(true);
   };
 
+  const handleDateChangeFromModal = (date: string) => {
+    setSelectedDate(date);
+  };
+
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedLesson(null);
@@ -518,6 +468,8 @@ export function Lesson4EventTable({
         onFilterChange={setFilter}
         lessonsCount={lessons.length}
         filteredLessonsCount={filteredLessons.length}
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
       />
       <LessonTable
         lessons={filteredLessons}
@@ -544,8 +496,9 @@ export function Lesson4EventTable({
             durationCapTwo: 180,
             durationCapThree: 240,
           }}
-          date={new Date().toISOString().split("T")[0]}
+          date={selectedDate}
           onConfirm={handleConfirmEvent}
+          onDateChange={handleDateChangeFromModal}
           remainingMinutes={
             selectedLesson.packageDuration -
             selectedLesson.totalKiteEventDuration
@@ -557,78 +510,3 @@ export function Lesson4EventTable({
   );
 }
 
-// Utility function for TeacherSchedule creation (DRY principle)
-function createTeacherSchedulesFromLessons(
-  lessons: any[],
-  bookingClasses: WhiteboardClass[],
-  selectedDate: string
-): Map<string, TeacherSchedule> {
-  const teacherSchedules = new Map<string, TeacherSchedule>();
-
-  // First pass: Create TeacherSchedule instances and add lessons
-  lessons.forEach((lesson) => {
-    if (!lesson.teacher?.id) return;
-    
-    const teacherId = lesson.teacher.id;
-    const teacherName = lesson.teacher.name;
-    
-    // Get or create teacher schedule
-    let teacherSchedule = teacherSchedules.get(teacherId);
-    if (!teacherSchedule) {
-      teacherSchedule = new TeacherSchedule(teacherId, teacherName, selectedDate);
-      teacherSchedules.set(teacherId, teacherSchedule);
-    }
-    
-    // Add lesson to schedule
-    teacherSchedule.lessons.push(lesson);
-    
-    // Add events from this lesson
-    if (lesson.events) {
-      lesson.events
-        .filter((event: any) => event != null && event.date)
-        .forEach((event: any) => {
-          if (TeacherSchedule.isSameDate(event.date, selectedDate)) {
-            const localTime = TeacherSchedule.extractTimeFromDate(event.date);
-            
-            // Extract student names from booking
-            let studentNames: string[] = [];
-            if (lesson.booking?.students?.length > 0) {
-              studentNames = lesson.booking.students.map(
-                (bookingStudent: any) =>
-                  bookingStudent.student?.name ||
-                  bookingStudent.student?.first_name ||
-                  "Unknown",
-              );
-            }
-
-            teacherSchedule.addEvent(
-              localTime,
-              event.duration,
-              lesson.id,
-              event.location,
-              lesson.booking?.students?.length || 1,
-              studentNames.length > 0 ? studentNames : undefined,
-            );
-          }
-        });
-    }
-  });
-
-  // Second pass: Add booking classes to each teacher schedule
-  bookingClasses.forEach((bookingClass) => {
-    const lessonsForBooking = lessons.filter(lesson => lesson.booking.id === bookingClass.getId());
-    
-    lessonsForBooking.forEach((lesson) => {
-      if (!lesson.teacher?.id) return;
-      
-      const teacherId = lesson.teacher.id;
-      const teacherSchedule = teacherSchedules.get(teacherId);
-      
-      if (teacherSchedule) {
-        teacherSchedule.addBookingClass(bookingClass);
-      }
-    });
-  });
-
-  return teacherSchedules;
-}

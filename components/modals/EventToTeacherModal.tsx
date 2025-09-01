@@ -19,6 +19,7 @@ interface EventToTeacherModalProps {
   controller: EventController;
   date: string;
   onConfirm: (eventData: any) => void;
+  onDateChange?: (date: string) => void;
   remainingMinutes?: number;
   allowDateEdit?: boolean;
 }
@@ -309,6 +310,7 @@ export default function EventToTeacherModal({
   controller,
   date,
   onConfirm,
+  onDateChange,
   remainingMinutes,
   allowDateEdit = true,
 }: EventToTeacherModalProps) {
@@ -324,6 +326,8 @@ export default function EventToTeacherModal({
   const [selectedAlternative, setSelectedAlternative] = useState<AvailableSlot | null>(null);
 
   useEffect(() => { setIsMounted(true); return () => setIsMounted(false); }, []);
+
+  // Teacher schedule is pre-filtered for the selected date at table level
 
   useEffect(() => {
     if (isOpen) {
@@ -406,7 +410,12 @@ export default function EventToTeacherModal({
         <EventModalHeader 
           teacherName={lesson.teacher?.name || 'Teacher'} 
           date={formData.date} 
-          onDateChange={(date) => handleFormDataChange({ date })}
+          onDateChange={(date) => {
+            handleFormDataChange({ date });
+            if (onDateChange) {
+              onDateChange(date);
+            }
+          }}
           onClose={onClose}
           lesson={lesson}
           allowDateEdit={allowDateEdit}
