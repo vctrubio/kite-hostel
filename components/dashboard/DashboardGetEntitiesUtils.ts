@@ -1,8 +1,8 @@
 import { ENTITY_DATA } from "@/lib/constants";
 import { Plus, LucideIcon, PlusCircle, Package, UserPlus, Download } from "lucide-react";
 import { seedCreateStudent, seedCreateTeacher } from "@/actions/seed-actions";
-import { getEventCsv } from "@/actions/event-actions";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { exportEventsToCsv } from "./DashboardExportUtils";
 
 export interface EntityConfig {
   name: string;
@@ -45,7 +45,9 @@ export function generateEntityActionButtons(
   selectedIds?: string[],
   openModal?: () => void,
   openDropdownForm?: () => void,
-  isDropdownFormOpen?: boolean
+  isDropdownFormOpen?: boolean,
+  data?: any[],
+  exportFileName?: string,
 ): ActionButton[] {
   // For complex forms (lesson, event), always go to route instead of dropdown
   const useRoute = entityName.toLowerCase() === 'lesson' || entityName.toLowerCase() === 'event';
@@ -96,39 +98,7 @@ export function generateEntityActionButtons(
     actions.push({
       icon: Download,
       label: "Export CSV",
-      action: async () => {
-        const { data, error } = await getEventCsv();
-        if (error) {
-          alert(`Export failed: ${error}`);
-          return;
-        }
-        if (data) {
-          // Convert data to CSV and download
-          const headers = [
-            { label: "Date", key: "date" },
-            { label: "Teacher", key: "teacher" },
-            { label: "Students", key: "students" },
-            { label: "Location", key: "location" },
-            { label: "Duration", key: "duration" },
-            { label: "Kite", key: "kite" },
-            { label: "Price Per Hour Per Student", key: "pricePerHourPerStudent" },
-            { label: "Commission Per Hour", key: "commissionPerHour" },
-          ];
-          
-          const csvContent = [
-            headers.map(h => h.label).join(','),
-            ...data.map(row => headers.map(h => `"${row[h.key as keyof typeof row] || ''}"`).join(','))
-          ].join('\n');
-          
-          const blob = new Blob([csvContent], { type: 'text/csv' });
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'events.csv';
-          a.click();
-          window.URL.revokeObjectURL(url);
-        }
-      }
+      action: () => exportEventsToCsv(data || [], exportFileName)
     });
   }
 

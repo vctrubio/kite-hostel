@@ -236,15 +236,6 @@ export function Dashboard({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownFormOpen, setIsDropdownFormOpen] = useState(false);
 
-  const actionButtons = generateEntityActionButtons(
-    entityName,
-    router,
-    selectedIds,
-    () => setIsModalOpen(true),
-    isDropdown ? () => setIsDropdownFormOpen(!isDropdownFormOpen) : undefined,
-    isDropdownFormOpen,
-  );
-
   // All handlers at the top
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "desc";
@@ -324,6 +315,22 @@ export function Dashboard({
     isFilterRangeSelected,
     entityName,
   ]);
+
+  const exportFileName = useMemo(() => {
+    const datePart = filterEnabled && isFilterRangeSelected ? selectedMonth : 'ALL';
+    return `tkh-${entityName.toLowerCase()}s-${datePart}.csv`;
+  }, [entityName, filterEnabled, isFilterRangeSelected, selectedMonth]);
+
+  const actionButtons = generateEntityActionButtons(
+    entityName,
+    router,
+    selectedIds,
+    () => setIsModalOpen(true),
+    isDropdown ? () => setIsDropdownFormOpen(!isDropdownFormOpen) : undefined,
+    isDropdownFormOpen,
+    filteredData,
+    exportFileName,
+  );
 
   const dynamicStats = useMemo(() => {
     if (!stats) return [];
