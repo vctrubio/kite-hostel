@@ -371,31 +371,57 @@ function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: R
 
 // Footer with logo and description
 function Footer() {
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    useEffect(() => {
+      const handler = (e: any) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+      };
+      window.addEventListener('beforeinstallprompt', handler);
+      return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstall = async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+    };
+
     return (
         <footer className="w-full bg-card p-6 shadow-inner">
-            <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-6">
-                <Image
-                    src="/logo-tkh.png"
-                    alt="Tarifa Kite School Logo"
-                    width={64}
-                    height={64}
-                    className="flex-shrink-0"
-                />
-                <div className="flex-1 text-slate-800 dark:text-slate-200">
-                    <h3 className="text-lg font-bold mb-2">A Prototype Kite School Management App</h3>
-                    <p className="mb-2"><span className="font-semibold">Mission:</span> To synchronize daily operations seamlessly, empowering kite schools to focus on what matters.</p>
-                    <p className="mb-2"><span className="font-semibold">How:</span> By connecting teachers, students, lessons, and analytics in one unified platform.</p>
-                    <p className="mb-2"><span className="font-semibold">Features:</span></p>
-                    <ul className="list-disc list-inside ml-4 mb-4">
-                        <li>Interactive whiteboard for real-time planning</li>
-                        <li>Comprehensive table dashboard for CRUD operations</li>
-                        <li>Secure user authentication and role management</li>
-                    </ul>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                        By: <a href="mailto:vctrubio@gmail.com" className="underline">vctrubio@gmail.com</a> &bull; Developer at <a href="https://donkeydrills.com" className="underline">donkeydrills.com</a> &bull; <a href="https://x.com/donkeydrills" className="underline">x.com/donkeydrills</a>
-                    </p>
-                </div>
+        <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-6">
+            <Image
+                src="/logo-tkh.png"
+                alt="Tarifa Kite School Logo"
+                width={64}
+                height={64}
+                className="flex-shrink-0"
+            />
+            <div className="flex-1 text-slate-800 dark:text-slate-200">
+                <h3 className="text-lg font-bold mb-2">A Prototype Kite School Management App</h3>
+                <p className="mb-2"><span className="font-semibold">Mission:</span> To synchronize daily operations seamlessly, empowering kite schools to focus on what matters.</p>
+                <p className="mb-2"><span className="font-semibold">How:</span> By connecting teachers, students, lessons, and analytics in one unified platform.</p>
+                <p className="mb-2"><span className="font-semibold">Features:</span></p>
+                <ul className="list-disc list-inside ml-4 mb-4">
+                    <li>Interactive whiteboard for real-time planning</li>
+                    <li>Comprehensive table dashboard for CRUD operations</li>
+                    <li>Secure user authentication and role management</li>
+                </ul>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                    By: <a href="mailto:vctrubio@gmail.com" className="underline">vctrubio@gmail.com</a> &bull; Developer at <a href="https://donkeydrills.com" className="underline">donkeydrills.com</a> &bull; <a href="https://x.com/donkeydrills" className="underline">x.com/donkeydrills</a>
+                </p>
+                {deferredPrompt && (
+                  <div className="mt-4">
+                    <button onClick={handleInstall} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg">
+                      <Image src="/logo-tkh.png" width={24} height={24} alt="Install" />
+                      Download for Home Screen
+                    </button>
+                  </div>
+                )}
             </div>
-        </footer>
+        </div>
+    </footer>
     );
 }

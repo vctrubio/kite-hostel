@@ -1,10 +1,20 @@
 "use client";
 
+import Image from "next/image";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default function UserPage() {
+  const handleInstall = () => {
+    const promptEvent = (window as any).deferredPrompt;
+    if (promptEvent) {
+      promptEvent.prompt();
+    } else {
+      console.log('Install prompt not available');
+    }
+  };
+
   const { user, loading } = useUserWallet();
 
   if (loading) {
@@ -43,6 +53,14 @@ export default function UserPage() {
           </Link>
         </nav>
       </div>
+      {/* Always show download button */}
+      <button
+        onClick={handleInstall}
+        className="mt-6 mx-auto flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-600 rounded hover:bg-gray-100 transform hover:scale-105 transition duration-200"
+      >
+        <Image src="/logo-tkh.png" width={24} height={24} alt="Install" />
+        Download for Home Screen
+      </button>
     </div>
   );
 }
