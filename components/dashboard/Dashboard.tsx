@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
@@ -215,6 +215,18 @@ export function Dashboard({
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
+  const handleMonthChange = (newMonth: string) => {
+    setSelectedMonth(newMonth);
+    localStorage.setItem("selectedMonth", newMonth);
+  };
+
+  useEffect(() => {
+    const savedMonth = localStorage.getItem("selectedMonth");
+    if (savedMonth) {
+      setSelectedMonth(savedMonth);
+    }
+  }, [entityName]);
   const [filterEnabled, setFilterEnabled] = useState(isFilterRangeSelected);
   const [customFilter, setCustomFilter] = useState<CustomFilterValue>(
     customFilters.defaultFilter,
@@ -334,7 +346,7 @@ export function Dashboard({
           filterEnabled={filterEnabled}
           handleToggleFilter={handleToggleFilter}
           selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
+          setSelectedMonth={handleMonthChange}
           showDateFilter={isFilterRangeSelected}
         />
 
