@@ -213,17 +213,33 @@ export function Dashboard({
   // All state at the top
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedMonth, setSelectedMonth] = useState({
+    month: currentMonth,
+    filterEnabled: isFilterRangeSelected
+  });
 
   const handleMonthChange = (newMonth: string) => {
-    setSelectedMonth(newMonth);
-    localStorage.setItem("selectedMonth", newMonth);
+    const newState = { ...selectedMonth, month: newMonth };
+    setSelectedMonth(newState);
+    localStorage.setItem("selectedMonth", JSON.stringify(newState));
   };
 
   useEffect(() => {
     const savedMonth = localStorage.getItem("selectedMonth");
     if (savedMonth) {
-      setSelectedMonth(savedMonth);
+      try {
+        const parsed = JSON.parse(savedMonth);
+        if (parsed && typeof parsed === 'object' && parsed.month) {
+          setSelectedMonth(parsed);
+          setFilterEnabled(parsed.filterEnabled ?? isFilterRangeSelected);
+        } else {
+          // Handle old string format
+          setSelectedMonth({ month: savedMonth, filterEnabled: isFilterRangeSelected });
+        }
+      } catch {
+        // Handle old string format
+        setSelectedMonth({ month: savedMonth, filterEnabled: isFilterRangeSelected });
+      }
     }
   }, [entityName]);
   const [filterEnabled, setFilterEnabled] = useState(isFilterRangeSelected);
@@ -284,7 +300,7 @@ export function Dashboard({
         if (!dateField) return false;
         const itemDate = new Date(dateField);
         const itemMonth = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, "0")}`;
-        return itemMonth === selectedMonth;
+        return itemMonth === selectedMonth.month;
       });
     }
 
@@ -317,7 +333,7 @@ export function Dashboard({
 
   const exportFileName = useMemo(() => {
     const datePart =
-      filterEnabled && isFilterRangeSelected ? selectedMonth : "ALL";
+      filterEnabled && isFilterRangeSelected ? selectedMonth.month : "ALL";
     return `tkh-${entityName.toLowerCase()}s-${datePart}.csv`;
   }, [entityName, filterEnabled, isFilterRangeSelected, selectedMonth]);
 
@@ -349,7 +365,11 @@ export function Dashboard({
   }, [stats, filteredData]);
 
   const handleToggleFilter = () => {
-    setFilterEnabled(!filterEnabled);
+    const newFilterEnabled = !filterEnabled;
+    setFilterEnabled(newFilterEnabled);
+    const newState = { ...selectedMonth, filterEnabled: newFilterEnabled };
+    setSelectedMonth(newState);
+    localStorage.setItem("selectedMonth", JSON.stringify(newState));
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -368,7 +388,7 @@ export function Dashboard({
           setSearchTerm={setSearchTerm}
           filterEnabled={filterEnabled}
           handleToggleFilter={handleToggleFilter}
-          selectedMonth={selectedMonth}
+          selectedMonth={selectedMonth.month}
           setSelectedMonth={handleMonthChange}
           showDateFilter={isFilterRangeSelected}
           data={filteredData}
