@@ -5,7 +5,7 @@ import { user_wallet } from "@/drizzle/migrations/schema";
 import { InferInsertModel, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { toUTCString } from '@/components/formatters/TimeZone';
+import { toUTCString } from "@/components/formatters/TimeZone";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -289,10 +289,7 @@ export async function getCurrentUserWallet(): Promise<{
     let teacherData: TeacherWithRelations | null = null;
     const userRole = wallet.role || "guest";
 
-    if (
-      wallet.pk &&
-      (userRole === "teacher" || userRole === "teacherAdmin")
-    ) {
+    if (wallet.pk && (userRole === "teacher" || userRole === "teacherAdmin")) {
       const { data } = await getTeacherById(wallet.pk);
       teacherData = data;
     }

@@ -224,12 +224,7 @@ function UserProfile({
         <div
           className={`text-xs text-muted-foreground ${isMobile ? "min-h-[14px]" : "min-h-[12px]"}`}
         >
-          {role}
-        </div>
-        <div
-          className={`text-xs text-muted-foreground ${isMobile ? "min-h-[14px]" : "min-h-[12px]"}`}
-        >
-          {email ? `(${email})` : ""}
+          {role} - {email ? `${email}` : ""}
         </div>
       </div>
     </div>
