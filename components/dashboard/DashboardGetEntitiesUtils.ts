@@ -1,8 +1,8 @@
 import { ENTITY_DATA } from "@/lib/constants";
-import { Plus, LucideIcon, PlusCircle, Package, UserPlus, Download } from "lucide-react";
+import { Plus, LucideIcon, PlusCircle, Package, UserPlus, Download as DownloadIcon } from "lucide-react";
 import { seedCreateStudent, seedCreateTeacher } from "@/actions/seed-actions";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { exportEventsToCsv } from "./DashboardExportUtils";
+import { exportEventsToCsv, exportStudentsToCsv, exportTeachersToCsv, exportPackagesToCsv } from "./DashboardExportUtils";
 
 export interface EntityConfig {
   name: string;
@@ -81,6 +81,11 @@ export function generateEntityActionButtons(
       action: openModal || (() => {}),
       disabled: !selectedIds || selectedIds.length === 0
     });
+    actions.push({
+      icon: DownloadIcon,
+      label: "Export CSV",
+      action: () => exportStudentsToCsv(data || [], exportFileName)
+    });
   }
 
   if (entityName.toLowerCase() === 'teacher') {
@@ -92,11 +97,24 @@ export function generateEntityActionButtons(
         router.refresh();
       }
     });
+    actions.push({
+      icon: DownloadIcon,
+      label: "Export CSV",
+      action: () => exportTeachersToCsv(data || [], exportFileName)
+    });
+  }
+
+  if (entityName.toLowerCase() === 'package') {
+    actions.push({
+      icon: DownloadIcon,
+      label: "Export CSV",
+      action: () => exportPackagesToCsv(data || [], exportFileName)
+    });
   }
 
   if (entityName.toLowerCase() === 'event') {
     actions.push({
-      icon: Download,
+      icon: DownloadIcon,
       label: "Export CSV",
       action: () => exportEventsToCsv(data || [], exportFileName)
     });
