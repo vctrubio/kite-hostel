@@ -4,15 +4,14 @@ import Image from "next/image";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { useState } from 'react';
 
 export default function UserPage() {
+  // State to show manual install instructions
+  const [showInstructions, setShowInstructions] = useState(false);
   const handleInstall = () => {
-    const promptEvent = (window as any).deferredPrompt;
-    if (promptEvent) {
-      promptEvent.prompt();
-    } else {
-      console.log('Install prompt not available');
-    }
+    // For iOS/Safari manual install
+    setShowInstructions(true);
   };
 
   const { user, loading } = useUserWallet();
@@ -61,6 +60,22 @@ export default function UserPage() {
         <Image src="/logo-tkh.png" width={24} height={24} alt="Install" />
         Download for Home Screen
       </button>
+      {/* Manual install instructions for iOS */}
+      {showInstructions && (
+        <div className="mt-4 mx-auto max-w-sm p-4 bg-white border border-gray-200 rounded-lg text-center text-sm text-gray-700 shadow">
+          <button
+            onClick={() => setShowInstructions(false)}
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+          >
+            ×
+          </button>
+          <p>To install on your device:</p>
+          <ol className="list-decimal list-inside text-left mt-2">
+            <li>Tap the browser’s <strong>Share</strong> icon</li>
+            <li>Select <strong>Add to Home Screen</strong></li>
+          </ol>
+        </div>
+      )}
     </div>
   );
 }
