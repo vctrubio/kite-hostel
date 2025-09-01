@@ -205,7 +205,7 @@ function UserProfile({
 }) {
   return (
     <div className="flex items-center space-x-3">
-      <Link href="/home">
+      <Link href="/">
         <Avatar
           className={`${isMobile ? "h-10 w-10" : "h-8 w-8"} transition-all duration-300 ${loading ? "ring-2 ring-border ring-offset-2 ring-offset-background" : ""}`}
         >
