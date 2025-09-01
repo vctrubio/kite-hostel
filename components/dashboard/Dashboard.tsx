@@ -325,6 +325,24 @@ export function Dashboard({
     entityName,
   ]);
 
+  const dynamicStats = useMemo(() => {
+    if (!stats) return [];
+
+    const newStats = stats.map((stat) => {
+      const newStat = { ...stat };
+      if (stat.subStats) {
+        newStat.subStats = stat.subStats.map((sub) => ({ ...sub }));
+      }
+      return newStat;
+    });
+
+    if (newStats.length > 0) {
+      newStats[0].value = filteredData.length;
+    }
+
+    return newStats;
+  }, [stats, filteredData]);
+
   const handleToggleFilter = () => {
     setFilterEnabled(!filterEnabled);
   };
@@ -350,7 +368,7 @@ export function Dashboard({
           showDateFilter={isFilterRangeSelected}
         />
 
-        <StatsGrid stats={stats} />
+        <StatsGrid stats={dynamicStats} />
 
         <DashboardActionButtons
           actionButtons={actionButtons}
