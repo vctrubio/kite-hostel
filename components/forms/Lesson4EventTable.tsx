@@ -390,14 +390,82 @@ export function Lesson4EventTable({
 
   const allTeacherSchedules = useMemo(() => {
     const todayDate = new Date().toISOString().split("T")[0];
+    const teacherSchedules = new Map<string, TeacherSchedule>();
     
     // Create WhiteboardClass instances from lesson bookings
     const bookingClasses = lessons
       .map((lesson) => lesson.booking)
       .filter(Boolean)
       .map((booking) => new WhiteboardClass(booking));
-    
-    return TeacherSchedule.createSchedulesFromLessons(todayDate, lessons, bookingClasses);
+
+    // First pass: Create TeacherSchedule instances and add lessons
+    lessons
+      .filter((lesson) => lesson != null)
+      .forEach((lesson) => {
+        if (!lesson.teacher?.id) return;
+        
+        const teacherId = lesson.teacher.id;
+        const teacherName = lesson.teacher.name;
+        
+        // Get or create teacher schedule
+        let teacherSchedule = teacherSchedules.get(teacherId);
+        if (!teacherSchedule) {
+          teacherSchedule = new TeacherSchedule(teacherId, teacherName, todayDate);
+          teacherSchedules.set(teacherId, teacherSchedule);
+        }
+        
+        // Add lesson to schedule
+        teacherSchedule.lessons.push(lesson);
+        
+        // Add events from this lesson
+        if (lesson.events) {
+          lesson.events
+            .filter((event: any) => event != null && event.date)
+            .forEach((event: any) => {
+              if (TeacherSchedule.isSameDate(event.date, todayDate)) {
+                const localTime = TeacherSchedule.extractTimeFromDate(event.date);
+                
+                // Extract student names from booking
+                let studentNames: string[] = [];
+                if (lesson.booking?.students?.length > 0) {
+                  studentNames = lesson.booking.students.map(
+                    (bookingStudent: any) =>
+                      bookingStudent.student?.name ||
+                      bookingStudent.student?.first_name ||
+                      "Unknown",
+                  );
+                }
+
+                teacherSchedule.addEvent(
+                  localTime,
+                  event.duration,
+                  lesson.id,
+                  event.location,
+                  lesson.booking?.students?.length || 1,
+                  studentNames.length > 0 ? studentNames : undefined,
+                );
+              }
+            });
+        }
+      });
+
+    // Second pass: Add booking classes to each teacher schedule
+    bookingClasses.forEach((bookingClass) => {
+      const relevantLessons = lessons.filter(lesson => lesson.booking.id === bookingClass.getId());
+      
+      relevantLessons.forEach((lesson) => {
+        if (!lesson.teacher?.id) return;
+        
+        const teacherId = lesson.teacher.id;
+        const teacherSchedule = teacherSchedules.get(teacherId);
+        
+        if (teacherSchedule) {
+          teacherSchedule.addBookingClass(bookingClass);
+        }
+      });
+    });
+
+    return teacherSchedules;
   }, [lessons]);
 
   const filteredLessons = useMemo(() => {
@@ -467,7 +535,7 @@ export function Lesson4EventTable({
               selectedLesson.booking.students?.map((bs) => bs.student) || [],
             booking: selectedLesson.booking,
           }}
-          teacherSchedule={allTeacherSchedules.get(selectedLesson.teacher?.id || '') || new TeacherSchedule(selectedLesson.teacher.id, selectedLesson.teacher.name, new Date().toISOString().split("T")[0], selectedLesson.booking)}
+          teacherSchedule={allTeacherSchedules.get(selectedLesson.teacher?.id || '') || new TeacherSchedule(selectedLesson.teacher.id, selectedLesson.teacher.name, new Date().toISOString().split("T")[0])}
           controller={{
             flag: true,
             location: "Los Lances" as Location,
@@ -487,4 +555,80 @@ export function Lesson4EventTable({
       )}
     </div>
   );
+}
+
+// Utility function for TeacherSchedule creation (DRY principle)
+function createTeacherSchedulesFromLessons(
+  lessons: any[],
+  bookingClasses: WhiteboardClass[],
+  selectedDate: string
+): Map<string, TeacherSchedule> {
+  const teacherSchedules = new Map<string, TeacherSchedule>();
+
+  // First pass: Create TeacherSchedule instances and add lessons
+  lessons.forEach((lesson) => {
+    if (!lesson.teacher?.id) return;
+    
+    const teacherId = lesson.teacher.id;
+    const teacherName = lesson.teacher.name;
+    
+    // Get or create teacher schedule
+    let teacherSchedule = teacherSchedules.get(teacherId);
+    if (!teacherSchedule) {
+      teacherSchedule = new TeacherSchedule(teacherId, teacherName, selectedDate);
+      teacherSchedules.set(teacherId, teacherSchedule);
+    }
+    
+    // Add lesson to schedule
+    teacherSchedule.lessons.push(lesson);
+    
+    // Add events from this lesson
+    if (lesson.events) {
+      lesson.events
+        .filter((event: any) => event != null && event.date)
+        .forEach((event: any) => {
+          if (TeacherSchedule.isSameDate(event.date, selectedDate)) {
+            const localTime = TeacherSchedule.extractTimeFromDate(event.date);
+            
+            // Extract student names from booking
+            let studentNames: string[] = [];
+            if (lesson.booking?.students?.length > 0) {
+              studentNames = lesson.booking.students.map(
+                (bookingStudent: any) =>
+                  bookingStudent.student?.name ||
+                  bookingStudent.student?.first_name ||
+                  "Unknown",
+              );
+            }
+
+            teacherSchedule.addEvent(
+              localTime,
+              event.duration,
+              lesson.id,
+              event.location,
+              lesson.booking?.students?.length || 1,
+              studentNames.length > 0 ? studentNames : undefined,
+            );
+          }
+        });
+    }
+  });
+
+  // Second pass: Add booking classes to each teacher schedule
+  bookingClasses.forEach((bookingClass) => {
+    const lessonsForBooking = lessons.filter(lesson => lesson.booking.id === bookingClass.getId());
+    
+    lessonsForBooking.forEach((lesson) => {
+      if (!lesson.teacher?.id) return;
+      
+      const teacherId = lesson.teacher.id;
+      const teacherSchedule = teacherSchedules.get(teacherId);
+      
+      if (teacherSchedule) {
+        teacherSchedule.addBookingClass(bookingClass);
+      }
+    });
+  });
+
+  return teacherSchedules;
 }

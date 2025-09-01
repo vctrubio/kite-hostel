@@ -7,7 +7,11 @@ import WhiteboardLessons from "./WhiteboardLessons";
 import WhiteboardEvents from "./WhiteboardEvents";
 import { WhiteboardData } from "@/actions/whiteboard-actions";
 import { WhiteboardClass } from "@/backend/WhiteboardClass";
-import { TeacherSchedule } from "@/backend/TeacherSchedule";
+import {
+  createTeacherSchedulesFromLessons,
+  calculateGlobalStats,
+  getEarliestTimeFromSchedules,
+} from "./WhiteboardMethods";
 import {
   getStoredDate,
   setStoredDate,
@@ -251,13 +255,12 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       bookingFilter === "all"
         ? dateFilteredBookings
         : dateFilteredBookings.filter(
-            (booking) => booking.status === bookingFilter,
-          );
+          (booking) => booking.status === bookingFilter,
+        );
 
     const bookingClasses = statusFilteredBookings.map(
       (booking) => new WhiteboardClass(booking),
     );
-
 
     const filteredLessons = statusFilteredBookings.flatMap(
       (booking) =>
@@ -294,78 +297,20 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         })) || [],
     );
 
-    // Create teacher schedules with access to all their booking classes
-    const teacherSchedules = new Map<string, TeacherSchedule>();
-    
-    // First pass: Create TeacherSchedule instances and add lessons
-    filteredLessons.forEach((lesson) => {
-      if (!lesson.teacher?.id) return;
-      
-      const teacherId = lesson.teacher.id;
-      const teacherName = lesson.teacher.name;
-      
-      // Get or create teacher schedule
-      let teacherSchedule = teacherSchedules.get(teacherId);
-      if (!teacherSchedule) {
-        teacherSchedule = new TeacherSchedule(teacherId, teacherName, selectedDate);
-        teacherSchedules.set(teacherId, teacherSchedule);
-      }
-      
-      // Add lesson to schedule
-      teacherSchedule.lessons.push(lesson);
-      
-      // Add events from this lesson
-      if (lesson.events) {
-        lesson.events
-          .filter((event: any) => event != null && event.date)
-          .forEach((event: any) => {
-            if (TeacherSchedule.isSameDate(event.date, selectedDate)) {
-              const localTime = TeacherSchedule.extractTimeFromDate(event.date);
-              
-              // Extract student names from booking
-              let studentNames: string[] = [];
-              if (lesson.booking?.students?.length > 0) {
-                studentNames = lesson.booking.students.map(
-                  (bookingStudent: any) =>
-                    bookingStudent.student?.name ||
-                    bookingStudent.student?.first_name ||
-                    "Unknown",
-                );
-              }
-
-              teacherSchedule.addEvent(
-                localTime,
-                event.duration,
-                lesson.id,
-                event.location,
-                lesson.booking?.students?.length || 1,
-                studentNames.length > 0 ? studentNames : undefined,
-              );
-            }
-          });
-      }
-    });
-
-    // Second pass: Add booking classes to each teacher schedule
-    bookingClasses.forEach((bookingClass) => {
-      const lessons = filteredLessons.filter(lesson => lesson.booking.id === bookingClass.getId());
-      
-      lessons.forEach((lesson) => {
-        if (!lesson.teacher?.id) return;
-        
-        const teacherId = lesson.teacher.id;
-        const teacherSchedule = teacherSchedules.get(teacherId);
-        
-        if (teacherSchedule) {
-          teacherSchedule.addBookingClass(bookingClass);
-        }
-      });
-    });
+    // Create teacher schedules using centralized utility function
+    const teacherSchedules = createTeacherSchedulesFromLessons(
+      filteredLessons,
+      bookingClasses,
+      selectedDate,
+    );
 
     // Calculate stats from teacherSchedules instead of filtered lessons
     const enhancedStats = {
       totalBookings: statusFilteredBookings.length,
-      totalLessons: Array.from(teacherSchedules.values()).reduce((total, schedule) => total + schedule.lessons.length, 0),
+      totalLessons: Array.from(teacherSchedules.values()).reduce(
+        (total, schedule) => total + schedule.lessons.length,
+        0,
+      ),
       totalEvents: filteredEvents.length,
     };
 
@@ -379,43 +324,13 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   }, [data, selectedDate, bookingFilter]);
 
   const globalStats = useMemo(() => {
-    let totalEvents = 0;
-    let totalLessons = 0;
-    let totalHours = 0;
-    let totalEarnings = 0;
-    let schoolRevenue = 0;
-
-    filteredData.teacherSchedules.forEach((schedule) => {
-      const stats = schedule.calculateTeacherStats();
-      totalEvents += stats.totalEvents;
-      totalLessons += stats.totalLessons;
-      totalHours += stats.totalHours;
-      totalEarnings += stats.totalEarnings;
-      schoolRevenue += stats.schoolRevenue;
-    });
-
-    return {
-      totalEvents,
-      totalLessons,
-      totalHours,
-      totalEarnings,
-      schoolRevenue,
-    };
+    return calculateGlobalStats(filteredData.teacherSchedules);
   }, [filteredData.teacherSchedules]);
 
   const earliestTime = useMemo(() => {
-    let earliest = null;
-    filteredData.teacherSchedules.forEach((schedule) => {
-      const firstEventNode = schedule
-        .getNodes()
-        .find((node) => node.type === "event");
-      if (firstEventNode) {
-        if (!earliest || firstEventNode.startTime < earliest) {
-          earliest = firstEventNode.startTime;
-        }
-      }
-    });
-    return earliest || "11:00";
+    return (
+      getEarliestTimeFromSchedules(filteredData.teacherSchedules) || "11:00"
+    );
   }, [filteredData.teacherSchedules]);
 
   const [hasInitializedTime, setHasInitializedTime] = useState(false);
@@ -446,7 +361,10 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       selectedDate={selectedDate}
       onDateChange={handleDateChange}
       bookingsCount={filteredData.bookings.length}
-      lessonsCount={Array.from(filteredData.teacherSchedules.values()).reduce((total, schedule) => total + schedule.lessons.length, 0)}
+      lessonsCount={Array.from(filteredData.teacherSchedules.values()).reduce(
+        (total, schedule) => total + schedule.lessons.length,
+        0,
+      )}
       eventsCount={filteredData.events.length}
       bookingFilter={bookingFilter}
       onBookingFilterChange={handleBookingFilterChange}

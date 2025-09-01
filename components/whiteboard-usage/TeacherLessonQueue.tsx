@@ -59,7 +59,10 @@ export default function TeacherLessonQueue({
     if (!teacherSchedule) return;
 
     const students = extractStudents(lesson.booking);
-    const remainingMinutes = teacherSchedule.whiteboard.getRemainingMinutes();
+    
+    // Get the booking class for this specific lesson
+    const bookingClass = teacherSchedule.getBookingClassForLesson(lesson);
+    const remainingMinutes = bookingClass ? bookingClass.getRemainingMinutes() : 0;
     
     const studentCount = students.length;
     let defaultDuration = durationSettings.durationCapOne;
