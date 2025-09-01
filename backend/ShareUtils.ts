@@ -115,10 +115,12 @@ export class ShareUtils {
         event.booking.students.forEach((bookingStudent: any) => {
           const student = bookingStudent.student;
           if (student) {
-            const name = student.name || student.first_name || "Unknown";
+            const name = [student.name || student.first_name, student.last_name]
+              .filter(Boolean)
+              .join(" ");
             if (!studentMap.has(name)) {
               studentMap.set(name, {
-                name,
+                name: name,
                 passport: student.passport_number || student.passport,
                 nationality: student.nationality,
               });
@@ -162,7 +164,7 @@ export class ShareUtils {
     sortedTeachers.forEach((teacherName, index) => {
       const teacherEvents = eventsByTeacher.get(teacherName)!;
 
-      message += `*Teacher: ${teacherName}*\n`;
+      message += `*${teacherName}*\n`;
 
       // Sort events by start time
       teacherEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));

@@ -15,16 +15,16 @@ export default async function StudentsPage() {
   const foreignStudents = totalStudents - localStudents;
 
   // Calculate students with active bookings
-  const studentsWithActiveBookings = students.filter((s) => 
-    s.bookings?.some((b: any) => b.status === "active")
+  const studentsWithActiveBookings = students.filter((s) =>
+    s.bookings?.some((b: any) => b.status === "active"),
   ).length;
-  
-  const studentsWithCompletedBookings = students.filter((s) => 
-    s.bookings?.some((b: any) => b.status === "completed")
+
+  const studentsWithCompletedBookings = students.filter((s) =>
+    s.bookings?.some((b: any) => b.status === "completed"),
   ).length;
-  
-  const studentsWithUncompleteBookings = students.filter((s) => 
-    s.bookings?.some((b: any) => b.status === "uncomplete")
+
+  const studentsWithUncompleteBookings = students.filter((s) =>
+    s.bookings?.some((b: any) => b.status === "uncomplete"),
   ).length;
 
   const stats = [
@@ -45,6 +45,8 @@ export default async function StudentsPage() {
       ],
     },
   ];
+
+  console.log("students from page: ", students);
 
   return (
     <Dashboard
