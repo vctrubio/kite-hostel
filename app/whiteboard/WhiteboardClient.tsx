@@ -226,18 +226,12 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       return {
         bookings: [],
         bookingClasses: [],
-        lessons: [],
         events: [],
         teacherSchedules: new Map(),
         status: {
           totalBookings: 0,
           totalLessons: 0,
           totalEvents: 0,
-          activeBookings: 0,
-          completableBookings: 0,
-          averageProgress: 0,
-          totalUsedMinutes: 0,
-          totalAvailableMinutes: 0,
         },
       };
     }
@@ -264,12 +258,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       (booking) => new WhiteboardClass(booking),
     );
 
-    const activeBookingClasses = bookingClasses.filter(
-      (bc) => bc.getStatus() === "active",
-    );
-    const completableBookingClasses = bookingClasses.filter((bc) =>
-      bc.isReadyForCompletion(),
-    );
 
     const filteredLessons = statusFilteredBookings.flatMap(
       (booking) =>
@@ -306,38 +294,84 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
         })) || [],
     );
 
+    // Create teacher schedules with access to all their booking classes
+    const teacherSchedules = new Map<string, TeacherSchedule>();
+    
+    // First pass: Create TeacherSchedule instances and add lessons
+    filteredLessons.forEach((lesson) => {
+      if (!lesson.teacher?.id) return;
+      
+      const teacherId = lesson.teacher.id;
+      const teacherName = lesson.teacher.name;
+      
+      // Get or create teacher schedule
+      let teacherSchedule = teacherSchedules.get(teacherId);
+      if (!teacherSchedule) {
+        teacherSchedule = new TeacherSchedule(teacherId, teacherName, selectedDate);
+        teacherSchedules.set(teacherId, teacherSchedule);
+      }
+      
+      // Add lesson to schedule
+      teacherSchedule.lessons.push(lesson);
+      
+      // Add events from this lesson
+      if (lesson.events) {
+        lesson.events
+          .filter((event: any) => event != null && event.date)
+          .forEach((event: any) => {
+            if (TeacherSchedule.isSameDate(event.date, selectedDate)) {
+              const localTime = TeacherSchedule.extractTimeFromDate(event.date);
+              
+              // Extract student names from booking
+              let studentNames: string[] = [];
+              if (lesson.booking?.students?.length > 0) {
+                studentNames = lesson.booking.students.map(
+                  (bookingStudent: any) =>
+                    bookingStudent.student?.name ||
+                    bookingStudent.student?.first_name ||
+                    "Unknown",
+                );
+              }
+
+              teacherSchedule.addEvent(
+                localTime,
+                event.duration,
+                lesson.id,
+                event.location,
+                lesson.booking?.students?.length || 1,
+                studentNames.length > 0 ? studentNames : undefined,
+              );
+            }
+          });
+      }
+    });
+
+    // Second pass: Add booking classes to each teacher schedule
+    bookingClasses.forEach((bookingClass) => {
+      const lessons = filteredLessons.filter(lesson => lesson.booking.id === bookingClass.getId());
+      
+      lessons.forEach((lesson) => {
+        if (!lesson.teacher?.id) return;
+        
+        const teacherId = lesson.teacher.id;
+        const teacherSchedule = teacherSchedules.get(teacherId);
+        
+        if (teacherSchedule) {
+          teacherSchedule.addBookingClass(bookingClass);
+        }
+      });
+    });
+
+    // Calculate stats from teacherSchedules instead of filtered lessons
     const enhancedStats = {
       totalBookings: statusFilteredBookings.length,
-      totalLessons: filteredLessons.length,
+      totalLessons: Array.from(teacherSchedules.values()).reduce((total, schedule) => total + schedule.lessons.length, 0),
       totalEvents: filteredEvents.length,
-      activeBookings: activeBookingClasses.length,
-      completableBookings: completableBookingClasses.length,
-      averageProgress: Math.round(
-        bookingClasses.reduce(
-          (sum, bc) => sum + bc.getCompletionPercentage(),
-          0,
-        ) / (bookingClasses.length || 1),
-      ),
-      totalUsedMinutes: bookingClasses.reduce(
-        (sum, bc) => sum + bc.getUsedMinutes(),
-        0,
-      ),
-      totalAvailableMinutes: bookingClasses.reduce(
-        (sum, bc) => sum + bc.getTotalMinutes(),
-        0,
-      ),
     };
-
-    const teacherSchedules = TeacherSchedule.createSchedulesFromLessons(
-      selectedDate,
-      filteredLessons,
-      bookingClasses,
-    );
 
     return {
       bookings: statusFilteredBookings,
       bookingClasses,
-      lessons: filteredLessons,
       events: filteredEvents,
       teacherSchedules,
       status: enhancedStats,
@@ -412,7 +446,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       selectedDate={selectedDate}
       onDateChange={handleDateChange}
       bookingsCount={filteredData.bookings.length}
-      lessonsCount={filteredData.lessons.length}
+      lessonsCount={Array.from(filteredData.teacherSchedules.values()).reduce((total, schedule) => total + schedule.lessons.length, 0)}
       eventsCount={filteredData.events.length}
       bookingFilter={bookingFilter}
       onBookingFilterChange={handleBookingFilterChange}
@@ -446,7 +480,6 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
             {activeSection === "lessons" && (
               <WhiteboardLessons
-                lessons={filteredData.lessons}
                 selectedDate={selectedDate}
                 teacherSchedules={filteredData.teacherSchedules}
                 controller={controller}

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Send } from "lucide-react";
 import { BookmarkIcon, HelmetIcon, HeadsetIcon } from "@/svgs";
-import { DateSince } from "@/components/formatters/DateSince";
 import { Duration } from "@/components/formatters/Duration";
 import { FormatDateRange } from "@/components/formatters/DateRange";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
@@ -63,8 +62,7 @@ export function BookingRow({
               {booking.students.map((bs: any) => bs.student.name).join(", ")}
             </span>
           ) : (
-                                    // eslint-disable-next-line react/no-unescaped-entities
-                                    <span>No students</span>
+            <span>No students</span>
           )}
         </td>
         <td className="py-2 px-4 text-left">

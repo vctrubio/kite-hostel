@@ -76,15 +76,12 @@ export class TeacherSchedule {
   private lessonQueue: QueuedLesson[] = []; // Add lesson queue
   private queueStartTime: string | null = null; // Preferred queue start time
   public lessons: any[] = [];
-  public booking: BookingData;
-  public whiteboard: WhiteboardClass; // Store whiteboard class reference (required)
+  public bookingClasses: Map<string, WhiteboardClass> = new Map(); // Map of booking ID to WhiteboardClass
 
   constructor(
     teacherId: string,
     teacherName: string,
     date: string,
-    booking: BookingData,
-    whiteboard: WhiteboardClass,
   ) {
     this.schedule = {
       teacherId,
@@ -92,8 +89,27 @@ export class TeacherSchedule {
       date,
       head: null,
     };
-    this.booking = booking;
-    this.whiteboard = whiteboard;
+  }
+
+  /**
+   * Add a booking class to this teacher's schedule
+   */
+  addBookingClass(bookingClass: WhiteboardClass): void {
+    this.bookingClasses.set(bookingClass.getId(), bookingClass);
+  }
+
+  /**
+   * Get booking class for a specific lesson
+   */
+  getBookingClassForLesson(lesson: any): WhiteboardClass | undefined {
+    return this.bookingClasses.get(lesson.booking?.id);
+  }
+
+  /**
+   * Get all booking classes for this teacher
+   */
+  getAllBookingClasses(): WhiteboardClass[] {
+    return Array.from(this.bookingClasses.values());
   }
 
   /**
@@ -106,90 +122,71 @@ export class TeacherSchedule {
   ): Map<string, TeacherSchedule> {
     const schedules = new Map<string, TeacherSchedule>();
 
-    // Group lessons by teacher
-    const teacherLessonsMap = new Map<string, any[]>();
-
+    // First pass: Create TeacherSchedule instances and add lessons
     lessons
-      .filter((lesson) => lesson != null) // Filter out null/undefined lessons
+      .filter((lesson) => lesson != null)
       .forEach((lesson) => {
-        if (lesson.teacher?.id) {
-          const teacherId = lesson.teacher.id;
-          if (!teacherLessonsMap.has(teacherId)) {
-            teacherLessonsMap.set(teacherId, []);
-          }
-          teacherLessonsMap.get(teacherId)!.push(lesson);
+        if (!lesson.teacher?.id) return;
+        
+        const teacherId = lesson.teacher.id;
+        const teacherName = lesson.teacher.name;
+        
+        // Get or create teacher schedule
+        let teacherSchedule = schedules.get(teacherId);
+        if (!teacherSchedule) {
+          teacherSchedule = new TeacherSchedule(teacherId, teacherName, date);
+          schedules.set(teacherId, teacherSchedule);
+        }
+        
+        // Add lesson to schedule
+        teacherSchedule.lessons.push(lesson);
+        
+        // Add events from this lesson
+        if (lesson.events) {
+          lesson.events
+            .filter((event: any) => event != null && event.date)
+            .forEach((event: any) => {
+              if (TeacherSchedule.isSameDate(event.date, date)) {
+                const localTime = format(new Date(event.date), "HH:mm");
+                
+                // Extract student names from booking
+                let studentNames: string[] = [];
+                if (lesson.booking?.students?.length > 0) {
+                  studentNames = lesson.booking.students.map(
+                    (bookingStudent: any) =>
+                      bookingStudent.student?.name ||
+                      bookingStudent.student?.first_name ||
+                      "Unknown",
+                  );
+                }
+
+                teacherSchedule.addEvent(
+                  localTime,
+                  event.duration,
+                  lesson.id,
+                  event.location,
+                  lesson.booking?.students?.length || 1,
+                  studentNames.length > 0 ? studentNames : undefined,
+                );
+              }
+            });
         }
       });
 
-    // Create schedule for each teacher
-    teacherLessonsMap.forEach((teacherLessons, teacherId) => {
-      const teacher = teacherLessons[0].teacher;
-      // NOTE: This assumes all lessons for a teacher on a given day belong to the same booking.
-      const booking = teacherLessons[0].booking;
-
-      // Find the corresponding WhiteboardClass instance - required!
-      const whiteboardClass = whiteboardClasses.find(
-        (wc) => wc.booking.id === booking.id,
-      );
-
-      if (!whiteboardClass) {
-        console.error(`No WhiteboardClass found for booking ${booking.id}`);
-        return;
-      }
-
-      const schedule = new TeacherSchedule(
-        teacherId,
-        teacher.name,
-        date,
-        booking,
-        whiteboardClass,
-      );
-      schedule.lessons = teacherLessons;
-
-      // Add existing events from lessons
-      teacherLessons.forEach((lesson) => {
-        // Add safety check for lesson existence
-        if (!lesson || !lesson.events) return;
-
-        lesson.events
-          .filter((event: any) => event != null) // Filter out null/undefined events
-          .forEach((event: any) => {
-            // Add proper null/undefined checks
-            if (
-              event &&
-              event.date &&
-              TeacherSchedule.isSameDate(event.date, date)
-            ) {
-              // Convert UTC timestamp to local time using the same method as EventCard
-              const localTime = format(new Date(event.date), "HH:mm");
-
-              // Extract student names from booking.students (BookingStudent relations)
-              let studentNames: string[] = [];
-              if (
-                lesson.booking?.students &&
-                Array.isArray(lesson.booking.students)
-              ) {
-                studentNames = lesson.booking.students.map(
-                  (bookingStudent: any) =>
-                    bookingStudent.student?.name ||
-                    bookingStudent.student?.first_name ||
-                    "Unknown",
-                );
-              }
-
-              schedule.addEvent(
-                localTime,
-                event.duration || 120,
-                lesson.id,
-                event.location || "Los Lances",
-                lesson.booking?.students?.length || 1,
-                studentNames.length > 0 ? studentNames : undefined,
-              );
-            }
-          });
+    // Second pass: Add booking classes to each teacher schedule
+    whiteboardClasses.forEach((bookingClass) => {
+      const relevantLessons = lessons.filter(lesson => lesson.booking.id === bookingClass.getId());
+      
+      relevantLessons.forEach((lesson) => {
+        if (!lesson.teacher?.id) return;
+        
+        const teacherId = lesson.teacher.id;
+        const teacherSchedule = schedules.get(teacherId);
+        
+        if (teacherSchedule) {
+          teacherSchedule.addBookingClass(bookingClass);
+        }
       });
-
-      schedules.set(teacherId, schedule);
     });
 
     return schedules;

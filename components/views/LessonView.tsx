@@ -14,13 +14,23 @@ export function LessonView({ booking }: LessonViewProps) {
   const activeLesson = booking.lessons.find(
     (lesson) => lesson.status === "planned" || lesson.status === "rest",
   );
-  const teacherName = activeLesson?.teacher?.name || booking.lessons?.find(lesson => lesson.teacher)?.teacher.name || "N/A";
+  const teacherName =
+    activeLesson?.teacher?.name ||
+    booking.lessons?.find((lesson) => lesson.teacher)?.teacher.name ||
+    "N/A";
   console.log("activeLesson:", activeLesson);
   console.log("booking.lessons:", booking.lessons);
 
-  const totalLessonEventDuration = booking.lessons?.reduce((sum, lesson) => {
-    return sum + (lesson.events?.reduce((eventSum, event) => eventSum + event.duration, 0) || 0);
-  }, 0) || 0;
+  const totalLessonEventDuration =
+    booking.lessons?.reduce((sum, lesson) => {
+      return (
+        sum +
+        (lesson.events?.reduce(
+          (eventSum, event) => eventSum + event.duration,
+          0,
+        ) || 0)
+      );
+    }, 0) || 0;
 
   const packageDuration = booking.package?.duration || 0;
 
@@ -39,7 +49,8 @@ export function LessonView({ booking }: LessonViewProps) {
         totalMinutes={packageDuration}
       />
       <span className="text-xs text-foreground">
-        <Duration minutes={totalLessonEventDuration} /> / <Duration minutes={packageDuration} />
+        <Duration minutes={totalLessonEventDuration} /> /{" "}
+        <Duration minutes={packageDuration} />
       </span>
     </div>
   );

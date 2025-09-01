@@ -11,11 +11,9 @@ import LessonCard from "@/components/cards/LessonCard";
 import TeacherLessonQueue from "@/components/whiteboard-usage/TeacherLessonQueue";
 import { createTeacherQueueEvents } from "@/actions/event-actions";
 import { reorganizeEventTimes } from "@/actions/kite-actions";
-import { groupLessonsByTeacher } from "@/backend/WhiteboardClass";
 import type { EventController, QueueControllerSettings } from "@/backend/types";
 
 interface WhiteboardLessonsProps {
-  lessons: any[];
   selectedDate: string;
   teacherSchedules: Map<string, TeacherSchedule>;
   controller: EventController;
@@ -76,7 +74,7 @@ function TeacherGroup({
   const handleFullScheduleReorganization = useCallback(async () => {
     try {
       // Create event ID mapping for database updates
-      const eventIdMap = createEventIdMap(teacherGroup.lessons);
+      const eventIdMap = createEventIdMap(teacherSchedule.lessons);
 
       // Use the existing performCompactReorganization method
       const success = teacherSchedule.performCompactReorganization();
@@ -114,7 +112,6 @@ function TeacherGroup({
     }
   }, [
     teacherSchedule,
-    teacherGroup.lessons,
     selectedDate,
     onQueueChange,
     createEventIdMap,
@@ -195,7 +192,6 @@ function EmptyState() {
 }
 
 export default function WhiteboardLessons({
-  lessons,
   selectedDate,
   teacherSchedules,
   controller,
@@ -230,7 +226,22 @@ export default function WhiteboardLessons({
     setQueueUpdateTrigger((prev) => prev + 1);
   }, []);
 
-  const groupedLessons = groupLessonsByTeacher(lessons);
+  // Create grouped lessons directly from teacher schedules
+  const groupedLessons = useMemo(() => {
+    const groups: any[] = [];
+    teacherSchedules.forEach((teacherSchedule, teacherId) => {
+      if (teacherSchedule.lessons.length > 0) {
+        // Get teacher name from the first lesson
+        const teacherName = teacherSchedule.lessons[0]?.teacher?.name || "Unknown Teacher";
+        groups.push({
+          teacherId,
+          teacherName,
+          lessons: teacherSchedule.lessons,
+        });
+      }
+    });
+    return groups;
+  }, [teacherSchedules]);
 
   const handleRemoveFromQueue = useCallback(
     (lessonId: string) => {

@@ -6,7 +6,7 @@ import { FlagIcon } from "@/svgs/FlagIcon";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
 import { FileText } from "lucide-react";
-import { extractStudents } from "@/backend/WhiteboardClass";
+import { extractStudents, WhiteboardClass } from "@/backend/WhiteboardClass";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 
 // Sub-component: Event Details
@@ -71,8 +71,8 @@ export default function LessonCard({
   teacherSchedule,
   selectedDate,
 }: LessonCardProps) {
-  // Use WhiteboardClass instance from TeacherSchedule
-  const bookingClass = teacherSchedule.whiteboard;
+  // Get the correct booking class for this lesson from the teacher schedule
+  const bookingClass = teacherSchedule.getBookingClassForLesson(lesson) || new WhiteboardClass(lesson.booking);
   const students = extractStudents(lesson.booking);
 
   // Check for events on the selected date using TeacherSchedule
