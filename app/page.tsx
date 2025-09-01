@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Shield } from "lucide-react";
 import { HelmetIcon, HeadsetIcon } from "@/svgs";
+import Image from 'next/image';
 
 // Role configurations for the what-we-do component
 const ROLE_CONFIGS = {
@@ -43,14 +44,13 @@ const ROLE_ICONS = [
 // Parent component that only renders children
 export default function HomePage() {
     return (
-        <main className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
-            <div className="p-6 sm:p-8 my-auto">
-                {/* Logo and Title */}
-                <div className="flex flex-col text-center mb-6">
-                    <RoleSelectionComponent />
-                    <PageTitle />
-                </div>
+        <main className="min-h-screen flex flex-col items-center justify-between bg-background text-foreground">
+            <div className="p-6 sm:p-8 my-auto w-full max-w-4xl">
+                {/* Main content */}
+                <RoleSelectionComponent />
+                <PageTitle />
             </div>
+            <Footer />
         </main>
     );
 }
@@ -58,15 +58,19 @@ export default function HomePage() {
 // Title component
 function PageTitle() {
     return (
-        <div>
-            {/* Subheading with decorative line */}
-            <div className="flex items-center justify-center gap-3 mb-1">
-                <div className="h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-slate-400 dark:via-slate-400 dark:to-slate-300 w-12 shadow-sm"></div>
+        <div className="text-center">
+            {/* Subheading with decorative lines and animated title */}
+            <div className="flex items-center justify-center gap-3 mt-4 mb-1">
+                <div className="h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-slate-400 dark:via-slate-400 dark:to-slate-300 w-12 shadow-sm opacity-0 animate-fadeIn" style={{ animationDelay: '300ms' }}></div>
                 <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider font-mono">
-                    <div>Tarifa</div>
-                    <div>Kite Hostel</div>
+                    <div className="opacity-0 animate-fadeIn" style={{ animationDelay: '400ms' }}>
+                        Tarifa
+                    </div>
+                    <div className="opacity-0 animate-fadeIn" style={{ animationDelay: '600ms' }}>
+                        Kite Hostel
+                    </div>
                 </h2>
-                <div className="h-0.5 bg-gradient-to-l from-transparent via-slate-400 to-slate-500 dark:via-slate-400 dark:to-slate-300 w-12 shadow-sm"></div>
+                <div className="h-0.5 bg-gradient-to-l from-transparent via-slate-400 to-slate-500 dark:via-slate-400 dark:to-slate-300 w-12 shadow-sm opacity-0 animate-fadeIn" style={{ animationDelay: '300ms' }}></div>
             </div>
         </div>
     );
@@ -145,25 +149,28 @@ function CompassSVG({ className = "", isLoading = false }: { className?: string;
 
 // Role selection component
 function RoleSelectionComponent() {
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [hoveredIcon, setHoveredIcon] = useState<number | null>(null);
     const router = useRouter();
 
     const handleIconClick = (route: string, index: number) => {
-        // if (index === 0) {
-        //     // Student clicked
-        //     alert("hello sexy student");
-        // } else {
         router.push(route);
-        // }
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => {
+        const last = localStorage.getItem('lastLandingTime');
+        const now = Date.now();
+        // show spinner only if first load or after 60s
+        if (!last || now - parseInt(last) > 60000) {
+            setIsLoading(true);
+            const timer = setTimeout(() => {
+                setIsLoading(false);
+                localStorage.setItem('lastLandingTime', now.toString());
+            }, 800);
+            return () => clearTimeout(timer);
+        } else {
             setIsLoading(false);
-        }, 800); // Much shorter timeout - just show compass spinners briefly
-
-        return () => clearTimeout(timer);
+        }
     }, []);
 
     if (isLoading) {
@@ -359,5 +366,36 @@ function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: R
                 </div>
             ))}
         </div>
+    );
+}
+
+// Footer with logo and description
+function Footer() {
+    return (
+        <footer className="w-full bg-card p-6 shadow-inner">
+            <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-6">
+                <Image
+                    src="/logo-tkh.png"
+                    alt="Tarifa Kite School Logo"
+                    width={64}
+                    height={64}
+                    className="flex-shrink-0"
+                />
+                <div className="flex-1 text-slate-800 dark:text-slate-200">
+                    <h3 className="text-lg font-bold mb-2">Tarifa Kite School Management App</h3>
+                    <p className="mb-2"><span className="font-semibold">Mission:</span> To synchronize daily operations seamlessly, empowering kite schools to focus on what matters.</p>
+                    <p className="mb-2"><span className="font-semibold">How:</span> By connecting teachers, students, lessons, and analytics in one unified platform.</p>
+                    <p className="mb-2"><span className="font-semibold">Features:</span></p>
+                    <ul className="list-disc list-inside ml-4 mb-4">
+                        <li>Interactive whiteboard for real-time planning</li>
+                        <li>Comprehensive table dashboard for CRUD operations</li>
+                        <li>Secure user authentication and role management</li>
+                    </ul>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                        By: <a href="mailto:vctrubio@gmail.com" className="underline">vctrubio@gmail.com</a> &bull; Developer at <a href="https://donkeydrills.com" className="underline">donkeydrills.com</a> &bull; <a href="https://x.com/donkeydrills" className="underline">x.com/donkeydrills</a>
+                    </p>
+                </div>
+            </div>
+        </footer>
     );
 }
