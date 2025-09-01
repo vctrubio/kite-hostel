@@ -30,6 +30,7 @@ import {
 import { deleteEvent } from "@/actions/event-actions";
 import { timeToMinutes, minutesToTime } from "@/components/formatters/TimeZone";
 import { extractStudentNames } from "@/backend/WhiteboardClass";
+import { type EventStatus } from "@/lib/constants";
 
 interface WhiteboardEventsProps {
   events: any[];
@@ -591,6 +592,96 @@ const TeacherEventsGroup = forwardRef<
 });
 TeacherEventsGroup.displayName = "TeacherEventsGroup";
 
+function UpdateAllEventsStatusButton({
+  events,
+  onAllEventsUpdated,
+}: {
+  events: any[];
+  onAllEventsUpdated: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleUpdateAll = async (status: EventStatus) => {
+    if (events.length === 0) return;
+
+    try {
+      for (const event of events) {
+        if (event.id) {
+          await TeacherEventsUtils.changeEventStatus(event.id, status);
+        }
+      }
+      onAllEventsUpdated();
+    } catch (error) {
+      console.error(`❌ Error updating events to ${status}:`, error);
+    }
+    setIsOpen(false);
+  };
+
+  if (events.length === 0) return null;
+
+  const statusButtons = [
+    {
+      value: "planned" as const,
+      label: "Planned",
+      className: "bg-blue-600 hover:bg-blue-700 text-white",
+    },
+    {
+      value: "tbc" as const,
+      label: "TBC",
+      className: "bg-purple-600 hover:bg-purple-700 text-white",
+    },
+    {
+      value: "completed" as const,
+      label: "Completed",
+      className: "bg-green-600 hover:bg-green-700 text-white",
+    },
+    {
+      value: "cancelled" as const,
+      label: "Cancelled",
+      className: "bg-red-600 hover:bg-red-700 text-white",
+    },
+  ];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 border border-blue-300 flex items-center gap-1"
+        title="Update status of all events"
+      >
+        <Zap className="w-3 h-3" />
+        <span>Update All</span>
+        <ChevronDown className="w-3 h-3" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded shadow-lg p-3 z-10 w-64">
+          <div className="text-sm text-gray-800 font-medium mb-2">
+            Update all {events.length} events to:
+          </div>
+          <div className="flex flex-col gap-2">
+            {statusButtons.map((statusButton) => (
+              <button
+                key={statusButton.value}
+                onClick={() => handleUpdateAll(statusButton.value)}
+                className={`px-3 py-1 text-xs rounded ${statusButton.className}`}
+              >
+                Set all to {statusButton.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="mt-2 w-full px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NoWindButton({
   events,
   onAllEventsDeleted,
@@ -666,6 +757,7 @@ function ParentControlFlag({
   onParentCancelTimeAdjustment,
   onParentFlagClick,
   onAllEventsDeleted,
+  onAllEventsUpdated,
 }: {
   events: any[];
   selectedDate: string;
@@ -677,6 +769,7 @@ function ParentControlFlag({
   onParentCancelTimeAdjustment: () => void;
   onParentFlagClick: () => void;
   onAllEventsDeleted: () => void;
+  onAllEventsUpdated: () => void;
 }) {
   const dayOfWeek = useMemo(
     () =>
@@ -744,7 +837,13 @@ function ParentControlFlag({
             )}
           </div>
         </div>
-        <NoWindButton events={events} onAllEventsDeleted={onAllEventsDeleted} />
+        <div className="flex items-center gap-2">
+          <UpdateAllEventsStatusButton
+            events={events}
+            onAllEventsUpdated={onAllEventsUpdated}
+          />
+          <NoWindButton events={events} onAllEventsDeleted={onAllEventsDeleted} />
+        </div>
       </div>
     </div>
   );
@@ -874,6 +973,10 @@ export default function WhiteboardEvents({
     router.refresh();
   }, [router]);
 
+  const handleAllEventsUpdated = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
   return (
     <div className="space-y-6">
       <ParentControlFlag
@@ -887,6 +990,7 @@ export default function WhiteboardEvents({
         onParentCancelTimeAdjustment={handleParentCancelTimeAdjustment}
         onParentFlagClick={handleParentFlagClick}
         onAllEventsDeleted={handleAllEventsDeleted}
+        onAllEventsUpdated={handleAllEventsUpdated}
       />
 
       {teacherEventGroups.length > 0 && (

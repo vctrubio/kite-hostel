@@ -16,10 +16,7 @@ import {
   findNextAvailableSlot,
   type ScheduleItem,
 } from "./ScheduleUtils";
-import {
-  type TeacherStats,
-  type BookingData,
-} from "./types";
+import { type TeacherStats, type BookingData } from "./types";
 import { WhiteboardClass } from "./WhiteboardClass";
 
 export type ScheduleItemType = "event" | "gap";
@@ -77,11 +74,7 @@ export class TeacherSchedule {
   public lessons: any[] = [];
   public bookingClasses: Map<string, WhiteboardClass> = new Map(); // Map of booking ID to WhiteboardClass
 
-  constructor(
-    teacherId: string,
-    teacherName: string,
-    date: string,
-  ) {
+  constructor(teacherId: string, teacherName: string, date: string) {
     this.schedule = {
       teacherId,
       teacherName,
@@ -103,8 +96,6 @@ export class TeacherSchedule {
   getBookingClassForLesson(lesson: any): WhiteboardClass | undefined {
     return this.bookingClasses.get(lesson.booking?.id);
   }
-
-
 
   /**
    * Add an event to the linked list (sorted by start time)
@@ -142,7 +133,7 @@ export class TeacherSchedule {
     if (
       !this.schedule.head ||
       timeToMinutes(newNode.startTime) <
-        timeToMinutes(this.schedule.head.startTime)
+      timeToMinutes(this.schedule.head.startTime)
     ) {
       newNode.next = this.schedule.head;
       this.schedule.head = newNode;
@@ -164,14 +155,15 @@ export class TeacherSchedule {
   /**
    * Calculate the next possible slot after existing events
    */
-  private calculatePossibleSlot(requestedDuration: number): AvailableSlot | null {
+  private calculatePossibleSlot(
+    requestedDuration: number,
+  ): AvailableSlot | null {
     const storedNodes = this.getStoredNodes();
     const eventNodes = storedNodes.filter((node) => node.type === "event");
 
     // Use the utility function to find next available slot
     return findNextAvailableSlot(eventNodes, requestedDuration);
   }
-
 
   /**
    * Check for conflicts when adding a new item
@@ -268,7 +260,6 @@ export class TeacherSchedule {
     return false;
   }
 
-
   /**
    * Check if reorganization is possible for this teacher's schedule
    */
@@ -347,8 +338,39 @@ export class TeacherSchedule {
     return updates;
   }
 
+  /**
+   * Analyze gaps in any array of schedule nodes using ScheduleUtils
+   * @param scheduleNodes - Array of schedule nodes to analyze
+   * @returns Array of nodes with gap information added
+   */
+  analyzeScheduleGaps(
+    scheduleNodes: ScheduleNode[],
+  ): Array<ScheduleNode & { hasGap?: boolean; gapDuration?: number }> {
+    const eventNodes = scheduleNodes.filter((node) => node.type === "event");
 
+    if (eventNodes.length <= 1) {
+      return eventNodes.map((node) => ({ ...node, hasGap: false }));
+    }
 
+    // Map back to original nodes with gap information
+    return eventNodes.map((node, index) => {
+      if (index === 0) {
+        return { ...node, hasGap: false };
+      }
+
+      const previousNode = eventNodes[index - 1];
+      const previousEndTime =
+        timeToMinutes(previousNode.startTime) + previousNode.duration;
+      const currentStartTime = timeToMinutes(node.startTime);
+      const gapMinutes = currentStartTime - previousEndTime;
+
+      return {
+        ...node,
+        hasGap: gapMinutes > 0,
+        gapDuration: gapMinutes > 0 ? gapMinutes : undefined,
+      };
+    });
+  }
 
   /**
    * Combine date and time into a proper timestamp string
@@ -882,7 +904,6 @@ export class TeacherSchedule {
     });
   }
 
-
   // Check if queue can be scheduled - always allow scheduling
   canScheduleQueue(): boolean {
     // Always return true - let the user schedule and handle conflicts in the actual scheduling
@@ -952,7 +973,6 @@ export class TeacherSchedule {
 
     return minutesToTime(earliest);
   }
-
 
   /**
    * Remove an event and shift ALL subsequent nodes to fill the gap
@@ -1099,8 +1119,12 @@ export class TeacherSchedule {
     return updates;
   }
 
-  getEventStats(event: any): { earning: number; revenue: number; packageDescription: string } {
-    const lessonForEvent = this.lessons.find(l => l.id === event.lesson?.id);
+  getEventStats(event: any): {
+    earning: number;
+    revenue: number;
+    packageDescription: string;
+  } {
+    const lessonForEvent = this.lessons.find((l) => l.id === event.lesson?.id);
 
     if (!lessonForEvent) {
       return { earning: 0, revenue: 0, packageDescription: "" };
@@ -1119,15 +1143,15 @@ export class TeacherSchedule {
     let packageDescription = "";
 
     if (booking?.package) {
-        const packagePrice = booking.package.price_per_student || 0;
-        const packageDurationMinutes = booking.package.duration || 1;
-        const studentCount = booking.students?.length || 0;
-        packageDescription = booking.package.description || "";
+      const packagePrice = booking.package.price_per_student || 0;
+      const packageDurationMinutes = booking.package.duration || 1;
+      const studentCount = booking.students?.length || 0;
+      packageDescription = booking.package.description || "";
 
-        if (packageDurationMinutes > 0) {
-            const packageHourlyRate = (packagePrice * 60) / packageDurationMinutes;
-            revenue = packageHourlyRate * eventHours * studentCount;
-        }
+      if (packageDurationMinutes > 0) {
+        const packageHourlyRate = (packagePrice * 60) / packageDurationMinutes;
+        revenue = packageHourlyRate * eventHours * studentCount;
+      }
     }
 
     return { earning, revenue, packageDescription };
