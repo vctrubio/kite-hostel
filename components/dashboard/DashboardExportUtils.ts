@@ -6,27 +6,31 @@ export function exportEventsToCsv(data: any[], fileName: string = 'events.csv') 
 
   const headers = [
     { label: "Date", key: "date" },
+    { label: "Start Time", key: "startTime" },
+    { label: "Duration (h)", key: "duration" },
+    { label: "Location", key: "location" },
     { label: "Teacher", key: "teacher" },
     { label: "Students", key: "students" },
-    { label: "Location", key: "location" },
-    { label: "Duration", key: "duration" },
     { label: "Kite", key: "kite" },
-    { label: "Price Per Hour Per Student", key: "pricePerHourPerStudent" },
-    { label: "Commission Per Hour", key: "commissionPerHour" },
+    { label: "Price/Hour/Student (€)", key: "pricePerHourPerStudent" },
+    { label: "Commission/Hour (€)", key: "commissionPerHour" },
   ];
 
   const csvData = data.map(event => {
+      const eventDate = event.date ? new Date(event.date) : null;
+      const durationInHours = event.duration ? event.duration / 60 : 0;
       const packageHours = event.package?.duration ? event.package.duration / 60 : 0;
       const pricePerHour = packageHours > 0 && event.package?.price_per_student ? event.package.price_per_student / packageHours : 0;
       const studentNames = event.students?.map((s: any) => `${s.name} ${s.last_name || ''}`.trim()).join(', ') || '';
       const kiteInfo = event.kite ? `${event.kite.model} ${event.kite.size}m` : '';
 
       return {
-          date: event.date ? new Date(event.date).toLocaleDateString() : '',
+          date: eventDate ? eventDate.toLocaleDateString() : '',
+          startTime: eventDate ? eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+          duration: durationInHours.toFixed(2),
+          location: event.location || '',
           teacher: event.teacher?.name || '',
           students: studentNames,
-          location: event.location || '',
-          duration: event.duration || 0,
           kite: kiteInfo,
           pricePerHourPerStudent: pricePerHour.toFixed(2),
           commissionPerHour: event.commission_per_hour || 0,
@@ -188,6 +192,100 @@ export function exportPackagesToCsv(data: any[], fileName: string = 'packages.cs
           capacity_students: pkg.capacity_students || 0,
           capacity_kites: pkg.capacity_kites || 0,
           bookingCount: pkg.bookingCount || 0,
+      };
+  });
+  
+  const csvContent = [
+    headers.map(h => h.label).join(','),
+    ...csvData.map(row => headers.map(h => `"${row[h.key as keyof typeof row] || ''}"`).join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+export function exportBookingsToCsv(data: any[], fileName: string = 'bookings.csv') {
+  if (!data || data.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const headers = [
+    { label: "Start Date", key: "date_start" },
+    { label: "End Date", key: "date_end" },
+    { label: "Students", key: "studentNames" },
+    { label: "Package", key: "packageDescription" },
+    { label: "Package Hours", key: "packageHours" },
+    { label: "Progression", key: "progression" },
+  ];
+
+  const csvData = data.map(booking => {
+      const packageDuration = booking.package?.duration || 0;
+      const packageHours = packageDuration / 60;
+
+      const eventsDuration = booking.lessons?.reduce((lessonTotal: number, lesson: any) => {
+          const lessonMinutes = lesson.events?.reduce((eventTotal: number, event: any) => {
+              return eventTotal + (event.duration || 0);
+          }, 0) || 0;
+          return lessonTotal + lessonMinutes;
+      }, 0) || 0;
+      const progress = packageDuration > 0 ? (eventsDuration / packageDuration) * 100 : 0;
+
+      return {
+          date_start: booking.date_start ? new Date(booking.date_start).toLocaleDateString() : '',
+          date_end: booking.date_end ? new Date(booking.date_end).toLocaleDateString() : '',
+          studentNames: booking.students?.map((bs: any) => bs.student.name).join(", ") || 'No students',
+          packageDescription: booking.package?.description || '',
+          packageHours: parseFloat(packageHours.toFixed(2)),
+          progression: `${progress.toFixed(0)}%`,
+      };
+  });
+  
+  const csvContent = [
+    headers.map(h => h.label).join(','),
+    ...csvData.map(row => headers.map(h => `"${row[h.key as keyof typeof row] || ''}"`).join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+export function exportLessonsToCsv(data: any[], fileName: string = 'lessons.csv') {
+  if (!data || data.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const headers = [
+    { label: "Teacher", key: "teacherName" },
+    { label: "Commission per Hour (€)", key: "commissionRate" },
+    { label: "Students", key: "studentNames" },
+    { label: "Package", key: "packageDescription" },
+    { label: "Event Count", key: "eventCount" },
+    { label: "Total Event Hours", key: "totalEventHours" },
+  ];
+
+  const csvData = data.map(lesson => {
+      const totalEventMinutes = lesson.events?.reduce((sum: number, event: any) => sum + event.duration, 0) || 0;
+      const totalEventHours = totalEventMinutes / 60;
+
+      return {
+          teacherName: lesson.teacher?.name || '',
+          commissionRate: lesson.commission?.price_per_hour || 0,
+          studentNames: lesson.booking?.students?.map((bs: any) => bs.student.name).join(", ") || 'No students',
+          packageDescription: lesson.booking?.package?.description || '',
+          eventCount: lesson.events?.length || 0,
+          totalEventHours: parseFloat(totalEventHours.toFixed(2)),
       };
   });
   

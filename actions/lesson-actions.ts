@@ -36,6 +36,7 @@ export async function getLessonsWithDetails(): Promise<{ data: LessonWithDetails
       with: {
         teacher: true,
         events: true,
+        commission: true,
         booking: {
           with: {
             package: true,

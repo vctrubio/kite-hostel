@@ -97,6 +97,7 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
     case 'lesson':
       return [
         { title: "Teacher", key: "teacher", sortable: true },
+        { title: "Commission", key: "commission", sortable: true },
         { title: "Students", key: "students", sortable: false },
         { title: "Events", key: "events", sortable: true },
         { title: "Status", key: "status", sortable: true },

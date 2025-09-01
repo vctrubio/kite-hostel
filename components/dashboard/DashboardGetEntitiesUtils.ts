@@ -2,7 +2,7 @@ import { ENTITY_DATA } from "@/lib/constants";
 import { Plus, LucideIcon, PlusCircle, Package, UserPlus, Download as DownloadIcon } from "lucide-react";
 import { seedCreateStudent, seedCreateTeacher } from "@/actions/seed-actions";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { exportEventsToCsv, exportStudentsToCsv, exportTeachersToCsv, exportPackagesToCsv } from "./DashboardExportUtils";
+import { exportEventsToCsv, exportStudentsToCsv, exportTeachersToCsv, exportPackagesToCsv, exportBookingsToCsv, exportLessonsToCsv } from "./DashboardExportUtils";
 
 export interface EntityConfig {
   name: string;
@@ -109,6 +109,22 @@ export function generateEntityActionButtons(
       icon: DownloadIcon,
       label: "Export CSV",
       action: () => exportPackagesToCsv(data || [], exportFileName)
+    });
+  }
+
+  if (entityName.toLowerCase() === 'booking') {
+    actions.push({
+      icon: DownloadIcon,
+      label: "Export CSV",
+      action: () => exportBookingsToCsv(data || [], exportFileName)
+    });
+  }
+
+  if (entityName.toLowerCase() === 'lesson') {
+    actions.push({
+      icon: DownloadIcon,
+      label: "Export CSV",
+      action: () => exportLessonsToCsv(data || [], exportFileName)
     });
   }
 
