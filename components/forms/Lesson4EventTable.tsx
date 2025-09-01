@@ -165,7 +165,9 @@ function LessonTableRow({
                   <HelmetIcon key={index} className="h-4 w-4 text-yellow-500" />
                 ))}
                 <span className="text-sm">
-                  {lesson.booking.students.map((bs: any) => bs.student.name).join(", ")}
+                  {lesson.booking.students
+                    .map((bs: any) => bs.student.name)
+                    .join(", ")}
                 </span>
               </>
             ) : (
@@ -401,8 +403,8 @@ export function Lesson4EventTable({
   const [selectedLesson, setSelectedLesson] =
     useState<LessonWithDetails | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
-  const [selectedDate, setSelectedDate] = useState(() => 
-    new Date().toISOString().split("T")[0]
+  const [selectedDate, setSelectedDate] = useState(
+    () => new Date().toISOString().split("T")[0],
   );
 
   const allTeacherSchedules = useMemo(() => {
@@ -410,8 +412,12 @@ export function Lesson4EventTable({
       .map((lesson) => lesson.booking)
       .filter(Boolean)
       .map((booking) => new WhiteboardClass(booking));
-    
-    return createTeacherSchedulesFromLessons(lessons, bookingClasses, selectedDate);
+
+    return createTeacherSchedulesFromLessons(
+      lessons,
+      bookingClasses,
+      selectedDate,
+    );
   }, [lessons, selectedDate]);
 
   const filteredLessons = useMemo(() => {
@@ -487,7 +493,14 @@ export function Lesson4EventTable({
               selectedLesson.booking.students?.map((bs) => bs.student) || [],
             booking: selectedLesson.booking,
           }}
-          teacherSchedule={allTeacherSchedules.get(selectedLesson.teacher?.id || '') || new TeacherSchedule(selectedLesson.teacher.id, selectedLesson.teacher.name, new Date().toISOString().split("T")[0])}
+          teacherSchedule={
+            allTeacherSchedules.get(selectedLesson.teacher?.id || "") ||
+            new TeacherSchedule(
+              selectedLesson.teacher.id,
+              selectedLesson.teacher.name,
+              new Date().toISOString().split("T")[0],
+            )
+          }
           controller={{
             flag: true,
             location: "Los Lances" as Location,
@@ -509,4 +522,3 @@ export function Lesson4EventTable({
     </div>
   );
 }
-
