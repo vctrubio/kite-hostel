@@ -119,8 +119,8 @@ function TeacherGroup({
 
   return (
     <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg">
-      <div className="flex justify-between items-center p-4 border-b border-border dark:border-gray-700">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 border-b border-border dark:border-gray-700">
+        <div className="flex items-center gap-2 flex-wrap">
           <HeadsetIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
           <h4 className="text-lg font-medium text-foreground dark:text-white">
             {teacherGroup.teacherName}
@@ -141,9 +141,11 @@ function TeacherGroup({
             </div>
           )}
         </div>
-        <TeacherLessonStats
-          teacherStats={teacherSchedule.calculateTeacherStats()}
-        />
+        <div className="mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-border dark:border-gray-700 sm:border-0">
+          <TeacherLessonStats
+            teacherStats={teacherSchedule.calculateTeacherStats()}
+          />
+        </div>
       </div>
 
       <div className="p-4 space-y-3">

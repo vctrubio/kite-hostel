@@ -65,15 +65,8 @@ function TimeAdjustmentFlag({
 
   if (timeAdjustmentMode) {
     return (
-      <div className="flex items-center gap-1">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onTimeAdjustment(-30)}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="Move back 30 minutes"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="flex items-center justify-center gap-1">
           <span className="min-w-[60px] text-center font-mono">
             {displayTime}
             {proposedTimeOffset !== 0 && !parentTimeAdjustmentMode && (
@@ -83,6 +76,15 @@ function TimeAdjustmentFlag({
               </span>
             )}
           </span>
+        </div>
+        <div className="flex items-center justify-center gap-2 mt-1 sm:mt-0">
+          <button
+            onClick={() => onTimeAdjustment(-30)}
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+            title="Move back 30 minutes"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
           <button
             onClick={() => onTimeAdjustment(30)}
             className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -472,23 +474,27 @@ const TeacherEventsGroup = forwardRef<
 
   return (
     <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg">
-      <div className="flex justify-between items-center p-4 border-b border-border dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          <HeadsetIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
-          <h4 className="text-lg font-medium text-foreground dark:text-white">
-            {schedule.teacherName}
-          </h4>
-          <TimeAdjustmentFlag
-            proposedTimeOffset={globalTimeOffset}
-            timeAdjustmentMode={timeAdjustmentMode}
-            editableScheduleNodes={editableScheduleNodes}
-            parentTimeAdjustmentMode={parentTimeAdjustmentMode}
-            onTimeAdjustment={handleTimeAdjustment}
-            onSetTimeAdjustmentMode={setTimeAdjustmentMode}
-            onSetViewMode={setViewMode}
-          />
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 border-b border-border dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex items-center gap-2">
+            <HeadsetIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <h4 className="text-lg font-medium text-foreground dark:text-white">
+              {schedule.teacherName}
+            </h4>
+          </div>
+          <div className="mt-2 sm:mt-0">
+            <TimeAdjustmentFlag
+              proposedTimeOffset={globalTimeOffset}
+              timeAdjustmentMode={timeAdjustmentMode}
+              editableScheduleNodes={editableScheduleNodes}
+              parentTimeAdjustmentMode={parentTimeAdjustmentMode}
+              onTimeAdjustment={handleTimeAdjustment}
+              onSetTimeAdjustmentMode={setTimeAdjustmentMode}
+              onSetViewMode={setViewMode}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-400">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-400 mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-border dark:border-gray-700 sm:border-0">
           {viewMode === "event" ? (
             <>
               {canReorganize && (
@@ -779,56 +785,62 @@ function ParentControlFlag({
 
   return (
     <div className="border border-border dark:border-gray-700 rounded-lg p-4">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <h3 className="text-lg font-medium text-foreground dark:text-white">
             {dayOfWeek}
           </h3>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2 sm:mt-0">
             <button
               onClick={onParentFlagClick}
               title="Toggle Global Time Adjustment"
+              className="flex items-center gap-1"
             >
               {parentTimeAdjustmentMode ? (
                 <FlagOff className="w-5 h-5 text-blue-500" />
               ) : (
                 <Flag className="w-5 h-5 text-muted-foreground" />
               )}
+              {parentTimeAdjustmentMode && <span className="text-sm">Exit</span>}
             </button>
 
             {parentTimeAdjustmentMode ? (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onParentTimeAdjustment(-30)}
-                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                  title="Move all schedules back 30 minutes"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="min-w-[60px] text-center font-mono">
-                  {parentGlobalTime || "No Lessons Set"}
-                </span>
-                <button
-                  onClick={() => onParentTimeAdjustment(30)}
-                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                  title="Move all schedules forward 30 minutes"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={onParentAcceptTimeAdjustment}
-                  className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
-                  title="Apply global time adjustment to all teachers"
-                >
-                  Submit All
-                </button>
-                <button
-                  onClick={onParentCancelTimeAdjustment}
-                  className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
-                  title="Cancel global time adjustment"
-                >
-                  Cancel
-                </button>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2 sm:mt-0">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onParentTimeAdjustment(-30)}
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                    title="Move all schedules back 30 minutes"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="min-w-[60px] text-center font-mono">
+                    {parentGlobalTime || "No Lessons Set"}
+                  </span>
+                  <button
+                    onClick={() => onParentTimeAdjustment(30)}
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                    title="Move all schedules forward 30 minutes"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                  <button
+                    onClick={onParentAcceptTimeAdjustment}
+                    className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
+                    title="Apply global time adjustment to all teachers"
+                  >
+                    Submit All
+                  </button>
+                  <button
+                    onClick={onParentCancelTimeAdjustment}
+                    className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
+                    title="Cancel global time adjustment"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-1 text-muted-foreground">
@@ -837,7 +849,7 @@ function ParentControlFlag({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-border dark:border-gray-700 sm:border-0">
           <UpdateAllEventsStatusButton
             events={events}
             onAllEventsUpdated={onAllEventsUpdated}
