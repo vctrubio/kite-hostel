@@ -39,7 +39,7 @@ function BookingHeader({
     <div className="grid grid-cols-12 gap-3 p-4 border-b border-border/50">
       {/* Icon - 2 columns */}
       <div className="col-span-2 flex items-center justify-center">
-        <BookingIcon className="w-8 h-8 text-blue-700 dark:text-blue-300" />
+        <BookingIcon className="w-8 h-8 text-blue-700 dark:text-blue-400" />
       </div>
 
       {/* Date and Progress - 10 columns */}
@@ -179,15 +179,15 @@ function LessonsSection({
   const getHeadsetColor = (status: string) => {
     switch (status) {
       case "planned":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-400";
       case "delegated":
-        return "text-orange-600";
+        return "text-orange-600 dark:text-orange-400";
       case "cancelled":
-        return "text-red-600";
+        return "text-red-600 dark:text-red-400";
       case "rest":
         return "text-blue-600 dark:text-blue-400";
       case "completed":
-        return "text-gray-400";
+        return "text-gray-500 dark:text-gray-400";
       default:
         return "text-gray-500";
     }

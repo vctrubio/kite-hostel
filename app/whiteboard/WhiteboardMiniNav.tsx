@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { SingleDatePicker } from "@/components/pickers/single-date-picker";
 import BookingStatusFilter from "@/components/whiteboard-usage/BookingStatusFilter";
 import WhiteboardActions from "@/components/whiteboard-usage/WhiteboardActions";
 import GlobalStatsHeader from "@/components/whiteboard-usage/GlobalStatsHeader";
 import type { WhiteboardMiniNavProps } from "./WhiteboardClient";
+import { ChevronDownIcon } from "@/svgs";
 
 export default function WhiteboardMiniNav({
   activeSection,
@@ -20,6 +22,8 @@ export default function WhiteboardMiniNav({
   globalStats,
   navItems,
 }: WhiteboardMiniNavProps) {
+  const [showFiltersAndActions, setShowFiltersAndActions] = useState(true);
+
   const getCount = (id: string) => {
     switch (id) {
       case "bookings":
@@ -75,13 +79,25 @@ export default function WhiteboardMiniNav({
       <div className="p-3 border-t border-border">
         <GlobalStatsHeader globalStats={globalStats} />
       </div>
+      
+      {/* Toggle button for mobile - only visible on mobile screens */}
+      <button 
+        onClick={() => setShowFiltersAndActions(!showFiltersAndActions)}
+        className="md:hidden w-full p-2 flex items-center justify-center border-t border-border text-sm text-muted-foreground"
+      >
+        <span>{showFiltersAndActions ? "Hide" : "Show"} Filters & Actions</span>
+        <ChevronDownIcon className={`w-4 h-4 ml-1 transition-transform ${showFiltersAndActions ? 'rotate-180' : ''}`} />
+      </button>
 
-      <BookingStatusFilter
-        activeFilter={bookingFilter}
-        onFilterChange={onBookingFilterChange}
-      />
+      {/* Collapsible section for mobile */}
+      <div className={`transition-all duration-300 ${showFiltersAndActions ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'} md:max-h-none md:opacity-100`}>
+        <BookingStatusFilter
+          activeFilter={bookingFilter}
+          onFilterChange={onBookingFilterChange}
+        />
 
-      <WhiteboardActions onActionClick={onActionClick} />
+        <WhiteboardActions onActionClick={onActionClick} />
+      </div>
     </div>
   );
 }

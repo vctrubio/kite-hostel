@@ -74,7 +74,7 @@ export function LessonStatusLabel({ lessonId, currentStatus, lessonEvents = [], 
       <DropdownMenuTrigger asChild>
         <Label
           className={cn(
-            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors group",
+            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold cursor-pointer transition-colors group",
             getStatusColors(status),
             isPending && "opacity-50 cursor-not-allowed"
           )}

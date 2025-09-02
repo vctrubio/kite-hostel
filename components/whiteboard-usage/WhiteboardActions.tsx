@@ -22,7 +22,7 @@ const ACTION_BUTTONS = [
   },
   {
     id: "medical",
-    label: "Medical",
+    label: "MED",
     icon: StethoscopeIcon,
     title: "Generate Medical Email",
     classes: {

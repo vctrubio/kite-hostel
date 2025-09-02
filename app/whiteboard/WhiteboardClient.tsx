@@ -376,8 +376,8 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
 
   return (
     <div className="desktop:flex">
-      {/* Sidebar: sticky top on mobile, sticky left on desktop */}
-      <aside className="sticky top-0 z-20 p-2 bg-background/95 backdrop-blur-sm border-b border-border desktop:h-screen desktop:w-80 desktop:flex-shrink-0 desktop:p-4 desktop:bg-background desktop:backdrop-blur-none">
+      {/* Sidebar: not sticky on mobile, sticky left on desktop */}
+      <aside className="z-20 p-2 bg-background border-b border-border desktop:sticky desktop:top-0 desktop:h-screen desktop:w-80 desktop:flex-shrink-0 desktop:p-4 desktop:bg-background">
         <div className="desktop:sticky desktop:top-4">{miniNav}</div>
       </aside>
 

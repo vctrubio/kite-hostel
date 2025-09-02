@@ -41,9 +41,10 @@ function RouteButton({
           ? "bg-gray-200 text-gray-800 shadow-sm"
           : `${color} ${hoverColor}`
       }`}
+      title={label}
     >
       <Icon className="h-4 w-4" />
-      <span>{label}</span>
+      <span className="hidden sm:inline">{label}</span>
     </Link>
   );
 }
@@ -79,9 +80,10 @@ function RouteButtonWithAction({
               ? "bg-gray-200 text-gray-800 shadow-sm"
               : `${color} ${hoverColor}`
           }`}
+          title={label}
         >
           <Icon className="h-4 w-4" />
-          <span>{label}</span>
+          <span className="hidden sm:inline">{label}</span>
         </Link>
         <Link
           href={quickActionHref}
@@ -114,9 +116,10 @@ function EntityDropdownItem({
           (e.currentTarget.style.backgroundColor = entity.hoverColor)
         }
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+        title={entity.name}
       >
         <EntityIcon className={`h-4 w-4 ${entity.color}`} />
-        <span>{entity.name}</span>
+        <span className="hidden sm:inline">{entity.name}</span>
       </Link>
       <Link
         href={`${entity.link}/form`}
@@ -167,11 +170,12 @@ function FormsDropdown({
               ? "bg-gray-200 text-gray-800 shadow-sm"
               : `${color} ${hoverColor}`
           }`}
+          title={label}
         >
           <Icon
             className={`h-4 w-4 ${isOnFormRoute ? entityInfo.color : ""}`}
           />
-          <span>{label}</span>
+          <span className="hidden sm:inline">{label}</span>
         </Link>
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -421,9 +425,10 @@ function TeacherNavRoutes() {
       <Link
         href="/teachers"
         className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+        title="Home"
       >
         <Home className="h-4 w-4" />
-        <span>Home</span>
+        <span className="hidden sm:inline">Home</span>
       </Link>
     </div>
   );
@@ -436,9 +441,10 @@ function ReferenceNavRoutes() {
       <Link
         href="/user"
         className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+        title="Home"
       >
         <Home className="h-4 w-4" />
-        <span>Home</span>
+        <span className="hidden sm:inline">Home</span>
       </Link>
     </div>
   );

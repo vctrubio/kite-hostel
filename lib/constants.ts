@@ -4,7 +4,7 @@ import {
   languagesEnum,
   EventStatusEnum,
   locationEnum,
-  userRole,
+  
 } from "@/drizzle/migrations/schema";
 import {
   HelmetIcon,
@@ -37,8 +37,9 @@ export type EventStatus = (typeof EVENT_STATUS_ENUM_VALUES)[number];
 export const LOCATION_ENUM_VALUES = locationEnum.enumValues;
 export type Location = (typeof LOCATION_ENUM_VALUES)[number];
 
-export const USER_ROLE_ENUM_VALUES = userRole.enumValues;
-export type UserRole = (typeof USER_ROLE_ENUM_VALUES)[number];
+// TODO: userRole is not defined, commenting out for now
+// export const USER_ROLE_ENUM_VALUES = userRole.enumValues;
+// export type UserRole = (typeof USER_ROLE_ENUM_VALUES)[number];
 
 // Lesson status filter configuration for UI components
 export const LESSON_STATUS_FILTERS = [
@@ -91,7 +92,7 @@ export const BOOKING_STATUS_FILTERS = [
     icon: Circle,
     title: "All Bookings",
     classes: {
-      base: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+      base: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-blue-900",
       hover: "hover:bg-gray-200 dark:hover:bg-gray-700",
       active: "bg-white text-black border-black/50 hover:bg-gray-200",
     },
@@ -102,9 +103,9 @@ export const BOOKING_STATUS_FILTERS = [
     icon: Play,
     title: "Active Bookings",
     classes: {
-      base: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200",
-      hover: "hover:bg-blue-200 dark:hover:bg-blue-900",
-      active: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-500/50",
+      base: "bg-blue-100 text-blue-700 dark:bg-blue-500/50 dark:text-blue-900",
+      hover: "hover:bg-blue-200 dark:hover:bg-blue-500/70",
+      active: "bg-blue-200 text-blue-800 dark:bg-blue-500/80 dark:text-blue-900 border-blue-400 font-bold",
     },
   },
   {
@@ -113,9 +114,9 @@ export const BOOKING_STATUS_FILTERS = [
     icon: CheckCircle,
     title: "Completed Bookings",
     classes: {
-      base: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-      hover: "hover:bg-green-200 dark:hover:bg-green-900/50",
-      active: "bg-green-200 dark:bg-green-900/50 border-green-600",
+      base: "bg-green-100 text-green-800 dark:bg-green-600/50 dark:text-green-900",
+      hover: "hover:bg-green-200 dark:hover:bg-green-600/70",
+      active: "bg-green-200 dark:bg-green-600/80 dark:text-green-900 border-green-600 font-bold",
     },
   },
   {
@@ -124,9 +125,9 @@ export const BOOKING_STATUS_FILTERS = [
     icon: XCircle,
     title: "Uncomplete Bookings",
     classes: {
-      base: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-      hover: "hover:bg-red-200 dark:hover:bg-red-900/50",
-      active: "bg-red-200 dark:bg-red-900/50 border-red-500",
+      base: "bg-red-100 text-red-800 dark:bg-red-600/50 dark:text-red-900",
+      hover: "hover:bg-red-200 dark:hover:bg-red-600/70",
+      active: "bg-red-200 dark:bg-red-600/80 dark:text-red-900 border-red-500 font-bold",
     },
   },
 ] as const;
@@ -174,17 +175,17 @@ export type EventStatusFilter = (typeof EVENT_STATUS_FILTERS)[number]["value"];
 export const getStatusColors = (status: LessonStatus): string => {
   switch (status) {
     case "planned":
-      return "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400";
+      return "bg-blue-100 text-blue-700 dark:bg-blue-600/50 dark:text-blue-900";
     case "rest":
-      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400";
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-600/50 dark:text-yellow-900";
     case "delegated":
-      return "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400";
+      return "bg-orange-100 text-orange-700 dark:bg-orange-600/50 dark:text-orange-900";
     case "completed":
-      return "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400";
+      return "bg-green-100 text-green-700 dark:bg-green-600/50 dark:text-green-900";
     case "cancelled":
-      return "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400";
+      return "bg-red-100 text-red-700 dark:bg-red-600/50 dark:text-red-900";
     default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300";
+      return "bg-gray-100 dark:bg-gray-600/50 text-gray-800 dark:text-gray-900";
   }
 };
 
@@ -192,13 +193,13 @@ export const getStatusColors = (status: LessonStatus): string => {
 export const getBookingStatusColor = (status: BookingStatus): string => {
   switch (status) {
     case "active":
-      return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300";
+      return "bg-blue-100 dark:bg-blue-500/50 text-blue-800 dark:text-blue-900";
     case "completed":
-      return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300";
+      return "bg-green-100 dark:bg-green-600/50 text-green-800 dark:text-green-900";
     case "uncomplete":
-      return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300";
+      return "bg-red-100 dark:bg-red-600/50 text-red-800 dark:text-red-900";
     default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300";
+      return "bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-900";
   }
 };
 
@@ -218,15 +219,15 @@ export const ACTIVE_LESSON_STATUSES: LessonStatus[] = ["planned", "rest"];
 export const getEventStatusColor = (status: EventStatus): string => {
   switch (status) {
     case "planned":
-      return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300";
+      return "bg-blue-100 dark:bg-blue-600/50 text-blue-800 dark:text-blue-900";
     case "tbc":
-      return "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300";
+      return "bg-purple-100 dark:bg-purple-600/50 text-purple-800 dark:text-purple-900";
     case "completed":
-      return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300";
+      return "bg-green-100 dark:bg-green-600/50 text-green-800 dark:text-green-900";
     case "cancelled":
-      return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300";
+      return "bg-red-100 dark:bg-red-600/50 text-red-800 dark:text-red-900";
     default:
-      return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300";
+      return "bg-gray-100 dark:bg-gray-600/50 text-gray-800 dark:text-gray-900";
   }
 };
 
