@@ -43,16 +43,7 @@ export default function FormsPage() {
     }
   };
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Forms & Data Management</h1>
-          <p className="text-muted-foreground mt-2">
-            Create and manage all your kite school data
-          </p>
-        </div>
-      </div>
-
+    <div className="p-6">
       <div className="space-y-2">
         {ENTITY_DATA.map((entity) => {
           const Icon = entity.icon;

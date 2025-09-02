@@ -381,7 +381,7 @@ export function Dashboard({
 
   return (
     <>
-      <div className="mx-auto space-y-6" onKeyDown={handleKeyDown}>
+      <div className="mx-auto space-y-6 py-4" onKeyDown={handleKeyDown}>
         <DashboardHeader
           entity={entity}
           searchTerm={searchTerm}
