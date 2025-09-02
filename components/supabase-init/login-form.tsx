@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { MiniGoogleSignInButton } from "./GoogleSignInButton";
 
 export function LoginForm({
   className,
@@ -120,15 +121,11 @@ export function LoginForm({
                   </span>
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
+              <MiniGoogleSignInButton
                 onClick={handleGoogleSignIn}
-                disabled={isLoading}
-              >
-                Login with Google
-              </Button>
+                isLoading={isLoading}
+                className="w-full"
+              />
             </div>
             <div className="mt-4 text-center text-sm">
               Don't have an account?{" "}

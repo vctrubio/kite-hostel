@@ -2,7 +2,7 @@
 
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import Link from "next/link";
-import { LoginForm } from "../../../components/supabase-init/login-form";
+import { GoogleOnlyLoginForm } from "../../../components/supabase-init/google-only-login-form";
 import { useState, useEffect } from "react";
 
 export default function LoginPage() {
@@ -49,7 +49,7 @@ export default function LoginPage() {
             showUserInfo ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
-          <LoginForm />
+          <GoogleOnlyLoginForm />
         </div>
 
         {/* User Info Container */}
