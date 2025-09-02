@@ -82,16 +82,16 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
             <th 
               scope="col" 
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort('kites')}
+              onClick={() => handleSort('capacity')}
             >
-              Kites {getSortIcon('kites')}
+              Capacity {getSortIcon('capacity')}
             </th>
             <th 
               scope="col" 
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort('capacity')}
+              onClick={() => handleSort('kites')}
             >
-              Capacity {getSortIcon('capacity')}
+              Kites {getSortIcon('kites')}
             </th>
             <th 
               scope="col" 
@@ -126,10 +126,10 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
                 {pkg.description}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {pkg.capacity_kites}
+                {pkg.capacity_students}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {pkg.capacity_students}
+                {pkg.capacity_kites}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 <Duration minutes={pkg.duration} />

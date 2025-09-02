@@ -3,5 +3,5 @@ export default function TablesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="container mx-auto p-6">{children}</div>;
+  return <div className="container mx-auto p-1">{children}</div>;
 }

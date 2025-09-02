@@ -113,7 +113,7 @@ export function BookingFormSummary({
                   form === 'student' ? 'text-yellow-500' :
                   form === 'package' ? 'text-orange-500' : ''
                 }`} />
-                {getFormLabel(form)}
+                <span className="hidden sm:inline">{getFormLabel(form)}</span>
               </button>
             );
           })}
