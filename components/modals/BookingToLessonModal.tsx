@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createLesson } from "@/actions/lesson-actions";
@@ -43,6 +43,22 @@ export function BookingToLessonModal({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
+  // Add event listener for the Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    // Clean up the event listener when component unmounts
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   const handleCreateLesson = () => {
     if (!selectedTeacherId || !selectedCommissionId) {
       toast.error("Please select both a teacher and a commission.");
@@ -67,13 +83,15 @@ export function BookingToLessonModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">Link Booking to Lesson</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          This booking currently has no lessons. Select a teacher and commission
-          to create one.
-        </p>
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-card rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative z-[10000]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-xl font-bold mb-4">Link Booking to Teacher</h2>
 
         {/* Booking Reference Information */}
         {bookingReference && (
