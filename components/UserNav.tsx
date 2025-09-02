@@ -36,11 +36,10 @@ function RouteButton({
   return (
     <Link
       href={href}
-      className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-        isActive
+      className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
           ? "bg-gray-200 text-gray-800 shadow-sm"
           : `${color} ${hoverColor}`
-      }`}
+        }`}
       title={label}
     >
       <Icon className="h-4 w-4" />
@@ -75,11 +74,10 @@ function RouteButtonWithAction({
       <div className="flex items-center">
         <Link
           href={href}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${
-            isActive
+          className={`flex items-center space-x-2 px-4 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${isActive
               ? "bg-gray-200 text-gray-800 shadow-sm"
               : `${color} ${hoverColor}`
-          }`}
+            }`}
           title={label}
         >
           <Icon className="h-4 w-4" />
@@ -165,11 +163,10 @@ function FormsDropdown({
       <div className="flex items-center">
         <Link
           href={href}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${
-            isActive
+          className={`flex items-center space-x-2 px-4 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${isActive
               ? "bg-gray-200 text-gray-800 shadow-sm"
               : `${color} ${hoverColor}`
-          }`}
+            }`}
           title={label}
         >
           <Icon
@@ -482,13 +479,15 @@ export function UserNav() {
             loading={loading}
           />
           <div className="flex items-center space-x-4">
-            {user && ["admin", "teacherAdmin"].includes(role) && (
+            <AdminNavRoutes />
+
+            {/* {user && ["admin", "teacherAdmin"].includes(role) && (
               <AdminNavRoutes />
             )}
             {user && role === "teacher" && <TeacherNavRoutes />}
             {user && role === "reference" && <ReferenceNavRoutes />}
             {user && role === "locked" && <LockedNavRoutes />}
-            <ActionButtons user={user} note={note} />
+            <ActionButtons user={user} note={note} /> */}
           </div>
         </div>
       </div>
@@ -508,12 +507,13 @@ export function UserNav() {
             <ActionButtons user={user} note={note} />
           </div>
           <div className="order-2 flex items-center space-x-3 justify-center mx-auto">
-            {user && ["admin", "teacherAdmin"].includes(role) && (
+            <AdminNavRoutes />
+            {/* {user && ["admin", "teacherAdmin"].includes(role) && (
               <AdminNavRoutes />
             )}
             {user && role === "teacher" && <TeacherNavRoutes />}
             {user && role === "reference" && <ReferenceNavRoutes />}
-            {user && role === "locked" && <LockedNavRoutes />}
+            {user && role === "locked" && <LockedNavRoutes />} */}
           </div>
         </div>
       </div>
