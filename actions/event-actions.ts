@@ -98,6 +98,7 @@ export async function createEvent(eventData: EventData & { status?: "planned" | 
     }
 
     revalidatePath('/whiteboard');
+    revalidatePath('/billboard');
     return { success: true, data: eventResult };
   } catch (error) {
     console.error('🔥 Error creating event:', error);
@@ -194,6 +195,7 @@ export async function createTeacherQueueEvents(events: QueueEventData[]) {
     console.log(`📊 Queue creation complete: ${successCount} success, ${failureCount} failures`);
 
     revalidatePath('/whiteboard');
+    revalidatePath('/billboard');
     return { 
       success: failureCount === 0, 
       results,
@@ -232,6 +234,7 @@ export async function deleteEvent(eventId: string) {
     }
 
     revalidatePath('/whiteboard');
+    revalidatePath('/billboard');
     revalidatePath('/events');
     return { success: true };
   } catch (error) {
@@ -271,6 +274,7 @@ export async function updateEvent(eventId: string, updates: {
     }
     
     revalidatePath("/whiteboard");
+    revalidatePath("/billboard");
     revalidatePath("/events");
     return { success: true };
   } catch (error: any) {

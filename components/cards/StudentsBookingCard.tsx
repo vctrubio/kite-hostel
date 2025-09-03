@@ -16,6 +16,7 @@ interface StudentsBookingCardProps {
   selectedDate?: string;
   onCreateEvents?: (lessonIds: string[]) => void;
   teachers?: any[]; // Teachers available for lesson assignment (already filtered to exclude those with lessons)
+  isDraggable?: boolean; // Whether this booking can be dragged (has lesson with teacher_id)
 }
 
 // Lesson Section Component
@@ -68,7 +69,7 @@ function LessonsSection({ lessons }: { lessons: any[] }) {
   );
 }
 
-export default function StudentsBookingCard({ booking, onDragStart, selectedDate, onCreateEvents, teachers }: StudentsBookingCardProps) {
+export default function StudentsBookingCard({ booking, onDragStart, selectedDate, onCreateEvents, teachers, isDraggable = false }: StudentsBookingCardProps) {
   const router = useRouter();
   const [showLessonModal, setShowLessonModal] = useState(false);
   const modalId = `lesson-modal-${booking.id}`;
@@ -110,14 +111,14 @@ export default function StudentsBookingCard({ booking, onDragStart, selectedDate
 
   return (
     <div 
-      draggable={existingLessons.length > 0} // Only draggable if lessons exist
+      draggable={isDraggable}
       onDragStart={handleDragStart}
       className={`p-4 bg-card rounded-lg border border-border transition-shadow ${
-        existingLessons.length > 0 
-          ? "cursor-grab hover:shadow-md active:cursor-grabbing" 
-          : ""
+        isDraggable 
+          ? "cursor-grab hover:shadow-md active:cursor-grabbing border-green-200 dark:border-green-800" 
+          : "opacity-75"
       }`}
-      style={{ position: 'relative' }} // Ensure proper stacking context
+      style={{ position: 'relative' }}
     >
       <div className="flex flex-col gap-3">
         {/* Date information with progress bar */}
