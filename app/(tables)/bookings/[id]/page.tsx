@@ -124,11 +124,77 @@ function Students({ students }: { students: any[] }) {
         <span>Students</span>
         <span className="text-sm text-muted-foreground font-normal">({students.length})</span>
       </h2>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {students.map((student) => (
-          <div key={student.id} className="flex items-center gap-2">
-            <HelmetIcon className="w-5 h-5 text-yellow-500" />
-            <span className="font-medium">{student.name}</span>
+          <div 
+            key={student.id} 
+            className="p-3 rounded-md border border-border hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <a 
+                href={`/students/${student.id}`} 
+                className="flex items-center gap-2 group"
+              >
+                <HelmetIcon className="w-5 h-5 text-yellow-500 group-hover:text-yellow-600" />
+                <span className="font-medium text-lg group-hover:underline">{student.name}</span>
+              </a>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="space-y-1">
+                <p className="text-muted-foreground">Passport:</p>
+                <p className="font-medium">{student.passport_number || 'N/A'}</p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-muted-foreground">Phone:</p>
+                <p className="font-medium">
+                  {student.phone ? (
+                    <a 
+                      href={`https://wa.me/${student.phone.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-blue-600 hover:underline"
+                    >
+                      {student.phone}
+                    </a>
+                  ) : 'N/A'}
+                </p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-muted-foreground">Country:</p>
+                <p className="font-medium">{student.country || 'N/A'}</p>
+              </div>
+              
+              {student.languages && student.languages.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Languages:</p>
+                  <p className="font-medium">{student.languages.join(', ')}</p>
+                </div>
+              )}
+              
+              <div className="space-y-1">
+                <p className="text-muted-foreground">Size:</p>
+                <p className="font-medium">{student.size || 'N/A'}</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-muted-foreground">Created:</p>
+                <p className="font-medium">
+                  {student.created_at ? (
+                    <DateSince dateString={student.created_at} />
+                  ) : 'N/A'}
+                </p>
+              </div>
+              
+              {student.desc && (
+                <div className="space-y-1 md:col-span-3">
+                  <p className="text-muted-foreground">Description:</p>
+                  <p className="font-medium">{student.desc}</p>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
