@@ -43,7 +43,8 @@
     "react-dom": "^19.0.0",
     "react-select-country-list": "^2.2.3",
     "sonner": "^2.0.6",
-    "tailwind-merge": "^3.3.0"
+    "tailwind-merge": "^3.3.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

@@ -16,9 +16,11 @@ import {
   Plus,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
 } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { BookingData } from "@/backend/types";
 import {
   DropdownMenu,
@@ -326,6 +328,17 @@ function StudentCardFooter({
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Booking Link */}
+          <div className="mt-4 pt-3 border-t border-border/30">
+            <Link 
+              href={`/bookings/${booking.id}`}
+              className="flex items-center justify-center gap-1.5 w-full py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm transition-colors"
+            >
+              <span>Go to Booking Details</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </div>
       )}

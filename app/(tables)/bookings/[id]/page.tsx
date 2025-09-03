@@ -1,16 +1,16 @@
 import { getBookingById } from "@/actions/booking-actions";
-import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
-import { Duration } from "@/components/formatters/Duration";
-import { DateSince } from "@/components/formatters/DateSince";
+import { getBookingExportData, getEventsExportData } from "@/actions/export-actions";
 import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
-import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
-import {
-  BookmarkIcon,
-  BookingIcon,
-  HeadsetIcon,
-  FlagIcon,
-  HelmetIcon
-} from "@/svgs";
+import { 
+  BookingHeader, 
+  Students, 
+  PackageDetails, 
+  BookingTimeline, 
+  ReferenceInformation, 
+  Lessons, 
+  ExportSection 
+} from "./components";
+import { Receipt } from "@/components/export/Receipt";
 
 interface BookingDetailPageProps {
   params: { id: string };
@@ -20,13 +20,9 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   const { id } = params;
   const { data: booking, error } = await getBookingById(id);
 
-  // Add a console log to verify data structure
-  // console.log("Booking data:", JSON.stringify({
-  //   id: booking?.id,
-  //   status: booking?.status,
-  //   lessonCount: booking?.lessonCount,
-  //   hasLessons: booking?.lessons?.length > 0
-  // }, null, 2));
+  // Prepare export data
+  const bookingExportData = await getBookingExportData(id);
+  const eventsExportData = await getEventsExportData(id);
 
   if (error) {
     return <div className="text-red-500">Error: {error}</div>;
@@ -58,6 +54,25 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   // Calculate price to pay per student based on used hours
   const priceToPay = pricePerHourPerStudent * eventHours;
 
+  // Prepare receipt event data
+  const receiptEvents = booking.lessons?.flatMap(lesson =>
+    (lesson.events || []).map(event => {
+      const eventDate = new Date(event.date);
+      const durationHours = (event.duration || 0) / 60;
+      const formattedDuration = durationHours % 1 === 0 ?
+        `${Math.floor(durationHours)}h` :
+        `${durationHours.toFixed(1)}h`;
+
+      return {
+        teacherName: lesson.teacher?.name || 'Unknown',
+        date: `${eventDate.getDate()}/${eventDate.getMonth() + 1}`,
+        time: `${eventDate.getHours()}:${String(eventDate.getMinutes()).padStart(2, '0')}`,
+        duration: formattedDuration,
+        location: event.location
+      };
+    })
+  ) || [];
+  
   // Calculate days between start and end dates
   const startDate = new Date(booking.date_start);
   const endDate = new Date(booking.date_end);
@@ -80,238 +95,84 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
     return `${day} ${month}`;
   };
 
+  // Generate receipt text for export
+  const receiptText = `
+Students: ${students.map(s => s.name).join(', ')}
+Package Hours: ${packageHours % 1 === 0 ? Math.floor(packageHours) : packageHours.toFixed(1)}h
+Price per Hour: €${pricePerHourPerStudent.toFixed(2)}
+Total Kited Hours: ${eventHours % 1 === 0 ? Math.floor(eventHours) : eventHours.toFixed(1)}h
+Total Price to Pay: €${priceToPay.toFixed(2)}
+
+*** RECEIPT ***${receiptEvents.map((event, index) => `
+${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.duration}, ${event.location}`).join('')}`;
+
   return (
     <div className="container mx-auto p-4">
       <div className="grid gap-6 md:grid-cols-2">
         {/* Header Section */}
-        <div className="col-span-full space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-              <BookingIcon className="w-8 h-8 text-blue-500" />
-              <span>Booking </span>
-              </h1>
-              <div className="pt-1">
-              <BookingProgressBar
-                eventMinutes={bookingClass.calculateBookingLessonEventMinutes()}
-                totalMinutes={bookingClass.getTotalMinutes()}
-              />
-              </div>
-            </div>
-            <BookingStatusLabel bookingId={booking.id} currentStatus={booking.status} />
-          </div>
-
-          {/* Dates and Progress bar */}
-          <div className="w-full max-w-2xl mb-4">
-            <div className="flex flex-wrap items-center gap-3 mb-2">
-              <div className="text-base font-medium flex items-center gap-2">
-                <span>{formatReadableDate(booking.date_start)}</span>
-                <span>to</span>
-                <span>{formatReadableDate(booking.date_end)}</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
+        <BookingHeader 
+          bookingId={booking.id}
+          status={booking.status}
+          eventMinutes={bookingClass.calculateBookingLessonEventMinutes()}
+          totalMinutes={bookingClass.getTotalMinutes()}
+          dateStart={booking.date_start}
+          dateEnd={booking.date_end}
+          formatReadableDate={formatReadableDate}
+        />
 
         {/* Left Column */}
         <div className="space-y-6">
           {/* Students Section */}
-          <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <span>Students</span>
-              <span className="text-sm text-muted-foreground font-normal">({students.length})</span>
-            </h2>
-            <div className="space-y-3">
-              {students.map((student) => (
-                <div key={student.id} className="flex items-center gap-2">
-                  <HelmetIcon className="w-5 h-5 text-yellow-500" />
-                  <span className="font-medium">{student.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Students students={students} />
 
           {/* Package Details Section */}
-          <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <BookmarkIcon className="w-5 h-5 text-indigo-500" />
-              <span>Package Details</span>
-            </h2>
+          <PackageDetails 
+            packageData={booking.package}
+            eventHours={eventHours}
+            pricePerHourPerStudent={pricePerHourPerStudent}
+            totalPrice={totalPrice}
+            priceToPay={priceToPay}
+            referenceId={booking.reference?.id}
+          />
 
-            {booking.package && (
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Description:</span>
-                  <p className="font-medium">
-                    {booking.package.description || "No description"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Reference:</span>
-                  <p className="font-medium">
-                    {booking.reference?.id || "NULL"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Duration:</span>
-                  <p className="font-medium">
-                    <Duration minutes={booking.package.duration} />
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Used Hours:</span>
-                  <p className="font-medium">
-                    <Duration minutes={eventHours * 60} />
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Kite Capacity:</span>
-                  <p className="font-medium">
-                    {booking.package.capacity_kites} kites / {booking.package.capacity_students} students
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">
-                    Price per Student:
-                  </span>
-                  <p className="font-medium">
-                    €{booking.package.price_per_student}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">
-                    Price per Hour/Student:
-                  </span>
-                  <p className="font-medium">
-                    €{pricePerHourPerStudent.toFixed(2)}/h
-                  </p>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">Total Price:</span>
-                  <p className="font-medium text-green-600">€{totalPrice}</p>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">Price to Pay/Student:</span>
-                  <p className="font-medium text-blue-600">€{priceToPay.toFixed(2)}</p>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Booking Dates */}
+          <BookingTimeline 
+            createdAt={booking.created_at}
+            dateStart={booking.date_start}
+            dateEnd={booking.date_end}
+            daysDifference={daysDifference}
+            formatReadableDate={formatReadableDate}
+          />
         </div>
 
         {/* Right Column */}
         <div className="space-y-6">
-          {/* Lessons Section */}
-          <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <HeadsetIcon className="w-5 h-5 text-green-600" />
-              <span>Lessons</span>
-              <span className="text-sm text-muted-foreground font-normal">({booking.lessons.length})</span>
-            </h2>
-
-            {booking.lessons.length > 0 ? (
-              <div className="space-y-4">
-                {booking.lessons.map((lesson) => (
-                  <div key={lesson.id} className="bg-background/50 rounded p-3 space-y-3">
-                    {/* Lesson header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <HeadsetIcon className="w-4 h-4 text-green-600" />
-                        <span className="font-medium">{lesson.teacher?.name || "Unknown Teacher"}</span>
-                      </div>
-                      <div className="text-sm px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
-                        {lesson.status}
-                      </div>
-                    </div>
-
-                    {/* Events list */}
-                    {lesson.events && lesson.events.length > 0 && (
-                      <div className="space-y-2 mt-2">
-                        <div className="ml-3 space-y-2">
-                          {lesson.events.map((event) => (
-                            <div
-                              key={event.id}
-                              className="flex items-center gap-3 text-sm"
-                            >
-                              <FlagIcon className="w-4 h-4 text-orange-500" />
-                              <span>{formatEventDate(event.date)}</span>
-                              <Duration minutes={event.duration || 0} />
-                              <span className="text-muted-foreground">{event.location}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No lessons associated with this booking.</p>
-            )}
-          </div>
-
           {/* Reference Information */}
-          {booking.reference && (
-            <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-              <h2 className="text-xl font-semibold">Reference Information</h2>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Reference ID:</span>
-                  <p className="font-medium">{booking.reference.id}</p>
-                </div>
-                {booking.reference.teacher && (
-                  <div>
-                    <span className="text-muted-foreground">Teacher:</span>
-                    <p className="font-medium">
-                      {booking.reference.teacher.name}
-                    </p>
-                  </div>
-                )}
-                {booking.reference.note && (
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground">Note:</span>
-                    <p className="font-medium">{booking.reference.note}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <ReferenceInformation reference={booking.reference} />
 
-          {/* Booking Dates */}
-          <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-            <h2 className="text-xl font-semibold">Booking Timeline</h2>
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Created:</span>
-                <span className="font-medium">
-                  {booking.created_at ? formatReadableDate(booking.created_at) : "N/A"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Start Date:</span>
-                <span className="font-medium">
-                  {formatReadableDate(booking.date_start)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">End Date:</span>
-                <span className="font-medium">
-                  {formatReadableDate(booking.date_end)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-1 border-t border-border">
-                <span className="text-muted-foreground">Total Days:</span>
-                <span className="px-2.5 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 rounded-full text-xs font-medium">
-                  {daysDifference} day{daysDifference !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-1">
-                <span className="text-muted-foreground">Since Start Date:</span>
-                <DateSince dateString={booking.date_start} />
-              </div>
-            </div>
-          </div>
+          {/* Lessons Section */}
+          <Lessons 
+            lessons={booking.lessons} 
+            formatEventDate={formatEventDate} 
+          />
+
+          {/* Receipt Section */}
+          <Receipt
+            studentNames={students.map(s => s.name).join(', ')}
+            packageHours={packageHours}
+            pricePerHour={pricePerHourPerStudent}
+            totalKitedHours={eventHours}
+            totalPriceToPay={priceToPay}
+            events={receiptEvents}
+          />
+
+          {/* Export buttons */}
+          <ExportSection
+            bookingId={booking.id}
+            bookingData={bookingExportData}
+            eventsData={eventsExportData}
+            receiptText={receiptText}
+          />
         </div>
       </div>
     </div>
