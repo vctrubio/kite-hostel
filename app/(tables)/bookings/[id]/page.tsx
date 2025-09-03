@@ -1,16 +1,392 @@
 import { getBookingById } from "@/actions/booking-actions";
 import { getBookingExportData, getEventsExportData } from "@/actions/export-actions";
 import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
-import { 
-  BookingHeader, 
-  Students, 
-  PackageDetails, 
-  BookingTimeline, 
-  ReferenceInformation, 
-  Lessons, 
-  ExportSection 
-} from "./components";
 import { Receipt } from "@/components/export/Receipt";
+import { ExportButtons } from "@/components/export/ExportButtons";
+import { Duration } from "@/components/formatters/Duration";
+import { DateSince } from "@/components/formatters/DateSince";
+import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
+import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
+import {
+  BookmarkIcon,
+  BookingIcon,
+  HeadsetIcon,
+  FlagIcon,
+  HelmetIcon
+} from "@/svgs";
+
+// ===== SUB-COMPONENTS =====
+
+// Component for displaying lesson information
+function LessonCard({ lesson, formatEventDate }: { lesson: any; formatEventDate: (dateString: string) => string }) {
+  // Check if commission exists on the lesson object
+  const hasCommission = 'commission' in lesson && lesson.commission;
+  
+  // Calculate total hours
+  const hasEvents = lesson.events && lesson.events.length > 0;
+  const totalHours = hasEvents 
+    ? (lesson.events.reduce((sum, event) => sum + (event.duration || 0), 0) / 60).toFixed(1)
+    : "0.0";
+    
+  // Calculate total earnings
+  const totalEarnings = hasCommission 
+    ? (parseFloat(totalHours) * lesson.commission.price_per_hour).toFixed(2)
+    : "0.00";
+  
+  return (
+    <div className="bg-background/50 rounded-lg border border-muted/40 p-3 space-y-3 hover:shadow-sm transition-shadow">
+      {/* Lesson header */}
+      <div className="flex flex-col space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <HeadsetIcon className="w-4 h-4 text-green-600" />
+            <span className="font-medium">{lesson.teacher?.name || "Unknown Teacher"}</span>
+            <span className="text-xs text-muted-foreground px-1.5 py-0.5 bg-muted/30 rounded-full">
+              {lesson.status}
+            </span>
+          </div>
+          
+          {/* Commission calculation - replacing status */}
+          {hasCommission ? (
+            <div className="flex items-center gap-1 text-sm bg-gray-50 dark:bg-gray-800 rounded-md px-2.5 py-1 shadow-sm">
+              <span className="font-semibold text-green-600">€{lesson.commission.price_per_hour}</span>
+              <span className="text-gray-500">×</span>
+              <span className="font-semibold text-orange-500">{totalHours}h</span>
+              <span className="text-gray-500">=</span>
+              <span className="font-semibold text-gray-600">€{totalEarnings}</span>
+            </div>
+          ) : (
+            <div className="text-sm px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 rounded-md">
+              No commission data
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Events list */}
+      {hasEvents ? (
+        <div className="space-y-2 mt-2 bg-muted/20 rounded-md p-2">
+          <div className="ml-2 space-y-2">
+            {lesson.events.map((event: any) => (
+              <div
+                key={event.id}
+                className="flex items-center gap-3 text-sm"
+              >
+                <FlagIcon className="w-3.5 h-3.5 text-orange-500" />
+                <span>{formatEventDate(event.date)}</span>
+                <Duration minutes={event.duration || 0} />
+                <span className="text-muted-foreground">{event.location}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-sm text-muted-foreground text-center py-2">
+          No events scheduled yet
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Component for displaying lessons
+function Lessons({ lessons, formatEventDate }: { lessons: any[]; formatEventDate: (dateString: string) => string }) {
+  return (
+    <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+      <h2 className="text-xl font-semibold flex items-center gap-2">
+        <HeadsetIcon className="w-5 h-5 text-green-600" />
+        <span>Lessons</span>
+        <span className="text-sm text-muted-foreground font-normal">({lessons.length})</span>
+      </h2>
+
+      {lessons.length > 0 ? (
+        <div className="space-y-4">
+          {lessons.map((lesson) => (
+            <LessonCard 
+              key={lesson.id} 
+              lesson={lesson} 
+              formatEventDate={formatEventDate} 
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">No lessons associated with this booking.</p>
+      )}
+    </div>
+  );
+}
+
+// Component for displaying students
+function Students({ students }: { students: any[] }) {
+  return (
+    <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+      <h2 className="text-xl font-semibold flex items-center gap-2">
+        <span>Students</span>
+        <span className="text-sm text-muted-foreground font-normal">({students.length})</span>
+      </h2>
+      <div className="space-y-3">
+        {students.map((student) => (
+          <div key={student.id} className="flex items-center gap-2">
+            <HelmetIcon className="w-5 h-5 text-yellow-500" />
+            <span className="font-medium">{student.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Component for displaying package details
+function PackageDetails({ 
+  packageData, 
+  eventHours, 
+  pricePerHourPerStudent, 
+  totalPrice, 
+  priceToPay,
+  referenceId
+}: { 
+  packageData: any;
+  eventHours: number;
+  pricePerHourPerStudent: number;
+  totalPrice: number;
+  priceToPay: number;
+  referenceId?: string;
+}) {
+  if (!packageData) return null;
+
+  return (
+    <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+      <h2 className="text-xl font-semibold flex items-center gap-2">
+        <BookmarkIcon className="w-5 h-5 text-indigo-500" />
+        <span>Package Details</span>
+      </h2>
+
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-muted-foreground">Description:</span>
+          <p className="font-medium">
+            {packageData.description || "No description"}
+          </p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Reference:</span>
+          <p className="font-medium">
+            {referenceId || "NULL"}
+          </p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Duration:</span>
+          <p className="font-medium">
+            <Duration minutes={packageData.duration} />
+          </p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Used Hours:</span>
+          <p className="font-medium">
+            <Duration minutes={eventHours * 60} />
+          </p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Kite Capacity:</span>
+          <p className="font-medium">
+            {packageData.capacity_kites} kites / {packageData.capacity_students} students
+          </p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">
+            Price per Student:
+          </span>
+          <p className="font-medium">
+            €{packageData.price_per_student}
+          </p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">
+            Price per Hour/Student:
+          </span>
+          <p className="font-medium">
+            €{pricePerHourPerStudent.toFixed(2)}/h
+          </p>
+        </div>
+        <div className="col-span-2">
+          <span className="text-muted-foreground">Total Price:</span>
+          <p className="font-medium text-green-600">€{totalPrice}</p>
+        </div>
+        <div className="col-span-2">
+          <span className="text-muted-foreground">Price to Pay/Student:</span>
+          <p className="font-medium text-blue-600">€{priceToPay.toFixed(2)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component for displaying booking timeline
+function BookingTimeline({ 
+  createdAt, 
+  dateStart, 
+  dateEnd,
+  daysDifference,
+  formatReadableDate
+}: {
+  createdAt?: string;
+  dateStart: string;
+  dateEnd: string;
+  daysDifference: number;
+  formatReadableDate: (dateString: string) => string;
+}) {
+  return (
+    <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+      <h2 className="text-xl font-semibold">Booking Timeline</h2>
+      <div className="grid grid-cols-1 gap-3 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Created:</span>
+          <span className="font-medium">
+            {createdAt ? formatReadableDate(createdAt) : "N/A"}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Start Date:</span>
+          <span className="font-medium">
+            {formatReadableDate(dateStart)}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">End Date:</span>
+          <span className="font-medium">
+            {formatReadableDate(dateEnd)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center pt-1 border-t border-border">
+          <span className="text-muted-foreground">Total Days:</span>
+          <span className="px-2.5 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 rounded-full text-xs font-medium">
+            {daysDifference} day{daysDifference !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="flex justify-between items-center pt-1">
+          <span className="text-muted-foreground">Since Start Date:</span>
+          <DateSince dateString={dateStart} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component for displaying reference information
+function ReferenceInformation({ reference }: {
+  reference: {
+    id: string;
+    teacher?: {
+      name: string;
+    } | null;
+    note?: string;
+  } | null;
+}) {
+  if (!reference) return null;
+
+  return (
+    <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+      <h2 className="text-xl font-semibold">Reference Information</h2>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-muted-foreground">Reference ID:</span>
+          <p className="font-medium">{reference.id}</p>
+        </div>
+        {reference.teacher && (
+          <div>
+            <span className="text-muted-foreground">Teacher:</span>
+            <p className="font-medium">
+              {reference.teacher.name}
+            </p>
+          </div>
+        )}
+        {reference.note && (
+          <div className="col-span-2">
+            <span className="text-muted-foreground">Note:</span>
+            <p className="font-medium">{reference.note}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Component for displaying booking header
+function BookingHeader({
+  bookingId,
+  status,
+  eventMinutes,
+  totalMinutes,
+  dateStart,
+  dateEnd,
+  formatReadableDate
+}: {
+  bookingId: string;
+  status: "active" | "uncomplete" | "completed";
+  eventMinutes: any; // Using any to match the output of calculateBookingLessonEventMinutes
+  totalMinutes: number;
+  dateStart: string;
+  dateEnd: string;
+  formatReadableDate: (dateString: string) => string;
+}) {
+  return (
+    <div className="col-span-full space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <BookingIcon className="w-8 h-8 text-blue-500" />
+            <span>Booking </span>
+          </h1>
+          <div className="pt-1">
+            <BookingProgressBar
+              eventMinutes={eventMinutes}
+              totalMinutes={totalMinutes}
+            />
+          </div>
+        </div>
+        <BookingStatusLabel bookingId={bookingId} currentStatus={status} />
+      </div>
+
+      {/* Dates and Progress bar */}
+      <div className="w-full max-w-2xl mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="text-base font-medium flex items-center gap-2">
+            <span>{formatReadableDate(dateStart)}</span>
+            <span>to</span>
+            <span>{formatReadableDate(dateEnd)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component for displaying export section
+function ExportSection({ 
+  bookingId, 
+  bookingData, 
+  eventsData,
+  receiptText 
+}: {
+  bookingId: string;
+  bookingData: any;
+  eventsData: any;
+  receiptText: string;
+}) {
+  return (
+    <div className="bg-card rounded-lg border border-border p-4">
+      <h2 className="text-xl font-semibold mb-4">Export & Share</h2>
+      <ExportButtons
+        bookingId={bookingId}
+        bookingData={bookingData}
+        eventsData={eventsData}
+        receiptText={receiptText}
+      />
+    </div>
+  );
+}
+
+// ===== MAIN PAGE COMPONENT =====
 
 interface BookingDetailPageProps {
   params: { id: string };
