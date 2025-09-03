@@ -51,36 +51,26 @@ export default function FlagCard({
   const statusLabel = STATUS_LABELS[status];
 
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
-      {/* Header with large flag icon and time info */}
-      <div className="p-4 flex items-center gap-4">
-        <FlagIcon className="w-12 h-12" />
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-foreground">
-              <DateTime dateString={startTime} formatType="time" />
-            </span>
-            <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium">
-              <Duration minutes={duration} />
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Students section */}
-      <div className="px-4 pb-4">
-        <div className="flex items-center gap-2">
+    <div className="w-[285px] bg-card border border-border rounded-lg overflow-hidden">
+      <div className="p-4 flex items-start gap-4">
+        <div className="flex flex-col items-center gap-2">
+          <FlagIcon className="w-12 h-12" />
           <div className="flex gap-1">
             {students.map((_, index) => (
               <HelmetIcon key={index} className="w-4 h-4 text-yellow-500" />
             ))}
           </div>
-          <div className="flex flex-wrap gap-1">
+        </div>
+        <div className="flex-1">
+          <div className="text-xl font-bold text-foreground">
+            <DateTime dateString={startTime} formatType="time" />
+          </div>
+          <div className="text-muted-foreground text-sm">
+            +<Duration minutes={duration} />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1">
             {students.map((student, index) => (
-              <span
-                key={index}
-                className="text-sm font-medium text-foreground"
-              >
+              <span key={index} className="text-sm font-medium text-foreground">
                 {student}
                 {index < students.length - 1 && ","}
               </span>
