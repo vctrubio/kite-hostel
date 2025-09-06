@@ -61,4 +61,71 @@ export class BillboardClass {
       }
     };
   }
+
+  // Student utilities
+  getStudentCount(): number {
+    return this.booking.students?.length || 0;
+  }
+
+  getStudentNames(): string[] {
+    return this.booking.students?.map(bs => bs.student.name) || [];
+  }
+
+  getStudents() {
+    return this.booking.students?.map(bs => bs.student) || [];
+  }
+
+  // Teacher utilities
+  getTeachers() {
+    const teachers = this.lessons
+      .map(lesson => lesson.teacher)
+      .filter(Boolean);
+    // Remove duplicates by teacher ID
+    const uniqueTeachers = teachers.filter((teacher, index, self) => 
+      index === self.findIndex(t => t?.id === teacher?.id)
+    );
+    return uniqueTeachers;
+  }
+
+  getTeacherIds(): string[] {
+    return this.getTeachers().map(teacher => teacher!.id);
+  }
+
+  hasTeacher(teacherId: string): boolean {
+    return this.getTeacherIds().includes(teacherId);
+  }
+
+  // Event utilities for specific teacher and date
+  getEventsForTeacherAndDate(teacherId: string, selectedDate: string) {
+    const filterDate = new Date(selectedDate);
+    filterDate.setHours(0, 0, 0, 0);
+
+    return this.lessons
+      .filter(lesson => lesson.teacher?.id === teacherId)
+      .flatMap(lesson => {
+        const events = lesson.events || [];
+        return events
+          .filter(event => {
+            if (!event.date) return false;
+            const eventDate = new Date(event.date);
+            eventDate.setHours(0, 0, 0, 0);
+            return eventDate.getTime() === filterDate.getTime();
+          })
+          .map(event => ({
+            ...event,
+            lesson,
+            booking: this.booking,
+            students: this.getStudentNames()
+          }));
+      });
+  }
+
+  // Check if booking needs teacher assignment
+  needsTeacherAssignment(): boolean {
+    return this.lessons.length === 0 || this.lessons.some(lesson => !lesson.teacher);
+  }
+
+  static extractStudents(booking: BookingData) {
+    return booking.students?.map(bs => bs.student) || [];
+  }
 }

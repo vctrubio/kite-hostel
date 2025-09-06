@@ -135,7 +135,7 @@ export default function BillboardDev({ bookingsData }: BillboardDevProps) {
       </div>
 
       {/* Usage Examples */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      {/* <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <h3 className="font-semibold text-blue-800 mb-2">Direct Access Usage:</h3>
         <div className="text-sm text-blue-700 space-y-1">
           <div><code>billboardClass.booking.date_start</code> - Start date</div>
@@ -171,7 +171,7 @@ export default function BillboardDev({ bookingsData }: BillboardDevProps) {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

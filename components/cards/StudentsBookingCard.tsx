@@ -38,6 +38,8 @@ interface StudentsBookingCardProps {
   billboardClass: BillboardClass;
   selectedDate?: string;
   isDraggable?: boolean;
+  onDragStart?: (bookingId: string) => void;
+  onDragEnd?: (bookingId: string, wasDropped: boolean) => void;
 }
 
 // Lesson Section Component
@@ -335,13 +337,15 @@ export default function StudentsBookingCard({
   billboardClass,
   selectedDate,
   isDraggable = false,
+  onDragStart,
+  onDragEnd,
 }: StudentsBookingCardProps) {
   const [showLessonModal, setShowLessonModal] = useState(false);
   const booking = billboardClass.booking;
 
-  // Extract students directly from billboardClass
+  // Extract students using BillboardClass method
   const students = useMemo(() => 
-    billboardClass.booking.students?.map(bs => bs.student) || [], 
+    billboardClass.getStudents(), 
     [billboardClass]
   );
   
@@ -364,13 +368,19 @@ export default function StudentsBookingCard({
         lessonIds: lessonIds,
       }),
     );
-    // Note: onDragStart callback removed - using booking.id for dragging
+    onDragStart?.(booking.id);
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    const wasDropped = e.dataTransfer.dropEffect !== "none";
+    onDragEnd?.(booking.id, wasDropped);
   };
 
   return (
     <div
       draggable={isDraggable}
       onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       className={`p-4 bg-card rounded-lg border border-border transition-shadow ${
         isDraggable
           ? "cursor-grab hover:shadow-md active:cursor-grabbing border-green-200 dark:border-green-800"

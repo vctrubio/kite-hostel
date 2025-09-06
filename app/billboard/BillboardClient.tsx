@@ -9,8 +9,10 @@ import {
 } from "@/components/formatters/DateTime";
 import BillboardHeader from "./BillboardHeader";
 import BillboardDev from "./BillboardDev";
+import TeacherColumnSimple from "./TeacherColumnSimple";
 import StudentBookingColumn from "./StudentBookingColumn";
 import { BillboardClass } from "@/backend/BillboardClass";
+import { TeacherQueue } from "@/backend/TeacherQueue";
 import { type EventController } from "@/backend/types";
 import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 
@@ -56,6 +58,35 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     });
   }, [billboardClasses, selectedDate]);
 
+  // Teacher queues for the selected date
+  const teacherQueues = useMemo(() => {
+    const queuesMap = new Map<string, TeacherQueue>();
+    
+    data.teachers?.forEach(teacher => {
+      const queue = TeacherQueue.fromBillboardClasses(filteredBillboardClasses, teacher.id, selectedDate);
+      queuesMap.set(teacher.id, queue);
+    });
+    
+    console.log("TeacherQueues created:", queuesMap);
+    return queuesMap;
+  }, [data.teachers, filteredBillboardClasses, selectedDate]);
+
+  // Available bookings (show all that have teacher assignments and can be dragged)
+  const availableBillboardClasses = useMemo(() => {
+    return filteredBillboardClasses.filter(bc => {
+      // Show bookings that have teacher assignments (can be dragged)
+      // Don't filter out based on drag state - let them stay visible
+      return !bc.needsTeacherAssignment();
+    });
+  }, [filteredBillboardClasses]);
+
+  // Drag and drop handlers
+  const handleTeacherDrop = (teacherId: string, bookingId: string) => {
+    // Handle the drop logic here - for now just log
+    console.log(`Dropped booking ${bookingId} on teacher ${teacherId}`);
+    // In a real implementation, you'd create/assign the lesson here
+  };
+
   // Date management
   const handleDateChange = (date: string) => {
     if (!date || isNaN(Date.parse(date))) {
@@ -93,10 +124,17 @@ export default function BillboardClient({ data }: BillboardClientProps) {
       {/* Dev Component - JSON View */}
       <BillboardDev bookingsData={data.bookings} />
 
-      {/* Main content */}
-      <div className="grid grid-cols-1 gap-6">
+      {/* Main content - Teacher Column and Student Column */}
+      <div className="grid grid-cols-4 gap-4">
+        <TeacherColumnSimple
+          teachers={data.teachers || []}
+          teacherQueues={teacherQueues}
+          dayOfWeek={new Date(selectedDate).toLocaleDateString("en-US", { weekday: "long" })}
+          onTeacherDrop={handleTeacherDrop}
+        />
+        
         <StudentBookingColumn
-          billboardClasses={filteredBillboardClasses}
+          billboardClasses={availableBillboardClasses}
           selectedDate={selectedDate}
         />
       </div>

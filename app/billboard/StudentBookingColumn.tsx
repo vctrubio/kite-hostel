@@ -7,6 +7,8 @@ import { BillboardClass } from "@/backend/BillboardClass";
 interface StudentBookingColumnProps {
   billboardClasses: BillboardClass[];
   selectedDate: string;
+  onBookingDragStart?: (bookingId: string) => void;
+  onBookingDragEnd?: (bookingId: string, wasDropped: boolean) => void;
 }
 
 type BookingFilter = "all" | "available";
@@ -14,6 +16,8 @@ type BookingFilter = "all" | "available";
 export default function StudentBookingColumn({
   billboardClasses,
   selectedDate,
+  onBookingDragStart,
+  onBookingDragEnd,
 }: StudentBookingColumnProps) {
   const [filter, setFilter] = useState<BookingFilter>("available");
 
@@ -95,6 +99,8 @@ export default function StudentBookingColumn({
                 billboardClass={billboardClass}
                 selectedDate={selectedDate}
                 isDraggable={hasValidLesson}
+                onDragStart={onBookingDragStart}
+                onDragEnd={onBookingDragEnd}
               />
             );
           })

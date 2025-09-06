@@ -3,10 +3,9 @@
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle, ArrowUp, ArrowDown, MapPin } from 'lucide-react';
 import { HelmetIcon } from '@/svgs';
 import { Duration } from '@/components/formatters/Duration';
-import { DateTime } from '@/components/formatters/DateTime';
+import { DateTime, formatTime } from '@/components/formatters/DateTime';
 import { type QueuedLesson } from '@/backend/TeacherSchedule';
 import { addMinutes, format } from 'date-fns';
-import { extractTimeFromUTC, addMinutesToTime } from '@/components/formatters/TimeZone';
 
 interface TeacherLessonQueueCardProps {
   queuedLesson: QueuedLesson & { scheduledDateTime: string };
@@ -48,7 +47,7 @@ export default function TeacherLessonQueueCard({
     scheduledDateTime
   } = queuedLesson;
 
-  const endTime = scheduledDateTime ? addMinutesToTime(extractTimeFromUTC(scheduledDateTime), duration) : '';
+  const endTime = scheduledDateTime ? formatTime(addMinutes(new Date(scheduledDateTime), duration).toISOString()) : '';
   const remaining = remainingMinutes - duration;
   const studentNames = students.join(', ');
   const gapDuration = (queuedLesson as any).gapDuration || 0;
@@ -139,7 +138,7 @@ export default function TeacherLessonQueueCard({
             <div className="flex flex-col text-center">
               {scheduledDateTime && (
                 <div className="text-sm font-medium text-green-600 dark:text-green-400">
-                  {extractTimeFromUTC(scheduledDateTime)}
+                  {formatTime(scheduledDateTime)}
                 </div>
               )}
               {endTime && (
