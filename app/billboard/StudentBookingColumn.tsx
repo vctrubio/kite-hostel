@@ -2,37 +2,29 @@
 
 import { useState, useMemo } from "react";
 import StudentsBookingCard from "@/components/cards/StudentsBookingCard";
-import { WhiteboardClass } from "@/backend/WhiteboardClass";
+import { BillboardClass } from "@/backend/BillboardClass";
 
 interface StudentBookingColumnProps {
-  bookings: any[];
-  teachers: any[];
+  billboardClasses: BillboardClass[];
   selectedDate: string;
-  onDragStart: (booking: any) => void;
-  bookingClasses: Map<string, WhiteboardClass>;
 }
 
 type BookingFilter = "all" | "available";
 
 export default function StudentBookingColumn({
-  bookings,
-  teachers,
+  billboardClasses,
   selectedDate,
-  onDragStart,
-  bookingClasses,
 }: StudentBookingColumnProps) {
   const [filter, setFilter] = useState<BookingFilter>("available");
 
-  const filteredBookings = useMemo(() => {
+  const filteredBillboardClasses = useMemo(() => {
     if (filter === "all") {
-      return bookings;
+      return billboardClasses;
     }
 
     // Available = bookings that DO NOT have an event today
-    return bookings.filter((booking) => {
-      const bookingClass = bookingClasses.get(booking.id);
-      if (!bookingClass) return false;
-      const lessons = bookingClass.getLessons() || [];
+    return billboardClasses.filter((billboardClass) => {
+      const lessons = billboardClass.lessons || [];
       
       // Check if any lesson has events for the selected date
       const hasEventToday = lessons.some((lesson) => {
@@ -49,13 +41,13 @@ export default function StudentBookingColumn({
       
       return !hasEventToday; // Available = no events today
     });
-  }, [bookings, selectedDate, filter, bookingClasses]);
+  }, [billboardClasses, selectedDate, filter]);
 
   return (
     <div className="col-span-1">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">
-          Bookings ({filteredBookings.length})
+          Bookings ({filteredBillboardClasses.length})
         </h2>
         
         {/* All/Available Toggle */}
@@ -84,7 +76,7 @@ export default function StudentBookingColumn({
       </div>
       
       <div className="space-y-3">
-        {filteredBookings.length === 0 ? (
+        {filteredBillboardClasses.length === 0 ? (
           <p className="text-muted-foreground">
             {filter === "available" 
               ? "No available bookings for this date" 
@@ -92,30 +84,16 @@ export default function StudentBookingColumn({
             }
           </p>
         ) : (
-          filteredBookings.map((booking) => {
+          filteredBillboardClasses.map((billboardClass) => {
             // Check if booking has lessons with teacher assignments
-            const bookingClass = bookingClasses.get(booking.id);
-            if (!bookingClass) return null;
-            const existingLessons = bookingClass.getLessons() || [];
+            const existingLessons = billboardClass.lessons || [];
             const hasValidLesson = existingLessons.some(lesson => lesson.teacher?.id);
-            
-            const teachersWithLessons = new Set(
-              existingLessons
-                .map((lesson) => lesson.teacher?.id)
-                .filter(Boolean),
-            );
-
-            const availableTeachers = teachers.filter(
-              (teacher) => !teachersWithLessons.has(teacher.id),
-            );
 
             return (
               <StudentsBookingCard
-                key={booking.id}
-                booking={booking}
-                onDragStart={onDragStart}
+                key={billboardClass.booking.id}
+                billboardClass={billboardClass}
                 selectedDate={selectedDate}
-                teachers={availableTeachers}
                 isDraggable={hasValidLesson}
               />
             );

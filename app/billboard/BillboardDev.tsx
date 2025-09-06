@@ -127,8 +127,6 @@ export default function BillboardDev({ bookingsData }: BillboardDevProps) {
                   remainingMinutes: billboardClass.getRemainingMinutes(),
                   packageHours: (billboardClass.package?.duration || 0) / 60,
                   eventHours: billboardClass.getEventMinutes().completed / 60,
-                  studentCount: billboardClass.getStudentCount(),
-                  studentNames: billboardClass.getStudentNames()
                 }
               }, null, 2)}</pre>
             </div>
@@ -164,7 +162,6 @@ export default function BillboardDev({ bookingsData }: BillboardDevProps) {
             <div><code>billboardClass.getPackageMinutes().spent.pricePerStudent</code> - Spent price per student</div>
             <div><code>billboardClass.getRemainingMinutes()</code> - Planned - Completed</div>
             <div><code>billboardClass.getStudentCount()</code> - Number of students</div>
-            <div><code>billboardClass.getStudentNames()</code> - Array of student names</div>
           </div>
           <div className="mt-2 text-xs text-blue-600">
             <strong>Direct calculations:</strong>

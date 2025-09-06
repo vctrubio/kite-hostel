@@ -12,7 +12,6 @@ import { TeacherSchedule } from "@/backend/TeacherSchedule";
 interface ControllerSettingsProps {
   controller: EventController;
   onControllerChange: (controller: EventController) => void;
-  teacherSchedules: Map<string, TeacherSchedule>;
 }
 
 const MIN_DURATION = 60; // 1 hour minimum
@@ -22,7 +21,6 @@ const DURATION_INCREMENT = 30; // 30 minute increments
 export default function ControllerSettings({
   controller,
   onControllerChange,
-  teacherSchedules,
 }: ControllerSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -73,23 +71,6 @@ export default function ControllerSettings({
     [updateController],
   );
 
-  // Calculate earliest start time across all teacher schedules
-  const earliestStartTime = useMemo(() => {
-    let earliest = null;
-
-    teacherSchedules.forEach((schedule) => {
-      const firstEventNode = schedule
-        .getNodes()
-        .find((node) => node.type === "event");
-      if (firstEventNode) {
-        if (!earliest || firstEventNode.startTime < earliest) {
-          earliest = firstEventNode.startTime;
-        }
-      }
-    });
-
-    return earliest;
-  }, [teacherSchedules]);
 
   return (
     <div className="relative">
@@ -97,14 +78,7 @@ export default function ControllerSettings({
       <div className="border border-border rounded-lg">
         <div className="p-3 flex items-center justify-between">
           {/* Left: Earliest Start Time Display */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {earliestStartTime ? (
-              <span>Earliest start: {earliestStartTime}</span>
-            ) : (
-              <span>No events scheduled</span>
-            )}
-          </div>
-
+ 
           {/* Center: Professional Controls Row */}
           <div className="flex items-center gap-4">
             {/* Flag Time Control - Professional Design */}

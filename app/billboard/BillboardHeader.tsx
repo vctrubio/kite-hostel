@@ -12,7 +12,6 @@ interface BillboardHeaderProps {
   onDateChange: (date: string) => void;
   controller: EventController;
   onControllerChange: (controller: EventController) => void;
-  teacherSchedules: Map<string, TeacherSchedule>;
 }
 
 export default function BillboardHeader({
@@ -20,33 +19,8 @@ export default function BillboardHeader({
   onDateChange,
   controller,
   onControllerChange,
-  teacherSchedules,
 }: BillboardHeaderProps) {
   // Calculate global stats from teacher schedules
-  const globalStats = useMemo(() => {
-    let totalEvents = 0;
-    let totalLessons = 0;
-    let totalHours = 0;
-    let totalEarnings = 0;
-    let schoolRevenue = 0;
-
-    teacherSchedules.forEach((schedule) => {
-      const stats = schedule.calculateTeacherStats();
-      totalEvents += stats.totalEvents;
-      totalLessons += stats.totalLessons;
-      totalHours += stats.totalHours;
-      totalEarnings += stats.totalEarnings;
-      schoolRevenue += stats.schoolRevenue;
-    });
-
-    return {
-      totalEvents,
-      totalLessons,
-      totalHours,
-      totalEarnings,
-      schoolRevenue,
-    };
-  }, [teacherSchedules]);
 
   const handleActionClick = async (actionId: 'share' | 'medical' | 'csv' | 'print') => {
     console.log(`Billboard action: ${actionId}`);
@@ -68,7 +42,6 @@ export default function BillboardHeader({
           />
         </div>
 
-        <GlobalStatsHeader globalStats={globalStats} />
 
         {/* Actions with 2x2 grid styling */}
         <div className="bg-card rounded-lg border border-border p-3">
@@ -109,7 +82,6 @@ export default function BillboardHeader({
           <ControllerSettings
             controller={controller}
             onControllerChange={onControllerChange}
-            teacherSchedules={teacherSchedules}
           />
         </div>
       </div>

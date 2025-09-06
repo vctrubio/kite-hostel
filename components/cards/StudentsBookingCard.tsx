@@ -2,6 +2,7 @@
 
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
+import { BillboardClass } from "@/backend/BillboardClass";
 import {
   HelmetIcon,
   BookingIcon,
@@ -34,10 +35,8 @@ import { updateBookingStatus } from "@/actions/booking-actions";
 import { cn } from "@/lib/utils";
 
 interface StudentsBookingCardProps {
-  booking: BookingData;
-  onDragStart?: (booking: any) => void;
+  billboardClass: BillboardClass;
   selectedDate?: string;
-  teachers?: any[];
   isDraggable?: boolean;
 }
 
@@ -91,21 +90,20 @@ function LessonsSection({ lessons }: { lessons: any[] }) {
 }
 
 interface StudentCardFooterProps {
-  booking: BookingData;
-  teachers?: any[];
+  billboardClass: BillboardClass;
   onAssignTeacherClick: () => void;
   onBookingComplete?: (bookingId: string) => void;
 }
 
 function StudentCardFooter({
-  booking,
-  teachers,
+  billboardClass,
   onAssignTeacherClick,
   onBookingComplete,
 }: StudentCardFooterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const booking = billboardClass.booking;
 
   const handleDropdownToggle = () => setIsOpen(!isOpen);
 
@@ -127,22 +125,9 @@ function StudentCardFooter({
     });
   };
 
-  const packageHours = booking.package ? booking.package.duration / 60 : 0;
-  const totalPrice = booking.package
-    ? booking.package.price_per_student * booking.package.capacity_students
-    : 0;
-  const pricePerHourPerStudent = packageHours > 0 
-    ? (booking.package?.price_per_student || 0) / packageHours
-    : 0;
-  
-  // Calculate event hours (used hours) from booking's lessons and events
-  const eventHours = booking.lessons?.reduce((total, lesson) => {
-    const lessonEventMinutes = lesson.events?.reduce((sum, event) => sum + (event.duration || 0), 0) || 0;
-    return total + lessonEventMinutes / 60;
-  }, 0) || 0;
-  
-  // Calculate price to pay per student based on used hours
-  const priceToPay = pricePerHourPerStudent * eventHours;
+  // Use BillboardClass methods for calculations
+  const packageMinutes = billboardClass.getPackageMinutes();
+  const eventMinutes = billboardClass.getEventMinutes();
 
   return (
     <div className="border-t border-border/50 -mx-4 -mb-4">
@@ -244,7 +229,7 @@ function StudentCardFooter({
                 <div>
                   <span className="text-muted-foreground">Used Hours:</span>
                   <p className="font-medium">
-                    <Duration minutes={eventHours * 60} />
+                    <Duration minutes={eventMinutes.completed} />
                   </p>
                 </div>
                 <div>
@@ -266,16 +251,16 @@ function StudentCardFooter({
                     Price per Hour/Student:
                   </span>
                   <p className="font-medium">
-                    €{pricePerHourPerStudent.toFixed(2)}/h
+                    €{packageMinutes.expected.pricePerHourPerStudent.toFixed(2)}/h
                   </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Total Price:</span>
-                  <p className="font-medium text-green-600">€{totalPrice}</p>
+                  <p className="font-medium text-green-600">€{packageMinutes.expected.totalPrice}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Price to Pay/Student:</span>
-                  <p className="font-medium text-blue-600">€{priceToPay.toFixed(2)}</p>
+                  <p className="font-medium text-blue-600">€{packageMinutes.spent.pricePerStudent.toFixed(2)}</p>
                 </div>
               </div>
             )}
@@ -347,19 +332,20 @@ function StudentCardFooter({
 }
 
 export default function StudentsBookingCard({
-  booking,
-  onDragStart,
+  billboardClass,
   selectedDate,
-  teachers,
   isDraggable = false,
 }: StudentsBookingCardProps) {
-  const router = useRouter();
   const [showLessonModal, setShowLessonModal] = useState(false);
-  const modalId = `lesson-modal-${booking.id}`;
+  const booking = billboardClass.booking;
 
-  const bookingClass = useMemo(() => new WhiteboardClass(booking), [booking]);
-  const students = useMemo(() => extractStudents(booking), [booking]);
-  const existingLessons = useMemo(() => bookingClass.getLessons() || [], [bookingClass]);
+  // Extract students directly from billboardClass
+  const students = useMemo(() => 
+    billboardClass.booking.students?.map(bs => bs.student) || [], 
+    [billboardClass]
+  );
+  
+  const existingLessons = useMemo(() => billboardClass.lessons || [], [billboardClass]);
   
   const assignedTeacherIds = useMemo(() => {
     return new Set(
@@ -378,7 +364,7 @@ export default function StudentsBookingCard({
         lessonIds: lessonIds,
       }),
     );
-    onDragStart?.(booking);
+    // Note: onDragStart callback removed - using booking.id for dragging
   };
 
   return (
@@ -407,8 +393,8 @@ export default function StudentsBookingCard({
             </div>
             <div className="flex-grow min-w-[150px]">
               <BookingProgressBar
-                eventMinutes={bookingClass.calculateBookingLessonEventMinutes()}
-                totalMinutes={bookingClass.getTotalMinutes()}
+                eventMinutes={billboardClass.getEventMinutes()}
+                totalMinutes={billboardClass.package?.duration || 0}
               />
             </div>
           </div>
@@ -442,23 +428,15 @@ export default function StudentsBookingCard({
       </div>
 
       <StudentCardFooter
-        booking={booking}
-        teachers={teachers}
+        billboardClass={billboardClass}
         onAssignTeacherClick={() => setShowLessonModal(true)}
       />
 
-      {showLessonModal && teachers && (
-        <BookingToLessonModal
-          key={modalId}
-          bookingId={booking.id}
-          bookingReference={booking.reference}
-          onClose={() => setShowLessonModal(false)}
-          teachers={teachers}
-          onCommissionCreated={() => {
-            setShowLessonModal(false);
-            router.refresh();
-          }}
-        />
+      {/* TODO: Add lesson modal back when teachers are available */}
+      {showLessonModal && (
+        <div className="text-sm text-muted-foreground p-2">
+          Lesson assignment modal - Teachers not available in this context
+        </div>
       )}
     </div>
   );

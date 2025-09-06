@@ -43,7 +43,7 @@ export class BillboardClass {
     const eventMinutes = this.getEventMinutes();
     const packageDuration = this.package?.duration || 0;
     const pricePerStudent = this.package?.price_per_student || 0;
-    const studentCount = this.getStudentCount();
+    const studentCount = this.booking.students?.length || 0;
     const packageHours = packageDuration / 60;
     const pricePerHourPerStudent = packageHours > 0 ? pricePerStudent / packageHours : 0;
     
@@ -61,17 +61,4 @@ export class BillboardClass {
       }
     };
   }
-
-  // Student utilities
-  getStudentCount(): number {
-    return this.booking.students?.length || 0;
-  }
-
-  getStudentNames(): string[] {
-    return this.booking.students?.map(bs => bs.student.name) || [];
-  }
-}
-
-export function createBillboardClasses(bookingsData: BookingData[]): BillboardClass[] {
-  return bookingsData.map(booking => new BillboardClass(booking));
 }
