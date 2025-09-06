@@ -102,21 +102,20 @@ export class TeacherQueue {
     return lesson.billboardClass.booking.students?.map(s => s.student.name || 'Student') || [];
   }
 
+  // Get start time from scheduledDateTime
+  getStartTime(lesson: QueuedLesson): string {
+    if (!lesson.event.scheduledDateTime) return "09:00";
+    const date = new Date(lesson.event.scheduledDateTime);
+    return date.toTimeString().substring(0, 5); // Extract HH:MM
+  }
+
   getRemainingMinutes(lesson: QueuedLesson): number {
-    if (!lesson.billboardClass?.booking.package) return lesson.duration;
-    return lesson.billboardClass.booking.package.duration || lesson.duration;
+    if (!lesson.billboardClass?.booking.package) return lesson.event.duration;
+    return lesson.billboardClass.booking.package.duration || lesson.event.duration;
   }
 
   getLocation(lesson: QueuedLesson): string {
-    // Find the event in the lessons
-    const lessons = lesson.billboardClass?.booking.lessons || [];
-    for (const lessonData of lessons) {
-      const event = lessonData.events?.find(e => (e.lesson_id || e.id) === lesson.lessonId);
-      if (event) {
-        return event.location || "Main Beach";
-      }
-    }
-    return "Main Beach";
+    return lesson.event.location || "Main Beach";
   }
 
   getTeacherEarnings(lesson: QueuedLesson): number {
