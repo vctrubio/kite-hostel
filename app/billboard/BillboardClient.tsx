@@ -9,6 +9,7 @@ import {
   getTodayDateString,
 } from "@/components/formatters/DateTime";
 import BillboardHeader from "./BillboardHeader";
+import BillboardDev from "./BillboardDev";
 import TeacherColumn from "./TeacherColumn";
 import StudentBookingColumn from "./StudentBookingColumn";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";
@@ -128,7 +129,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     });
 
     setTeacherSchedules(schedules);
-  }, [data.teachers, bookingClasses, selectedDate, controller.submitTime, controller.durationCapOne]);
+  }, [data, bookingClasses, selectedDate, controller.submitTime, controller.durationCapOne]);
 
   const handleDrop = (teacherId: string, e: React.DragEvent) => {
     e.preventDefault();
@@ -195,7 +196,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     });
     
     return eventsMap;
-  }, [data.teachers, bookingClasses, selectedDate]);
+  }, [data, bookingClasses, selectedDate]);
 
   const filteredData = useMemo(() => {
     if (!selectedDate || isNaN(Date.parse(selectedDate))) {
@@ -269,6 +270,9 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         onControllerChange={setController}
         teacherSchedules={teacherSchedules}
       />
+
+      {/* Billboard Dev Component - JSON View */}
+      <BillboardDev bookingsData={data.bookings} />
 
       {/* Main content - 3/4 and 1/4 split */}
       <div className="grid grid-cols-4 gap-6">
