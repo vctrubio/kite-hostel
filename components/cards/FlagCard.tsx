@@ -5,7 +5,8 @@ import { Duration } from "@/components/formatters/Duration";
 import { DateTime } from "@/components/formatters/DateTime";
 import { FlagIcon } from "@/svgs";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
-import { ChevronDown, ChevronUp, DollarSign } from "lucide-react";
+import { ChevronDown, ChevronUp, DollarSign, Trash2 } from "lucide-react";
+import { deleteEvent } from "@/actions/event-actions";
 
 interface FlagCardProps {
   startTime: string;
@@ -14,6 +15,7 @@ interface FlagCardProps {
   status: "planned" | "completed" | "tbc" | "cancelled";
   teacherEarnings?: number;
   schoolEarnings?: number;
+  eventId?: string;
   onStatusChange?: (newStatus: "planned" | "completed" | "tbc" | "cancelled") => void;
 }
 
@@ -38,20 +40,48 @@ export default function FlagCard({
   status,
   teacherEarnings,
   schoolEarnings,
+  eventId,
   onStatusChange,
 }: FlagCardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
   
   const handleStatusChange = (newStatus: typeof status) => {
     onStatusChange?.(newStatus);
     setShowDropdown(false);
   };
 
+  const handleDelete = async () => {
+    if (!eventId) return;
+    
+    setIsDeleting(true);
+    try {
+      const result = await deleteEvent(eventId);
+      if (!result.success) {
+        // TODO: Replace with toast notification
+        console.error("Failed to delete event:", result.error);
+      } else {
+        // Success animation
+        setIsDeleted(true);
+        setShowDropdown(false);
+        // Card will disappear due to revalidation after animation
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      // TODO: Replace with toast notification
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const statusColor = STATUS_COLORS[status];
   const statusLabel = STATUS_LABELS[status];
 
   return (
-    <div className="w-[285px] bg-card border border-border rounded-lg overflow-hidden">
+    <div className={`w-[285px] bg-card border border-border rounded-lg overflow-hidden transition-all duration-500 ${
+      isDeleted ? 'opacity-0 scale-95 translate-y-2' : 'opacity-100 scale-100 translate-y-0'
+    } ${isDeleting ? 'animate-pulse' : ''}`}>
       <div className="p-4 flex items-start gap-4">
         <div className="flex flex-col items-center gap-2">
           <FlagIcon className="w-12 h-12" />
@@ -103,54 +133,22 @@ export default function FlagCard({
         </button>
 
         {showDropdown && (
-          <div className="px-4 pb-4 space-y-2">
-            {/* Status options */}
-            <div className="grid grid-cols-2 gap-2">
+          <div className="px-4 pb-4 space-y-3">
+            {/* Delete button */}
+            {eventId && (
               <button
-                onClick={() => handleStatusChange("planned")}
-                className={`px-3 py-2 text-sm rounded transition-colors ${
-                  status === "planned"
-                    ? "bg-blue-500 text-white"
-                    : "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                }`}
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/50 rounded transition-colors disabled:opacity-50"
               >
-                Planned
+                <Trash2 className="w-4 h-4" />
+                {isDeleting ? "Deleting..." : "Delete Event"}
               </button>
-              <button
-                onClick={() => handleStatusChange("tbc")}
-                className={`px-3 py-2 text-sm rounded transition-colors ${
-                  status === "tbc"
-                    ? "bg-purple-500 text-white"
-                    : "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-900/50"
-                }`}
-              >
-                TBC
-              </button>
-              <button
-                onClick={() => handleStatusChange("completed")}
-                className={`px-3 py-2 text-sm rounded transition-colors ${
-                  status === "completed"
-                    ? "bg-green-500 text-white"
-                    : "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-900/50"
-                }`}
-              >
-                Completed
-              </button>
-              <button
-                onClick={() => handleStatusChange("cancelled")}
-                className={`px-3 py-2 text-sm rounded transition-colors ${
-                  status === "cancelled"
-                    ? "bg-orange-500 text-white"
-                    : "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 hover:bg-orange-200 dark:hover:bg-orange-900/50"
-                }`}
-              >
-                Cancelled
-              </button>
-            </div>
+            )}
 
             {/* Earnings breakdown for completed status */}
             {status === "completed" && (teacherEarnings || schoolEarnings) && (
-              <div className="mt-3 pt-3 border-t border-border space-y-2">
+              <div className="pt-3 border-t border-border space-y-2">
                 <div className="text-xs font-medium text-muted-foreground mb-2">
                   Earnings Breakdown:
                 </div>

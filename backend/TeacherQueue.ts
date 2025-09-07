@@ -4,10 +4,11 @@
  * Uses BillboardClass for data access and lesson IDs for identification
  */
 
-import { addMinutes } from 'date-fns';
-import { BillboardClass } from './BillboardClass';
-import { formatTime } from '@/components/formatters/DateTime';
-import { EventStatus, Location } from '@/lib/constants';
+import { addMinutes } from "date-fns";
+import { BillboardClass } from "./BillboardClass";
+import { formatTime } from "@/components/formatters/DateTime";
+import { EventStatus, Location } from "@/lib/constants";
+import { createEvent } from "@/actions/event-actions";
 
 export interface EventData {
   id?: string; // Event ID if it exists, undefined if dragged from StudentBookingColumn
@@ -35,21 +36,12 @@ export interface TeacherInfo {
 export class TeacherQueue {
   private head: EventNode | null = null;
   public teacher: TeacherInfo;
-  
+
   constructor(
     teacher: TeacherInfo,
     private date: string,
   ) {
     this.teacher = teacher;
-  }
- 
-  // Get start time from eventData
-  getStartTime(eventNode: EventNode): string {
-    if (!eventNode.eventData.date) {
-      throw new Error(`date is required for lesson ${eventNode.lessonId}`);
-    }
-    const date = new Date(eventNode.eventData.date);
-    return date.toTimeString().substring(0, 5); // Extract HH:MM
   }
 
   // Add event to queue (simple - just add to end)
@@ -95,60 +87,61 @@ export class TeacherQueue {
     let teacherEarnings = 0;
     let schoolRevenue = 0;
     let eventCount = 0;
-    
+
     // Calculate totals for all events
-    eventNodes.forEach(eventNode => {
+    eventNodes.forEach((eventNode) => {
       try {
         totalDuration += eventNode.eventData.duration;
         eventCount++;
-        
+
         // Teacher earnings
-        const lesson = eventNode.billboardClass.lessons?.find(l => l.id === eventNode.lessonId);
+        const lesson = eventNode.billboardClass.lessons?.find(
+          (l) => l.id === eventNode.lessonId,
+        );
         if (lesson?.commission?.price_per_hour) {
           const hours = eventNode.eventData.duration / 60;
           teacherEarnings += lesson.commission.price_per_hour * hours;
         }
-        
+
         // School revenue
         const pkg = eventNode.billboardClass?.booking.package;
         if (pkg?.price_per_student && pkg?.capacity_students && pkg?.duration) {
           const packageHours = pkg.duration / 60;
           const eventHours = eventNode.eventData.duration / 60;
           const pricePerHourPerStudent = pkg.price_per_student / packageHours;
-          schoolRevenue += pricePerHourPerStudent * pkg.capacity_students * eventHours;
+          schoolRevenue +=
+            pricePerHourPerStudent * pkg.capacity_students * eventHours;
         }
       } catch (error) {
         // Skip events with missing data
-        console.warn(`Skipping event ${eventNode.lessonId} due to missing data:`, error);
+        console.warn(
+          `Skipping event ${eventNode.lessonId} due to missing data:`,
+          error,
+        );
       }
     });
-    
+
     return {
       eventCount,
       totalDuration, // in minutes
-      totalHours: Math.round(totalDuration / 60 * 10) / 10, // rounded to 1 decimal
+      totalHours: Math.round((totalDuration / 60) * 10) / 10, // rounded to 1 decimal
       earnings: {
         teacher: teacherEarnings,
         school: schoolRevenue,
-        total: teacherEarnings + schoolRevenue
-      }
+        total: teacherEarnings + schoolRevenue,
+      },
     };
-  }
-
-  // Check if queue is empty
-  isEmpty(): boolean {
-    return this.head === null;
   }
 
   // Get the last event in the queue
   getLastEvent(): EventNode | null {
     if (!this.head) return null;
-    
+
     let current = this.head;
     while (current.next) {
       current = current.next;
     }
-    
+
     return current;
   }
 
@@ -156,13 +149,21 @@ export class TeacherQueue {
   getAllEvents(): EventNode[] {
     const events: EventNode[] = [];
     let current = this.head;
-    
+
     while (current) {
       events.push(current);
       current = current.next;
     }
-    
+
     return events;
+  }
+
+  // Get start time from event node
+  getStartTime(eventNode: EventNode): string {
+    const eventDate = new Date(eventNode.eventData.date);
+    const hours = eventDate.getHours();
+    const minutes = eventDate.getMinutes();
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   }
 
   // Get flag time - returns actual head time or null if no events
@@ -172,6 +173,92 @@ export class TeacherQueue {
       return this.getStartTime(this.head);
     } catch {
       return null;
+    }
+  }
+
+  // Helper function to parse time to minutes
+  private parseTimeToMinutes(timeStr: string): number {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    return hours * 60 + minutes;
+  }
+
+  // Helper function to format minutes to time
+  private formatMinutesToTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+  }
+
+  // Add event action - creates event and adds to queue
+  async addEventAction(
+    billboardClass: BillboardClass,
+    controller: {
+      submitTime: string;
+      location: Location;
+      durationCapOne: number;
+      durationCapTwo: number;
+      durationCapThree: number;
+    }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Find a lesson with teacher assignment from the billboard class
+      const lessonWithTeacher = billboardClass.lessons.find(
+        (lesson) => lesson.teacher?.id === this.teacher.id
+      );
+      if (!lessonWithTeacher) {
+        return {
+          success: false,
+          error: `No lesson found with teacher assignment for teacher: ${this.teacher.name}`
+        };
+      }
+
+      // Determine start time based on queue state
+      let eventTime: string;
+      const lastEvent = this.getLastEvent();
+      
+      if (!lastEvent) {
+        // Use controller submit time if queue is empty
+        eventTime = controller.submitTime;
+      } else {
+        // Find the next available slot after the last event
+        const lastEventStart = this.getStartTime(lastEvent);
+        const lastEventStartMinutes = this.parseTimeToMinutes(lastEventStart);
+        const lastEventEndMinutes = lastEventStartMinutes + lastEvent.eventData.duration;
+        eventTime = this.formatMinutesToTime(lastEventEndMinutes);
+      }
+
+      // Determine duration based on package student capacity
+      const studentCapacity = billboardClass.booking.package.capacity_students;
+      let eventDuration: number;
+      
+      if (studentCapacity === 1) {
+        eventDuration = controller.durationCapOne;
+      } else if (studentCapacity === 2) {
+        eventDuration = controller.durationCapTwo;
+      } else {
+        eventDuration = controller.durationCapThree;
+      }
+
+      // Create the event
+      const result = await createEvent({
+        lessonId: lessonWithTeacher.id,
+        date: this.date,
+        startTime: eventTime,
+        durationMinutes: eventDuration,
+        location: controller.location,
+        status: "planned"
+      });
+
+      if (result.success) {
+        console.log("Event created successfully:", result.data);
+        return { success: true };
+      } else {
+        console.error("Failed to create event:", result.error);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error("Error in addEventAction:", error);
+      return { success: false, error: "Failed to create event" };
     }
   }
 }
