@@ -358,15 +358,16 @@ export default function StudentsBookingCard({
   }, [existingLessons]);
 
   const handleDragStart = (e: React.DragEvent) => {
-    const lessonIds = existingLessons.map((lesson) => lesson.id);
+    // Create a serializable object with the billboardClass data
+    const dragData = {
+      booking: billboardClass.booking,
+      lessons: billboardClass.lessons,
+      package: billboardClass.package,
+    };
+    
     e.dataTransfer.setData(
-      "text/plain",
-      JSON.stringify({
-        bookingId: booking.id,
-        booking: booking,
-        assignedTeacherIds: Array.from(assignedTeacherIds),
-        lessonIds: lessonIds,
-      }),
+      "application/json",
+      JSON.stringify(dragData),
     );
     onDragStart?.(booking.id);
   };

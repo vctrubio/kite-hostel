@@ -67,7 +67,7 @@ export function createTeacherQueuesFromBillboardClasses(
         next: null
       };
       
-      queue.addEventNode(eventNode);
+      queue.addToQueue(eventNode);
     });
     
     queues.push(queue);

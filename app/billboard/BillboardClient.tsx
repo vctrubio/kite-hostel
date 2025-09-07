@@ -16,6 +16,7 @@ import { TeacherQueue } from "@/backend/TeacherQueue";
 import { type EventController } from "@/backend/types";
 import { createTeacherQueuesFromBillboardClasses } from "@/backend/billboardUtils";
 import { LOCATION_ENUM_VALUES } from "@/lib/constants";
+import { createEvent } from "@/actions/event-actions";
 
 const STORAGE_KEY = "billboard-selected-date";
 interface BillboardClientProps {
@@ -76,19 +77,11 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     console.log("Teacher Schedules for", selectedDate);
     queues.forEach(queue => {
       console.log(`\n--- ${queue.teacher.name} (${queue.teacher.id}) ---`);
-      const eventNodes = queue.getEventNodes();
-      console.log(`Events count: ${eventNodes.length}`);
+      const stats = queue.getTeacherStats();
+      console.log(`Events count: ${stats.eventCount}`);
+      console.log(`Total duration: ${stats.totalHours}h`);
       
-      eventNodes.forEach((eventNode, index) => {
-        console.log(`  ${index + 1}. Event ${eventNode.id}:`);
-        console.log(`     Time: ${new Date(eventNode.eventData.date).toLocaleTimeString()}`);
-        console.log(`     Duration: ${eventNode.eventData.duration} minutes`);
-        console.log(`     Location: ${eventNode.eventData.location}`);
-        console.log(`     Status: ${eventNode.eventData.status}`);
-        console.log(`     Has Gap: ${eventNode.hasGap}`);
-      });
-      
-      if (eventNodes.length === 0) {
+      if (stats.eventCount === 0) {
         console.log("  No events scheduled");
       }
     });
@@ -99,7 +92,6 @@ export default function BillboardClient({ data }: BillboardClientProps) {
 
   // Calculate flag time - earliest time from teacher queues or controller submit time
   const calculatedFlagTime = useMemo(() => {
-    // Get earliest time from all teacher queues
     const allTimes: string[] = [];
     teacherQueues.forEach(queue => {
       const time = queue.getFlagTime();
@@ -159,6 +151,88 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     }
   }, []);
 
+  // Add booking to teacher queue function
+  const addToTeacherQueue = async (teacherId: string, billboardClass: BillboardClass) => {
+    try {
+      const teacherQueue = teacherQueues.get(teacherId);
+      if (!teacherQueue) {
+        console.error("Teacher queue not found for teacher:", teacherId);
+        return;
+      }
+
+      // Find a lesson with teacher assignment from the billboard class
+      const lessonWithTeacher = billboardClass.lessons.find(lesson => lesson.teacher?.id === teacherId);
+      if (!lessonWithTeacher) {
+        console.error("No lesson found with teacher assignment for teacher:", teacherId);
+        return;
+      }
+
+      // Check if the teacher queue is empty
+      let eventTime: string;
+
+      if (teacherQueue.isEmpty()) {
+        // Use flag time if queue is empty
+        eventTime = flagTime;
+      } else {
+        // Find the next available slot after the last event
+        const lastEvent = teacherQueue.getLastEvent();
+        if (lastEvent) {
+          const lastEventStart = teacherQueue.getStartTime(lastEvent);
+          const lastEventStartMinutes = parseTimeToMinutes(lastEventStart);
+          const lastEventEndMinutes = lastEventStartMinutes + lastEvent.eventData.duration;
+          eventTime = formatMinutesToTime(lastEventEndMinutes);
+        } else {
+          eventTime = flagTime; // fallback
+        }
+      }
+
+      // Use controller settings based on package student capacity
+      const studentCapacity = billboardClass.booking.package.capacity_students;
+      let eventDuration: number;
+      
+      if (studentCapacity === 1) {
+        eventDuration = controller.durationCapOne;
+      } else if (studentCapacity === 2) {
+        eventDuration = controller.durationCapTwo;
+      } else 
+        eventDuration = controller.durationCapThree;
+
+      
+      const eventLocation = controller.location;
+
+      // Create the event
+      const result = await createEvent({
+        lessonId: lessonWithTeacher.id,
+        date: selectedDate,
+        startTime: eventTime,
+        durationMinutes: eventDuration,
+        location: eventLocation,
+        status: "planned"
+      });
+
+      if (result.success) {
+        console.log("Event created successfully:", result.data);
+        // The page will be revalidated by the createEvent action
+      } else {
+        console.error("Failed to create event:", result.error);
+      }
+    } catch (error) {
+      console.error("Error adding to teacher queue:", error);
+    }
+  };
+
+  // Helper functions for time manipulation
+  const parseTimeToMinutes = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const formatMinutesToTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="min-h-screen p-4">
       {/* Header with date picker and controller */}
@@ -169,8 +243,6 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         onControllerChange={setController}
       />
 
-      {/* Dev Component - JSON View */}
-      <BillboardDev bookingsData={data.bookings} />
 
       {/* Main content - Teacher Column and Student Column */}
       <div className="grid grid-cols-4 gap-4">
@@ -179,6 +251,8 @@ export default function BillboardClient({ data }: BillboardClientProps) {
           teacherQueues={teacherQueues}
           dayOfWeek={new Date(selectedDate).toLocaleDateString("en-US", { weekday: "long" })}
           flagTime={flagTime}
+          controller={controller}
+          onAddToQueue={addToTeacherQueue}
         />
         
         <StudentBookingColumn
@@ -186,6 +260,10 @@ export default function BillboardClient({ data }: BillboardClientProps) {
           selectedDate={selectedDate}
         />
       </div>
+
+            {/* Dev Component - JSON View */}
+      <BillboardDev bookingsData={data.bookings} />
+
     </div>
   );
 }

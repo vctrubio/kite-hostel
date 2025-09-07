@@ -42,8 +42,7 @@ export class TeacherQueue {
   ) {
     this.teacher = teacher;
   }
-
-  
+ 
   // Get start time from eventData
   getStartTime(eventNode: EventNode): string {
     if (!eventNode.eventData.date) {
@@ -53,9 +52,45 @@ export class TeacherQueue {
     return date.toTimeString().substring(0, 5); // Extract HH:MM
   }
 
+  // Add event to queue (simple - just add to end)
+  addToQueue(eventNode: EventNode): void {
+    if (!this.head) {
+      this.head = eventNode;
+    } else {
+      // Find the last node
+      let current = this.head;
+      while (current.next) {
+        current = current.next;
+      }
+      current.next = eventNode;
+    }
+  }
+
+  // Remove from queue by lesson ID
+  removeFromQueue(lessonId: string): void {
+    if (!this.head) return;
+
+    // If head is the node to remove
+    if (this.head.lessonId === lessonId) {
+      this.head = this.head.next;
+      return;
+    }
+
+    // Find the node before the one to remove
+    let current = this.head;
+    while (current.next && current.next.lessonId !== lessonId) {
+      current = current.next;
+    }
+
+    // If found, remove it
+    if (current.next) {
+      current.next = current.next.next;
+    }
+  }
+
   // Get comprehensive teacher statistics
   getTeacherStats() {
-    const eventNodes = this.getEventNodes();
+    const eventNodes = this.getAllEvents();
     let totalDuration = 0;
     let teacherEarnings = 0;
     let schoolRevenue = 0;
@@ -99,239 +134,35 @@ export class TeacherQueue {
       }
     };
   }
-  
-  // Add event node to end of queue
-  addEventNode(eventNode: EventNode): void {
-    if (!this.head) {
-      this.head = eventNode;
-    } else {
-      // Find the last node
-      let current = this.head;
-      while (current.next) {
-        current = current.next;
-      }
-      current.next = eventNode;
-    }
 
-    this.recalculateTimes();
+  // Check if queue is empty
+  isEmpty(): boolean {
+    return this.head === null;
   }
 
-  // Remove event node from queue by lesson ID
-  removeEventNode(lessonId: string): void {
-    if (!this.head) return;
-
-    // If head is the node to remove
-    if (this.head.lessonId === lessonId) {
-      this.head = this.head.next;
-      this.recalculateTimes();
-      return;
-    }
-
-    // Find the node before the one to remove
-    let current = this.head;
-    while (current.next && current.next.lessonId !== lessonId) {
-      current = current.next;
-    }
-
-    // If found, remove it
-    if (current.next) {
-      current.next = current.next.next;
-      this.recalculateTimes();
-    }
-  }
-
-  // Move event up in queue (earlier)
-  moveUp(lessonId: string): void {
-    if (!this.head) return;
-
-    // Can't move head up
-    if (this.head.lessonId === lessonId) return;
-
-    // Find the node before the one we want to move up
-    let beforePrev: EventNode | null = null;
-    let prev = this.head;
-    
-    while (prev.next && prev.next.lessonId !== lessonId) {
-      beforePrev = prev;
-      prev = prev.next;
-    }
-    
-    const current = prev.next;
-    if (!current) return; // Node not found
-    
-    // Remove current from its position
-    prev.next = current.next;
-    
-    // Insert current before prev
-    if (!beforePrev) {
-      // prev is head, so current becomes new head
-      current.next = prev;
-      this.head = current;
-    } else {
-      // Insert current between beforePrev and prev
-      beforePrev.next = current;
-      current.next = prev;
-    }
-    
-    this.recalculateTimes();
-  }
-
-  // Move lesson down in queue (later)
-  moveDown(lessonId: string): void {
-    if (!this.head) return;
-    
-    let prev: EventNode | null = null;
-    let current = this.head;
-    
-    // Find the node to move down
-    while (current && current.lessonId !== lessonId) {
-      prev = current;
-      current = current.next;
-    }
-    
-    if (!current || !current.next) return; // Node not found or is last
-    
-    const next = current.next;
-    const afterNext = next.next;
-    
-    // Remove current from its position
-    if (prev) {
-      prev.next = next;
-    } else {
-      this.head = next;
-    }
-    
-    // Insert current after next
-    next.next = current;
-    current.next = afterNext;
-    
-    this.recalculateTimes();
-  }
-
-  // Adjust lesson duration
-  adjustDuration(lessonId: string, increment: boolean): void {
-    const node = this.findEventNodeByLessonId(lessonId);
-    if (!node) return;
-
-    const adjustment = increment ? 15 : -15; // 15-minute increments
-    const newDuration = Math.max(15, node.eventData.duration + adjustment);
-    
-    // Don't exceed remaining minutes
-    const remainingMinutes = this.getRemainingMinutes(node);
-    if (newDuration <= remainingMinutes) {
-      node.eventData.duration = newDuration;
-      this.recalculateTimes();
-    }
-  }
-
-  // Adjust lesson start time
-  adjustTime(lessonId: string, increment: boolean): void {
-    const node = this.findEventNodeByLessonId(lessonId);
-    if (!node) return;
-
-    const adjustment = increment ? 15 : -15; // 15-minute increments
-    node.timeAdjustment = (node.timeAdjustment || 0) + adjustment;
-    this.recalculateTimes();
-  }
-
-  // Recalculate all lesson times based on queue order
-  private recalculateTimes(): void {
-    let currentNode = this.head;
-
-    while (currentNode) {
-      const isFirst = currentNode === this.head;
-      
-      if (isFirst) {
-        // For the first node, use the original event time
-        if (currentNode.eventData.date) {
-          const originalTime = formatTime(currentNode.eventData.date);
-          const originalTimeMinutes = this.parseTime(originalTime);
-          const adjustedTime = originalTimeMinutes + (currentNode.timeAdjustment || 0);
-          
-          currentNode.eventData.date = this.createDateTime(adjustedTime);
-        }
-        currentNode.hasGap = false;
-      } else {
-        // For subsequent nodes, calculate based on previous node's end time
-        const prevNode = this.findPrevNode(currentNode);
-        if (prevNode) {
-          const prevStartTime = this.getStartTime(prevNode);
-          const prevEndTime = this.parseTime(prevStartTime) + prevNode.eventData.duration;
-          const adjustedTime = prevEndTime + (currentNode.timeAdjustment || 0);
-          
-          // Set scheduled times
-          currentNode.eventData.date = this.createDateTime(adjustedTime);
-          
-          // Check for gaps
-          currentNode.hasGap = adjustedTime > prevEndTime;
-        }
-      }
-
-      currentNode = currentNode.next;
-    }
-  }
-
-  // Helper: Parse time string to minutes since midnight
-  private parseTime(timeStr: string): number {
-    if (!timeStr || typeof timeStr !== 'string') {
-      console.error('Invalid timeStr passed to parseTime:', timeStr);
-      return 0; // fallback to midnight
-    }
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
-  // Helper: Format minutes to time string
-  private formatTime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  }
-
-  // Helper: Create ISO datetime string for given time
-  private createDateTime(minutes: number): string {
-    const timeStr = this.formatTime(minutes);
-    return `${this.date}T${timeStr}:00`;
-  }
-
-  // Get all event nodes as array
-  getEventNodes(): EventNode[] {
-    const nodes: EventNode[] = [];
-    let current = this.head;
-    
-    while (current) {
-      nodes.push(current);
-      current = current.next;
-    }
-    
-    return nodes;
-  }
-
-  // Get event node by lesson ID
-  getEventNode(lessonId: string): EventNode | null {
-    return this.findEventNodeByLessonId(lessonId);
-  }
-  
-  // Helper: Find event node by lesson ID
-  private findEventNodeByLessonId(lessonId: string): EventNode | null {
-    let current = this.head;
-    while (current) {
-      if (current.lessonId === lessonId) return current;
-      current = current.next;
-    }
-    return null;
-  }
-  
-  // Helper: Find previous node
-  private findPrevNode(targetNode: EventNode): EventNode | null {
-    if (!this.head || this.head === targetNode) return null;
+  // Get the last event in the queue
+  getLastEvent(): EventNode | null {
+    if (!this.head) return null;
     
     let current = this.head;
     while (current.next) {
-      if (current.next === targetNode) return current;
       current = current.next;
     }
-    return null;
+    
+    return current;
+  }
+
+  // Get all events for display (simplified version of getEventNodes)
+  getAllEvents(): EventNode[] {
+    const events: EventNode[] = [];
+    let current = this.head;
+    
+    while (current) {
+      events.push(current);
+      current = current.next;
+    }
+    
+    return events;
   }
 
   // Get flag time - returns actual head time or null if no events
@@ -343,5 +174,4 @@ export class TeacherQueue {
       return null;
     }
   }
-
 }
