@@ -63,7 +63,31 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     const queuesMap = new Map<string, TeacherQueue>();
     
     data.teachers?.forEach(teacher => {
-      const queue = TeacherQueue.fromBillboardClasses(filteredBillboardClasses, teacher.id, selectedDate);
+      const teacherInfo = { id: teacher.id, name: teacher.name };
+      const queue = new TeacherQueue(teacherInfo, selectedDate);
+      
+      // Get all events for this teacher on this date
+      filteredBillboardClasses.forEach(bc => {
+        const events = bc.getEventsForTeacherAndDate(teacher.id, selectedDate);
+        events.forEach(event => {
+          const eventNode = {
+            id: event.id, // Use actual event ID (string) for existing events
+            lessonId: event.lesson?.id || event.id,
+            billboardClass: bc,
+            eventData: {
+              id: event.id, // This exists for existing events
+              date: event.date,
+              duration: event.duration || 120,
+              location: event.location,
+              status: event.status || "planned"
+            },
+            timeAdjustment: 0,
+            next: null
+          };
+          queue.addEventNode(eventNode);
+        });
+      });
+      
       queuesMap.set(teacher.id, queue);
     });
     
@@ -80,11 +104,9 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     });
   }, [filteredBillboardClasses]);
 
-  // Drag and drop handlers
+  // Drag and drop handlers (placeholder for future implementation)
   const handleTeacherDrop = (teacherId: string, bookingId: string) => {
-    // Handle the drop logic here - for now just log
-    console.log(`Dropped booking ${bookingId} on teacher ${teacherId}`);
-    // In a real implementation, you'd create/assign the lesson here
+    console.log(`Dropped booking ${bookingId} on teacher ${teacherId} - drag functionality not implemented yet`);
   };
 
   // Date management
@@ -130,7 +152,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
           teachers={data.teachers || []}
           teacherQueues={teacherQueues}
           dayOfWeek={new Date(selectedDate).toLocaleDateString("en-US", { weekday: "long" })}
-          onTeacherDrop={handleTeacherDrop}
+          flagTime={controller.submitTime}
         />
         
         <StudentBookingColumn

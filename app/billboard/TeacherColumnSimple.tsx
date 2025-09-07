@@ -10,7 +10,8 @@ interface TeacherColumnSimpleProps {
   teachers: any[];
   teacherQueues: Map<string, TeacherQueue>;
   dayOfWeek: string; // e.g., "Monday", "Tuesday", etc.
-  onTeacherDrop: (teacherId: string, bookingId: string) => void;
+  onTeacherDrop?: (teacherId: string, bookingId: string) => void; // Optional for now
+  flagTime: string; // Submit time from controller as fallback
 }
 
 interface TeacherRowProps {
@@ -19,9 +20,10 @@ interface TeacherRowProps {
   onDrop: (e: React.DragEvent) => void;
   teacherQueue: TeacherQueue;
   onQueueUpdate: (teacherId: string, queue: TeacherQueue) => void;
+  onSubmit?: (teacherId: string) => Promise<void>;
 }
 
-function TeacherRow({ teacher, isEditMode, onDrop, teacherQueue, onQueueUpdate }: TeacherRowProps) {
+function TeacherRow({ teacher, isEditMode, onDrop, teacherQueue, onQueueUpdate, onSubmit }: TeacherRowProps) {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
@@ -31,19 +33,13 @@ function TeacherRow({ teacher, isEditMode, onDrop, teacherQueue, onQueueUpdate }
     onDrop(e);
   };
 
-  // Calculate teacher earnings and school revenue from queue
-  const financials = useMemo(() => {
-    let teacherEarnings = 0;
-    let schoolRevenue = 0;
-    
-    const lessons = teacherQueue.getLessons();
-    lessons.forEach(lesson => {
-      // Use the TeacherQueue's built-in methods for accurate calculations
-      teacherEarnings += teacherQueue.getTeacherEarnings(lesson);
-      schoolRevenue += teacherQueue.getSchoolRevenue(lesson);
-    });
-    
-    return { teacherEarnings, schoolRevenue };
+  // Get event nodes and stats from queue
+  const eventNodes = useMemo(() => {
+    return teacherQueue.getEventNodes();
+  }, [teacherQueue]);
+  
+  const teacherStats = useMemo(() => {
+    return teacherQueue.getTeacherStats();
   }, [teacherQueue]);
 
   // Queue management handlers
@@ -87,88 +83,91 @@ function TeacherRow({ teacher, isEditMode, onDrop, teacherQueue, onQueueUpdate }
           </div>
           
           {/* Teacher Stats */}
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Lessons:</span>
-              <span className="font-medium">{teacherQueue.getLessons().length}</span>
-            </div>
-            
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Teacher Earnings:</span>
-              <span className="font-medium text-green-600">
-                €{financials.teacherEarnings.toFixed(2)}
-              </span>
-            </div>
-            
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">School Revenue:</span>
-              <span className="font-medium text-blue-600">
-                €{financials.schoolRevenue.toFixed(2)}
-              </span>
-            </div>
-            
-            <div className="pt-2 border-t border-border">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground font-medium">Total Revenue:</span>
-                <span className="font-bold">
-                  €{(financials.teacherEarnings + financials.schoolRevenue).toFixed(2)}
-                </span>
+          <div className="space-y-3 text-sm">
+            {/* Row 1: Events and Duration */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground mb-1">Events</div>
+                <div className="font-medium">{teacherStats.eventCount}</div>
               </div>
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground mb-1">Duration</div>
+                <div className="font-medium">{teacherStats.totalHours}h</div>
+              </div>
+            </div>
+            
+            {/* Row 2: Teacher and School Earnings */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground mb-1">Teacher</div>
+                <div className="font-medium">€{teacherStats.earnings.teacher.toFixed(2)}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground mb-1">School</div>
+                <div className="font-medium">€{teacherStats.earnings.school.toFixed(2)}</div>
+              </div>
+            </div>
+            
+            {/* Total Revenue */}
+            <div className="pt-2 border-t border-border text-center">
+              <div className="text-xs text-muted-foreground mb-1">Total Revenue</div>
+              <div className="font-bold">€{teacherStats.earnings.total.toFixed(2)}</div>
             </div>
           </div>
         </div>
         
         {/* Right Column - Events/Queue */}
         <div className="flex-1 p-4">
-          {teacherQueue.getLessons().length === 0 ? (
+          {eventNodes.length === 0 ? (
             <div className="text-center text-muted-foreground text-sm py-8">
-              {isEditMode ? "Drop booking here to assign" : "No lessons scheduled"}
+              {isEditMode ? "Drop booking here to assign" : "No events scheduled"}
             </div>
           ) : (
             <div className="flex flex-wrap gap-3">
               {isEditMode ? (
-                // Render queue lessons with full functionality in edit mode
-                teacherQueue.getLessons().map((lesson, index) => (
-                  <div key={lesson.lessonId} className="flex-shrink-0">
-                    <LessonQueueCard
-                      queuedLesson={{
-                        ...lesson,
-                        students: teacherQueue.getStudents(lesson),
-                        remainingMinutes: teacherQueue.getRemainingMinutes(lesson),
-                        scheduledStartTime: lesson.scheduledStartTime || "11:11",
-                        scheduledDateTime: lesson.scheduledDateTime || new Date().toISOString()
-                      } as any}
-                      location={teacherQueue.getLocation(lesson)}
-                      isFirst={teacherQueue.isFirst(lesson.lessonId)}
-                      isLast={teacherQueue.isLast(lesson.lessonId)}
-                      canMoveEarlier={teacherQueue.canMoveUp(lesson.lessonId)}
-                      canMoveLater={teacherQueue.canMoveDown(lesson.lessonId)}
-                      onRemove={handleRemoveLesson}
-                      onAdjustDuration={handleAdjustDuration}
-                      onAdjustTime={handleAdjustTime}
-                      onMoveUp={handleMoveUp}
-                      onMoveDown={handleMoveDown}
-                    />
-                  </div>
-                ))
+                // Render event nodes with full functionality in edit mode
+                eventNodes.map((eventNode, index) => {
+                  const earnings = teacherQueue.getEventEarnings(eventNode);
+                  return (
+                    <div key={eventNode.id || `pending-${index}`} className="flex-shrink-0">
+                      <LessonQueueCard
+                        eventNode={eventNode}
+                        location={eventNode.eventData.location}
+                        isFirst={teacherQueue.isFirst(eventNode.lessonId)}
+                        isLast={teacherQueue.isLast(eventNode.lessonId)}
+                        canMoveEarlier={teacherQueue.canMoveUp(eventNode.lessonId)}
+                        canMoveLater={teacherQueue.canMoveDown(eventNode.lessonId)}
+                        onRemove={handleRemoveLesson}
+                        onAdjustDuration={handleAdjustDuration}
+                        onAdjustTime={handleAdjustTime}
+                        onMoveUp={handleMoveUp}
+                        onMoveDown={handleMoveDown}
+                        onSubmit={async () => onSubmit?.(teacher.id)}
+                      />
+                    </div>
+                  );
+                })
               ) : (
-                // Render queue lessons as flag cards for view mode
-                teacherQueue.getLessons().map((lesson, index) => (
-                  <div key={lesson.lessonId} className="flex-shrink-0">
-                    <FlagCard
-                      startTime={lesson.scheduledDateTime || new Date().toISOString()}
-                      duration={lesson.duration || 0}
-                      students={teacherQueue.getStudents(lesson)}
-                      status={lesson.status}
-                      teacherEarnings={teacherQueue.getTeacherEarnings(lesson)}
-                      schoolEarnings={teacherQueue.getSchoolRevenue(lesson)}
-                      onStatusChange={(newStatus) => {
-                        console.log(`Change lesson ${lesson.lessonId} status to ${newStatus}`);
-                        // TODO: Implement status change
-                      }}
-                    />
-                  </div>
-                ))
+                // Render event nodes as flag cards for view mode
+                eventNodes.map((eventNode, index) => {
+                  const earnings = teacherQueue.getEventEarnings(eventNode);
+                  return (
+                    <div key={eventNode.id || `view-${index}`} className="flex-shrink-0">
+                      <FlagCard
+                        startTime={eventNode.eventData.date}
+                        duration={eventNode.eventData.duration}
+                        students={eventNode.billboardClass.getStudentNames()}
+                        status={eventNode.eventData.status}
+                        teacherEarnings={earnings.teacher}
+                        schoolEarnings={earnings.school}
+                        onStatusChange={(newStatus) => {
+                          console.log(`Change event ${eventNode.lessonId} status to ${newStatus}`);
+                          // TODO: Implement status change
+                        }}
+                      />
+                    </div>
+                  );
+                })
               )}
             </div>
           )}
@@ -182,7 +181,8 @@ export default function TeacherColumnSimple({
   teachers,
   teacherQueues,
   dayOfWeek,
-  onTeacherDrop,
+  onTeacherDrop = () => {},
+  flagTime,
 }: TeacherColumnSimpleProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   
@@ -197,48 +197,70 @@ export default function TeacherColumnSimple({
     const allTimes: string[] = [];
     teacherQueues.forEach(queue => {
       const time = queue.getFlagTime();
-      if (time !== "11:11") { // Only if not debug indicator
+      if (time !== null) { // Only if there are events
         allTimes.push(time);
       }
     });
     
-    if (allTimes.length === 0) return "09:00"; // Default if no lessons
+    // If no events exist, use the controller submit time as fallback
+    if (allTimes.length === 0) return flagTime;
     return allTimes.sort()[0];
-  }, [teacherQueues]);
+  }, [teacherQueues, flagTime]);
 
   const handleSubmitChanges = async () => {
     console.log("Submitting queue changes...");
     
-    // Collect all changes from queues
-    const changes: Array<{
-      teacherId: string;
-      lessons: any[];
-    }> = [];
-    
-    teacherQueues.forEach((queue, teacherId) => {
-      const lessons = queue.getLessons();
-      if (lessons.length > 0) {
-        changes.push({
-          teacherId,
-          lessons: lessons.map(lesson => ({
-            bookingId: lesson.bookingId,
-            lessonId: lesson.lessonId,
-            duration: lesson.duration,
-            scheduledDateTime: lesson.scheduledDateTime,
-            timeAdjustment: lesson.timeAdjustment || 0,
-            students: queue.getStudents(lesson)
-          }))
-        });
+    try {
+      // Import the event actions
+      const { createEvent, updateEvent } = await import('@/actions/event-actions');
+      
+      const results = [];
+      
+      // Process each teacher's queue
+      for (const [teacherId, queue] of teacherQueues.entries()) {
+        const eventNodes = queue.getEventNodes();
+        
+        for (const eventNode of eventNodes) {
+          if (!eventNode.eventData.id) {
+            // New event - create it
+            const result = await createEvent({
+              lessonId: eventNode.lessonId,
+              date: new Date(eventNode.eventData.date).toISOString().split('T')[0],
+              startTime: queue.getStartTime(eventNode),
+              durationMinutes: eventNode.eventData.duration,
+              location: eventNode.eventData.location as any,
+              status: eventNode.eventData.status
+            });
+            results.push(result);
+          } else {
+            // Existing event - update it
+            const result = await updateEvent(eventNode.eventData.id, {
+              date: eventNode.eventData.date,
+              duration: eventNode.eventData.duration,
+              status: eventNode.eventData.status,
+              location: eventNode.eventData.location as any
+            });
+            results.push(result);
+          }
+        }
       }
-    });
-    
-    console.log("Queue changes to submit:", changes);
-    
-    // TODO: Implement actual submission logic
-    // This would typically call an API to update the schedule
-    
-    // Exit edit mode after successful submission
-    setIsEditMode(false);
+      
+      const failures = results.filter(r => !r.success);
+      if (failures.length > 0) {
+        console.error('Some submissions failed:', failures);
+        alert(`${failures.length} submissions failed. Check console for details.`);
+      } else {
+        console.log('All submissions successful');
+        // Exit edit mode after successful submission
+        setIsEditMode(false);
+        // Refresh the page to get updated data
+        window.location.reload();
+      }
+      
+    } catch (error) {
+      console.error('Error submitting changes:', error);
+      alert('Error submitting changes. Please try again.');
+    }
   };
 
   const handleTeacherDrop = (teacherId: string) => (e: React.DragEvent) => {
@@ -251,9 +273,9 @@ export default function TeacherColumnSimple({
         return;
       }
 
-      // Enter edit mode when something is dropped
+      // Enter edit mode when something is dropped (if drag is implemented)
       setIsEditMode(true);
-      onTeacherDrop(teacherId, bookingId);
+      onTeacherDrop?.(teacherId, bookingId);
     } catch (error) {
       console.error("Failed to handle teacher drop:", error);
     }
@@ -316,6 +338,10 @@ export default function TeacherColumnSimple({
               onDrop={handleTeacherDrop(teacher.id)}
               teacherQueue={queue}
               onQueueUpdate={handleQueueUpdate}
+              onSubmit={async (teacherId) => {
+                // Individual lesson submit - could be implemented here
+                console.log(`Submit changes for teacher ${teacherId}`);
+              }}
             />
           );
         })}

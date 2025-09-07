@@ -1,183 +1,177 @@
 /**
- * TeacherQueue - Manages a linked list of lessons for a teacher on a specific date
- * Handles time adjustments, duration changes, and lesson reordering
- * Uses BillboardClass for data access and booking/lesson IDs for identification
+ * TeacherQueue - Manages a linked list of events for a teacher on a specific date
+ * Handles time adjustments, duration changes, and event reordering
+ * Uses BillboardClass for data access and lesson IDs for identification
  */
 
-import { addMinutes, format } from 'date-fns';
+import { addMinutes } from 'date-fns';
 import { BillboardClass } from './BillboardClass';
 import { formatTime } from '@/components/formatters/DateTime';
+import { EventStatus, Location } from '@/lib/constants';
 
-export interface QueuedLesson {
-  id: string | null; // Event ID if it exists, null if dragged from StudentBookingColumn
-  lesson: {
-    id: string;
-    bookingId: string;
-    duration: number;
-    status: "planned" | "completed" | "tbc" | "cancelled";
-    teacher?: any;
-    booking?: any;
-    commission?: any;
-  };
-  event: {
-    id?: string;
-    duration: number;
-    scheduledDateTime?: string; // ISO string
-    location?: string;
-    status?: "planned" | "completed" | "tbc" | "cancelled";
-  };
-  hasGap?: boolean;
-  timeAdjustment?: number; // Manual time adjustment in minutes
-  gapClosureAdjustment?: number;
-  billboardClass?: BillboardClass; // Reference to original data
+export interface EventData {
+  id?: string; // Event ID if it exists, undefined if dragged from StudentBookingColumn
+  date: string; // ISO timestamp
+  duration: number; // Duration in minutes
+  location: Location; // Location enum value
+  status: EventStatus;
 }
 
-export interface QueueNode {
+export interface EventNode {
+  id: string | null; // Unique node ID for React keys, null for dragged bookings
+  lessonId: string; // Always exists from BillboardClass
+  billboardClass: BillboardClass; // Reference for calculations
+  eventData: EventData;
+  hasGap?: boolean;
+  timeAdjustment?: number; // Manual time adjustment in minutes
+  next: EventNode | null;
+}
+
+export interface TeacherInfo {
   id: string;
-  lesson: QueuedLesson;
-  next: QueueNode | null;
+  name: string;
 }
 
 export class TeacherQueue {
-  private head: QueueNode | null = null;
+  private head: EventNode | null = null;
+  public teacher: TeacherInfo;
   
   constructor(
+    teacher: TeacherInfo,
     private date: string,
-  ) {}
-
-  // Create queue from billboard classes for a specific teacher
-  static fromBillboardClasses(
-    billboardClasses: BillboardClass[], 
-    teacherId: string, 
-    date: string
-  ): TeacherQueue {
-    const queue = new TeacherQueue(date);
-    
-    // Get all events for this teacher on this date
-    const teacherEvents: any[] = [];
-    billboardClasses.forEach(bc => {
-      const events = bc.getEventsForTeacherAndDate(teacherId, date);
-      teacherEvents.push(...events.map(event => ({ event, billboardClass: bc })));
-    });
-
-    // Sort events by time
-    const sortedEvents = teacherEvents.sort((a, b) => {
-      const timeA = new Date(a.event.date).getTime();
-      const timeB = new Date(b.event.date).getTime();
-      return timeA - timeB;
-    });
-
-    // Add each event to the queue
-    sortedEvents.forEach(({ event, billboardClass }) => {
-      const queuedLesson: QueuedLesson = {
-        id: event.id || null,
-        lesson: {
-          id: event.lesson?.id || event.id,
-          bookingId: billboardClass.booking.id,
-          duration: event.duration || 120,
-          status: event.lesson?.status || "planned",
-          teacher: event.lesson?.teacher,
-          booking: event.lesson?.booking,
-          commission: event.lesson?.commission
-        },
-        event: {
-          id: event.id,
-          duration: event.duration || 120,
-          scheduledDateTime: event.date,
-          location: event.location,
-          status: event.status || "planned"
-        },
-        timeAdjustment: 0,
-        billboardClass: billboardClass
-      };
-      queue.addLesson(queuedLesson);
-    });
-
-    return queue;
+  ) {
+    this.teacher = teacher;
   }
 
-  // Getter methods using BillboardClass
-  getStudents(lesson: QueuedLesson): string[] {
-    if (!lesson.billboardClass) return [];
-    return lesson.billboardClass.booking.students?.map(s => s.student.name || 'Student') || [];
+  
+  // Getter methods using EventNode
+  getStudents(eventNode: EventNode): string[] {
+    return eventNode.billboardClass.getStudentNames();
   }
-
-  // Get start time from scheduledDateTime
-  getStartTime(lesson: QueuedLesson): string {
-    if (!lesson.event.scheduledDateTime) {
-      throw new Error(`scheduledDateTime is required for lesson ${lesson.lesson.id}`);
+  
+  // Get start time from eventData
+  getStartTime(eventNode: EventNode): string {
+    if (!eventNode.eventData.date) {
+      throw new Error(`date is required for lesson ${eventNode.lessonId}`);
     }
-    const date = new Date(lesson.event.scheduledDateTime);
+    const date = new Date(eventNode.eventData.date);
     return date.toTimeString().substring(0, 5); // Extract HH:MM
   }
 
-  getRemainingMinutes(lesson: QueuedLesson): number {
-    if (!lesson.billboardClass?.booking.package) return lesson.event.duration;
-    return lesson.billboardClass.booking.package.duration || lesson.event.duration;
+  getRemainingMinutes(eventNode: EventNode): number {
+    if (!eventNode.billboardClass?.booking.package) {
+      throw new Error(`package information is required for lesson ${eventNode.lessonId}`);
+    }
+    return eventNode.billboardClass.booking.package.duration;
   }
 
-  getLocation(lesson: QueuedLesson): string {
-    if (!lesson.event.location) {
-      throw new Error(`location is required for lesson ${lesson.lesson.id}`);
+  getLocation(eventNode: EventNode): Location {
+    if (!eventNode.eventData.location) {
+      throw new Error(`location is required for lesson ${eventNode.lessonId}`);
     }
-    return lesson.event.location;
+    return eventNode.eventData.location;
   }
 
-  getTeacherEarnings(lesson: QueuedLesson): number {
-    if (!lesson.lesson.commission?.price_per_hour) {
-      throw new Error(`commission price_per_hour is required for lesson ${lesson.lesson.id}`);
-    }
+  // Get comprehensive teacher statistics
+  getTeacherStats() {
+    const eventNodes = this.getEventNodes();
+    let totalDuration = 0;
+    let teacherEarnings = 0;
+    let schoolRevenue = 0;
+    let eventCount = 0;
     
-    const hours = lesson.event.duration / 60;
-    return lesson.lesson.commission.price_per_hour * hours;
-  }
-
-  getSchoolRevenue(lesson: QueuedLesson): number {
-    if (!lesson.billboardClass?.booking.package) {
-      throw new Error(`package information is required for lesson ${lesson.lesson.id}`);
-    }
+    // Calculate totals for all events
+    eventNodes.forEach(eventNode => {
+      try {
+        totalDuration += eventNode.eventData.duration;
+        eventCount++;
+        
+        // Teacher earnings
+        const lesson = eventNode.billboardClass.lessons?.find(l => l.id === eventNode.lessonId);
+        if (lesson?.commission?.price_per_hour) {
+          const hours = eventNode.eventData.duration / 60;
+          teacherEarnings += lesson.commission.price_per_hour * hours;
+        }
+        
+        // School revenue
+        const pkg = eventNode.billboardClass?.booking.package;
+        if (pkg?.price_per_student && pkg?.capacity_students && pkg?.duration) {
+          const packageHours = pkg.duration / 60;
+          const eventHours = eventNode.eventData.duration / 60;
+          const pricePerHourPerStudent = pkg.price_per_student / packageHours;
+          schoolRevenue += pricePerHourPerStudent * pkg.capacity_students * eventHours;
+        }
+      } catch (error) {
+        // Skip events with missing data
+        console.warn(`Skipping event ${eventNode.lessonId} due to missing data:`, error);
+      }
+    });
     
-    const pkg = lesson.billboardClass.booking.package;
-    if (!pkg.price_per_student || !pkg.capacity_students || !pkg.duration) {
-      throw new Error(`complete package information (price_per_student, capacity_students, duration) is required for lesson ${lesson.lesson.id}`);
-    }
-    
-    const packageHours = pkg.duration / 60;
-    const eventHours = lesson.event.duration / 60;
-    const pricePerHourPerStudent = pkg.price_per_student / packageHours;
-    
-    return pricePerHourPerStudent * pkg.capacity_students * eventHours;
-  }
-
-
-  // Add lesson to end of queue
-  addLesson(lesson: QueuedLesson): void {
-    const node: QueueNode = {
-      id: lesson.lesson.id,
-      lesson,
-      next: null
+    return {
+      eventCount,
+      totalDuration, // in minutes
+      totalHours: Math.round(totalDuration / 60 * 10) / 10, // rounded to 1 decimal
+      earnings: {
+        teacher: teacherEarnings,
+        school: schoolRevenue,
+        total: teacherEarnings + schoolRevenue
+      }
     };
-
+  }
+  
+  // Individual event financial calculations (for detailed views)
+  getEventEarnings(eventNode: EventNode) {
+    let teacherEarnings = 0;
+    let schoolRevenue = 0;
+    
+    try {
+      // Teacher earnings
+      const lesson = eventNode.billboardClass.lessons?.find(l => l.id === eventNode.lessonId);
+      if (lesson?.commission?.price_per_hour) {
+        const hours = eventNode.eventData.duration / 60;
+        teacherEarnings = lesson.commission.price_per_hour * hours;
+      }
+      
+      // School revenue
+      const pkg = eventNode.billboardClass?.booking.package;
+      if (pkg?.price_per_student && pkg?.capacity_students && pkg?.duration) {
+        const packageHours = pkg.duration / 60;
+        const eventHours = eventNode.eventData.duration / 60;
+        const pricePerHourPerStudent = pkg.price_per_student / packageHours;
+        schoolRevenue = pricePerHourPerStudent * pkg.capacity_students * eventHours;
+      }
+    } catch (error) {
+      console.warn(`Error calculating earnings for event ${eventNode.lessonId}:`, error);
+    }
+    
+    return {
+      teacher: teacherEarnings,
+      school: schoolRevenue,
+      total: teacherEarnings + schoolRevenue
+    };
+  }
+  // Add event node to end of queue
+  addEventNode(eventNode: EventNode): void {
     if (!this.head) {
-      this.head = node;
+      this.head = eventNode;
     } else {
       // Find the last node
       let current = this.head;
       while (current.next) {
         current = current.next;
       }
-      current.next = node;
+      current.next = eventNode;
     }
 
     this.recalculateTimes();
   }
 
-  // Remove lesson from queue
+  // Remove event node from queue by lesson ID
   removeLesson(lessonId: string): void {
     if (!this.head) return;
 
     // If head is the node to remove
-    if (this.head.id === lessonId) {
+    if (this.head.lessonId === lessonId) {
       this.head = this.head.next;
       this.recalculateTimes();
       return;
@@ -185,7 +179,7 @@ export class TeacherQueue {
 
     // Find the node before the one to remove
     let current = this.head;
-    while (current.next && current.next.id !== lessonId) {
+    while (current.next && current.next.lessonId !== lessonId) {
       current = current.next;
     }
 
@@ -196,18 +190,18 @@ export class TeacherQueue {
     }
   }
 
-  // Move lesson up in queue (earlier)
+  // Move event up in queue (earlier)
   moveUp(lessonId: string): void {
     if (!this.head) return;
 
     // Can't move head up
-    if (this.head.id === lessonId) return;
+    if (this.head.lessonId === lessonId) return;
 
     // Find the node before the one we want to move up
-    let beforePrev: QueueNode | null = null;
+    let beforePrev: EventNode | null = null;
     let prev = this.head;
     
-    while (prev.next && prev.next.id !== lessonId) {
+    while (prev.next && prev.next.lessonId !== lessonId) {
       beforePrev = prev;
       prev = prev.next;
     }
@@ -236,11 +230,11 @@ export class TeacherQueue {
   moveDown(lessonId: string): void {
     if (!this.head) return;
     
-    let prev: QueueNode | null = null;
+    let prev: EventNode | null = null;
     let current = this.head;
     
     // Find the node to move down
-    while (current && current.id !== lessonId) {
+    while (current && current.lessonId !== lessonId) {
       prev = current;
       current = current.next;
     }
@@ -266,27 +260,27 @@ export class TeacherQueue {
 
   // Adjust lesson duration
   adjustDuration(lessonId: string, increment: boolean): void {
-    const node = this.findNodeById(lessonId);
+    const node = this.findEventNodeByLessonId(lessonId);
     if (!node) return;
 
     const adjustment = increment ? 15 : -15; // 15-minute increments
-    const newDuration = Math.max(15, node.lesson.event.duration + adjustment);
+    const newDuration = Math.max(15, node.eventData.duration + adjustment);
     
     // Don't exceed remaining minutes
-    const remainingMinutes = this.getRemainingMinutes(node.lesson);
+    const remainingMinutes = this.getRemainingMinutes(node);
     if (newDuration <= remainingMinutes) {
-      node.lesson.event.duration = newDuration;
+      node.eventData.duration = newDuration;
       this.recalculateTimes();
     }
   }
 
   // Adjust lesson start time
   adjustTime(lessonId: string, increment: boolean): void {
-    const node = this.findNodeById(lessonId);
+    const node = this.findEventNodeByLessonId(lessonId);
     if (!node) return;
 
     const adjustment = increment ? 15 : -15; // 15-minute increments
-    node.lesson.timeAdjustment = (node.lesson.timeAdjustment || 0) + adjustment;
+    node.timeAdjustment = (node.timeAdjustment || 0) + adjustment;
     this.recalculateTimes();
   }
 
@@ -299,27 +293,27 @@ export class TeacherQueue {
       
       if (isFirst) {
         // For the first node, use the original event time
-        if (currentNode.lesson.event.scheduledDateTime) {
-          const originalTime = formatTime(currentNode.lesson.event.scheduledDateTime);
+        if (currentNode.eventData.date) {
+          const originalTime = formatTime(currentNode.eventData.date);
           const originalTimeMinutes = this.parseTime(originalTime);
-          const adjustedTime = originalTimeMinutes + (currentNode.lesson.timeAdjustment || 0);
+          const adjustedTime = originalTimeMinutes + (currentNode.timeAdjustment || 0);
           
-          currentNode.lesson.event.scheduledDateTime = this.createDateTime(adjustedTime);
+          currentNode.eventData.date = this.createDateTime(adjustedTime);
         }
-        currentNode.lesson.hasGap = false;
+        currentNode.hasGap = false;
       } else {
         // For subsequent nodes, calculate based on previous node's end time
         const prevNode = this.findPrevNode(currentNode);
         if (prevNode) {
-          const prevStartTime = this.getStartTime(prevNode.lesson);
-          const prevEndTime = this.parseTime(prevStartTime) + prevNode.lesson.event.duration;
-          const adjustedTime = prevEndTime + (currentNode.lesson.timeAdjustment || 0);
+          const prevStartTime = this.getStartTime(prevNode);
+          const prevEndTime = this.parseTime(prevStartTime) + prevNode.eventData.duration;
+          const adjustedTime = prevEndTime + (currentNode.timeAdjustment || 0);
           
           // Set scheduled times
-          currentNode.lesson.event.scheduledDateTime = this.createDateTime(adjustedTime);
+          currentNode.eventData.date = this.createDateTime(adjustedTime);
           
           // Check for gaps
-          currentNode.lesson.hasGap = adjustedTime > prevEndTime;
+          currentNode.hasGap = adjustedTime > prevEndTime;
         }
       }
 
@@ -350,37 +344,36 @@ export class TeacherQueue {
     return `${this.date}T${timeStr}:00`;
   }
 
-  // Get all lessons as array
-  getLessons(): QueuedLesson[] {
-    const lessons: QueuedLesson[] = [];
+  // Get all event nodes as array
+  getEventNodes(): EventNode[] {
+    const nodes: EventNode[] = [];
     let current = this.head;
     
     while (current) {
-      lessons.push(current.lesson);
+      nodes.push(current);
       current = current.next;
     }
     
-    return lessons;
+    return nodes;
   }
 
-  // Get lesson by ID
-  getLesson(lessonId: string): QueuedLesson | null {
-    const node = this.findNodeById(lessonId);
-    return node ? node.lesson : null;
+  // Get event node by lesson ID
+  getEventNode(lessonId: string): EventNode | null {
+    return this.findEventNodeByLessonId(lessonId);
   }
   
-  // Helper: Find node by ID
-  private findNodeById(lessonId: string): QueueNode | null {
+  // Helper: Find event node by lesson ID
+  private findEventNodeByLessonId(lessonId: string): EventNode | null {
     let current = this.head;
     while (current) {
-      if (current.id === lessonId) return current;
+      if (current.lessonId === lessonId) return current;
       current = current.next;
     }
     return null;
   }
   
   // Helper: Find previous node
-  private findPrevNode(targetNode: QueueNode): QueueNode | null {
+  private findPrevNode(targetNode: EventNode): EventNode | null {
     if (!this.head || this.head === targetNode) return null;
     
     let current = this.head;
@@ -393,22 +386,22 @@ export class TeacherQueue {
 
   // Check if lesson can move up
   canMoveUp(lessonId: string): boolean {
-    return this.head ? this.head.id !== lessonId : false;
+    return this.head ? this.head.lessonId !== lessonId : false;
   }
 
   // Check if lesson can move down
   canMoveDown(lessonId: string): boolean {
-    const node = this.findNodeById(lessonId);
+    const node = this.findEventNodeByLessonId(lessonId);
     return node ? node.next !== null : false;
   }
 
-  // Get flag time for debugging - returns actual head time or debug indicator
-  getFlagTime(): string {
-    if (!this.head) return "11:11";
+  // Get flag time - returns actual head time or null if no events
+  getFlagTime(): string | null {
+    if (!this.head) return null;
     try {
-      return this.getStartTime(this.head.lesson);
+      return this.getStartTime(this.head);
     } catch {
-      return "11:11";
+      return null;
     }
   }
 
@@ -418,7 +411,7 @@ export class TeacherQueue {
     let current = this.head;
     
     while (current) {
-      total += current.lesson.event.duration;
+      total += current.eventData.duration;
       current = current.next;
     }
     
@@ -427,12 +420,12 @@ export class TeacherQueue {
 
   // Check if lesson is first
   isFirst(lessonId: string): boolean {
-    return this.head?.id === lessonId;
+    return this.head?.lessonId === lessonId;
   }
 
   // Check if lesson is last
   isLast(lessonId: string): boolean {
-    const node = this.findNodeById(lessonId);
+    const node = this.findEventNodeByLessonId(lessonId);
     return node ? node.next === null : false;
   }
 }
