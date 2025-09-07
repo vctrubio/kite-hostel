@@ -4,11 +4,11 @@ import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle, Ar
 import { HelmetIcon } from '@/svgs';
 import { Duration } from '@/components/formatters/Duration';
 import { DateTime, formatTime } from '@/components/formatters/DateTime';
-import { type EventNode } from '@/backend/TeacherQueue';
+import { type QueuedLesson } from '@/backend/TeacherSchedule';
 import { addMinutes, format } from 'date-fns';
 
 interface TeacherLessonQueueCardProps {
-  eventNode: EventNode;
+  queuedLesson: QueuedLesson & { scheduledDateTime: string };
   location: string;
   isFirst: boolean;
   isLast: boolean;
@@ -20,11 +20,10 @@ interface TeacherLessonQueueCardProps {
   onMoveUp: (lessonId: string) => void;
   onMoveDown: (lessonId: string) => void;
   onRemoveGap?: (lessonId: string) => void;
-  onSubmit?: (lessonId: string) => void;
 }
 
 export default function TeacherLessonQueueCard({
-  eventNode,
+  queuedLesson,
   location,
   isFirst,
   isLast,
@@ -38,29 +37,25 @@ export default function TeacherLessonQueueCard({
   onRemoveGap
 }: TeacherLessonQueueCardProps) {
   // --- Logic at the top ---
-  const lessonId = eventNode.lessonId;
-  const duration = eventNode.eventData.duration;
-  const scheduledDateTime = eventNode.eventData.date;
-  const students = eventNode.billboardClass.getStudentNames();
-  const remainingMinutes = eventNode.billboardClass.getRemainingMinutes();
-  const hasGap = eventNode.hasGap;
-  const timeAdjustment = eventNode.timeAdjustment;
+  const {
+    students,
+    duration,
+    remainingMinutes,
+    lessonId,
+    hasGap,
+    timeAdjustment,
+    scheduledDateTime
+  } = queuedLesson;
 
   const endTime = scheduledDateTime ? formatTime(addMinutes(new Date(scheduledDateTime), duration).toISOString()) : '';
   const remaining = remainingMinutes - duration;
   const studentNames = students.join(', ');
-  const gapDuration = 0; // Remove this logic for simplicity
-  
-  // Check if this is a pending event (no event ID yet)
-  const isPendingEvent = !eventNode.eventData.id;
+  const gapDuration = (queuedLesson as any).gapDuration || 0;
 
   // --- Render ---
   return (
     <div
-      className={`p-4 rounded-lg border max-w-[420px] min-w-[240] ${
-        isPendingEvent
-          ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-          : hasGap && !isFirst
+      className={`p-4 rounded-lg border max-w-[420px] min-w-[240] ${hasGap && !isFirst
           ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
           : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
         }`}
@@ -195,12 +190,6 @@ export default function TeacherLessonQueueCard({
         </div>
         <span>•</span>
         <span><Duration minutes={remaining} /> remaining</span>
-        {isPendingEvent && (
-          <>
-            <span>•</span>
-            <span className="text-yellow-600 dark:text-yellow-400 font-medium">PENDING</span>
-          </>
-        )}
       </div>
 
       {/* Gap warning - only show if not first and has gap */}
