@@ -6,7 +6,7 @@
 
 import { addMinutes } from "date-fns";
 import { BillboardClass } from "./BillboardClass";
-import { formatTime } from "@/components/formatters/DateTime";
+import { formatTime, parseTimeToMinutes, formatMinutesToTime } from "@/components/formatters/DateTime";
 import { EventStatus, Location } from "@/lib/constants";
 import { createEvent } from "@/actions/event-actions";
 
@@ -176,18 +176,6 @@ export class TeacherQueue {
     }
   }
 
-  // Helper function to parse time to minutes
-  private parseTimeToMinutes(timeStr: string): number {
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    return hours * 60 + minutes;
-  }
-
-  // Helper function to format minutes to time
-  private formatMinutesToTime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
-  }
 
   // Add event action - creates event and adds to queue
   async addEventAction(
@@ -222,9 +210,9 @@ export class TeacherQueue {
       } else {
         // Find the next available slot after the last event
         const lastEventStart = this.getStartTime(lastEvent);
-        const lastEventStartMinutes = this.parseTimeToMinutes(lastEventStart);
+        const lastEventStartMinutes = parseTimeToMinutes(lastEventStart);
         const lastEventEndMinutes = lastEventStartMinutes + lastEvent.eventData.duration;
-        eventTime = this.formatMinutesToTime(lastEventEndMinutes);
+        eventTime = formatMinutesToTime(lastEventEndMinutes);
       }
 
       // Determine duration based on package student capacity

@@ -16,12 +16,14 @@ interface FlagCardProps {
   teacherEarnings?: number;
   schoolEarnings?: number;
   eventId?: string;
-  onStatusChange?: (newStatus: "planned" | "completed" | "tbc" | "cancelled") => void;
+  onStatusChange?: (
+    newStatus: "planned" | "completed" | "tbc" | "cancelled",
+  ) => void;
 }
 
 const STATUS_COLORS = {
   planned: "bg-blue-500",
-  tbc: "bg-purple-500", 
+  tbc: "bg-purple-500",
   completed: "bg-green-500",
   cancelled: "bg-orange-500",
 } as const;
@@ -46,7 +48,7 @@ export default function FlagCard({
   const [showDropdown, setShowDropdown] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
-  
+
   const handleStatusChange = (newStatus: typeof status) => {
     onStatusChange?.(newStatus);
     setShowDropdown(false);
@@ -54,7 +56,7 @@ export default function FlagCard({
 
   const handleDelete = async () => {
     if (!eventId) return;
-    
+
     setIsDeleting(true);
     try {
       const result = await deleteEvent(eventId);
@@ -79,9 +81,12 @@ export default function FlagCard({
   const statusLabel = STATUS_LABELS[status];
 
   return (
-    <div className={`w-[285px] bg-card border border-border rounded-lg overflow-hidden transition-all duration-500 ${
-      isDeleted ? 'opacity-0 scale-95 translate-y-2' : 'opacity-100 scale-100 translate-y-0'
-    } ${isDeleting ? 'animate-pulse' : ''}`}>
+    <div
+      className={`w-[285px] bg-card border border-border rounded-lg overflow-hidden transition-all duration-500 ${isDeleted
+        ? "opacity-0 scale-95 translate-y-2"
+        : "opacity-100 scale-100 translate-y-0"
+        } ${isDeleting ? "animate-pulse" : ""}`}
+    >
       <div className="p-4 flex items-start gap-4">
         <div className="flex flex-col items-center gap-2">
           <FlagIcon className="w-12 h-12" />
@@ -139,7 +144,7 @@ export default function FlagCard({
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/50 rounded transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 mt-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/50 rounded transition-colors disabled:opacity-50"
               >
                 <Trash2 className="w-4 h-4" />
                 {isDeleting ? "Deleting..." : "Delete Event"}
