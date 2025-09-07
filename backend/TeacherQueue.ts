@@ -44,11 +44,6 @@ export class TeacherQueue {
   }
 
   
-  // Getter methods using EventNode
-  getStudents(eventNode: EventNode): string[] {
-    return eventNode.billboardClass.getStudentNames();
-  }
-  
   // Get start time from eventData
   getStartTime(eventNode: EventNode): string {
     if (!eventNode.eventData.date) {
@@ -56,20 +51,6 @@ export class TeacherQueue {
     }
     const date = new Date(eventNode.eventData.date);
     return date.toTimeString().substring(0, 5); // Extract HH:MM
-  }
-
-  getRemainingMinutes(eventNode: EventNode): number {
-    if (!eventNode.billboardClass?.booking.package) {
-      throw new Error(`package information is required for lesson ${eventNode.lessonId}`);
-    }
-    return eventNode.billboardClass.booking.package.duration;
-  }
-
-  getLocation(eventNode: EventNode): Location {
-    if (!eventNode.eventData.location) {
-      throw new Error(`location is required for lesson ${eventNode.lessonId}`);
-    }
-    return eventNode.eventData.location;
   }
 
   // Get comprehensive teacher statistics
@@ -119,37 +100,6 @@ export class TeacherQueue {
     };
   }
   
-  // Individual event financial calculations (for detailed views)
-  getEventEarnings(eventNode: EventNode) {
-    let teacherEarnings = 0;
-    let schoolRevenue = 0;
-    
-    try {
-      // Teacher earnings
-      const lesson = eventNode.billboardClass.lessons?.find(l => l.id === eventNode.lessonId);
-      if (lesson?.commission?.price_per_hour) {
-        const hours = eventNode.eventData.duration / 60;
-        teacherEarnings = lesson.commission.price_per_hour * hours;
-      }
-      
-      // School revenue
-      const pkg = eventNode.billboardClass?.booking.package;
-      if (pkg?.price_per_student && pkg?.capacity_students && pkg?.duration) {
-        const packageHours = pkg.duration / 60;
-        const eventHours = eventNode.eventData.duration / 60;
-        const pricePerHourPerStudent = pkg.price_per_student / packageHours;
-        schoolRevenue = pricePerHourPerStudent * pkg.capacity_students * eventHours;
-      }
-    } catch (error) {
-      console.warn(`Error calculating earnings for event ${eventNode.lessonId}:`, error);
-    }
-    
-    return {
-      teacher: teacherEarnings,
-      school: schoolRevenue,
-      total: teacherEarnings + schoolRevenue
-    };
-  }
   // Add event node to end of queue
   addEventNode(eventNode: EventNode): void {
     if (!this.head) {
@@ -167,7 +117,7 @@ export class TeacherQueue {
   }
 
   // Remove event node from queue by lesson ID
-  removeLesson(lessonId: string): void {
+  removeEventNode(lessonId: string): void {
     if (!this.head) return;
 
     // If head is the node to remove
@@ -384,17 +334,6 @@ export class TeacherQueue {
     return null;
   }
 
-  // Check if lesson can move up
-  canMoveUp(lessonId: string): boolean {
-    return this.head ? this.head.lessonId !== lessonId : false;
-  }
-
-  // Check if lesson can move down
-  canMoveDown(lessonId: string): boolean {
-    const node = this.findEventNodeByLessonId(lessonId);
-    return node ? node.next !== null : false;
-  }
-
   // Get flag time - returns actual head time or null if no events
   getFlagTime(): string | null {
     if (!this.head) return null;
@@ -405,27 +344,4 @@ export class TeacherQueue {
     }
   }
 
-  // Get total duration
-  getTotalDuration(): number {
-    let total = 0;
-    let current = this.head;
-    
-    while (current) {
-      total += current.eventData.duration;
-      current = current.next;
-    }
-    
-    return total;
-  }
-
-  // Check if lesson is first
-  isFirst(lessonId: string): boolean {
-    return this.head?.lessonId === lessonId;
-  }
-
-  // Check if lesson is last
-  isLast(lessonId: string): boolean {
-    const node = this.findEventNodeByLessonId(lessonId);
-    return node ? node.next === null : false;
-  }
 }

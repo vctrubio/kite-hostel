@@ -44,7 +44,7 @@ function TeacherRow({ teacher, isEditMode, onDrop, teacherQueue, onQueueUpdate, 
 
   // Queue management handlers
   const handleRemoveLesson = (lessonId: string) => {
-    teacherQueue.removeLesson(lessonId);
+    teacherQueue.removeEventNode(lessonId);
     onQueueUpdate(teacher.id, teacherQueue);
   };
 
@@ -127,16 +127,19 @@ function TeacherRow({ teacher, isEditMode, onDrop, teacherQueue, onQueueUpdate, 
               {isEditMode ? (
                 // Render event nodes with full functionality in edit mode
                 eventNodes.map((eventNode, index) => {
-                  const earnings = teacherQueue.getEventEarnings(eventNode);
+                  // Calculate position in queue
+                  const isFirst = index === 0;
+                  const isLast = index === eventNodes.length - 1;
+                  
                   return (
                     <div key={eventNode.id || `pending-${index}`} className="flex-shrink-0">
                       <LessonQueueCard
                         eventNode={eventNode}
                         location={eventNode.eventData.location}
-                        isFirst={teacherQueue.isFirst(eventNode.lessonId)}
-                        isLast={teacherQueue.isLast(eventNode.lessonId)}
-                        canMoveEarlier={teacherQueue.canMoveUp(eventNode.lessonId)}
-                        canMoveLater={teacherQueue.canMoveDown(eventNode.lessonId)}
+                        isFirst={isFirst}
+                        isLast={isLast}
+                        canMoveEarlier={!isFirst}
+                        canMoveLater={!isLast}
                         onRemove={handleRemoveLesson}
                         onAdjustDuration={handleAdjustDuration}
                         onAdjustTime={handleAdjustTime}
@@ -150,7 +153,6 @@ function TeacherRow({ teacher, isEditMode, onDrop, teacherQueue, onQueueUpdate, 
               ) : (
                 // Render event nodes as flag cards for view mode
                 eventNodes.map((eventNode, index) => {
-                  const earnings = teacherQueue.getEventEarnings(eventNode);
                   return (
                     <div key={eventNode.id || `view-${index}`} className="flex-shrink-0">
                       <FlagCard
@@ -158,8 +160,6 @@ function TeacherRow({ teacher, isEditMode, onDrop, teacherQueue, onQueueUpdate, 
                         duration={eventNode.eventData.duration}
                         students={eventNode.billboardClass.getStudentNames()}
                         status={eventNode.eventData.status}
-                        teacherEarnings={earnings.teacher}
-                        schoolEarnings={earnings.school}
                         onStatusChange={(newStatus) => {
                           console.log(`Change event ${eventNode.lessonId} status to ${newStatus}`);
                           // TODO: Implement status change
