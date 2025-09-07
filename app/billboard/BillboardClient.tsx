@@ -14,10 +14,10 @@ import StudentBookingColumn from "./StudentBookingColumn";
 import { BillboardClass } from "@/backend/BillboardClass";
 import { TeacherQueue } from "@/backend/TeacherQueue";
 import { type EventController } from "@/backend/types";
+import { createTeacherQueuesFromBillboardClasses } from "@/backend/billboardUtils";
 import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 
 const STORAGE_KEY = "billboard-selected-date";
-
 interface BillboardClientProps {
   data: BillboardData;
 }
@@ -26,6 +26,7 @@ interface BillboardClientProps {
 export default function BillboardClient({ data }: BillboardClientProps) {
   // Core state
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateString());
+  const [flagTime, setFlagTime] = useState<string>("12:00");
   const [controller, setController] = useState<EventController>(() => ({
     flag: false,
     location: LOCATION_ENUM_VALUES[0],
@@ -60,40 +61,70 @@ export default function BillboardClient({ data }: BillboardClientProps) {
 
   // Teacher queues for the selected date
   const teacherQueues = useMemo(() => {
-    const queuesMap = new Map<string, TeacherQueue>();
+    const queues = createTeacherQueuesFromBillboardClasses(
+      data.teachers || [],
+      filteredBillboardClasses,
+      selectedDate
+    );
     
-    data.teachers?.forEach(teacher => {
-      const teacherInfo = { id: teacher.id, name: teacher.name };
-      const queue = new TeacherQueue(teacherInfo, selectedDate);
+    // Convert array to Map for compatibility with existing code
+    const queuesMap = new Map<string, TeacherQueue>();
+    queues.forEach(queue => {
+      queuesMap.set(queue.teacher.id, queue);
+    });
+    
+    console.log("Teacher Schedules for", selectedDate);
+    queues.forEach(queue => {
+      console.log(`\n--- ${queue.teacher.name} (${queue.teacher.id}) ---`);
+      const eventNodes = queue.getEventNodes();
+      console.log(`Events count: ${eventNodes.length}`);
       
-      // Get all events for this teacher on this date
-      filteredBillboardClasses.forEach(bc => {
-        const events = bc.getEventsForTeacherAndDate(teacher.id, selectedDate);
-        events.forEach(event => {
-          const eventNode = {
-            id: event.id, // Use actual event ID (string) for existing events
-            lessonId: event.lesson?.id || event.id,
-            billboardClass: bc,
-            eventData: {
-              id: event.id, // This exists for existing events
-              date: event.date,
-              duration: event.duration || 120,
-              location: event.location,
-              status: event.status || "planned"
-            },
-            timeAdjustment: 0,
-            next: null
-          };
-          queue.addEventNode(eventNode);
-        });
+      eventNodes.forEach((eventNode, index) => {
+        console.log(`  ${index + 1}. Event ${eventNode.id}:`);
+        console.log(`     Time: ${new Date(eventNode.eventData.date).toLocaleTimeString()}`);
+        console.log(`     Duration: ${eventNode.eventData.duration} minutes`);
+        console.log(`     Location: ${eventNode.eventData.location}`);
+        console.log(`     Status: ${eventNode.eventData.status}`);
+        console.log(`     Has Gap: ${eventNode.hasGap}`);
       });
       
-      queuesMap.set(teacher.id, queue);
+      if (eventNodes.length === 0) {
+        console.log("  No events scheduled");
+      }
     });
     
     console.log("TeacherQueues created:", queuesMap);
     return queuesMap;
   }, [data.teachers, filteredBillboardClasses, selectedDate]);
+
+  // Calculate flag time - earliest time from teacher queues or controller submit time
+  const calculatedFlagTime = useMemo(() => {
+    // Get earliest time from all teacher queues
+    const allTimes: string[] = [];
+    teacherQueues.forEach(queue => {
+      const time = queue.getFlagTime();
+      if (time !== null) { // Only if there are events
+        allTimes.push(time);
+      }
+    });
+    
+    // If no events exist, use the controller submit time as fallback
+    if (allTimes.length === 0) {
+      const timeSource = "Controller Time";
+      console.log(`Flag Time: ${controller.submitTime} (${timeSource})`);
+      return controller.submitTime;
+    }
+    
+    const earliestTime = allTimes.sort()[0];
+    const timeSource = "Earliest Time";
+    console.log(`Flag Time: ${earliestTime} (${timeSource})`);
+    return earliestTime;
+  }, [teacherQueues, controller.submitTime]);
+
+  // Update flag time when calculated value changes
+  useEffect(() => {
+    setFlagTime(calculatedFlagTime);
+  }, [calculatedFlagTime]);
 
   // Available bookings (show all that have teacher assignments and can be dragged)
   const availableBillboardClasses = useMemo(() => {
@@ -103,11 +134,6 @@ export default function BillboardClient({ data }: BillboardClientProps) {
       return !bc.needsTeacherAssignment();
     });
   }, [filteredBillboardClasses]);
-
-  // Drag and drop handlers (placeholder for future implementation)
-  const handleTeacherDrop = (teacherId: string, bookingId: string) => {
-    console.log(`Dropped booking ${bookingId} on teacher ${teacherId} - drag functionality not implemented yet`);
-  };
 
   // Date management
   const handleDateChange = (date: string) => {
@@ -152,7 +178,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
           teachers={data.teachers || []}
           teacherQueues={teacherQueues}
           dayOfWeek={new Date(selectedDate).toLocaleDateString("en-US", { weekday: "long" })}
-          flagTime={controller.submitTime}
+          flagTime={flagTime}
         />
         
         <StudentBookingColumn
