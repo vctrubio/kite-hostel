@@ -10,7 +10,7 @@ import {
   formatMinutesToTime,
 } from "@/components/formatters/DateTime";
 import { EventStatus, Location } from "@/lib/constants";
-import { createEvent } from "@/actions/event-actions";
+import { createEvent, deleteEvent, updateEvent } from "@/actions/event-actions";
 
 export interface EventData {
   id?: string; // Event ID if it exists, undefined if dragged from StudentBookingColumn
@@ -78,6 +78,87 @@ export class TeacherQueue {
     if (current.next) {
       current.next = current.next.next;
     }
+  }
+
+  // Remove from queue with cascade - deletes event from DB and shifts remaining events
+  async removeFromQueueWithCascade(lessonId: string): Promise<{ success: boolean; error?: string }> {
+    if (!this.head) return { success: false, error: "Queue is empty" };
+
+    // Find the node to remove and capture its start time
+    let nodeToRemove: EventNode | null = null;
+    let previousNode: EventNode | null = null;
+    let current = this.head;
+
+    while (current) {
+      if (current.lessonId === lessonId) {
+        nodeToRemove = current;
+        break;
+      }
+      previousNode = current;
+      current = current.next;
+    }
+
+    if (!nodeToRemove) {
+      return { success: false, error: "Event not found in queue" };
+    }
+
+    const removedStartTimeMinutes = this.getStartTimeMinutes(nodeToRemove);
+
+    // Delete the event from the database if it has an ID
+    if (nodeToRemove.eventData.id) {
+      const deleteResult = await deleteEvent(nodeToRemove.eventData.id);
+      if (!deleteResult.success) {
+        return { success: false, error: `Failed to delete event from database: ${deleteResult.error}` };
+      }
+    }
+
+    // Remove the node from the linked list
+    if (previousNode) {
+      previousNode.next = nodeToRemove.next;
+    } else {
+      // Removing head
+      this.head = nodeToRemove.next;
+    }
+
+    // If there are events after the removed one, shift them to fill the gap
+    const eventsToShift = [];
+    current = nodeToRemove.next;
+    while (current) {
+      eventsToShift.push(current);
+      current = current.next;
+    }
+
+    if (eventsToShift.length > 0) {
+      // Update the start times of all following events to shift them to the removed event's position
+      let newStartTimeMinutes = removedStartTimeMinutes;
+
+      for (const event of eventsToShift) {
+        // Update the event's start time
+        const [datePart] = event.eventData.date.split('T');
+        const newHours = Math.floor(newStartTimeMinutes / 60);
+        const newMinutes = newStartTimeMinutes % 60;
+        const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+        const newDateTimeString = `${datePart}T${newTime}:00`;
+        
+        event.eventData.date = newDateTimeString;
+
+        // Update in database if the event has an ID
+        if (event.eventData.id) {
+          const updateResult = await updateEvent(event.eventData.id, {
+            date: newDateTimeString,
+          });
+          
+          if (!updateResult.success) {
+            console.error(`Failed to update event ${event.eventData.id} in database:`, updateResult.error);
+          }
+        }
+
+        // Calculate start time for next event
+        newStartTimeMinutes += event.eventData.duration;
+      }
+    }
+
+    return { success: true };
   }
 
   // Get comprehensive teacher statistics

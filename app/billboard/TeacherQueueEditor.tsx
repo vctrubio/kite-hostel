@@ -12,7 +12,7 @@ interface TeacherQueueEditorProps {
   events: any[];
   teacherQueue: TeacherQueue;
   selectedDate: string;
-  onRemove: (lessonId: string) => void;
+  onRemove: (lessonId: string) => Promise<void>;
   onAdjustDuration: (lessonId: string, increment: boolean) => void;
   onAdjustTime: (lessonId: string, increment: boolean) => void;
   onMove: (lessonId: string, direction: "up" | "down") => void;

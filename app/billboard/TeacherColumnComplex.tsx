@@ -193,10 +193,31 @@ const TeacherQueueGroup = forwardRef<
   );
 
   const handleRemoveFromQueue = useCallback(
-    (lessonId: string) => {
-      teacherQueue.removeFromQueue(lessonId);
-      const newNodes = teacherQueue.getNodes();
-      setEditableScheduleNodes(newNodes);
+    async (lessonId: string) => {
+      try {
+        // Use the new cascade method to delete from DB and shift events
+        const result = await teacherQueue.removeFromQueueWithCascade(lessonId);
+        
+        if (result.success) {
+          const newNodes = teacherQueue.getNodes();
+          setEditableScheduleNodes(newNodes);
+          
+          // Update the original queue state to reflect the deletion
+          // This ensures reset/cancel don't show the deleted event
+          const updatedEvents = teacherQueue.getAllEvents();
+          originalQueueState.current = updatedEvents.map((event) => ({
+            ...event,
+            eventData: { ...event.eventData },
+          }));
+          
+          toast.success("Event removed and schedule adjusted");
+        } else {
+          toast.error(`Failed to remove event: ${result.error}`);
+        }
+      } catch (error) {
+        console.error("Error removing event:", error);
+        toast.error("Failed to remove event");
+      }
     },
     [teacherQueue],
   );
@@ -381,12 +402,17 @@ const TeacherQueueGroup = forwardRef<
   const renderEventCards = () => {
     return queueEvents.map((eventNode, index) => {
       let hasGap: number | undefined;
-      
+
       if (index > 0) {
         const prevEvent = queueEvents[index - 1];
-        const prevEventEndTime = timeToMinutes(prevEvent.eventData.date.split('T')[1].substring(0, 5)) + prevEvent.eventData.duration;
-        const currentEventStartTime = timeToMinutes(eventNode.eventData.date.split('T')[1].substring(0, 5));
-        
+        const prevEventEndTime =
+          timeToMinutes(
+            prevEvent.eventData.date.split("T")[1].substring(0, 5),
+          ) + prevEvent.eventData.duration;
+        const currentEventStartTime = timeToMinutes(
+          eventNode.eventData.date.split("T")[1].substring(0, 5),
+        );
+
         const gap = currentEventStartTime - prevEventEndTime;
         if (gap > 0) {
           hasGap = gap;

@@ -15,7 +15,7 @@ interface TeacherLessonQueueCardProps {
   isLast: boolean;
   canMoveEarlier: boolean;
   canMoveLater?: boolean;
-  onRemove: (lessonId: string) => void;
+  onRemove: (lessonId: string) => Promise<void>;
   onAdjustDuration: (lessonId: string, increment: boolean) => void;
   onAdjustTime: (lessonId: string, increment: boolean) => void;
   onMoveUp: (lessonId: string) => void;
@@ -115,7 +115,7 @@ export default function TeacherLessonQueueCard({
             </button>
           )}
           <button
-            onClick={() => onRemove(lessonId)}
+            onClick={async () => await onRemove(lessonId)}
             className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
             title="Remove from queue"
           >
