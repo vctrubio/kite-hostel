@@ -40,7 +40,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
   );
   const [exportDebugMode, setExportDebugMode] = useState(true);
   const [debugText, setDebugText] = useState<string>("");
-  const [showDebugDropdown, setShowDebugDropdown] = useState(true);
+  const [showDebugDropdown, setShowDebugDropdown] = useState(false);
   const [controller, setController] = useState<EventController>({
     flag: false,
     location: LOCATION_ENUM_VALUES[0],

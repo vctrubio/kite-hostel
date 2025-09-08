@@ -110,7 +110,7 @@ const TeacherQueueGroup = forwardRef<
   }));
 
   useEffect(() => {
-    if (parentTimeAdjustmentMode && parentGlobalTime) {
+    if (parentTimeAdjustmentMode && parentGlobalTime && isPendingParentUpdate) {
       const offsetMinutes =
         timeToMinutes(parentGlobalTime) -
         timeToMinutes(scheduleNodes[0]?.startTime || "00:00");
@@ -135,8 +135,9 @@ const TeacherQueueGroup = forwardRef<
           currentEvents[index].eventData.date = localDateTimeString;
         }
       });
-    } else if (!parentTimeAdjustmentMode) {
+    } else if (!parentTimeAdjustmentMode || !isPendingParentUpdate) {
       // Reset TeacherQueue events back to original times when exiting parent mode
+      // or when this teacher is not pending parent update
       const currentEvents = teacherQueue.getAllEvents();
       scheduleNodes.forEach((node, index) => {
         if (
@@ -156,6 +157,7 @@ const TeacherQueueGroup = forwardRef<
   }, [
     parentTimeAdjustmentMode,
     parentGlobalTime,
+    isPendingParentUpdate,
     scheduleNodes,
     teacherQueue,
     selectedDate,
@@ -750,6 +752,7 @@ export default function TeacherColumnComplex({
               isPendingParentUpdate={pendingParentUpdateTeachers.has(
                 group.teacherId,
               )}
+              onCompleteOrOptOut={handleTeacherUpdateCompletion}
               onOptInToParentUpdate={handleTeacherOptIn}
               controller={controller}
             />
