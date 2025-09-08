@@ -233,12 +233,15 @@ function TeacherLeftColumn({
             </button>
             <button
               onClick={
-                timeAdjustmentMode ? onCancelTimeAdjustment : onResetQueue
+                timeAdjustmentMode ? () => {
+                  // Reset time adjustments but stay in edit mode
+                  onTimeAdjustment(-globalTimeOffset);
+                } : onResetQueue
               }
               className="w-full px-3 py-2 text-sm bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
               title={
                 timeAdjustmentMode
-                  ? "Cancel time changes"
+                  ? "Reset time changes but stay in edit mode"
                   : "Reset all changes made to the queue"
               }
             >
@@ -251,7 +254,7 @@ function TeacherLeftColumn({
               className="w-full px-3 py-2 text-sm bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
               title={
                 timeAdjustmentMode
-                  ? "Cancel time changes"
+                  ? "Reset time changes and exit edit mode"
                   : "Cancel editing and discard all changes"
               }
             >

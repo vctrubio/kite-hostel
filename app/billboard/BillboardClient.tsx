@@ -82,30 +82,6 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     );
   }, [data.teachers, filteredBillboardClasses, selectedDate]);
 
-  // Calculate flag time - earliest time from teacher queues or controller submit time
-  const calculatedFlagTime = useMemo(() => {
-    const allTimes: string[] = [];
-    teacherQueues.forEach((queue) => {
-      const time = queue.getFlagTime();
-      if (time !== null) {
-        // Only if there are events
-        allTimes.push(time);
-      }
-    });
-
-    // If no events exist, use the controller submit time as fallback
-    if (allTimes.length === 0) {
-      const timeSource = "Controller Time";
-      console.log(`Flag Time: ${controller.submitTime} (${timeSource})`);
-      return controller.submitTime;
-    }
-
-    const earliestTime = allTimes.sort()[0];
-    const timeSource = "Earliest Time";
-    console.log(`Flag Time: ${earliestTime} (${timeSource})`);
-    return earliestTime;
-  }, [teacherQueues, controller.submitTime]);
-
   // Date management
   const handleDateChange = (date: string) => {
     if (!date || isNaN(Date.parse(date))) {
@@ -193,7 +169,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         total++;
         allIds.push(eventId);
         const status = eventNode.eventData.status;
-        
+
         switch (status) {
           case "planned":
             planned++;
@@ -214,14 +190,14 @@ export default function BillboardClient({ data }: BillboardClientProps) {
       });
     });
 
-    return { 
-      planned, 
-      completed, 
-      tbc, 
-      cancelled, 
+    return {
+      planned,
+      completed,
+      tbc,
+      cancelled,
       total,
       allIds,
-      incompleteIds
+      incompleteIds,
     };
   }, [teacherQueues]);
 

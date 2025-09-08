@@ -291,6 +291,17 @@ const TeacherQueueGroup = forwardRef<
 
       if (newOffset === 0) {
         setEditableScheduleNodes(scheduleNodes);
+        // Reset TeacherQueue events back to original times
+        const currentEvents = teacherQueue.getAllEvents();
+        scheduleNodes.forEach((node, index) => {
+          if (
+            currentEvents[index] &&
+            node.eventData?.lessonId === currentEvents[index].lessonId
+          ) {
+            const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
+            currentEvents[index].eventData.date = localDateTimeString;
+          }
+        });
         return;
       }
 
@@ -299,8 +310,21 @@ const TeacherQueueGroup = forwardRef<
         startTime: minutesToTime(timeToMinutes(node.startTime) + newOffset),
       }));
       setEditableScheduleNodes(updatedNodes);
+
+      // Apply the actual displayed times to the TeacherQueue events
+      const currentEvents = teacherQueue.getAllEvents();
+      updatedNodes.forEach((node, index) => {
+        if (
+          currentEvents[index] &&
+          node.eventData?.lessonId === currentEvents[index].lessonId
+        ) {
+          // Use the exact time from the node that's being displayed
+          const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
+          currentEvents[index].eventData.date = localDateTimeString;
+        }
+      });
     },
-    [globalTimeOffset, scheduleNodes],
+    [globalTimeOffset, scheduleNodes, teacherQueue, selectedDate],
   );
 
   const handleAcceptTimeAdjustment = useCallback(async () => {
@@ -309,12 +333,14 @@ const TeacherQueueGroup = forwardRef<
     if (parentTimeAdjustmentMode) {
       onCompleteOrOptOut?.(teacherId);
     } else {
+      // For individual mode, we need to submit the changes to the database
+      await handleSubmitQueueChanges(false);
       setTimeAdjustmentMode(false);
       setGlobalTimeOffset(0);
       setViewMode("event");
     }
     router.refresh();
-  }, [teacherId, parentTimeAdjustmentMode, onCompleteOrOptOut, router]);
+  }, [teacherId, parentTimeAdjustmentMode, onCompleteOrOptOut, router, handleSubmitQueueChanges]);
 
   const handleCancelTimeAdjustment = useCallback(() => {
     if (parentTimeAdjustmentMode) {
