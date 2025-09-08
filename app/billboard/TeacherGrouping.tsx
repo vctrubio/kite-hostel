@@ -311,12 +311,9 @@ export const TeacherGrouping = forwardRef<
 >((props, ref) => {
   const {
     teacherQueue,
-    selectedDate,
     draggedBooking: externalDraggedBooking,
     parentTimeAdjustmentMode = false,
-    parentGlobalTime = null,
     isPendingParentUpdate,
-    onCompleteOrOptOut,
     onOptInToParentUpdate,
     controller,
     viewMode,

@@ -752,7 +752,6 @@ export default function TeacherColumnComplex({
               isPendingParentUpdate={pendingParentUpdateTeachers.has(
                 group.teacherId,
               )}
-              onCompleteOrOptOut={handleTeacherUpdateCompletion}
               onOptInToParentUpdate={handleTeacherOptIn}
               controller={controller}
             />
