@@ -30,7 +30,7 @@ import { updateEvent } from "@/actions/event-actions";
 
 interface TeacherColumnComplexProps {
   teachers: any[];
-  teacherQueues: Map<string, TeacherQueue>;
+  teacherQueues: TeacherQueue[];
   controller: EventController;
   selectedDate: string;
 }
@@ -109,7 +109,6 @@ function TimeAdjustmentFlag({
 
 interface TeacherQueueGroupProps {
   teacherQueue: TeacherQueue;
-  events: any[];
   selectedDate: string;
   parentTimeAdjustmentMode?: boolean;
   parentGlobalTime?: string | null;
@@ -129,7 +128,6 @@ const TeacherQueueGroup = forwardRef<
 >((props, ref) => {
   const {
     teacherQueue,
-    events,
     selectedDate,
     parentTimeAdjustmentMode = false,
     parentGlobalTime = null,
@@ -733,13 +731,10 @@ export default function TeacherColumnComplex({
   );
 
   const teacherQueueGroups = useMemo(() => {
-    return Array.from(teacherQueues.entries())
-      .map(([teacherId, teacherQueue]) => ({
-        teacherId,
-        teacherQueue,
-        events: teacherQueue.getAllEvents(),
-      }))
-      .filter((group) => group.teacherQueue);
+    return teacherQueues.map((teacherQueue) => ({
+      teacherId: teacherQueue.teacher.id,
+      teacherQueue,
+    })).filter((group) => group.teacherQueue);
   }, [teacherQueues]);
 
   const earliestTime = useMemo(() => {
@@ -859,7 +854,6 @@ export default function TeacherColumnComplex({
                 teacherGroupRefs.current.set(group.teacherId, el)
               }
               teacherQueue={group.teacherQueue}
-              events={group.events}
               selectedDate={selectedDate}
               parentTimeAdjustmentMode={parentTimeAdjustmentMode}
               parentGlobalTime={parentGlobalTime}

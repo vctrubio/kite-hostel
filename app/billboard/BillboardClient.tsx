@@ -60,18 +60,11 @@ export default function BillboardClient({ data }: BillboardClientProps) {
 
   // Teacher queues for the selected date
   const teacherQueues = useMemo(() => {
-    const queues = createTeacherQueuesFromBillboardClasses(
+    return createTeacherQueuesFromBillboardClasses(
       data.teachers || [],
       filteredBillboardClasses,
       selectedDate,
     );
-
-    // Convert array to Map for compatibility with existing code
-    const queuesMap = new Map<string, TeacherQueue>();
-    queues.forEach((queue) => {
-      queuesMap.set(queue.teacher.id, queue);
-    });
-    return queuesMap;
   }, [data.teachers, filteredBillboardClasses, selectedDate]);
 
   // Calculate flag time - earliest time from teacher queues or controller submit time
