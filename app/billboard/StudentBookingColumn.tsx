@@ -11,7 +11,7 @@ interface StudentBookingColumnProps {
   onBookingDragEnd?: (bookingId: string, wasDropped: boolean) => void;
 }
 
-type BookingFilter = "all" | "available";
+type BookingFilter = "all" | "available" | "completed";
 
 export default function StudentBookingColumn({
   billboardClasses,
@@ -22,12 +22,19 @@ export default function StudentBookingColumn({
   const [filter, setFilter] = useState<BookingFilter>("available");
 
   const filteredBillboardClasses = useMemo(() => {
-    if (filter === "all") {
-      return billboardClasses;
+    const baseFiltered = billboardClasses.filter((billboardClass) => {
+      if (filter === "completed") {
+        return billboardClass.booking.status === "completed";
+      }
+      return billboardClass.booking.status !== "completed";
+    });
+
+    if (filter === "all" || filter === "completed") {
+      return baseFiltered;
     }
 
     // Available = bookings that DO NOT have an event today
-    return billboardClasses.filter((billboardClass) => {
+    return baseFiltered.filter((billboardClass) => {
       const lessons = billboardClass.lessons || [];
 
       // Check if any lesson has events for the selected date
@@ -74,6 +81,15 @@ export default function StudentBookingColumn({
           >
             All
           </button>
+          <button
+            onClick={() => setFilter("completed")}
+            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "completed"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            Completed
+          </button>
         </div>
       </div>
 
@@ -82,7 +98,9 @@ export default function StudentBookingColumn({
           <p className="text-muted-foreground">
             {filter === "available"
               ? "No available bookings for this date"
-              : "No bookings for this date"}
+              : filter === "completed"
+                ? "No bookings with status = completed for this date"
+                : "No bookings for this date"}
           </p>
         ) : (
           filteredBillboardClasses.map((billboardClass) => {
@@ -97,7 +115,7 @@ export default function StudentBookingColumn({
                 key={billboardClass.booking.id}
                 billboardClass={billboardClass}
                 selectedDate={selectedDate}
-                isDraggable={hasValidLesson}
+                isDraggable={hasValidLesson && filter === "available"}
                 onDragStart={onBookingDragStart}
                 onDragEnd={onBookingDragEnd}
               />

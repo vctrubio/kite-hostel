@@ -95,7 +95,7 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateString());
 
   const [bookingFilter, setBookingFilter] =
-    useState<BookingStatusFilter>("all");
+    useState<BookingStatusFilter>("available");
 
   const [controller, setController] = useState<EventController>(() => {
     const defaultSettings: EventController = {
@@ -247,12 +247,15 @@ export default function WhiteboardClient({ data }: WhiteboardClientProps) {
       return filterDate >= bookingStart && filterDate <= bookingEnd;
     });
 
-    const statusFilteredBookings =
-      bookingFilter === "all"
-        ? dateFilteredBookings
-        : dateFilteredBookings.filter(
-            (booking) => booking.status === bookingFilter,
-          );
+    const statusFilteredBookings = dateFilteredBookings.filter((booking) => {
+      if (bookingFilter === "completed") {
+        return booking.status === "completed";
+      }
+      if (bookingFilter === "all" || bookingFilter === "available") {
+        return booking.status !== "completed";
+      }
+      return booking.status === bookingFilter;
+    });
 
     const bookingClasses = statusFilteredBookings.map(
       (booking) => new WhiteboardClass(booking),
