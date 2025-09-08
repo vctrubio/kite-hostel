@@ -173,13 +173,13 @@ function TeacherLeftColumn({
           </div>
           <div className="text-center">
             <div className="font-semibold text-green-600 dark:text-green-400">
-              ${Math.round(teacherStats.earnings.teacher)}
+              €{Math.round(teacherStats.earnings.teacher)}
             </div>
             <div className="text-xs text-muted-foreground">Teacher</div>
           </div>
           <div className="text-center">
             <div className="font-semibold text-orange-600 dark:text-orange-400">
-              ${Math.round(teacherStats.earnings.school)}
+              €{Math.round(teacherStats.earnings.school)}
             </div>
             <div className="text-xs text-muted-foreground">School</div>
           </div>

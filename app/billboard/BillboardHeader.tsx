@@ -2,16 +2,25 @@
 
 import { SingleDatePicker } from "@/components/pickers/single-date-picker";
 import ControllerSettings from "@/components/whiteboard-usage/ControllerSettings";
-import GlobalStatsHeader from "@/components/whiteboard-usage/GlobalStatsHeader";
-import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { type EventController } from "@/backend/types";
-import { useMemo } from "react";
+import { HeadsetIcon } from "@/svgs/HeadsetIcon";
+import { HelmetIcon } from "@/svgs/HelmetIcon";
 
 interface BillboardHeaderProps {
   selectedDate: string | null;
   onDateChange: (date: string) => void;
   controller: EventController;
   onControllerChange: (controller: EventController) => void;
+  globalStats: {
+    eventCount: number;
+    totalHours: number;
+    earnings: {
+      teacher: number;
+      school: number;
+    };
+  };
+  teacherCount: number;
+  studentCount: number;
 }
 
 export default function BillboardHeader({
@@ -19,27 +28,65 @@ export default function BillboardHeader({
   onDateChange,
   controller,
   onControllerChange,
+  globalStats,
+  teacherCount,
+  studentCount,
 }: BillboardHeaderProps) {
   return (
     <div className="mb-6">
       <div className="grid grid-cols-4 gap-4">
-        {/* Left Section - Date Picker (spans 3 cols like TeacherColumnComplex) */}
+        {/* Left & Middle Sections */}
         <div className="col-span-3">
-          <div className="border border-border rounded-lg bg-card">
-            <div className="flex min-h-[100px]">
-              {/* Left Column - Date Picker (matches teacher info width) */}
-              <div className="w-72 p-4 border-r border-border flex-shrink-0">
+          <div className="flex gap-4">
+            {/* Left Section - Stats */}
+            <div className="w-72">
+              <div className="border border-border rounded-lg bg-card p-4 min-h-[100px] h-full">
                 <div className="space-y-2">
-                  <h3 className="font-medium text-foreground">Date Selection</h3>
-                  <SingleDatePicker
-                    selectedDate={selectedDate || undefined}
-                    onDateChange={onDateChange}
-                  />
+                  <div className="flex justify-around items-center">
+                    <div className="flex items-center gap-2">
+                      <HeadsetIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      <span className="font-semibold">{teacherCount}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <HelmetIcon className="w-5 h-5" />
+                      <span className="font-semibold">{studentCount}</span>
+                    </div>
+                  </div>
+                  <div className="py-2">
+                    <div className="grid grid-cols-4 gap-2 text-sm">
+                      <div className="text-center">
+                        <div className="font-semibold text-indigo-600 dark:text-indigo-400">
+                          {globalStats.eventCount}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Events</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-purple-600 dark:text-purple-400">
+                          {globalStats.totalHours}h
+                        </div>
+                        <div className="text-xs text-muted-foreground">Duration</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-green-600 dark:text-green-400">
+                          €{Math.round(globalStats.earnings.teacher)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Teacher</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-orange-600 dark:text-orange-400">
+                          €{Math.round(globalStats.earnings.school)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">School</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Right Column - Controller (matches events section) */}
-              <div className="flex-1 p-4">
+            {/* Middle Section - Controller */}
+            <div className="flex-1">
+              <div className="border border-border rounded-lg bg-card p-4 min-h-[100px] h-full">
                 <div className="space-y-2">
                   <h3 className="font-medium text-foreground">Event Settings</h3>
                   <ControllerSettings
@@ -52,15 +99,14 @@ export default function BillboardHeader({
           </div>
         </div>
 
-        {/* Right Section - Stats (spans 1 col like StudentBookingColumn) */}
+        {/* Right Section - Date Picker */}
         <div className="col-span-1">
-          <div className="border border-border rounded-lg bg-card p-4 min-h-[100px]">
+          <div className="border border-border rounded-lg bg-card p-4 min-h-[100px] h-full">
             <div className="space-y-2">
-              <h3 className="font-medium text-foreground">Daily Stats</h3>
-              <div className="text-center p-3 bg-muted rounded-lg">
-                <div className="text-lg font-bold">Hello Stats</div>
-                <div className="text-xs text-muted-foreground">placeholder</div>
-              </div>
+              <SingleDatePicker
+                selectedDate={selectedDate || undefined}
+                onDateChange={onDateChange}
+              />
             </div>
           </div>
         </div>
@@ -68,3 +114,4 @@ export default function BillboardHeader({
     </div>
   );
 }
+

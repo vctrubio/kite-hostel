@@ -115,6 +115,53 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     }
   }, []);
 
+  const globalStats = useMemo(() => {
+    const stats = {
+      eventCount: 0,
+      totalHours: 0,
+      earnings: {
+        teacher: 0,
+        school: 0,
+      },
+    };
+
+    if (!teacherQueues) {
+      return stats;
+    }
+
+    teacherQueues.forEach((queue) => {
+      const teacherStats = queue.getTeacherStats();
+      stats.eventCount += teacherStats.eventCount;
+      stats.totalHours += teacherStats.totalHours;
+      stats.earnings.teacher += teacherStats.earnings.teacher;
+      stats.earnings.school += teacherStats.earnings.school;
+    });
+
+    return stats;
+  }, [teacherQueues]);
+
+  const teacherCount = useMemo(() => {
+    return teacherQueues.filter((tq) => tq.getAllEvents().length > 0).length;
+  }, [teacherQueues]);
+
+  const studentCount = useMemo(() => {
+    const studentIds = new Set<string>();
+
+    teacherQueues.forEach((queue) => {
+      const events = queue.getAllEvents();
+      events.forEach((eventNode) => {
+        const students = eventNode.billboardClass.booking.students;
+        if (students) {
+          students.forEach((student) => {
+            studentIds.add(student.id);
+          });
+        }
+      });
+    });
+
+    return studentIds.size;
+  }, [teacherQueues]);
+
   return (
     <div className="min-h-screen p-4">
       {/* Header with date picker and controller */}
@@ -123,6 +170,9 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         onDateChange={handleDateChange}
         controller={controller}
         onControllerChange={setController}
+        globalStats={globalStats}
+        teacherCount={teacherCount}
+        studentCount={studentCount}
       />
 
       {/* Main content - Teacher Column and Student Column */}
