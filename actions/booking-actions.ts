@@ -30,13 +30,15 @@ export async function getBookingCountByPackageId(packageId: string) {
   } catch (error: any) {
     console.error(
       `Error fetching booking count for package with ID ${packageId} with Drizzle:`,
-      error
+      error,
     );
     return { count: 0, error: error.message };
   }
 }
 
-export async function getBookingById(id: string): Promise<{ data: BookingWithRelations | null; error: string | null }> {
+export async function getBookingById(
+  id: string,
+): Promise<{ data: BookingWithRelations | null; error: string | null }> {
   try {
     const booking = await db.query.Booking.findFirst({
       where: eq(Booking.id, id),
@@ -75,15 +77,27 @@ export async function getBookingById(id: string): Promise<{ data: BookingWithRel
       lessonCount: booking.lessons?.length ?? 0,
     };
 
-    return { data: bookingWithLessonCount as BookingWithRelations, error: null };
+    return {
+      data: bookingWithLessonCount as BookingWithRelations,
+      error: null,
+    };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error(`Error fetching booking with ID ${id} with Drizzle:`, error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(
+      `Error fetching booking with ID ${id} with Drizzle:`,
+      error,
+      "Full error object:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    );
     return { data: null, error: errorMessage };
   }
 }
 
-export async function getBookings(): Promise<{ data: BookingWithRelations[]; error: string | null }> {
+export async function getBookings(): Promise<{
+  data: BookingWithRelations[];
+  error: string | null;
+}> {
   try {
     const bookings = await db.query.Booking.findMany({
       with: {
@@ -117,10 +131,19 @@ export async function getBookings(): Promise<{ data: BookingWithRelations[]; err
       lessonCount: booking.lessons?.length ?? 0,
     }));
 
-    return { data: bookingsWithLessonCount as BookingWithRelations[], error: null };
+    return {
+      data: bookingsWithLessonCount as BookingWithRelations[],
+      error: null,
+    };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error("Error fetching bookings with Drizzle:", error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(
+      "Error fetching bookings with Drizzle:",
+      error,
+      "Full error object:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    );
     return { data: [], error: errorMessage };
   }
 }
@@ -139,7 +162,11 @@ export async function createBooking({
   date_end,
   student_ids,
   reference_id,
-}: CreateBookingParams): Promise<{ success: boolean; error: string | null; bookingId?: string }> {
+}: CreateBookingParams): Promise<{
+  success: boolean;
+  error: string | null;
+  bookingId?: string;
+}> {
   try {
     const newBooking = await db
       .insert(Booking)
@@ -169,6 +196,7 @@ export async function createBooking({
     revalidatePath("/bookings");
     revalidatePath("/bookings/form");
     revalidatePath("/students");
+    revalidatePath("/billboard");
     return { success: true, bookingId, error: null };
   } catch (error: any) {
     const errorMessage =
@@ -188,15 +216,14 @@ export async function updateBookingStatus(
   status: "active" | "uncomplete" | "completed",
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    await db
-      .update(Booking)
-      .set({ status })
-      .where(eq(Booking.id, bookingId));
+    await db.update(Booking).set({ status }).where(eq(Booking.id, bookingId));
     revalidatePath("/bookings");
     return { success: true, error: null };
   } catch (error: any) {
     const errorMessage =
-      error instanceof Error ? error.message : "Failed to update booking status.";
+      error instanceof Error
+        ? error.message
+        : "Failed to update booking status.";
     console.error(
       `Error updating booking status for booking ${bookingId}:`,
       error,
@@ -207,31 +234,45 @@ export async function updateBookingStatus(
   }
 }
 
-export async function deleteBooking(bookingId: string): Promise<{ success: boolean; error: string | null }> {
+export async function deleteBooking(
+  bookingId: string,
+): Promise<{ success: boolean; error: string | null }> {
   try {
     // Find all lessons related to the booking
-    const lessons = await db.select().from(Lesson).where(eq(Lesson.booking_id, bookingId));
-    const lessonIds = lessons.map(lesson => lesson.id);
+    const lessons = await db
+      .select()
+      .from(Lesson)
+      .where(eq(Lesson.booking_id, bookingId));
+    const lessonIds = lessons.map((lesson) => lesson.id);
 
     if (lessonIds.length > 0) {
       // Find all events related to these lessons
-      const events = await db.select().from(Event).where(and(...lessonIds.map(id => eq(Event.lesson_id, id))));
-      const eventIds = events.map(event => event.id);
+      const events = await db
+        .select()
+        .from(Event)
+        .where(and(...lessonIds.map((id) => eq(Event.lesson_id, id))));
+      const eventIds = events.map((event) => event.id);
 
       if (eventIds.length > 0) {
         // Delete all kite events related to these events
-        await db.delete(KiteEvent).where(and(...eventIds.map(id => eq(KiteEvent.event_id, id))));
+        await db
+          .delete(KiteEvent)
+          .where(and(...eventIds.map((id) => eq(KiteEvent.event_id, id))));
       }
 
       // Delete all events related to these lessons
-      await db.delete(Event).where(and(...lessonIds.map(id => eq(Event.lesson_id, id))));
+      await db
+        .delete(Event)
+        .where(and(...lessonIds.map((id) => eq(Event.lesson_id, id))));
     }
 
     // Delete all lessons related to the booking
     await db.delete(Lesson).where(eq(Lesson.booking_id, bookingId));
 
     // Delete all booking-student associations
-    await db.delete(BookingStudent).where(eq(BookingStudent.booking_id, bookingId));
+    await db
+      .delete(BookingStudent)
+      .where(eq(BookingStudent.booking_id, bookingId));
 
     // Finally, delete the booking itself
     await db.delete(Booking).where(eq(Booking.id, bookingId));

@@ -365,6 +365,7 @@ const TeacherQueueGroup = forwardRef<
           duration={eventNode.eventData.duration}
           students={eventNode.billboardClass.getStudentNames()}
           status={eventNode.eventData.status}
+          location={eventNode.eventData.location}
           eventId={eventNode.eventData.id}
           onStatusChange={() => { }}
         />
