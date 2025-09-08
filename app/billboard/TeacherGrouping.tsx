@@ -285,10 +285,14 @@ function TeacherRightContent({
   // Determine border color based on drag compatibility
   const getBorderColor = () => {
     if (!isDropping) return "";
-    if (dragCompatibility === "compatible") return "border-green-400 bg-green-50/50 dark:bg-green-950/50";
-    if (dragCompatibility === "incompatible") return "border-orange-400 bg-orange-50/50 dark:bg-orange-950/50";
+    if (dragCompatibility === "compatible")
+      return "border-green-400 bg-green-50/50 dark:bg-green-950/50";
+    if (dragCompatibility === "incompatible")
+      return "border-orange-400 bg-orange-50/50 dark:bg-orange-950/50";
     // Only show blue border if we haven't determined compatibility yet (during initial drag enter)
-    return dragCompatibility === null ? "border-blue-400 bg-blue-50/50 dark:bg-blue-950/50" : "";
+    return dragCompatibility === null
+      ? "border-blue-400 bg-blue-50/50 dark:bg-blue-950/50"
+      : "";
   };
 
   return (
@@ -344,7 +348,7 @@ export const TeacherGrouping = forwardRef<
   // Check if the dragged booking has a lesson assigned to this teacher
   const dragCompatibility = useMemo(() => {
     if (!externalDraggedBooking) return null;
-    
+
     const hasTeacherAssigned = externalDraggedBooking.hasTeacher(teacherId);
     return hasTeacherAssigned ? "compatible" : "incompatible";
   }, [externalDraggedBooking, teacherId]);
@@ -358,12 +362,14 @@ export const TeacherGrouping = forwardRef<
   const firstEventNode = editableScheduleNodes.find(
     (node) => node.type === "event",
   );
-  const displayTime = firstEventNode ? firstEventNode.startTime : "No Lesson Plan";
+  const displayTime = firstEventNode
+    ? firstEventNode.startTime
+    : "No Lesson Plan";
 
   // Drag and drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    
+
     e.dataTransfer.dropEffect = "copy";
   };
 
@@ -402,15 +408,14 @@ export const TeacherGrouping = forwardRef<
       }
 
       // Call the addEventAction method from TeacherQueue
-      const result = await teacherQueue.addEventAction(billboardClass, controller);
+      const result = await teacherQueue.addEventAction(
+        billboardClass,
+        controller,
+      );
 
       if (!result.success) {
         console.error("Failed to create event:", result.error);
         toast.error(`Failed to create event: ${result.error}`);
-      } else {
-        toast.success("Event created successfully!");
-        // Refresh the page to show updated data
-        router.refresh();
       }
     } catch (error) {
       console.error("Error handling drop:", error);

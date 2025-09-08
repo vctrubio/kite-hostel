@@ -8,6 +8,7 @@ import { HelmetIcon } from "@/svgs/HelmetIcon";
 import BillboardActions from "@/components/whiteboard-usage/BillboardActions";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { bulkUpdateEvents, bulkDeleteEvents } from "@/actions/event-actions";
 
 // Props Interface
@@ -86,20 +87,35 @@ function StatsSection({
         case "delete-incomplete":
           const deleteResult = await bulkDeleteEvents(eventStatus.allIds);
           if (deleteResult.success) {
+            toast.success(`Deleted ${deleteResult.deletedCount} events`, {
+              description: "All events have been removed"
+            });
             console.log(`✅ Deleted ${deleteResult.deletedCount} events`);
           } else {
+            toast.error("Failed to delete events", {
+              description: deleteResult.error
+            });
             console.error("❌ Failed to delete events:", deleteResult.error);
           }
           break;
         case "delete-safe":
           if (eventStatus.incompleteIds.length === 0) {
+            toast.info("No incomplete events to delete", {
+              description: "All events are already completed"
+            });
             console.log("No incomplete events to delete");
             return;
           }
           const safedeleteResult = await bulkDeleteEvents(eventStatus.incompleteIds);
           if (safedeleteResult.success) {
+            toast.success(`Safely deleted ${safedeleteResult.deletedCount} incomplete events`, {
+              description: "Completed events were preserved"
+            });
             console.log(`✅ Safely deleted ${safedeleteResult.deletedCount} incomplete events`);
           } else {
+            toast.error("Failed to safely delete incomplete events", {
+              description: safedeleteResult.error
+            });
             console.error("❌ Failed to safely delete incomplete events:", safedeleteResult.error);
           }
           break;
