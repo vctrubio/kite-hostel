@@ -358,20 +358,13 @@ export const TeacherGrouping = forwardRef<
   const firstEventNode = editableScheduleNodes.find(
     (node) => node.type === "event",
   );
-  const displayTime = firstEventNode ? firstEventNode.startTime : "No events";
+  const displayTime = firstEventNode ? firstEventNode.startTime : "No Lesson Plan";
 
   // Drag and drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     
-    // Set drop effect based on compatibility
-    if (dragCompatibility === "compatible") {
-      e.dataTransfer.dropEffect = "copy";
-    } else if (dragCompatibility === "incompatible") {
-      e.dataTransfer.dropEffect = "none";
-    } else {
-      e.dataTransfer.dropEffect = "copy"; // Default for initial state
-    }
+    e.dataTransfer.dropEffect = "copy";
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -404,7 +397,7 @@ export const TeacherGrouping = forwardRef<
       const hasValidLesson = billboardClass.hasTeacher(teacherId);
 
       if (!hasValidLesson) {
-        toast.error(`Assign ${schedule.teacherName} to this booking's lesson first`);
+        toast.error(`Assign ${schedule.teacherName} to the lesson`);
         return;
       }
 

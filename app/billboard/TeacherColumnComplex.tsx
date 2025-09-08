@@ -10,7 +10,6 @@ import {
   useRef,
 } from "react";
 import { useRouter } from "next/navigation";
-import { HeadsetIcon, FlagIcon } from "@/svgs";
 import FlagCard from "@/components/cards/FlagCard";
 import TeacherQueueEditor from "@/app/billboard/TeacherQueueEditor";
 import {
@@ -22,7 +21,6 @@ import {
   ChevronRight,
   Flag,
   FlagOff,
-  ChevronDown,
 } from "lucide-react";
 import { TeacherQueue } from "@/backend/TeacherQueue";
 import { BillboardClass } from "@/backend/BillboardClass";
@@ -67,7 +65,6 @@ const TeacherQueueGroup = forwardRef<
     controller,
   } = props;
 
-  const [isDropping, setIsDropping] = useState(false);
   const [timeAdjustmentMode, setTimeAdjustmentMode] = useState(false);
   const [globalTimeOffset, setGlobalTimeOffset] = useState(0);
   const [viewMode, setViewMode] = useState<"event" | "queue">("event");
@@ -78,7 +75,6 @@ const TeacherQueueGroup = forwardRef<
   const schedule = teacherQueue.getSchedule();
   const router = useRouter();
   const teacherId = schedule.teacherId;
-  const teacherStats = teacherQueue.getTeacherStats();
   const queueEvents = teacherQueue.getAllEvents();
 
   // Store original queue state for reset functionality
@@ -361,58 +357,6 @@ const TeacherQueueGroup = forwardRef<
     selectedDate,
   ]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-  };
-
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDropping(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsDropping(false);
-    }
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDropping(false);
-
-    try {
-      const dragData = e.dataTransfer.getData("application/json");
-      if (!dragData) return;
-
-      const parsedData = JSON.parse(dragData);
-      const billboardClass = new BillboardClass(parsedData.booking);
-
-      const hasValidLesson = billboardClass.hasTeacher(teacherId);
-
-      if (!hasValidLesson) {
-        toast.error("Assign Teacher To Lesson First");
-        return;
-      }
-
-      const result = await teacherQueue.addEventAction(
-        billboardClass,
-        controller,
-      );
-
-      if (!result.success) {
-        console.error("Failed to create event:", result.error);
-        toast.error(`Failed to create event: ${result.error}`);
-      } else {
-        toast.success("Event created successfully!");
-      }
-    } catch (error) {
-      console.error("Error handling drop:", error);
-      toast.error("Error handling drop");
-    }
-  };
-
   const renderEventCards = () => {
     return queueEvents.map((eventNode, index) => (
       <div key={`event-${eventNode.id}-${index}`} className="flex-shrink-0">
@@ -579,7 +523,6 @@ function ParentControlFlag({
 }
 
 export default function TeacherColumnComplex({
-  teachers,
   teacherQueues,
   controller,
   selectedDate,
