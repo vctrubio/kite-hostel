@@ -183,31 +183,46 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     let tbc = 0;
     let cancelled = 0;
     let total = 0;
+    const allIds: string[] = [];
+    const incompleteIds: string[] = [];
 
     teacherQueues.forEach((queue) => {
       const events = queue.getAllEvents();
       events.forEach((eventNode) => {
+        const eventId = eventNode.eventData.id;
         total++;
+        allIds.push(eventId);
         const status = eventNode.eventData.status;
         
         switch (status) {
           case "planned":
             planned++;
+            incompleteIds.push(eventId);
             break;
           case "completed":
             completed++;
             break;
           case "tbc":
             tbc++;
+            incompleteIds.push(eventId);
             break;
           case "cancelled":
             cancelled++;
+            incompleteIds.push(eventId);
             break;
         }
       });
     });
 
-    return { planned, completed, tbc, cancelled, total };
+    return { 
+      planned, 
+      completed, 
+      tbc, 
+      cancelled, 
+      total,
+      allIds,
+      incompleteIds
+    };
   }, [teacherQueues]);
 
   const handleActionClick = async (actionId: string) => {

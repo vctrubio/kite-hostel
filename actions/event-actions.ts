@@ -356,6 +356,83 @@ export async function getEvents() {
   }
 }
 
+export async function bulkUpdateEvents(eventIds: string[], updates: {
+  status?: "planned" | "completed" | "tbc" | "cancelled";
+}) {
+  try {
+    const supabase = await createClient();
+
+    if (eventIds.length === 0) {
+      return { success: false, error: "No event IDs provided" };
+    }
+
+    const updateData: any = {};
+    if (updates.status !== undefined) updateData.status = updates.status;
+
+    if (Object.keys(updateData).length === 0) {
+      return { success: false, error: "No fields to update" };
+    }
+
+    const { error: updateError } = await supabase
+      .from('event')
+      .update(updateData)
+      .in('id', eventIds);
+
+    if (updateError) {
+      console.error('❌ Bulk event update failed:', updateError);
+      return { success: false, error: updateError.message };
+    }
+    
+    revalidatePath("/whiteboard");
+    revalidatePath("/billboard");
+    revalidatePath("/events");
+    return { success: true, updatedCount: eventIds.length };
+  } catch (error: any) {
+    console.error("Error bulk updating events:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function bulkDeleteEvents(eventIds: string[]) {
+  try {
+    const supabase = await createClient();
+
+    if (eventIds.length === 0) {
+      return { success: false, error: "No event IDs provided" };
+    }
+
+    // First, delete any KiteEvent associations
+    const { error: kiteEventError } = await supabase
+      .from('kite_event')
+      .delete()
+      .in('event_id', eventIds);
+
+    if (kiteEventError) {
+      console.error('❌ Bulk KiteEvent deletion failed:', kiteEventError);
+      return { success: false, error: kiteEventError.message };
+    }
+
+    // Then delete the events themselves
+    const { error: deleteError } = await supabase
+      .from('event')
+      .delete()
+      .in('id', eventIds);
+
+    if (deleteError) {
+      console.error('❌ Bulk event deletion failed:', deleteError);
+      return { success: false, error: deleteError.message };
+    }
+
+    revalidatePath('/whiteboard');
+    revalidatePath('/billboard');
+    revalidatePath('/events');
+    return { success: true, deletedCount: eventIds.length };
+  } catch (error) {
+    console.error('🔥 Error bulk deleting events:', error);
+    return { success: false, error: 'Failed to bulk delete events' };
+  }
+}
+
 export async function getEventCsv() {
   try {
     const events = await db.select({

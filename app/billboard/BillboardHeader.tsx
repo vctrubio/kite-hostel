@@ -8,6 +8,7 @@ import { HelmetIcon } from "@/svgs/HelmetIcon";
 import BillboardActions from "@/components/whiteboard-usage/BillboardActions";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { bulkUpdateEvents, bulkDeleteEvents } from "@/actions/event-actions";
 
 // Props Interface
 interface BillboardHeaderProps {
@@ -34,6 +35,8 @@ interface BillboardHeaderProps {
     tbc: number;
     cancelled: number;
     total: number;
+    allIds: string[];
+    incompleteIds: string[];
   };
 }
 
@@ -46,22 +49,63 @@ function StatsSection({
 }: Pick<BillboardHeaderProps, "globalStats" | "teacherCount" | "studentCount" | "eventStatus">) {
   const [showLessonDropdown, setShowLessonDropdown] = useState(false);
 
-  const handleLessonAction = (action: string) => {
+  const handleLessonAction = async (action: string) => {
     setShowLessonDropdown(false);
     
-    switch (action) {
-      case "confirm-all":
-        console.log("TODO: set all events to complete");
-        break;
-      case "plan-all":
-        console.log("TODO: set all lessons to planned");
-        break;
-      case "set-tbc":
-        console.log("TODO: set all events to tbc");
-        break;
-      case "delete-incomplete":
-        console.log("TODO: delete all lessons that event status ≠ complete");
-        break;
+    if (eventStatus.allIds.length === 0) {
+      console.warn("No events to update");
+      return;
+    }
+
+    try {
+      switch (action) {
+        case "confirm-all":
+          const confirmResult = await bulkUpdateEvents(eventStatus.allIds, { status: "completed" });
+          if (confirmResult.success) {
+            console.log(`✅ Confirmed ${confirmResult.updatedCount} events`);
+          } else {
+            console.error("❌ Failed to confirm all events:", confirmResult.error);
+          }
+          break;
+        case "plan-all":
+          const planResult = await bulkUpdateEvents(eventStatus.allIds, { status: "planned" });
+          if (planResult.success) {
+            console.log(`✅ Set ${planResult.updatedCount} events to planned`);
+          } else {
+            console.error("❌ Failed to set all events to planned:", planResult.error);
+          }
+          break;
+        case "set-tbc":
+          const tbcResult = await bulkUpdateEvents(eventStatus.allIds, { status: "tbc" });
+          if (tbcResult.success) {
+            console.log(`✅ Set ${tbcResult.updatedCount} events to TBC`);
+          } else {
+            console.error("❌ Failed to set all events to TBC:", tbcResult.error);
+          }
+          break;
+        case "delete-incomplete":
+          const deleteResult = await bulkDeleteEvents(eventStatus.allIds);
+          if (deleteResult.success) {
+            console.log(`✅ Deleted ${deleteResult.deletedCount} events`);
+          } else {
+            console.error("❌ Failed to delete events:", deleteResult.error);
+          }
+          break;
+        case "delete-safe":
+          if (eventStatus.incompleteIds.length === 0) {
+            console.log("No incomplete events to delete");
+            return;
+          }
+          const safedeleteResult = await bulkDeleteEvents(eventStatus.incompleteIds);
+          if (safedeleteResult.success) {
+            console.log(`✅ Safely deleted ${safedeleteResult.deletedCount} incomplete events`);
+          } else {
+            console.error("❌ Failed to safely delete incomplete events:", safedeleteResult.error);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error("❌ Error performing bulk action:", error);
     }
   };
 
@@ -113,6 +157,12 @@ function StatsSection({
                       className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
                     >
                       No Wind = Delete Lessons
+                    </button>
+                    <button
+                      onClick={() => handleLessonAction("delete-safe")}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 text-orange-600 dark:text-orange-400"
+                    >
+                      Delete Lessons (Safe)
                     </button>
                   </div>
                 </div>
