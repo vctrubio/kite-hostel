@@ -8,7 +8,6 @@ import { HelmetIcon } from "@/svgs/HelmetIcon";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { deleteEvent, updateEvent } from "@/actions/event-actions";
 import {
-  getEventStatusColor,
   type EventStatus,
   LOCATION_ENUM_VALUES,
   type Location,
@@ -21,6 +20,7 @@ interface FlagCardProps {
   status: EventStatus;
   location: Location;
   eventId?: string;
+  hasGap?: number;
   onStatusChange?: (newStatus: EventStatus) => void;
   onLocationChange?: (newLocation: Location) => void;
 }
@@ -46,6 +46,7 @@ export default function FlagCard({
   status,
   location,
   eventId,
+  hasGap,
   onStatusChange,
   onLocationChange,
 }: FlagCardProps) {
@@ -125,11 +126,19 @@ export default function FlagCard({
 
   return (
     <div
-      className={`w-[285px] bg-card border border-border rounded-lg overflow-hidden transition-all duration-500 ${isDeleted
+      className={`w-[285px] bg-card border border-border rounded-lg overflow-hidden transition-all duration-500 relative ${isDeleted
         ? "opacity-0 scale-95 translate-y-2"
         : "opacity-100 scale-100 translate-y-0"
         } ${isDeleting ? "animate-pulse" : ""}`}
     >
+      {/* Gap indicator in top right */}
+      {hasGap && hasGap > 0 && (
+        <div className="absolute top-2 right-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md text-xs font-medium border border-orange-200 dark:border-orange-800 text-center">
+          <div>+<Duration minutes={hasGap} /></div>
+          <div className="text-[10px] opacity-75">delay</div>
+        </div>
+      )}
+
       <div className="p-4 flex items-start gap-4">
         <div className="flex flex-col items-center gap-2">
           <FlagIcon className="w-12 h-12" />

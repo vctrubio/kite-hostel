@@ -353,19 +353,35 @@ const TeacherQueueGroup = forwardRef<
   ]);
 
   const renderEventCards = () => {
-    return queueEvents.map((eventNode, index) => (
-      <div key={`event-${eventNode.id}-${index}`} className="flex-shrink-0">
-        <FlagCard
-          startTime={eventNode.eventData.date}
-          duration={eventNode.eventData.duration}
-          students={eventNode.billboardClass.getStudentNames()}
-          status={eventNode.eventData.status}
-          location={eventNode.eventData.location}
-          eventId={eventNode.eventData.id}
-          onStatusChange={() => { }}
-        />
-      </div>
-    ));
+    return queueEvents.map((eventNode, index) => {
+      let hasGap: number | undefined;
+      
+      if (index > 0) {
+        const prevEvent = queueEvents[index - 1];
+        const prevEventEndTime = timeToMinutes(prevEvent.eventData.date.split('T')[1].substring(0, 5)) + prevEvent.eventData.duration;
+        const currentEventStartTime = timeToMinutes(eventNode.eventData.date.split('T')[1].substring(0, 5));
+        
+        const gap = currentEventStartTime - prevEventEndTime;
+        if (gap > 0) {
+          hasGap = gap;
+        }
+      }
+
+      return (
+        <div key={`event-${eventNode.id}-${index}`} className="flex-shrink-0">
+          <FlagCard
+            startTime={eventNode.eventData.date}
+            duration={eventNode.eventData.duration}
+            students={eventNode.billboardClass.getStudentNames()}
+            status={eventNode.eventData.status}
+            location={eventNode.eventData.location}
+            eventId={eventNode.eventData.id}
+            hasGap={hasGap}
+            onStatusChange={() => { }}
+          />
+        </div>
+      );
+    });
   };
 
   return (
