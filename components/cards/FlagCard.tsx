@@ -133,11 +133,14 @@ export default function FlagCard({
       <div className="p-4 flex items-start gap-4">
         <div className="flex flex-col items-center gap-2">
           <FlagIcon className="w-12 h-12" />
-          <div className={`w-full gap-1 ${
-            students.length === 4 ? "grid grid-cols-2 justify-center" : 
-            students.length === 3 ? "grid grid-cols-2 justify-center" :
-            "flex flex-row-reverse"
-          }`}>
+          <div
+            className={`w-full gap-1 ${students.length === 4
+              ? "grid grid-cols-2 justify-center"
+              : students.length === 3
+                ? "grid grid-cols-2 justify-center"
+                : "flex flex-row-reverse"
+              }`}
+          >
             {students.map((_, index) => (
               <HelmetIcon key={index} className="w-4 h-4 text-yellow-500" />
             ))}

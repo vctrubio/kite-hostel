@@ -16,12 +16,7 @@ import {
   TeacherGrouping,
   type TeacherQueueGroupHandle,
 } from "@/app/billboard/TeacherGrouping";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Flag,
-  FlagOff,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Flag, FlagOff } from "lucide-react";
 import { TeacherQueue } from "@/backend/TeacherQueue";
 import { BillboardClass } from "@/backend/BillboardClass";
 import { type EventController } from "@/backend/types";

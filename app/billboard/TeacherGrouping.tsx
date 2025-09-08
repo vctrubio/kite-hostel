@@ -161,7 +161,7 @@ function TeacherLeftColumn({
       </div>
 
       {/* Stats */}
-      <div className="border border-b-popover py-2">
+      <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3">
         <div className="grid grid-cols-4 gap-2 text-sm">
           <div className="text-center">
             <div className="font-semibold text-indigo-600 dark:text-indigo-400">
@@ -338,7 +338,6 @@ export const TeacherGrouping = forwardRef<
 
   // Drag and drop state
   const [isDropping, setIsDropping] = useState(false);
-  const router = useRouter();
 
   const schedule = teacherQueue.getSchedule();
   const teacherId = schedule.teacherId;
