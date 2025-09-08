@@ -162,6 +162,10 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     return studentIds.size;
   }, [teacherQueues]);
 
+  const handleActionClick = async (actionId: string) => {
+    alert(`Action clicked: ${actionId}. Logic to be implemented.`);
+  };
+
   return (
     <div className="min-h-screen p-4">
       {/* Header with date picker and controller */}
@@ -173,6 +177,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         globalStats={globalStats}
         teacherCount={teacherCount}
         studentCount={studentCount}
+        onActionClick={handleActionClick}
       />
 
       {/* Main content - Teacher Column and Student Column */}

@@ -511,7 +511,7 @@ function ParentControlFlag({
 
   return (
     <div className="border border-border dark:border-gray-700 rounded-lg p-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center pl-2 ">
         <div className="flex items-center gap-4">
           <h3 className="text-lg font-medium text-foreground dark:text-white">
             {dayOfWeek}

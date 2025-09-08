@@ -29,7 +29,7 @@ export default function StudentBookingColumn({
     // Available = bookings that DO NOT have an event today
     return billboardClasses.filter((billboardClass) => {
       const lessons = billboardClass.lessons || [];
-      
+
       // Check if any lesson has events for the selected date
       const hasEventToday = lessons.some((lesson) => {
         const events = lesson.events || [];
@@ -42,56 +42,55 @@ export default function StudentBookingColumn({
           return eventDate.getTime() === filterDate.getTime();
         });
       });
-      
+
       return !hasEventToday; // Available = no events today
     });
   }, [billboardClasses, selectedDate, filter]);
 
   return (
     <div className="col-span-1">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 p-3 border rounded-lg">
         <h2 className="text-xl font-semibold">
           Bookings ({filteredBillboardClasses.length})
         </h2>
-        
+
         {/* All/Available Toggle */}
         <div className="flex items-center gap-1 bg-muted rounded-md p-1">
           <button
             onClick={() => setFilter("available")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
-              filter === "available"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "available"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             Available
           </button>
           <button
             onClick={() => setFilter("all")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
-              filter === "all"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "all"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             All
           </button>
         </div>
       </div>
-      
+
       <div className="space-y-3">
         {filteredBillboardClasses.length === 0 ? (
           <p className="text-muted-foreground">
-            {filter === "available" 
-              ? "No available bookings for this date" 
-              : "No bookings for this date"
-            }
+            {filter === "available"
+              ? "No available bookings for this date"
+              : "No bookings for this date"}
           </p>
         ) : (
           filteredBillboardClasses.map((billboardClass) => {
             // Check if booking has lessons with teacher assignments
             const existingLessons = billboardClass.lessons || [];
-            const hasValidLesson = existingLessons.some(lesson => lesson.teacher?.id);
+            const hasValidLesson = existingLessons.some(
+              (lesson) => lesson.teacher?.id,
+            );
 
             return (
               <StudentsBookingCard
