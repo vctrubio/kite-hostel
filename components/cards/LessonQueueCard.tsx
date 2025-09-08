@@ -6,6 +6,7 @@ import { Duration } from '@/components/formatters/Duration';
 import { DateTime, formatTime } from '@/components/formatters/DateTime';
 import { type QueuedLesson } from '@/backend/TeacherSchedule';
 import { addMinutes, format } from 'date-fns';
+import { useState } from 'react';
 
 interface TeacherLessonQueueCardProps {
   queuedLesson: QueuedLesson & { scheduledDateTime: string };
@@ -39,18 +40,40 @@ export default function TeacherLessonQueueCard({
   // --- Logic at the top ---
   const {
     students,
-    duration,
-    remainingMinutes,
+    duration: originalDuration,
+    remainingMinutes: originalRemainingMinutes,
     lessonId,
     hasGap,
     timeAdjustment,
     scheduledDateTime
   } = queuedLesson;
 
-  const endTime = scheduledDateTime ? formatTime(addMinutes(new Date(scheduledDateTime), duration).toISOString()) : '';
-  const remaining = remainingMinutes - duration;
+  // Track local duration adjustments
+  const [localDurationAdjustment, setLocalDurationAdjustment] = useState(0);
+  
+  // Calculate current duration and remaining minutes with local adjustments
+  const currentDuration = originalDuration + localDurationAdjustment;
+  const remainingMinutes = originalRemainingMinutes - localDurationAdjustment;
+
+  const endTime = scheduledDateTime ? formatTime(addMinutes(new Date(scheduledDateTime), currentDuration).toISOString()) : '';
+  const remaining = remainingMinutes;
   const studentNames = students.join(', ');
   const gapDuration = (queuedLesson as any).gapDuration || 0;
+
+  // Local duration adjustment handler
+  const handleLocalDurationAdjustment = (increment: boolean) => {
+    const adjustment = increment ? 30 : -30;
+    const newDuration = currentDuration + adjustment;
+    
+    // Don't allow duration below 60 minutes
+    if (newDuration < 60) return;
+    
+    // Update local state immediately for UI responsiveness
+    setLocalDurationAdjustment(prev => prev + adjustment);
+    
+    // Call the parent handler to update the actual data
+    onAdjustDuration(lessonId, increment);
+  };
 
   // --- Render ---
   return (
@@ -159,21 +182,20 @@ export default function TeacherLessonQueueCard({
           <div className="flex flex-col">
 
           <button
-            onClick={() => onAdjustDuration(lessonId, true)}
-            disabled={duration >= remainingMinutes}
-            className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={() => handleLocalDurationAdjustment(true)}
+            className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             title="30 minutes more"
           >
             <ChevronUp className="w-3 h-3" />
           </button>
           <div className="text-sm font-medium text-gray-900 dark:text-white my-1">
-            +<Duration minutes={duration} />
+            +<Duration minutes={currentDuration} />
           </div>
           <button
-            onClick={() => onAdjustDuration(lessonId, false)}
-            disabled={duration <= 30}
+            onClick={() => handleLocalDurationAdjustment(false)}
+            disabled={currentDuration <= 60}
             className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="30 minutes less"
+            title="30 minutes less (minimum 60 minutes)"
           >
             <ChevronDown className="w-3 h-3" />
           </button>
@@ -189,7 +211,12 @@ export default function TeacherLessonQueueCard({
           <span>{location}</span>
         </div>
         <span>•</span>
-        <span><Duration minutes={remaining} /> remaining</span>
+        <span className={remaining < 0 ? "text-orange-600 dark:text-orange-400 font-medium" : ""}>
+          <Duration minutes={Math.abs(remaining)} /> {remaining < 0 ? "over limit" : "remaining"}
+        </span>
+        {remaining < 0 && (
+          <AlertTriangle className="w-3 h-3 text-orange-600 dark:text-orange-400" />
+        )}
       </div>
 
       {/* Gap warning - only show if not first and has gap */}

@@ -102,11 +102,14 @@ export default function TeacherQueueEditor({
         // Get time in minutes for bounds checking
         const currentTimeMinutes = timeToMinutes(node.startTime);
 
+        // Get remaining minutes from the BillboardClass instance
+        const remainingMinutes = queueEvent ? queueEvent.billboardClass.getRemainingMinutes() : 0;
+
         const queuedLesson = {
           lessonId: node.eventData?.lessonId || "",
           students: studentList,
           duration: node.duration,
-          remainingMinutes: 2400, // Placeholder
+          remainingMinutes: remainingMinutes,
           scheduledDateTime: localDateTimeString,
           hasGap: hasGap,
           timeAdjustment: timeAdjustment,

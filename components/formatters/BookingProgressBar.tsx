@@ -33,14 +33,14 @@ export function BookingProgressBar({ eventMinutes, totalMinutes }: BookingProgre
         className="h-3 rounded-full overflow-hidden border border-border bg-gray-100 dark:bg-gray-800"
         style={{ width: "100px" }}
       >
-        {/* Completed minutes - Green */}
+        {/* Completed minutes - Dark Green */}
         <div
-          className="h-full bg-green-500 transition-all duration-300 float-left"
+          className="h-full bg-green-600 transition-all duration-300 float-left"
           style={{ width: `${completedWidth}%` }}
         />
-        {/* Planned minutes - Teal */}
+        {/* Planned minutes - Light Green */}
         <div
-          className="h-full bg-teal-500 transition-all duration-300 float-left"
+          className="h-full bg-green-300 transition-all duration-300 float-left"
           style={{ width: `${plannedWidth}%` }}
         />
         {/* TBC minutes - Purple */}

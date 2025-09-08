@@ -410,6 +410,11 @@ export class TeacherQueue {
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
     if (newIndex < 0 || newIndex >= events.length) return;
 
+    // Store the start time of the earlier position (the one that will keep its time)
+    const earlierIndex = Math.min(currentIndex, newIndex);
+    const earlierEvent = events[earlierIndex];
+    const preservedStartTimeMinutes = this.getStartTimeMinutes(earlierEvent);
+
     // Swap events
     [events[currentIndex], events[newIndex]] = [events[newIndex], events[currentIndex]];
     
@@ -419,6 +424,29 @@ export class TeacherQueue {
       event.next = null;
       this.addToQueue(event);
     });
+
+    // Recalculate start times starting from the preserved time
+    this.recalculateStartTimesFromPosition(earlierIndex, preservedStartTimeMinutes);
+  }
+
+  // Recalculate start times from a specific position with a given start time
+  private recalculateStartTimesFromPosition(startIndex: number, startTimeMinutes: number): void {
+    const events = this.getAllEvents();
+    let currentTimeMinutes = startTimeMinutes;
+
+    for (let i = startIndex; i < events.length; i++) {
+      const event = events[i];
+      
+      // Update event's start time
+      const [datePart] = event.eventData.date.split('T');
+      const newHours = Math.floor(currentTimeMinutes / 60);
+      const newMinutes = currentTimeMinutes % 60;
+      const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+      event.eventData.date = `${datePart}T${newTime}:00`;
+
+      // Calculate start time for next event (current start + current duration)
+      currentTimeMinutes += event.eventData.duration;
+    }
   }
 
 

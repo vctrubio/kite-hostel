@@ -35,7 +35,9 @@ export class BillboardClass {
 
   getRemainingMinutes(): number {
     const eventMinutes = this.getEventMinutes();
-    return eventMinutes.planned - eventMinutes.completed;
+    const packageDuration = this.package?.duration || 0;
+    const usedMinutes = eventMinutes.planned + eventMinutes.completed + eventMinutes.tbc;
+    return packageDuration - usedMinutes;
   }
 
   // Package calculations
