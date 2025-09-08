@@ -1,7 +1,6 @@
 "use client";
 
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
-import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
 import { BillboardClass } from "@/backend/BillboardClass";
 import {
   HelmetIcon,
@@ -22,7 +21,6 @@ import {
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { BookingData } from "@/backend/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +35,7 @@ import { cn } from "@/lib/utils";
 interface StudentsBookingCardProps {
   billboardClass: BillboardClass;
   selectedDate?: string;
+  teachers: any[];
   isDraggable?: boolean;
   onDragStart?: (bookingId: string) => void;
   onDragEnd?: (bookingId: string, wasDropped: boolean) => void;
@@ -93,12 +92,14 @@ function LessonsSection({ lessons }: { lessons: any[] }) {
 
 interface StudentCardFooterProps {
   billboardClass: BillboardClass;
+  availableTeachers: any[];
   onAssignTeacherClick: () => void;
   onBookingComplete?: (bookingId: string) => void;
 }
 
 function StudentCardFooter({
   billboardClass,
+  availableTeachers,
   onAssignTeacherClick,
   onBookingComplete,
 }: StudentCardFooterProps) {
@@ -150,11 +151,24 @@ function StudentCardFooter({
         <div className="flex flex-wrap items-center gap-3 px-2">
           <button
             onClick={onAssignTeacherClick}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            title="Assign Teacher"
+            disabled={availableTeachers.length === 0}
+            className={`flex items-center gap-2 transition-colors ${
+              availableTeachers.length === 0
+                ? "text-muted-foreground cursor-not-allowed opacity-50"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            title={
+              availableTeachers.length === 0
+                ? "No available teachers (all already assigned)"
+                : "Assign Teacher"
+            }
           >
             <Plus className="w-4 h-4" />
-            <span className="text-xs">Assign Teacher</span>
+            <span className="text-xs">
+              {availableTeachers.length === 0
+                ? "All Teachers Assigned"
+                : "Assign Teacher"}
+            </span>
           </button>
           
           <DropdownMenu>
@@ -336,6 +350,7 @@ function StudentCardFooter({
 export default function StudentsBookingCard({
   billboardClass,
   selectedDate,
+  teachers,
   isDraggable = false,
   onDragStart,
   onDragEnd,
@@ -356,6 +371,11 @@ export default function StudentsBookingCard({
       existingLessons.map((lesson) => lesson.teacher?.id).filter(Boolean),
     );
   }, [existingLessons]);
+
+  // Filter teachers to only show those not already assigned to this booking
+  const availableTeachers = useMemo(() => {
+    return teachers.filter((teacher) => !assignedTeacherIds.has(teacher.id));
+  }, [teachers, assignedTeacherIds]);
 
   const handleDragStart = (e: React.DragEvent) => {
     // Create a serializable object with the billboardClass data
@@ -440,14 +460,26 @@ export default function StudentsBookingCard({
 
       <StudentCardFooter
         billboardClass={billboardClass}
-        onAssignTeacherClick={() => setShowLessonModal(true)}
+        availableTeachers={availableTeachers}
+        onAssignTeacherClick={() => {
+          if (availableTeachers.length > 0) {
+            setShowLessonModal(true);
+          }
+        }}
       />
 
-      {/* TODO: Add lesson modal back when teachers are available */}
-      {showLessonModal && (
-        <div className="text-sm text-muted-foreground p-2">
-          Lesson assignment modal - Teachers not available in this context
-        </div>
+      {/* Lesson Modal for Teacher Assignment */}
+      {showLessonModal && availableTeachers.length > 0 && (
+        <BookingToLessonModal
+          bookingId={booking.id}
+          bookingReference={booking.reference}
+          onClose={() => setShowLessonModal(false)}
+          teachers={availableTeachers}
+          onCommissionCreated={() => {
+            // You can add a refresh callback here if needed
+            setShowLessonModal(false);
+          }}
+        />
       )}
     </div>
   );

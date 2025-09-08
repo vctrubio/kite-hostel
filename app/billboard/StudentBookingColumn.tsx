@@ -7,6 +7,7 @@ import { BillboardClass } from "@/backend/BillboardClass";
 interface StudentBookingColumnProps {
   billboardClasses: BillboardClass[];
   selectedDate: string;
+  teachers: any[];
   onBookingDragStart?: (bookingId: string) => void;
   onBookingDragEnd?: (bookingId: string, wasDropped: boolean) => void;
 }
@@ -16,6 +17,7 @@ type BookingFilter = "all" | "available" | "completed";
 export default function StudentBookingColumn({
   billboardClasses,
   selectedDate,
+  teachers,
   onBookingDragStart,
   onBookingDragEnd,
 }: StudentBookingColumnProps) {
@@ -115,6 +117,7 @@ export default function StudentBookingColumn({
                 key={billboardClass.booking.id}
                 billboardClass={billboardClass}
                 selectedDate={selectedDate}
+                teachers={teachers}
                 isDraggable={hasValidLesson && filter === "available"}
                 onDragStart={onBookingDragStart}
                 onDragEnd={onBookingDragEnd}

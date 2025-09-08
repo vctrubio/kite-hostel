@@ -192,6 +192,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         <StudentBookingColumn
           billboardClasses={filteredBillboardClasses}
           selectedDate={selectedDate}
+          teachers={data.teachers || []}
         />
       </div>
 
