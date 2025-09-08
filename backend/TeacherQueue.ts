@@ -421,10 +421,6 @@ export class TeacherQueue {
     });
   }
 
-  // Check if can reorganize schedule
-  canReorganizeSchedule(): boolean {
-    return this.getAllEvents().length > 1;
-  }
 
   // Get schedule info
   getSchedule() {

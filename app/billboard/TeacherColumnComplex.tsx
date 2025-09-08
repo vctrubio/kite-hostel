@@ -14,11 +14,14 @@ import { HeadsetIcon, FlagIcon } from "@/svgs";
 import FlagCard from "@/components/cards/FlagCard";
 import TeacherQueueEditor from "@/app/billboard/TeacherQueueEditor";
 import {
+  TeacherGrouping,
+  type TeacherQueueGroupHandle,
+} from "@/app/billboard/TeacherGrouping";
+import {
   ChevronLeft,
   ChevronRight,
   Flag,
   FlagOff,
-  Zap,
   ChevronDown,
 } from "lucide-react";
 import { TeacherQueue } from "@/backend/TeacherQueue";
@@ -35,78 +38,6 @@ interface TeacherColumnComplexProps {
   selectedDate: string;
 }
 
-// Sub-component: Time Adjustment Flag
-interface TimeAdjustmentFlagProps {
-  proposedTimeOffset: number;
-  timeAdjustmentMode: boolean;
-  editableScheduleNodes: any[];
-  parentTimeAdjustmentMode?: boolean;
-  onTimeAdjustment: (minutesOffset: number) => void;
-  onSetTimeAdjustmentMode: (mode: boolean) => void;
-  onSetViewMode: (mode: "event" | "queue") => void;
-}
-
-function TimeAdjustmentFlag({
-  proposedTimeOffset,
-  timeAdjustmentMode,
-  editableScheduleNodes,
-  parentTimeAdjustmentMode = false,
-  onTimeAdjustment,
-  onSetTimeAdjustmentMode,
-  onSetViewMode,
-}: TimeAdjustmentFlagProps) {
-  const firstEventNode = editableScheduleNodes.find(
-    (node) => node.type === "event",
-  );
-  const displayTime = firstEventNode ? firstEventNode.startTime : "No events";
-
-  if (timeAdjustmentMode) {
-    return (
-      <div className="flex items-center gap-1">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onTimeAdjustment(-30)}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="Move back 30 minutes"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="min-w-[60px] text-center font-mono">
-            {displayTime}
-            {proposedTimeOffset !== 0 && !parentTimeAdjustmentMode && (
-              <span className="text-orange-600 dark:text-orange-400 ml-1">
-                ({proposedTimeOffset > 0 ? "+" : ""}
-                {proposedTimeOffset}m)
-              </span>
-            )}
-          </span>
-          <button
-            onClick={() => onTimeAdjustment(30)}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="Move forward 30 minutes"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      onClick={() => {
-        onSetTimeAdjustmentMode(true);
-        onSetViewMode("queue");
-      }}
-      className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 cursor-pointer transition-colors"
-      title="Click to adjust start time and switch to queue view"
-    >
-      <Flag className="w-4 h-4" />
-      <span>{displayTime}</span>
-    </div>
-  );
-}
-
 interface TeacherQueueGroupProps {
   teacherQueue: TeacherQueue;
   selectedDate: string;
@@ -116,10 +47,6 @@ interface TeacherQueueGroupProps {
   onCompleteOrOptOut?: (teacherId: string) => void;
   onOptInToParentUpdate?: (teacherId: string) => void;
   controller: EventController;
-}
-
-export interface TeacherQueueGroupHandle {
-  submit: () => Promise<void>;
 }
 
 const TeacherQueueGroup = forwardRef<
@@ -146,7 +73,6 @@ const TeacherQueueGroup = forwardRef<
   const [editableScheduleNodes, setEditableScheduleNodes] =
     useState(scheduleNodes);
   const schedule = teacherQueue.getSchedule();
-  const canReorganize = teacherQueue.canReorganizeSchedule();
   const router = useRouter();
   const teacherId = schedule.teacherId;
   const teacherStats = teacherQueue.getTeacherStats();
@@ -154,13 +80,13 @@ const TeacherQueueGroup = forwardRef<
 
   // Store original queue state for reset functionality
   const originalQueueState = useRef<any[]>([]);
-  
+
   useEffect(() => {
     // Store original state when entering edit mode
     if (viewMode === "queue" && originalQueueState.current.length === 0) {
-      originalQueueState.current = queueEvents.map(event => ({
+      originalQueueState.current = queueEvents.map((event) => ({
         ...event,
-        eventData: { ...event.eventData }
+        eventData: { ...event.eventData },
       }));
     }
     // Clear original state when exiting edit mode
@@ -193,20 +119,25 @@ const TeacherQueueGroup = forwardRef<
 
   useEffect(() => {
     if (parentTimeAdjustmentMode && parentGlobalTime) {
-      const offsetMinutes = timeToMinutes(parentGlobalTime) - timeToMinutes(scheduleNodes[0]?.startTime || "00:00");
-      
+      const offsetMinutes =
+        timeToMinutes(parentGlobalTime) -
+        timeToMinutes(scheduleNodes[0]?.startTime || "00:00");
+
       // Update UI nodes
-      const updatedNodes = scheduleNodes.map(node => ({
+      const updatedNodes = scheduleNodes.map((node) => ({
         ...node,
-        startTime: minutesToTime(timeToMinutes(node.startTime) + offsetMinutes)
+        startTime: minutesToTime(timeToMinutes(node.startTime) + offsetMinutes),
       }));
       setEditableScheduleNodes(updatedNodes);
       setGlobalTimeOffset(offsetMinutes);
-      
+
       // Apply the actual displayed times to the TeacherQueue events
       const currentEvents = teacherQueue.getAllEvents();
       updatedNodes.forEach((node, index) => {
-        if (currentEvents[index] && node.eventData?.lessonId === currentEvents[index].lessonId) {
+        if (
+          currentEvents[index] &&
+          node.eventData?.lessonId === currentEvents[index].lessonId
+        ) {
           // Use the exact time from the node that's being displayed
           const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
           currentEvents[index].eventData.date = localDateTimeString;
@@ -216,13 +147,16 @@ const TeacherQueueGroup = forwardRef<
       // Reset TeacherQueue events back to original times when exiting parent mode
       const currentEvents = teacherQueue.getAllEvents();
       scheduleNodes.forEach((node, index) => {
-        if (currentEvents[index] && node.eventData?.lessonId === currentEvents[index].lessonId) {
+        if (
+          currentEvents[index] &&
+          node.eventData?.lessonId === currentEvents[index].lessonId
+        ) {
           // Restore original time from scheduleNodes
           const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
           currentEvents[index].eventData.date = localDateTimeString;
         }
       });
-      
+
       setEditableScheduleNodes(scheduleNodes);
       setGlobalTimeOffset(0);
       setTimeAdjustmentMode(false);
@@ -281,46 +215,55 @@ const TeacherQueueGroup = forwardRef<
     [teacherQueue],
   );
 
-  const handleSubmitQueueChanges = useCallback(async (suppressSuccessMessage = false) => {
-    try {
-      // Get all the modified events from the teacher queue
-      const currentEvents = teacherQueue.getAllEvents();
-      
-      // Update each event in the database
-      const updatePromises = currentEvents.map(async (event) => {
-        if (event.eventData.id) {
-          return updateEvent(event.eventData.id, {
-            date: event.eventData.date,
-            duration: event.eventData.duration,
-            location: event.eventData.location,
-          });
+  const handleSubmitQueueChanges = useCallback(
+    async (suppressSuccessMessage = false) => {
+      try {
+        // Get all the modified events from the teacher queue
+        const currentEvents = teacherQueue.getAllEvents();
+
+        // Update each event in the database
+        const updatePromises = currentEvents.map(async (event) => {
+          if (event.eventData.id) {
+            return updateEvent(event.eventData.id, {
+              date: event.eventData.date,
+              duration: event.eventData.duration,
+              location: event.eventData.location,
+            });
+          }
+        });
+
+        // Wait for all updates to complete
+        const results = await Promise.all(updatePromises.filter(Boolean));
+
+        // Check if all updates were successful
+        const failedUpdates = results.filter((result) => !result?.success);
+
+        if (failedUpdates.length > 0) {
+          console.error("Some event updates failed:", failedUpdates);
+          toast.error(`Failed to update ${failedUpdates.length} events`);
+        } else if (!suppressSuccessMessage) {
+          toast.success("All events updated successfully!");
+          console.log("✅ All events updated successfully");
         }
-      });
 
-      // Wait for all updates to complete
-      const results = await Promise.all(updatePromises.filter(Boolean));
-      
-      // Check if all updates were successful
-      const failedUpdates = results.filter(result => !result?.success);
-      
-      if (failedUpdates.length > 0) {
-        console.error("Some event updates failed:", failedUpdates);
-        toast.error(`Failed to update ${failedUpdates.length} events`);
-      } else if (!suppressSuccessMessage) {
-        toast.success("All events updated successfully!");
-        console.log("✅ All events updated successfully");
-      }
+        if (parentTimeAdjustmentMode) {
+          onCompleteOrOptOut?.(teacherId);
+        }
 
-      if (parentTimeAdjustmentMode) {
-        onCompleteOrOptOut?.(teacherId);
+        router.refresh();
+      } catch (error) {
+        console.error("Error submitting queue changes:", error);
+        toast.error("Failed to submit changes");
       }
-      
-      router.refresh();
-    } catch (error) {
-      console.error("Error submitting queue changes:", error);
-      toast.error("Failed to submit changes");
-    }
-  }, [teacherId, teacherQueue, parentTimeAdjustmentMode, onCompleteOrOptOut, router]);
+    },
+    [
+      teacherId,
+      teacherQueue,
+      parentTimeAdjustmentMode,
+      onCompleteOrOptOut,
+      router,
+    ],
+  );
 
   const handleResetQueue = useCallback(() => {
     // Restore original TeacherQueue state
@@ -357,9 +300,9 @@ const TeacherQueueGroup = forwardRef<
         return;
       }
 
-      const updatedNodes = scheduleNodes.map(node => ({
+      const updatedNodes = scheduleNodes.map((node) => ({
         ...node,
-        startTime: minutesToTime(timeToMinutes(node.startTime) + newOffset)
+        startTime: minutesToTime(timeToMinutes(node.startTime) + newOffset),
       }));
       setEditableScheduleNodes(updatedNodes);
     },
@@ -368,7 +311,7 @@ const TeacherQueueGroup = forwardRef<
 
   const handleAcceptTimeAdjustment = useCallback(async () => {
     console.log("Accepting time adjustment for teacher:", teacherId);
-    
+
     if (parentTimeAdjustmentMode) {
       onCompleteOrOptOut?.(teacherId);
     } else {
@@ -384,18 +327,21 @@ const TeacherQueueGroup = forwardRef<
       // Reset TeacherQueue events back to original times before exiting
       const currentEvents = teacherQueue.getAllEvents();
       scheduleNodes.forEach((node, index) => {
-        if (currentEvents[index] && node.eventData?.lessonId === currentEvents[index].lessonId) {
+        if (
+          currentEvents[index] &&
+          node.eventData?.lessonId === currentEvents[index].lessonId
+        ) {
           // Restore original time from scheduleNodes
           const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
           currentEvents[index].eventData.date = localDateTimeString;
         }
       });
-      
+
       // Reset UI state
       setEditableScheduleNodes(scheduleNodes);
       setGlobalTimeOffset(0);
       setTimeAdjustmentMode(false);
-      
+
       // Then exit parent mode
       exitAndOptOut();
     } else {
@@ -404,7 +350,13 @@ const TeacherQueueGroup = forwardRef<
       setEditableScheduleNodes(scheduleNodes);
       setViewMode("event");
     }
-  }, [parentTimeAdjustmentMode, exitAndOptOut, scheduleNodes, teacherQueue, selectedDate]);
+  }, [
+    parentTimeAdjustmentMode,
+    exitAndOptOut,
+    scheduleNodes,
+    teacherQueue,
+    selectedDate,
+  ]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -467,194 +419,67 @@ const TeacherQueueGroup = forwardRef<
           students={eventNode.billboardClass.getStudentNames()}
           status={eventNode.eventData.status}
           eventId={eventNode.eventData.id}
-          onStatusChange={() => {}}
+          onStatusChange={() => { }}
         />
       </div>
     ));
   };
 
   return (
-    <div className="bg-card dark:bg-gray-800 border border-border dark:border-gray-700 rounded-lg">
-      <div className="flex justify-between items-center p-4 border-b border-border dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          <HeadsetIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
-          <h4 className="text-lg font-medium text-foreground dark:text-white">
-            {schedule.teacherName}
-          </h4>
-          <TimeAdjustmentFlag
-            proposedTimeOffset={globalTimeOffset}
-            timeAdjustmentMode={timeAdjustmentMode}
-            editableScheduleNodes={editableScheduleNodes}
-            parentTimeAdjustmentMode={parentTimeAdjustmentMode}
-            onTimeAdjustment={handleTimeAdjustment}
-            onSetTimeAdjustmentMode={setTimeAdjustmentMode}
-            onSetViewMode={setViewMode}
-          />
-        </div>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-400">
-          {viewMode === "event" ? (
-            <>
-              {canReorganize && (
-                <button
-                  onClick={() => console.log("Reorganize clicked")}
-                  className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
-                  title="Optimize schedule by removing gaps"
-                >
-                  <div className="flex items-center gap-1">
-                    <Zap className="w-3 h-3" />
-                    <span>Reorganize</span>
-                  </div>
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  if (parentTimeAdjustmentMode && !isPendingParentUpdate) {
-                    onOptInToParentUpdate?.(teacherId);
-                  } else {
-                    setViewMode("queue");
-                  }
-                }}
-                className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 border border-blue-300"
-                title="Edit schedule in queue view"
-              >
-                Edit Schedule
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={
-                  timeAdjustmentMode
-                    ? handleAcceptTimeAdjustment
-                    : handleSubmitAndExit
-                }
-                className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
-                title={
-                  timeAdjustmentMode
-                    ? "Accept time changes"
-                    : "Submit queue changes"
-                }
-              >
-                Submit
-              </button>
-              <button
-                onClick={
-                  timeAdjustmentMode
-                    ? handleCancelTimeAdjustment
-                    : handleResetQueue
-                }
-                className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
-                title={
-                  timeAdjustmentMode
-                    ? "Cancel time changes"
-                    : "Reset all changes made to the queue"
-                }
-              >
-                Reset
-              </button>
-              <button
-                onClick={
-                  timeAdjustmentMode
-                    ? handleCancelTimeAdjustment
-                    : handleCancelQueue
-                }
-                className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
-                title={
-                  timeAdjustmentMode
-                    ? "Cancel time changes"
-                    : "Cancel editing and discard all changes"
-                }
-              >
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div
-        className={`transition-colors ${
-          isDropping
-            ? "border-blue-400 bg-blue-50/50 dark:bg-blue-950/50"
-            : ""
-        }`}
-        onDragOver={handleDragOver}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div className="flex min-h-[200px]">
-          {/* Left Column - Teacher Info & Stats */}
-          <div className="w-72 p-4 border-r border-border flex-shrink-0">
-            <div className="border space-y-2 py-4">
-              <div className="flex items-center justify-center gap-4 text-sm">
-                <div className="text-center">
-                  <div className="font-semibold text-indigo-600 dark:text-indigo-400">
-                    {teacherStats.eventCount}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Events</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-purple-600 dark:text-purple-400">
-                    {teacherStats.totalHours}h
-                  </div>
-                  <div className="text-xs text-muted-foreground">Duration</div>
-                </div>
-              </div>
-              <div className="flex items-center justify-center gap-4 text-sm">
-                <div className="text-center">
-                  <div className="font-semibold text-green-600 dark:text-green-400">
-                    ${Math.round(teacherStats.earnings.teacher)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Teacher</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-orange-600 dark:text-orange-400">
-                    ${Math.round(teacherStats.earnings.school)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">School</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Events Schedule */}
-          <div className="flex-1 p-4">
-            <div className="flex flex-wrap gap-4">
-              {viewMode === "event" && renderEventCards()}
-              {viewMode === "queue" && (
-                <TeacherQueueEditor
-                  scheduleNodes={editableScheduleNodes}
-                  originalScheduleNodes={scheduleNodes}
-                  events={queueEvents.map((event) => ({
-                    id: event.eventData.id,
-                    lesson: {
-                      id: event.lessonId,
-                    },
-                    booking: {
-                      students: event.billboardClass.getStudents(),
-                    },
-                    location: event.eventData.location,
-                    duration: event.eventData.duration,
-                    status: event.eventData.status,
-                  }))}
-                  teacherQueue={teacherQueue}
-                  selectedDate={selectedDate}
-                  onRemove={handleRemoveFromQueue}
-                  onAdjustDuration={handleAdjustDuration}
-                  onAdjustTime={handleAdjustTime}
-                  onMove={handleMoveInQueue}
-                  onRefresh={() => {
-                    const newNodes = teacherQueue.getNodes();
-                    setEditableScheduleNodes(newNodes);
-                  }}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <TeacherGrouping
+      ref={ref}
+      teacherQueue={teacherQueue}
+      selectedDate={selectedDate}
+      parentTimeAdjustmentMode={parentTimeAdjustmentMode}
+      parentGlobalTime={parentGlobalTime}
+      isPendingParentUpdate={isPendingParentUpdate}
+      onCompleteOrOptOut={onCompleteOrOptOut}
+      onOptInToParentUpdate={onOptInToParentUpdate}
+      controller={controller}
+      viewMode={viewMode}
+      timeAdjustmentMode={timeAdjustmentMode}
+      globalTimeOffset={globalTimeOffset}
+      editableScheduleNodes={editableScheduleNodes}
+      onSubmit={handleSubmitQueueChanges}
+      onSetViewMode={setViewMode}
+      onSetTimeAdjustmentMode={setTimeAdjustmentMode}
+      onTimeAdjustment={handleTimeAdjustment}
+      onAcceptTimeAdjustment={handleAcceptTimeAdjustment}
+      onCancelTimeAdjustment={handleCancelTimeAdjustment}
+      onResetQueue={handleResetQueue}
+      onCancelQueue={handleCancelQueue}
+      onSubmitAndExit={handleSubmitAndExit}
+    >
+      {viewMode === "event" && renderEventCards()}
+      {viewMode === "queue" && (
+        <TeacherQueueEditor
+          scheduleNodes={editableScheduleNodes}
+          originalScheduleNodes={scheduleNodes}
+          events={queueEvents.map((event) => ({
+            id: event.eventData.id,
+            lesson: {
+              id: event.lessonId,
+            },
+            booking: {
+              students: event.billboardClass.getStudents(),
+            },
+            location: event.eventData.location,
+            duration: event.eventData.duration,
+            status: event.eventData.status,
+          }))}
+          teacherQueue={teacherQueue}
+          selectedDate={selectedDate}
+          onRemove={handleRemoveFromQueue}
+          onAdjustDuration={handleAdjustDuration}
+          onAdjustTime={handleAdjustTime}
+          onMove={handleMoveInQueue}
+          onRefresh={() => {
+            const newNodes = teacherQueue.getNodes();
+            setEditableScheduleNodes(newNodes);
+          }}
+        />
+      )}
+    </TeacherGrouping>
   );
 });
 TeacherQueueGroup.displayName = "TeacherQueueGroup";
@@ -766,10 +591,12 @@ export default function TeacherColumnComplex({
   );
 
   const teacherQueueGroups = useMemo(() => {
-    return teacherQueues.map((teacherQueue) => ({
-      teacherId: teacherQueue.teacher.id,
-      teacherQueue,
-    })).filter((group) => group.teacherQueue);
+    return teacherQueues
+      .map((teacherQueue) => ({
+        teacherId: teacherQueue.teacher.id,
+        teacherQueue,
+      }))
+      .filter((group) => group.teacherQueue);
   }, [teacherQueues]);
 
   const earliestTime = useMemo(() => {
@@ -818,10 +645,12 @@ export default function TeacherColumnComplex({
   const handleParentAcceptTimeAdjustment = useCallback(async () => {
     const submitPromises: Promise<void>[] = [];
     let totalEventsUpdated = 0;
-    
+
     // Get count of events that will be updated before submitting
     pendingParentUpdateTeachers.forEach((teacherId) => {
-      const teacherQueue = teacherQueues.find(q => q.teacher.id === teacherId);
+      const teacherQueue = teacherQueues.find(
+        (q) => q.teacher.id === teacherId,
+      );
       if (teacherQueue) {
         totalEventsUpdated += teacherQueue.getAllEvents().length;
       }
@@ -844,7 +673,12 @@ export default function TeacherColumnComplex({
 
     handleParentCancelTimeAdjustment();
     router.refresh();
-  }, [pendingParentUpdateTeachers, teacherQueues, handleParentCancelTimeAdjustment, router]);
+  }, [
+    pendingParentUpdateTeachers,
+    teacherQueues,
+    handleParentCancelTimeAdjustment,
+    router,
+  ]);
 
   const handleTeacherUpdateCompletion = useCallback((teacherId: string) => {
     setPendingParentUpdateTeachers((prev) => {
@@ -866,9 +700,14 @@ export default function TeacherColumnComplex({
     const newMode = !parentTimeAdjustmentMode;
     setParentTimeAdjustmentMode(newMode);
     if (newMode) {
-      setParentGlobalTime(earliestTime !== "No lessons today" ? earliestTime : null);
-      const allTeacherIds = teacherQueueGroups.map((group) => group.teacherId);
-      setPendingParentUpdateTeachers(new Set(allTeacherIds));
+      setParentGlobalTime(
+        earliestTime !== "No lessons today" ? earliestTime : null,
+      );
+      // Only include teachers that have events
+      const teachersWithEvents = teacherQueueGroups
+        .filter((group) => group.teacherQueue.getAllEvents().length > 0)
+        .map((group) => group.teacherId);
+      setPendingParentUpdateTeachers(new Set(teachersWithEvents));
     } else {
       handleParentCancelTimeAdjustment();
     }
