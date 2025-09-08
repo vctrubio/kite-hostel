@@ -12,7 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { HeadsetIcon, FlagIcon } from "@/svgs";
 import FlagCard from "@/components/cards/FlagCard";
-import TeacherQueueEditor from "@/components/billboard-usage/TeacherQueueEditor";
+import TeacherQueueEditor from "@/app/billboard/TeacherQueueEditor";
 import {
   ChevronLeft,
   ChevronRight,
@@ -187,19 +187,42 @@ const TeacherQueueGroup = forwardRef<
 
   useImperativeHandle(ref, () => ({
     submit: async () => {
-      await handleSubmitQueueChanges();
+      await handleSubmitQueueChanges(true); // Pass true to suppress individual success messages
     },
   }));
 
   useEffect(() => {
     if (parentTimeAdjustmentMode && parentGlobalTime) {
+      const offsetMinutes = timeToMinutes(parentGlobalTime) - timeToMinutes(scheduleNodes[0]?.startTime || "00:00");
+      
+      // Update UI nodes
       const updatedNodes = scheduleNodes.map(node => ({
         ...node,
-        startTime: minutesToTime(timeToMinutes(node.startTime) + (timeToMinutes(parentGlobalTime) - timeToMinutes(scheduleNodes[0]?.startTime || "00:00")))
+        startTime: minutesToTime(timeToMinutes(node.startTime) + offsetMinutes)
       }));
       setEditableScheduleNodes(updatedNodes);
-      setGlobalTimeOffset(timeToMinutes(parentGlobalTime) - timeToMinutes(scheduleNodes[0]?.startTime || "00:00"));
+      setGlobalTimeOffset(offsetMinutes);
+      
+      // Apply the actual displayed times to the TeacherQueue events
+      const currentEvents = teacherQueue.getAllEvents();
+      updatedNodes.forEach((node, index) => {
+        if (currentEvents[index] && node.eventData?.lessonId === currentEvents[index].lessonId) {
+          // Use the exact time from the node that's being displayed
+          const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
+          currentEvents[index].eventData.date = localDateTimeString;
+        }
+      });
     } else if (!parentTimeAdjustmentMode) {
+      // Reset TeacherQueue events back to original times when exiting parent mode
+      const currentEvents = teacherQueue.getAllEvents();
+      scheduleNodes.forEach((node, index) => {
+        if (currentEvents[index] && node.eventData?.lessonId === currentEvents[index].lessonId) {
+          // Restore original time from scheduleNodes
+          const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
+          currentEvents[index].eventData.date = localDateTimeString;
+        }
+      });
+      
       setEditableScheduleNodes(scheduleNodes);
       setGlobalTimeOffset(0);
       setTimeAdjustmentMode(false);
@@ -208,6 +231,8 @@ const TeacherQueueGroup = forwardRef<
     parentTimeAdjustmentMode,
     parentGlobalTime,
     scheduleNodes,
+    teacherQueue,
+    selectedDate,
   ]);
 
   // Only update editable nodes when NOT in edit mode to avoid resetting user changes
@@ -256,24 +281,18 @@ const TeacherQueueGroup = forwardRef<
     [teacherQueue],
   );
 
-  const handleSubmitQueueChanges = useCallback(async () => {
+  const handleSubmitQueueChanges = useCallback(async (suppressSuccessMessage = false) => {
     try {
-      console.log("Submitting queue changes for teacher:", teacherId);
-      
       // Get all the modified events from the teacher queue
       const currentEvents = teacherQueue.getAllEvents();
       
       // Update each event in the database
       const updatePromises = currentEvents.map(async (event) => {
         if (event.eventData.id) {
-          // Use the local datetime string directly - no timezone conversion
-          const localDateTime = event.eventData.date; // This is already in local time from TeacherQueue
-          
           return updateEvent(event.eventData.id, {
-            date: localDateTime, // Pass the local datetime directly
+            date: event.eventData.date,
             duration: event.eventData.duration,
             location: event.eventData.location,
-            // Keep the current status - don't change it
           });
         }
       });
@@ -287,7 +306,7 @@ const TeacherQueueGroup = forwardRef<
       if (failedUpdates.length > 0) {
         console.error("Some event updates failed:", failedUpdates);
         toast.error(`Failed to update ${failedUpdates.length} events`);
-      } else {
+      } else if (!suppressSuccessMessage) {
         toast.success("All events updated successfully!");
         console.log("✅ All events updated successfully");
       }
@@ -324,7 +343,7 @@ const TeacherQueueGroup = forwardRef<
   }, [parentTimeAdjustmentMode, exitAndOptOut, handleResetQueue]);
 
   const handleSubmitAndExit = useCallback(async () => {
-    await handleSubmitQueueChanges();
+    await handleSubmitQueueChanges(false); // Keep success messages for individual submissions
     setViewMode("event");
   }, [handleSubmitQueueChanges]);
 
@@ -362,6 +381,22 @@ const TeacherQueueGroup = forwardRef<
 
   const handleCancelTimeAdjustment = useCallback(() => {
     if (parentTimeAdjustmentMode) {
+      // Reset TeacherQueue events back to original times before exiting
+      const currentEvents = teacherQueue.getAllEvents();
+      scheduleNodes.forEach((node, index) => {
+        if (currentEvents[index] && node.eventData?.lessonId === currentEvents[index].lessonId) {
+          // Restore original time from scheduleNodes
+          const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
+          currentEvents[index].eventData.date = localDateTimeString;
+        }
+      });
+      
+      // Reset UI state
+      setEditableScheduleNodes(scheduleNodes);
+      setGlobalTimeOffset(0);
+      setTimeAdjustmentMode(false);
+      
+      // Then exit parent mode
       exitAndOptOut();
     } else {
       setTimeAdjustmentMode(false);
@@ -369,7 +404,7 @@ const TeacherQueueGroup = forwardRef<
       setEditableScheduleNodes(scheduleNodes);
       setViewMode("event");
     }
-  }, [parentTimeAdjustmentMode, exitAndOptOut, scheduleNodes]);
+  }, [parentTimeAdjustmentMode, exitAndOptOut, scheduleNodes, teacherQueue, selectedDate]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -782,6 +817,16 @@ export default function TeacherColumnComplex({
 
   const handleParentAcceptTimeAdjustment = useCallback(async () => {
     const submitPromises: Promise<void>[] = [];
+    let totalEventsUpdated = 0;
+    
+    // Get count of events that will be updated before submitting
+    pendingParentUpdateTeachers.forEach((teacherId) => {
+      const teacherQueue = teacherQueues.find(q => q.teacher.id === teacherId);
+      if (teacherQueue) {
+        totalEventsUpdated += teacherQueue.getAllEvents().length;
+      }
+    });
+
     pendingParentUpdateTeachers.forEach((teacherId) => {
       const teacherGroup = teacherGroupRefs.current.get(teacherId);
       if (teacherGroup) {
@@ -791,13 +836,15 @@ export default function TeacherColumnComplex({
 
     try {
       await Promise.all(submitPromises);
+      toast.success(`${totalEventsUpdated} Events Successfully Updated`);
     } catch (error) {
       console.error("Error submitting one or more teacher schedules:", error);
+      toast.error("Failed to submit some teacher schedules");
     }
 
     handleParentCancelTimeAdjustment();
     router.refresh();
-  }, [pendingParentUpdateTeachers, handleParentCancelTimeAdjustment, router]);
+  }, [pendingParentUpdateTeachers, teacherQueues, handleParentCancelTimeAdjustment, router]);
 
   const handleTeacherUpdateCompletion = useCallback((teacherId: string) => {
     setPendingParentUpdateTeachers((prev) => {
