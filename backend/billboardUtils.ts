@@ -43,13 +43,9 @@ export function createTeacherQueuesFromBillboardClasses(
       return timeA - timeB;
     });
     
-    // Add events to queue with gap calculation
-    teacherEvents.forEach((item, index) => {
+    // Add events to queue
+    teacherEvents.forEach((item) => {
       const { event, billboardClass } = item;
-      
-      // Calculate gap if not the first event
-      const gapMinutes = calculateGapMinutes(teacherEvents, index);
-      const hasGap = gapMinutes !== undefined;
       
       const eventNode: EventNode = {
         id: event.id,
@@ -62,8 +58,6 @@ export function createTeacherQueuesFromBillboardClasses(
           location: event.location,
           status: event.status
         },
-        hasGap,
-        timeAdjustment: 0,
         next: null
       };
       
@@ -117,20 +111,3 @@ function collectEventsByTeacher(
   return eventsByTeacher;
 }
 
-/**
- * Calculate gap in minutes between events
- */
-function calculateGapMinutes(teacherEvents: TeacherEventItem[], currentIndex: number): number | undefined {
-  if (currentIndex === 0) return undefined;
-  
-  const prevEvent = teacherEvents[currentIndex - 1].event;
-  const currentEvent = teacherEvents[currentIndex].event;
-  
-  const prevEndTime = new Date(new Date(prevEvent.date).getTime() + (prevEvent.duration * 60 * 1000));
-  const currentStartTime = new Date(currentEvent.date);
-  
-  const gapMilliseconds = currentStartTime.getTime() - prevEndTime.getTime();
-  const gapMinutes = Math.round(gapMilliseconds / (1000 * 60));
-  
-  return gapMinutes > 0 ? gapMinutes : undefined;
-}

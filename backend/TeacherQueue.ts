@@ -25,8 +25,6 @@ export interface EventNode {
   lessonId: string; // Always exists from BillboardClass
   billboardClass: BillboardClass; // Reference for calculations
   eventData: EventData;
-  hasGap?: boolean;
-  timeAdjustment?: number; // Manual time adjustment in minutes
   next: EventNode | null;
 }
 
