@@ -10,7 +10,7 @@ interface BillboardActionsProps {
 
 export default function BillboardActions({ onActionClick }: BillboardActionsProps) {
   return (
-    <div className="p-3 border-t border-border">
+    <div>
       <div className="flex justify-around">
         <button onClick={() => onActionClick("share")} className="flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 hover:bg-muted/50">
           <Share2Icon className="w-5 h-5 text-blue-500" />

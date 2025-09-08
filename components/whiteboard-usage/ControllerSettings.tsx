@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, Timer, MapPin } from "lucide-react";
 import { addMinutesToTime } from "@/components/formatters/TimeZone";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import { formatHours } from "@/components/formatters/Duration";
 import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 import type { EventController } from "@/backend/types";
-import { TeacherSchedule } from "@/backend/TeacherSchedule";
 
 interface ControllerSettingsProps {
   controller: EventController;
@@ -23,6 +22,7 @@ export default function ControllerSettings({
   onControllerChange,
 }: ControllerSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Use useCallback to prevent re-renders
   const updateController = useCallback(
@@ -71,56 +71,88 @@ export default function ControllerSettings({
     [updateController],
   );
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       {/* Professional Header with Icon and Controls */}
       <div className="flex items-center justify-between">
         {/* Left: Earliest Start Time Display */}
 
         {/* Center: Professional Controls Row */}
-        <div className="flex items-stretch gap-4">
-          {/* Flag Time Control - Professional Design */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border">
-            <FlagIcon className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-mono font-medium min-w-[45px]">
-              {controller.submitTime}
-            </span>
-            <div className="flex flex-col gap-0.5">
-              <button
-                type="button"
-                onClick={adjustTimeUp}
-                className="p-0.5 hover:bg-blue-50 rounded transition-colors group"
+        <div className="flex flex-col gap-2">
+          <div className="flex items-stretch gap-4">
+            {/* Flag Time Control - Professional Design */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border">
+              <FlagIcon className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-mono font-medium min-w-[45px]">
+                {controller.submitTime}
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <button
+                  type="button"
+                  onClick={adjustTimeUp}
+                  className="p-0.5 hover:bg-blue-50 rounded transition-colors group"
+                >
+                  <ChevronUp className="w-3 h-3 text-muted-foreground group-hover:text-blue-600" />
+                </button>
+                <button
+                  type="button"
+                  onClick={adjustTimeDown}
+                  className="p-0.5 hover:bg-blue-50 rounded transition-colors group"
+                >
+                  <ChevronDown className="w-3 h-3 text-muted-foreground group-hover:text-blue-600" />
+                </button>
+              </div>
+            </div>
+
+            {/* Location Control - Clean Dropdown */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <select
+                value={controller.location}
+                onChange={handleLocationChange}
+                className="text-sm font-medium bg-transparent border-none focus:outline-none cursor-pointer min-w-[80px]"
               >
-                <ChevronUp className="w-3 h-3 text-muted-foreground group-hover:text-blue-600" />
-              </button>
-              <button
-                type="button"
-                onClick={adjustTimeDown}
-                className="p-0.5 hover:bg-blue-50 rounded transition-colors group"
-              >
-                <ChevronDown className="w-3 h-3 text-muted-foreground group-hover:text-blue-600" />
-              </button>
+                {LOCATION_ENUM_VALUES.map((location) => (
+                  <option
+                    key={location}
+                    value={location}
+                    className="bg-background"
+                  >
+                    {location}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-
-          {/* Location Control - Clean Dropdown */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border">
-            <MapPin className="w-4 h-4 text-muted-foreground" />
-            <select
-              value={controller.location}
-              onChange={handleLocationChange}
-              className="text-sm font-medium bg-transparent border-none focus:outline-none cursor-pointer min-w-[80px]"
-            >
-              {LOCATION_ENUM_VALUES.map((location) => (
-                <option
-                  key={location}
-                  value={location}
-                  className="bg-background"
-                >
-                  {location}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center justify-around text-xs text-muted-foreground pt-1">
+            <div>
+              Private:{" "}
+              <strong>{formatHours(controller.durationCapOne)}h</strong>
+            </div>
+            <div>
+              Semi-Private:{" "}
+              <strong>{formatHours(controller.durationCapTwo)}h</strong>
+            </div>
+            <div>
+              Group:{" "}
+              <strong>{formatHours(controller.durationCapThree)}h</strong>
+            </div>
           </div>
         </div>
 

@@ -19,7 +19,6 @@ import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 import { createEvent } from "@/actions/event-actions";
 
 const STORAGE_KEY = "billboard-selected-date";
-const BILLBOARD_CONTROLLER_STORAGE_KEY = "billboard-controller-settings";
 interface BillboardClientProps {
   data: BillboardData;
 }
@@ -27,54 +26,14 @@ interface BillboardClientProps {
 export default function BillboardClient({ data }: BillboardClientProps) {
   // Core state
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateString());
-  const [controller, setController] = useState<EventController>(() => {
-    const defaultSettings: EventController = {
-      flag: false,
-      location: LOCATION_ENUM_VALUES[0],
-      submitTime: "12:00",
-      durationCapOne: 120,
-      durationCapTwo: 180,
-      durationCapThree: 240,
-    };
-
-    if (typeof window === "undefined") {
-      return defaultSettings;
-    }
-
-    try {
-      const savedSettings = localStorage.getItem(BILLBOARD_CONTROLLER_STORAGE_KEY);
-      if (savedSettings) {
-        return { ...defaultSettings, ...JSON.parse(savedSettings) };
-      }
-    } catch (error) {
-      console.error(
-        "Failed to parse controller settings from localStorage",
-        error,
-      );
-    }
-    return defaultSettings;
+  const [controller, setController] = useState<EventController>({
+    flag: false,
+    location: LOCATION_ENUM_VALUES[0],
+    submitTime: "12:00",
+    durationCapOne: 120,
+    durationCapTwo: 180,
+    durationCapThree: 240,
   });
-
-  useEffect(() => {
-    try {
-      const settingsToSave = {
-        location: controller.location,
-        submitTime: controller.submitTime,
-        durationCapOne: controller.durationCapOne,
-        durationCapTwo: controller.durationCapTwo,
-        durationCapThree: controller.durationCapThree,
-      };
-      localStorage.setItem(
-        BILLBOARD_CONTROLLER_STORAGE_KEY,
-        JSON.stringify(settingsToSave),
-      );
-    } catch (error) {
-      console.error(
-        "Failed to save controller settings to localStorage",
-        error,
-      );
-    }
-  }, [controller]);
 
   // Billboard classes for clean data access
   const billboardClasses = useMemo(() => {
