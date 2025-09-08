@@ -9,7 +9,6 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
-import { useRouter } from "next/navigation";
 import FlagCard from "@/components/cards/FlagCard";
 import TeacherQueueEditor from "@/app/billboard/TeacherQueueEditor";
 import {
@@ -68,7 +67,6 @@ const TeacherQueueGroup = forwardRef<
   const [editableScheduleNodes, setEditableScheduleNodes] =
     useState(scheduleNodes);
   const schedule = teacherQueue.getSchedule();
-  const router = useRouter();
   const teacherId = schedule.teacherId;
   const queueEvents = teacherQueue.getAllEvents();
 
@@ -197,11 +195,11 @@ const TeacherQueueGroup = forwardRef<
       try {
         // Use the new cascade method to delete from DB and shift events
         const result = await teacherQueue.removeFromQueueWithCascade(lessonId);
-        
+
         if (result.success) {
           const newNodes = teacherQueue.getNodes();
           setEditableScheduleNodes(newNodes);
-          
+
           // Update the original queue state to reflect the deletion
           // This ensures reset/cancel don't show the deleted event
           const updatedEvents = teacherQueue.getAllEvents();
@@ -209,7 +207,7 @@ const TeacherQueueGroup = forwardRef<
             ...event,
             eventData: { ...event.eventData },
           }));
-          
+
           toast.success("Event removed and schedule adjusted");
         } else {
           toast.error(`Failed to remove event: ${result.error}`);
@@ -264,20 +262,12 @@ const TeacherQueueGroup = forwardRef<
         if (parentTimeAdjustmentMode) {
           onCompleteOrOptOut?.(teacherId);
         }
-
-        router.refresh();
       } catch (error) {
         console.error("Error submitting queue changes:", error);
         toast.error("Failed to submit changes");
       }
     },
-    [
-      teacherId,
-      teacherQueue,
-      parentTimeAdjustmentMode,
-      onCompleteOrOptOut,
-      router,
-    ],
+    [teacherId, teacherQueue, parentTimeAdjustmentMode, onCompleteOrOptOut],
   );
 
   const handleResetQueue = useCallback(() => {
@@ -360,8 +350,12 @@ const TeacherQueueGroup = forwardRef<
       setGlobalTimeOffset(0);
       setViewMode("event");
     }
-    router.refresh();
-  }, [teacherId, parentTimeAdjustmentMode, onCompleteOrOptOut, router, handleSubmitQueueChanges]);
+  }, [
+    teacherId,
+    parentTimeAdjustmentMode,
+    onCompleteOrOptOut,
+    handleSubmitQueueChanges,
+  ]);
 
   const handleCancelTimeAdjustment = useCallback(() => {
     if (parentTimeAdjustmentMode) {
@@ -597,7 +591,6 @@ export default function TeacherColumnComplex({
   const [parentGlobalTime, setParentGlobalTime] = useState<string | null>(null);
   const [pendingParentUpdateTeachers, setPendingParentUpdateTeachers] =
     useState<Set<string>>(new Set());
-  const router = useRouter();
   const teacherGroupRefs = useRef<Map<string, TeacherQueueGroupHandle | null>>(
     new Map(),
   );
@@ -684,12 +677,10 @@ export default function TeacherColumnComplex({
     }
 
     handleParentCancelTimeAdjustment();
-    router.refresh();
   }, [
     pendingParentUpdateTeachers,
     teacherQueues,
     handleParentCancelTimeAdjustment,
-    router,
   ]);
 
   const handleTeacherUpdateCompletion = useCallback((teacherId: string) => {
