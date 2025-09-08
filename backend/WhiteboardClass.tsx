@@ -144,8 +144,9 @@ export function extractStudentNames(booking: any): string {
   return booking?.students?.map((bs: any) => bs.student?.name).filter(Boolean).join(', ') || 'No students';
 }
 
-export function extractStudents(booking: any): Array<{id: string; name: string}> {
+export function extractStudents(booking: any): Array<any> {
   return booking?.students?.map((s: any) => ({
+    ...s.student,
     id: s.student?.id || '',
     name: s.student?.name || 'Unknown'
   })) || [];

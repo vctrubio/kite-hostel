@@ -109,6 +109,17 @@ export const BOOKING_STATUS_FILTERS = [
     },
   },
   {
+    value: "available" as const,
+    label: "Available",
+    icon: Play,
+    title: "Available Bookings",
+    classes: {
+      base: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-200",
+      hover: "hover:bg-yellow-200 dark:hover:bg-yellow-900",
+      active: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 border-yellow-500/50",
+    },
+  },
+  {
     value: "completed" as const,
     label: "Done",
     icon: CheckCircle,

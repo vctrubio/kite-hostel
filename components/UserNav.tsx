@@ -15,6 +15,10 @@ import {
   Plus,
   LogIn,
   Home,
+<<<<<<< HEAD
+=======
+  LayoutGrid,
+>>>>>>> v2
 } from "lucide-react";
 import { ENTITY_DATA } from "@/lib/constants";
 
@@ -36,11 +40,19 @@ function RouteButton({
   return (
     <Link
       href={href}
+<<<<<<< HEAD
       className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
           ? "bg-gray-200 text-gray-800 shadow-sm"
           : `${color} ${hoverColor}`
         }`}
       title={label}
+=======
+      className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+        isActive
+          ? "bg-gray-200 text-gray-800 shadow-sm"
+          : `${color} ${hoverColor}`
+      }`}
+>>>>>>> v2
     >
       <Icon className="h-4 w-4" />
       <span className="hidden sm:inline">{label}</span>
@@ -74,11 +86,19 @@ function RouteButtonWithAction({
       <div className="flex items-center">
         <Link
           href={href}
+<<<<<<< HEAD
           className={`flex items-center space-x-2 px-4 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${isActive
               ? "bg-gray-200 text-gray-800 shadow-sm"
               : `${color} ${hoverColor}`
             }`}
           title={label}
+=======
+          className={`flex items-center space-x-2 px-4 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${
+            isActive
+              ? "bg-gray-200 text-gray-800 shadow-sm"
+              : `${color} ${hoverColor}`
+          }`}
+>>>>>>> v2
         >
           <Icon className="h-4 w-4" />
           <span className="hidden sm:inline">{label}</span>
@@ -163,11 +183,19 @@ function FormsDropdown({
       <div className="flex items-center">
         <Link
           href={href}
+<<<<<<< HEAD
           className={`flex items-center space-x-2 px-4 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${isActive
               ? "bg-gray-200 text-gray-800 shadow-sm"
               : `${color} ${hoverColor}`
             }`}
           title={label}
+=======
+          className={`flex items-center space-x-2 px-4 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${
+            isActive
+              ? "bg-gray-200 text-gray-800 shadow-sm"
+              : `${color} ${hoverColor}`
+          }`}
+>>>>>>> v2
         >
           <Icon
             className={`h-4 w-4 ${isOnFormRoute ? entityInfo.color : ""}`}
@@ -307,6 +335,16 @@ function AdminNavRoutes() {
 
   const routes = [
     {
+      href: "/billboard",
+      label: "Billboard",
+      icon: LayoutGrid,
+      color: "text-gray-500",
+      hoverColor: "hover:text-gray-700 hover:bg-gray-100",
+      hasQuickAction: true,
+      quickActionHref: "/bookings/form",
+      quickActionIcon: Plus,
+    },
+    {
       href: "/whiteboard",
       label: "Whiteboard",
       icon: Tv,
@@ -372,7 +410,7 @@ function AdminNavRoutes() {
                 quickActionHref={quickActionHref}
                 quickActionIcon={QuickActionIcon}
                 actionTitle={
-                  href === "/whiteboard"
+                  href === "/whiteboard" || href === "/billboard"
                     ? "Quick add booking"
                     : `Quick add ${label.toLowerCase()}`
                 }
@@ -422,7 +460,10 @@ function TeacherNavRoutes() {
       <Link
         href="/teachers"
         className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+<<<<<<< HEAD
         title="Home"
+=======
+>>>>>>> v2
       >
         <Home className="h-4 w-4" />
         <span className="hidden sm:inline">Home</span>
@@ -438,7 +479,10 @@ function ReferenceNavRoutes() {
       <Link
         href="/user"
         className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+<<<<<<< HEAD
         title="Home"
+=======
+>>>>>>> v2
       >
         <Home className="h-4 w-4" />
         <span className="hidden sm:inline">Home</span>
@@ -478,6 +522,7 @@ export function UserNav() {
             avatar_url={avatar_url}
             loading={loading}
           />
+<<<<<<< HEAD
           <div className="flex items-center space-x-4">
             <AdminNavRoutes />
 
@@ -489,6 +534,16 @@ export function UserNav() {
             {user && role === "locked" && <LockedNavRoutes />}
             <ActionButtons user={user} note={note} /> */}
           </div>
+=======
+          <AdminNavRoutes />
+          {/* <div className="flex items-center space-x-4"> */}
+          {/*   {user && ['admin', 'teacherAdmin'].includes(role) && <AdminNavRoutes />} */}
+          {/*   {user && role === 'teacher' && <TeacherNavRoutes />} */}
+          {/*   {user && role === 'reference' && <ReferenceNavRoutes />} */}
+          {/*   {user && role === 'locked' && <LockedNavRoutes />} */}
+          {/* </div> */}
+          <ActionButtons user={user} note={note} />
+>>>>>>> v2
         </div>
       </div>
 
@@ -506,6 +561,7 @@ export function UserNav() {
             />
             <ActionButtons user={user} note={note} />
           </div>
+<<<<<<< HEAD
           <div className="order-2 flex items-center space-x-3 justify-center mx-auto">
             <AdminNavRoutes />
             {/* {user && ["admin", "teacherAdmin"].includes(role) && (
@@ -515,6 +571,15 @@ export function UserNav() {
             {user && role === "reference" && <ReferenceNavRoutes />}
             {user && role === "locked" && <LockedNavRoutes />} */}
           </div>
+=======
+          <AdminNavRoutes />
+          {/* <div className="order-2 flex items-center space-x-3 justify-center mx-auto"> */}
+          {/*   {user && ['admin', 'teacherAdmin'].includes(role) && <AdminNavRoutes />} */}
+          {/*   {user && role === 'teacher' && <TeacherNavRoutes />} */}
+          {/*   {user && role === 'reference' && <ReferenceNavRoutes />} */}
+          {/*   {user && role === 'locked' && <LockedNavRoutes />} */}
+          {/* </div> */}
+>>>>>>> v2
         </div>
       </div>
     </div>

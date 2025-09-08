@@ -6,6 +6,7 @@ import { CommissionForm } from "@/components/forms/CommissionForm";
 interface Teacher {
   id: string;
   name: string;
+  languages?: string[];
   commissions: {
     id: string;
     price_per_hour: number;
@@ -49,7 +50,14 @@ export function BookingLessonTeacherTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {teachers.map((teacher) => (
+            {teachers.length === 0 ? (
+              <tr>
+                <td colSpan={2} className="px-6 py-4 text-center text-sm text-gray-500">
+                  No available teachers
+                </td>
+              </tr>
+            ) : (
+              teachers.map((teacher) => (
               <tr
                 key={teacher.id}
                 className={`cursor-pointer hover:bg-gray-100 ${selectedTeacherId === teacher.id ? "bg-blue-100" : ""}`}
@@ -67,7 +75,8 @@ export function BookingLessonTeacherTable({
                   {teacher.languages?.join(", ") || "N/A"}
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>
