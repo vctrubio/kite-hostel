@@ -6,6 +6,8 @@ import { type EventController } from "@/backend/types";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
 import BillboardActions from "@/components/whiteboard-usage/BillboardActions";
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 
 // Props Interface
 interface BillboardHeaderProps {
@@ -24,6 +26,8 @@ interface BillboardHeaderProps {
   teacherCount: number;
   studentCount: number;
   onActionClick: (action: string) => void;
+  exportDebugMode: boolean;
+  onExportDebugModeChange: (enabled: boolean) => void;
 }
 
 // Sub-components
@@ -106,12 +110,35 @@ function EventSettingsSection({
   );
 }
 
-function ActionSettingsSection({ onActionClick }: Pick<BillboardHeaderProps, "onActionClick">) {
+function ActionSettingsSection({ 
+  onActionClick, 
+  exportDebugMode, 
+  onExportDebugModeChange 
+}: Pick<BillboardHeaderProps, "onActionClick" | "exportDebugMode" | "onExportDebugModeChange">) {
   return (
     <div>
       <div className="border border-border rounded-lg bg-card min-h-[100px] h-full">
         <div className="space-y-2">
-          <h3 className="font-medium text-foreground p-4 pb-0">Action Settings</h3>
+          <div className="flex items-center justify-between p-4 pb-0">
+            <h3 className="font-medium text-foreground">Action Settings</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Debug</span>
+              <button
+                onClick={() => onExportDebugModeChange(!exportDebugMode)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  exportDebugMode
+                    ? 'bg-blue-600'
+                    : 'bg-gray-200 dark:bg-gray-700'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                    exportDebugMode ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
           <div className="border-t border-border p-3">
             <BillboardActions onActionClick={onActionClick} />
           </div>

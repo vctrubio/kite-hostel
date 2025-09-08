@@ -12,11 +12,20 @@ import BillboardDev from "./BillboardDev";
 import TeacherColumnComplex from "./TeacherColumnComplex";
 import StudentBookingColumn from "./StudentBookingColumn";
 import { BillboardClass } from "@/backend/BillboardClass";
-import { TeacherQueue } from "@/backend/TeacherQueue";
 import { type EventController } from "@/backend/types";
 import { createTeacherQueuesFromBillboardClasses } from "@/backend/billboardUtils";
 import { LOCATION_ENUM_VALUES } from "@/lib/constants";
-import { createEvent } from "@/actions/event-actions";
+import {
+  exportBillboardEventsToCsv,
+  exportBillboardEventsToXlsm,
+  generateWhatsAppMessage,
+  generateMedicalEmail,
+  shareToWhatsApp,
+  sendMedicalEmail,
+  generatePrintHTML,
+  printHTMLDocument,
+  extractShareDataFromTeacherQueues,
+} from "@/components/billboard/BillboardExportUtils";
 
 const STORAGE_KEY = "billboard-selected-date";
 interface BillboardClientProps {
@@ -26,7 +35,12 @@ interface BillboardClientProps {
 export default function BillboardClient({ data }: BillboardClientProps) {
   // Core state
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateString());
-  const [draggedBooking, setDraggedBooking] = useState<BillboardClass | null>(null);
+  const [draggedBooking, setDraggedBooking] = useState<BillboardClass | null>(
+    null,
+  );
+  const [exportDebugMode, setExportDebugMode] = useState(true);
+  const [debugText, setDebugText] = useState<string>("");
+  const [showDebugDropdown, setShowDebugDropdown] = useState(true);
   const [controller, setController] = useState<EventController>({
     flag: false,
     location: LOCATION_ENUM_VALUES[0],
@@ -164,12 +178,92 @@ export default function BillboardClient({ data }: BillboardClientProps) {
   }, [teacherQueues]);
 
   const handleActionClick = async (actionId: string) => {
-    alert(`Action clicked: ${actionId}. Logic to be implemented.`);
+    try {
+      // Extract share data using the utility function
+      const shareData = extractShareDataFromTeacherQueues(
+        selectedDate,
+        teacherQueues,
+      );
+
+      if (exportDebugMode) {
+        // Debug mode - show text in dropdown instead of executing action
+        let debugContent = "";
+
+        switch (actionId) {
+          case "share":
+            debugContent = generateWhatsAppMessage(shareData);
+            break;
+          case "medical":
+            const { subject, body } = generateMedicalEmail(
+              selectedDate,
+              teacherQueues,
+            );
+            debugContent = `Subject: ${subject}\n\nBody:\n${body}`;
+            break;
+          case "csv":
+            const csvHeaders =
+              "Time,Duration (hrs),Location,Teacher,Students,Package,Teacher Commission (€),School Revenue (€),Total Revenue (€)";
+            const csvRows = shareData.events
+              .map((event) => {
+                const durationHrs = (event.duration / 60).toFixed(1);
+                return `${event.startTime},${durationHrs}hrs,${event.location},${event.teacherName},"${event.studentNames.join(" & ")}",${event.packageDescription},${event.teacherEarning.toFixed(2)},${event.schoolRevenue.toFixed(2)},${event.totalRevenue.toFixed(2)}`;
+              })
+              .join("\n");
+            debugContent = `${csvHeaders}\n${csvRows}`;
+            break;
+          case "xlsm":
+            debugContent =
+              "XLSM export would be generated with the same data as CSV but in Excel format";
+            break;
+          case "print":
+            debugContent = generatePrintHTML(shareData);
+            break;
+          default:
+            debugContent = `Unknown action: ${actionId}`;
+        }
+
+        setDebugText(debugContent);
+        setShowDebugDropdown(true);
+      } else {
+        // Normal mode - execute actions
+        switch (actionId) {
+          case "share":
+            const whatsappMessage = generateWhatsAppMessage(shareData);
+            shareToWhatsApp(whatsappMessage);
+            break;
+          case "medical":
+            const { subject, body } = generateMedicalEmail(
+              selectedDate,
+              teacherQueues,
+            );
+            sendMedicalEmail(subject, body);
+            break;
+          case "csv":
+            const csvFilename = `tkh-billboard-${selectedDate}.csv`;
+            exportBillboardEventsToCsv(shareData, csvFilename);
+            break;
+          case "xlsm":
+            const xlsmFilename = `tkh-billboard-${selectedDate}.xls`;
+            exportBillboardEventsToXlsm(shareData, xlsmFilename);
+            break;
+          case "print":
+            const htmlContent = generatePrintHTML(shareData);
+            printHTMLDocument(htmlContent);
+            break;
+          default:
+            console.warn(`Unknown action: ${actionId}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error executing ${actionId} action:`, error);
+    }
   };
 
   // Drag handlers
   const handleBookingDragStart = (bookingId: string) => {
-    const booking = filteredBillboardClasses.find(bc => bc.booking.id === bookingId);
+    const booking = filteredBillboardClasses.find(
+      (bc) => bc.booking.id === bookingId,
+    );
     if (booking) {
       setDraggedBooking(booking);
     }
@@ -181,6 +275,35 @@ export default function BillboardClient({ data }: BillboardClientProps) {
 
   return (
     <div className="min-h-screen p-4">
+      {/* Debug Dropdown */}
+      {showDebugDropdown && (
+        <div className="mb-4 p-4 bg-gray-100 border rounded">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold">Export Debug Content:</h3>
+            <button
+              onClick={() => setShowDebugDropdown(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          <textarea
+            value={debugText}
+            readOnly
+            className="w-full h-64 p-2 border rounded font-mono text-sm"
+            onClick={(e) => e.currentTarget.select()}
+          />
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() => navigator.clipboard.writeText(debugText)}
+              className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+            >
+              Copy to Clipboard
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header with date picker and controller */}
       <BillboardHeader
         selectedDate={selectedDate}
@@ -191,6 +314,8 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         teacherCount={teacherCount}
         studentCount={studentCount}
         onActionClick={handleActionClick}
+        exportDebugMode={exportDebugMode}
+        onExportDebugModeChange={setExportDebugMode}
       />
 
       {/* Main content - Teacher Column and Student Column */}
