@@ -6,7 +6,6 @@ import { Duration } from '@/components/formatters/Duration';
 import { DateTime, formatTime } from '@/components/formatters/DateTime';
 import { type QueuedLesson } from '@/backend/TeacherSchedule';
 import { addMinutes, format } from 'date-fns';
-import { useState } from 'react';
 
 interface TeacherLessonQueueCardProps {
   queuedLesson: QueuedLesson & { scheduledDateTime: string };
@@ -48,28 +47,22 @@ export default function TeacherLessonQueueCard({
     scheduledDateTime
   } = queuedLesson;
 
-  // Track local duration adjustments
-  const [localDurationAdjustment, setLocalDurationAdjustment] = useState(0);
-  
-  // Calculate current duration and remaining minutes with local adjustments
-  const currentDuration = originalDuration + localDurationAdjustment;
-  const remainingMinutes = originalRemainingMinutes - localDurationAdjustment;
+  // Use the duration directly from props since backend handles adjustments
+  const currentDuration = originalDuration;
+  const remainingMinutes = originalRemainingMinutes;
 
   const endTime = scheduledDateTime ? formatTime(addMinutes(new Date(scheduledDateTime), currentDuration).toISOString()) : '';
   const remaining = remainingMinutes;
   const studentNames = students.join(', ');
   const gapDuration = (queuedLesson as any).gapDuration || 0;
 
-  // Local duration adjustment handler
+  // Duration adjustment handler - delegate to parent
   const handleLocalDurationAdjustment = (increment: boolean) => {
     const adjustment = increment ? 30 : -30;
     const newDuration = currentDuration + adjustment;
     
     // Don't allow duration below 60 minutes
     if (newDuration < 60) return;
-    
-    // Update local state immediately for UI responsiveness
-    setLocalDurationAdjustment(prev => prev + adjustment);
     
     // Call the parent handler to update the actual data
     onAdjustDuration(lessonId, increment);
