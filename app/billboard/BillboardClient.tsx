@@ -177,6 +177,39 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     return studentIds.size;
   }, [teacherQueues]);
 
+  const eventStatus = useMemo(() => {
+    let planned = 0;
+    let completed = 0;
+    let tbc = 0;
+    let cancelled = 0;
+    let total = 0;
+
+    teacherQueues.forEach((queue) => {
+      const events = queue.getAllEvents();
+      events.forEach((eventNode) => {
+        total++;
+        const status = eventNode.eventData.status;
+        
+        switch (status) {
+          case "planned":
+            planned++;
+            break;
+          case "completed":
+            completed++;
+            break;
+          case "tbc":
+            tbc++;
+            break;
+          case "cancelled":
+            cancelled++;
+            break;
+        }
+      });
+    });
+
+    return { planned, completed, tbc, cancelled, total };
+  }, [teacherQueues]);
+
   const handleActionClick = async (actionId: string) => {
     try {
       // Extract share data using the utility function
@@ -316,6 +349,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         onActionClick={handleActionClick}
         exportDebugMode={exportDebugMode}
         onExportDebugModeChange={setExportDebugMode}
+        eventStatus={eventStatus}
       />
 
       {/* Main content - Teacher Column and Student Column */}

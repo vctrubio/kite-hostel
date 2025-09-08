@@ -28,6 +28,13 @@ interface BillboardHeaderProps {
   onActionClick: (action: string) => void;
   exportDebugMode: boolean;
   onExportDebugModeChange: (enabled: boolean) => void;
+  eventStatus: {
+    planned: number;
+    completed: number;
+    tbc: number;
+    cancelled: number;
+    total: number;
+  };
 }
 
 // Sub-components
@@ -35,12 +42,83 @@ function StatsSection({
   globalStats,
   teacherCount,
   studentCount,
-}: Pick<BillboardHeaderProps, "globalStats" | "teacherCount" | "studentCount">) {
+  eventStatus,
+}: Pick<BillboardHeaderProps, "globalStats" | "teacherCount" | "studentCount" | "eventStatus">) {
+  const [showLessonDropdown, setShowLessonDropdown] = useState(false);
+
+  const handleLessonAction = (action: string) => {
+    setShowLessonDropdown(false);
+    
+    switch (action) {
+      case "confirm-all":
+        console.log("TODO: set all events to complete");
+        break;
+      case "plan-all":
+        console.log("TODO: set all lessons to planned");
+        break;
+      case "set-tbc":
+        console.log("TODO: set all events to tbc");
+        break;
+      case "delete-incomplete":
+        console.log("TODO: delete all lessons that event status ≠ complete");
+        break;
+    }
+  };
+
   return (
     <div className="w-72">
       <div className="border border-border rounded-lg bg-card min-h-[100px] h-full">
         <div className="space-y-2">
-          <h3 className="font-medium text-foreground p-4 pb-0">Stats</h3>
+          <div className="flex items-center justify-between p-4 pb-0">
+            <h3 className="font-medium text-foreground">Stats</h3>
+            <div className="relative">
+              <button
+                onClick={() => setShowLessonDropdown(!showLessonDropdown)}
+                className={`flex items-center gap-1 px-2 py-1 text-xs rounded-full transition-colors ${
+                  eventStatus.completed === eventStatus.total && eventStatus.total > 0
+                    ? 'bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-green-800 dark:text-green-200'
+                    : eventStatus.tbc === eventStatus.total && eventStatus.total > 0
+                    ? 'bg-purple-100 dark:bg-purple-900 hover:bg-purple-200 dark:hover:bg-purple-800 text-purple-800 dark:text-purple-200'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span className="font-medium">{eventStatus.completed}/{eventStatus.total}</span>
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              
+              {/* Dropdown */}
+              {showLessonDropdown && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 border border-border rounded-lg shadow-lg z-10">
+                  <div className="py-1">
+                    <button
+                      onClick={() => handleLessonAction("confirm-all")}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Confirm All Lessons
+                    </button>
+                    <button
+                      onClick={() => handleLessonAction("plan-all")}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Set All Lessons to Planned
+                    </button>
+                    <button
+                      onClick={() => handleLessonAction("set-tbc")}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 text-purple-600 dark:text-purple-400"
+                    >
+                      Set All TBC
+                    </button>
+                    <button
+                      onClick={() => handleLessonAction("delete-incomplete")}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
+                    >
+                      No Wind = Delete Lessons
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
           <div className="border-t border-border p-3">
             <div className="space-y-2">
               <div className="flex justify-around items-center">
