@@ -43,7 +43,7 @@ export default async function RootLayout({
           >
             <Analytics />
             {/* <UserNav /> */}
-            {/* <RouteNav /> */}
+            <RouteNav />
             {children}
             <Toaster position="top-left" />
           </ThemeProvider>

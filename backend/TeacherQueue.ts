@@ -4,9 +4,11 @@
  * Uses BillboardClass for data access and lesson IDs for identification
  */
 
-import { addMinutes } from "date-fns";
 import { BillboardClass } from "./BillboardClass";
-import { formatTime, parseTimeToMinutes, formatMinutesToTime } from "@/components/formatters/DateTime";
+import {
+  parseTimeToMinutes,
+  formatMinutesToTime,
+} from "@/components/formatters/DateTime";
 import { EventStatus, Location } from "@/lib/constants";
 import { createEvent } from "@/actions/event-actions";
 
@@ -163,7 +165,115 @@ export class TeacherQueue {
     const eventDate = new Date(eventNode.eventData.date);
     const hours = eventDate.getHours();
     const minutes = eventDate.getMinutes();
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  }
+
+  // Get start time in minutes from event node
+  getStartTimeMinutes(eventNode: EventNode): number {
+    const eventDate = new Date(eventNode.eventData.date);
+    return eventDate.getHours() * 60 + eventDate.getMinutes();
+  }
+
+  // Cascade time adjustment through the linked list
+  private cascadeTimeAdjustment(startNode: EventNode | null, changeMinutes: number): void {
+    let current = startNode;
+    
+    while (current) {
+      // Adjust current node's start time using local datetime manipulation
+      const currentDateTime = current.eventData.date;
+      if (currentDateTime.includes('T')) {
+        const [datePart, timePart] = currentDateTime.split('T');
+        const [hours, minutes] = timePart.split(':').map(Number);
+        
+        const totalMinutes = hours * 60 + minutes + changeMinutes;
+        const newHours = Math.floor(totalMinutes / 60);
+        const newMinutes = totalMinutes % 60;
+        
+        const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+        current.eventData.date = `${datePart}T${newTime}:00`;
+      }
+      
+      // Check if we need to continue cascading
+      if (current.next) {
+        const currentEndTime = this.getStartTimeMinutes(current) + current.eventData.duration;
+        const nextStartTime = this.getStartTimeMinutes(current.next);
+        
+        // If there's a gap, stop cascading
+        if (currentEndTime !== nextStartTime) {
+          break;
+        }
+      }
+      
+      current = current.next;
+    }
+  }
+
+  // Restore queue state from a backup
+  restoreState(originalEvents: EventNode[]): void {
+    this.head = null;
+    originalEvents.forEach(event => {
+      const restoredEvent: EventNode = {
+        ...event,
+        eventData: { ...event.eventData },
+        next: null,
+      };
+      this.addToQueue(restoredEvent);
+    });
+  }
+
+  // Remove gap by moving the current node earlier to close the gap
+  removeGap(lessonId: string): void {
+    let current = this.head;
+    let previous: EventNode | null = null;
+
+    // Find the target lesson and its previous node
+    while (current) {
+      if (current.lessonId === lessonId) {
+        break;
+      }
+      previous = current;
+      current = current.next;
+    }
+
+    if (!current || !previous) {
+      // No gap to remove if it's the first node or not found
+      return;
+    }
+
+    // Calculate the gap
+    const previousEndTime = this.getStartTimeMinutes(previous) + previous.eventData.duration;
+    const currentStartTime = this.getStartTimeMinutes(current);
+    const gapMinutes = currentStartTime - previousEndTime;
+
+    if (gapMinutes <= 0) {
+      // No gap to remove
+      return;
+    }
+
+    // Move the current node earlier to close the gap using local datetime manipulation
+    const currentDateTime = current.eventData.date;
+    if (currentDateTime.includes('T')) {
+      const [datePart, timePart] = currentDateTime.split('T');
+      const [hours, minutes] = timePart.split(':').map(Number);
+      
+      const totalMinutes = hours * 60 + minutes - gapMinutes;
+      const newHours = Math.floor(totalMinutes / 60);
+      const newMinutes = totalMinutes % 60;
+      
+      const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+      current.eventData.date = `${datePart}T${newTime}:00`;
+    }
+
+    // Check if we need to cascade the change to maintain the chain
+    if (current.next) {
+      const newCurrentEndTime = this.getStartTimeMinutes(current) + current.eventData.duration;
+      const nextStartTime = this.getStartTimeMinutes(current.next);
+      
+      // If no gap to next node, cascade the time change
+      if (newCurrentEndTime === nextStartTime) {
+        this.cascadeTimeAdjustment(current.next, -gapMinutes);
+      }
+    }
   }
 
   // Get flag time - returns actual head time or null if no events
@@ -176,6 +286,155 @@ export class TeacherQueue {
     }
   }
 
+  // Get nodes for schedule manipulation (similar to TeacherSchedule.getNodes())
+  getNodes(): any[] {
+    const nodes: any[] = [];
+    let current = this.head;
+
+    while (current) {
+      nodes.push({
+        id: current.id,
+        type: "event",
+        startTime: this.getStartTime(current),
+        duration: current.eventData.duration,
+        eventData: {
+          lessonId: current.lessonId,
+        },
+      });
+      current = current.next;
+    }
+
+    return nodes;
+  }
+
+  // Apply global time offset to all events
+  applyGlobalTimeOffset(offsetMinutes: number): EventNode[] {
+    const updatedEvents: EventNode[] = [];
+    let current = this.head;
+
+    while (current) {
+      const originalDate = new Date(current.eventData.date);
+      const newDate = new Date(originalDate.getTime() + offsetMinutes * 60 * 1000);
+      
+      const updatedEvent: EventNode = {
+        ...current,
+        eventData: {
+          ...current.eventData,
+          date: newDate.toISOString(),
+        },
+      };
+      
+      updatedEvents.push(updatedEvent);
+      current = current.next;
+    }
+
+    return updatedEvents;
+  }
+
+  // Adjust lesson duration
+  adjustLessonDuration(lessonId: string, increment: boolean): void {
+    let current = this.head;
+    while (current) {
+      if (current.lessonId === lessonId) {
+        const change = increment ? 30 : -30;
+        const oldDuration = current.eventData.duration;
+        
+        // Check if there was a connection BEFORE the change
+        let wasConnected = false;
+        if (current.next) {
+          const oldEndTime = this.getStartTimeMinutes(current) + oldDuration;
+          const nextStartTime = this.getStartTimeMinutes(current.next);
+          wasConnected = oldEndTime === nextStartTime;
+        }
+        
+        // Make the duration change
+        current.eventData.duration = Math.max(30, current.eventData.duration + change);
+        const actualChange = current.eventData.duration - oldDuration;
+        
+        // If there was a connection and duration actually changed, cascade the change
+        if (actualChange !== 0 && wasConnected && current.next) {
+          this.cascadeTimeAdjustment(current.next, actualChange);
+        }
+        break;
+      }
+      current = current.next;
+    }
+  }
+
+  // Adjust lesson time  
+  adjustLessonTime(lessonId: string, increment: boolean): void {
+    let current = this.head;
+    while (current) {
+      if (current.lessonId === lessonId) {
+        const change = increment ? 30 : -30;
+        
+        // Check if there was a connection BEFORE the change
+        let wasConnected = false;
+        if (current.next) {
+          const oldEndTime = this.getStartTimeMinutes(current) + current.eventData.duration;
+          const nextStartTime = this.getStartTimeMinutes(current.next);
+          wasConnected = oldEndTime === nextStartTime;
+        }
+        
+        // Work with local datetime string directly to avoid timezone conversion
+        const currentDateTime = current.eventData.date;
+        if (currentDateTime.includes('T')) {
+          // Parse as local datetime: "2024-01-15T14:00:00"
+          const [datePart, timePart] = currentDateTime.split('T');
+          const [hours, minutes] = timePart.split(':').map(Number);
+          
+          const totalMinutes = hours * 60 + minutes + change;
+          const newHours = Math.floor(totalMinutes / 60);
+          const newMinutes = totalMinutes % 60;
+          
+          // Create new local datetime string
+          const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+          current.eventData.date = `${datePart}T${newTime}:00`;
+        }
+        
+        // If there was a connection, cascade the time change to maintain it
+        if (wasConnected && current.next) {
+          this.cascadeTimeAdjustment(current.next, change);
+        }
+        break;
+      }
+      current = current.next;
+    }
+  }
+
+  // Move lesson in queue
+  moveLessonInQueue(lessonId: string, direction: "up" | "down"): void {
+    const events = this.getAllEvents();
+    const currentIndex = events.findIndex(event => event.lessonId === lessonId);
+    
+    if (currentIndex === -1) return;
+    
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= events.length) return;
+
+    // Swap events
+    [events[currentIndex], events[newIndex]] = [events[newIndex], events[currentIndex]];
+    
+    // Rebuild the linked list
+    this.head = null;
+    events.forEach(event => {
+      event.next = null;
+      this.addToQueue(event);
+    });
+  }
+
+  // Check if can reorganize schedule
+  canReorganizeSchedule(): boolean {
+    return this.getAllEvents().length > 1;
+  }
+
+  // Get schedule info
+  getSchedule() {
+    return {
+      teacherId: this.teacher.id,
+      teacherName: this.teacher.name,
+    };
+  }
 
   // Add event action - creates event and adds to queue
   async addEventAction(
@@ -186,24 +445,24 @@ export class TeacherQueue {
       durationCapOne: number;
       durationCapTwo: number;
       durationCapThree: number;
-    }
+    },
   ): Promise<{ success: boolean; error?: string }> {
     try {
       // Find a lesson with teacher assignment from the billboard class
       const lessonWithTeacher = billboardClass.lessons.find(
-        (lesson) => lesson.teacher?.id === this.teacher.id
+        (lesson) => lesson.teacher?.id === this.teacher.id,
       );
       if (!lessonWithTeacher) {
         return {
           success: false,
-          error: `No lesson found with teacher assignment for teacher: ${this.teacher.name}`
+          error: `No lesson found with teacher assignment for teacher: ${this.teacher.name}`,
         };
       }
 
       // Determine start time based on queue state
       let eventTime: string;
       const lastEvent = this.getLastEvent();
-      
+
       if (!lastEvent) {
         // Use controller submit time if queue is empty
         eventTime = controller.submitTime;
@@ -211,14 +470,15 @@ export class TeacherQueue {
         // Find the next available slot after the last event
         const lastEventStart = this.getStartTime(lastEvent);
         const lastEventStartMinutes = parseTimeToMinutes(lastEventStart);
-        const lastEventEndMinutes = lastEventStartMinutes + lastEvent.eventData.duration;
+        const lastEventEndMinutes =
+          lastEventStartMinutes + lastEvent.eventData.duration;
         eventTime = formatMinutesToTime(lastEventEndMinutes);
       }
 
       // Determine duration based on package student capacity
       const studentCapacity = billboardClass.booking.package.capacity_students;
       let eventDuration: number;
-      
+
       if (studentCapacity === 1) {
         eventDuration = controller.durationCapOne;
       } else if (studentCapacity === 2) {
@@ -234,7 +494,7 @@ export class TeacherQueue {
         startTime: eventTime,
         durationMinutes: eventDuration,
         location: controller.location,
-        status: "planned"
+        status: "planned",
       });
 
       if (result.success) {
