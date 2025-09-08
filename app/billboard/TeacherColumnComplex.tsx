@@ -36,11 +36,13 @@ interface TeacherColumnComplexProps {
   teacherQueues: TeacherQueue[];
   controller: EventController;
   selectedDate: string;
+  draggedBooking?: BillboardClass | null;
 }
 
 interface TeacherQueueGroupProps {
   teacherQueue: TeacherQueue;
   selectedDate: string;
+  draggedBooking?: BillboardClass | null;
   parentTimeAdjustmentMode?: boolean;
   parentGlobalTime?: string | null;
   isPendingParentUpdate: boolean;
@@ -56,6 +58,7 @@ const TeacherQueueGroup = forwardRef<
   const {
     teacherQueue,
     selectedDate,
+    draggedBooking,
     parentTimeAdjustmentMode = false,
     parentGlobalTime = null,
     isPendingParentUpdate,
@@ -430,6 +433,7 @@ const TeacherQueueGroup = forwardRef<
       ref={ref}
       teacherQueue={teacherQueue}
       selectedDate={selectedDate}
+      draggedBooking={draggedBooking}
       parentTimeAdjustmentMode={parentTimeAdjustmentMode}
       parentGlobalTime={parentGlobalTime}
       isPendingParentUpdate={isPendingParentUpdate}
@@ -579,6 +583,7 @@ export default function TeacherColumnComplex({
   teacherQueues,
   controller,
   selectedDate,
+  draggedBooking,
 }: TeacherColumnComplexProps) {
   const [parentTimeAdjustmentMode, setParentTimeAdjustmentMode] =
     useState(false);
@@ -736,11 +741,12 @@ export default function TeacherColumnComplex({
           {teacherQueueGroups.map((group) => (
             <TeacherQueueGroup
               key={group.teacherId}
-              ref={(el: TeacherQueueGroupHandle | null) =>
-                teacherGroupRefs.current.set(group.teacherId, el)
-              }
+              ref={(el: TeacherQueueGroupHandle | null) => {
+                teacherGroupRefs.current.set(group.teacherId, el);
+              }}
               teacherQueue={group.teacherQueue}
               selectedDate={selectedDate}
+              draggedBooking={draggedBooking}
               parentTimeAdjustmentMode={parentTimeAdjustmentMode}
               parentGlobalTime={parentGlobalTime}
               isPendingParentUpdate={pendingParentUpdateTeachers.has(

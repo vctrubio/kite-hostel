@@ -1,11 +1,14 @@
 "use client";
 
-import { forwardRef, useImperativeHandle } from "react";
+import { forwardRef, useImperativeHandle, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { HeadsetIcon } from "@/svgs";
 import { Flag, ChevronLeft, ChevronRight } from "lucide-react";
 import { TeacherQueue } from "@/backend/TeacherQueue";
+import { BillboardClass } from "@/backend/BillboardClass";
 import { type EventController } from "@/backend/types";
 import { timeToMinutes, minutesToTime } from "@/components/formatters/TimeZone";
+import { toast } from "sonner";
 
 // Types
 export interface TeacherQueueGroupHandle {
@@ -15,6 +18,7 @@ export interface TeacherQueueGroupHandle {
 interface TeacherQueueGroupProps {
   teacherQueue: TeacherQueue;
   selectedDate: string;
+  draggedBooking?: BillboardClass | null;
   parentTimeAdjustmentMode?: boolean;
   parentGlobalTime?: string | null;
   isPendingParentUpdate: boolean;
@@ -264,6 +268,7 @@ function TeacherLeftColumn({
 function TeacherRightContent({
   children,
   isDropping,
+  dragCompatibility,
   onDragOver,
   onDragEnter,
   onDragLeave,
@@ -271,15 +276,24 @@ function TeacherRightContent({
 }: {
   children: React.ReactNode;
   isDropping: boolean;
+  dragCompatibility: "compatible" | "incompatible" | null;
   onDragOver: (e: React.DragEvent) => void;
   onDragEnter: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
 }) {
+  // Determine border color based on drag compatibility
+  const getBorderColor = () => {
+    if (!isDropping) return "";
+    if (dragCompatibility === "compatible") return "border-green-400 bg-green-50/50 dark:bg-green-950/50";
+    if (dragCompatibility === "incompatible") return "border-orange-400 bg-orange-50/50 dark:bg-orange-950/50";
+    // Only show blue border if we haven't determined compatibility yet (during initial drag enter)
+    return dragCompatibility === null ? "border-blue-400 bg-blue-50/50 dark:bg-blue-950/50" : "";
+  };
+
   return (
     <div
-      className={`flex-1 p-4 transition-colors ${isDropping ? "border-blue-400 bg-blue-50/50 dark:bg-blue-950/50" : ""
-        }`}
+      className={`flex-1 p-4 transition-colors ${getBorderColor()}`}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
@@ -298,6 +312,7 @@ export const TeacherGrouping = forwardRef<
   const {
     teacherQueue,
     selectedDate,
+    draggedBooking: externalDraggedBooking,
     parentTimeAdjustmentMode = false,
     parentGlobalTime = null,
     isPendingParentUpdate,
@@ -320,10 +335,22 @@ export const TeacherGrouping = forwardRef<
     children,
   } = props;
 
+  // Drag and drop state
+  const [isDropping, setIsDropping] = useState(false);
+  const router = useRouter();
+
   const schedule = teacherQueue.getSchedule();
   const teacherId = schedule.teacherId;
   const teacherStats = teacherQueue.getTeacherStats();
   const hasEvents = teacherQueue.getAllEvents().length > 0;
+
+  // Check if the dragged booking has a lesson assigned to this teacher
+  const dragCompatibility = useMemo(() => {
+    if (!externalDraggedBooking) return null;
+    
+    const hasTeacherAssigned = externalDraggedBooking.hasTeacher(teacherId);
+    return hasTeacherAssigned ? "compatible" : "incompatible";
+  }, [externalDraggedBooking, teacherId]);
 
   // Expose submit method via ref
   useImperativeHandle(ref, () => ({
@@ -336,25 +363,69 @@ export const TeacherGrouping = forwardRef<
   );
   const displayTime = firstEventNode ? firstEventNode.startTime : "No events";
 
-  // Drag and drop handlers (simplified - you'll need to implement these)
+  // Drag and drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
+    
+    // Set drop effect based on compatibility
+    if (dragCompatibility === "compatible") {
+      e.dataTransfer.dropEffect = "copy";
+    } else if (dragCompatibility === "incompatible") {
+      e.dataTransfer.dropEffect = "none";
+    } else {
+      e.dataTransfer.dropEffect = "copy"; // Default for initial state
+    }
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
-    // setIsDropping(true); - you'll need to manage this state
+    setIsDropping(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    // Handle drag leave
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDropping(false);
+    }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    // Handle drop logic
+    setIsDropping(false);
+
+    try {
+      const dragData = e.dataTransfer.getData("application/json");
+      if (!dragData) {
+        toast.error("No drag data found");
+        return;
+      }
+
+      const parsedData = JSON.parse(dragData);
+      const billboardClass = new BillboardClass(parsedData.booking);
+
+      // Check if teacher has a lesson assigned to this booking
+      const hasValidLesson = billboardClass.hasTeacher(teacherId);
+
+      if (!hasValidLesson) {
+        toast.error(`Assign ${schedule.teacherName} to this booking's lesson first`);
+        return;
+      }
+
+      // Call the addEventAction method from TeacherQueue
+      const result = await teacherQueue.addEventAction(billboardClass, controller);
+
+      if (!result.success) {
+        console.error("Failed to create event:", result.error);
+        toast.error(`Failed to create event: ${result.error}`);
+      } else {
+        toast.success("Event created successfully!");
+        // Refresh the page to show updated data
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Error handling drop:", error);
+      toast.error("Error handling drop");
+    }
   };
 
   return (
@@ -385,7 +456,8 @@ export const TeacherGrouping = forwardRef<
 
         {/* Right Column - Content Area */}
         <TeacherRightContent
-          isDropping={false} // You'll need to manage this state
+          isDropping={isDropping}
+          dragCompatibility={dragCompatibility}
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}

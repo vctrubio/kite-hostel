@@ -26,6 +26,7 @@ interface BillboardClientProps {
 export default function BillboardClient({ data }: BillboardClientProps) {
   // Core state
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateString());
+  const [draggedBooking, setDraggedBooking] = useState<BillboardClass | null>(null);
   const [controller, setController] = useState<EventController>({
     flag: false,
     location: LOCATION_ENUM_VALUES[0],
@@ -166,6 +167,18 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     alert(`Action clicked: ${actionId}. Logic to be implemented.`);
   };
 
+  // Drag handlers
+  const handleBookingDragStart = (bookingId: string) => {
+    const booking = filteredBillboardClasses.find(bc => bc.booking.id === bookingId);
+    if (booking) {
+      setDraggedBooking(booking);
+    }
+  };
+
+  const handleBookingDragEnd = (bookingId: string, wasDropped: boolean) => {
+    setDraggedBooking(null);
+  };
+
   return (
     <div className="min-h-screen p-4">
       {/* Header with date picker and controller */}
@@ -187,12 +200,15 @@ export default function BillboardClient({ data }: BillboardClientProps) {
           teacherQueues={teacherQueues}
           controller={controller}
           selectedDate={selectedDate}
+          draggedBooking={draggedBooking}
         />
 
         <StudentBookingColumn
           billboardClasses={filteredBillboardClasses}
           selectedDate={selectedDate}
           teachers={data.teachers || []}
+          onBookingDragStart={handleBookingDragStart}
+          onBookingDragEnd={handleBookingDragEnd}
         />
       </div>
 
