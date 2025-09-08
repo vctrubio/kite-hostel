@@ -10,7 +10,7 @@ import {
   formatMinutesToTime,
 } from "@/components/formatters/DateTime";
 import { EventStatus, Location } from "@/lib/constants";
-import { createEvent, deleteEvent, updateEvent } from "@/actions/event-actions";
+import { createEvent } from "@/actions/event-actions";
 
 export interface EventData {
   id?: string; // Event ID if it exists, undefined if dragged from StudentBookingColumn
@@ -78,87 +78,6 @@ export class TeacherQueue {
     if (current.next) {
       current.next = current.next.next;
     }
-  }
-
-  // Remove from queue with cascade - deletes event from DB and shifts remaining events
-  async removeFromQueueWithCascade(lessonId: string): Promise<{ success: boolean; error?: string }> {
-    if (!this.head) return { success: false, error: "Queue is empty" };
-
-    // Find the node to remove and capture its start time
-    let nodeToRemove: EventNode | null = null;
-    let previousNode: EventNode | null = null;
-    let current = this.head;
-
-    while (current) {
-      if (current.lessonId === lessonId) {
-        nodeToRemove = current;
-        break;
-      }
-      previousNode = current;
-      current = current.next;
-    }
-
-    if (!nodeToRemove) {
-      return { success: false, error: "Event not found in queue" };
-    }
-
-    const removedStartTimeMinutes = this.getStartTimeMinutes(nodeToRemove);
-
-    // Delete the event from the database if it has an ID
-    if (nodeToRemove.eventData.id) {
-      const deleteResult = await deleteEvent(nodeToRemove.eventData.id);
-      if (!deleteResult.success) {
-        return { success: false, error: `Failed to delete event from database: ${deleteResult.error}` };
-      }
-    }
-
-    // Remove the node from the linked list
-    if (previousNode) {
-      previousNode.next = nodeToRemove.next;
-    } else {
-      // Removing head
-      this.head = nodeToRemove.next;
-    }
-
-    // If there are events after the removed one, shift them to fill the gap
-    const eventsToShift = [];
-    current = nodeToRemove.next;
-    while (current) {
-      eventsToShift.push(current);
-      current = current.next;
-    }
-
-    if (eventsToShift.length > 0) {
-      // Update the start times of all following events to shift them to the removed event's position
-      let newStartTimeMinutes = removedStartTimeMinutes;
-
-      for (const event of eventsToShift) {
-        // Update the event's start time
-        const [datePart] = event.eventData.date.split('T');
-        const newHours = Math.floor(newStartTimeMinutes / 60);
-        const newMinutes = newStartTimeMinutes % 60;
-        const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
-        const newDateTimeString = `${datePart}T${newTime}:00`;
-        
-        event.eventData.date = newDateTimeString;
-
-        // Update in database if the event has an ID
-        if (event.eventData.id) {
-          const updateResult = await updateEvent(event.eventData.id, {
-            date: newDateTimeString,
-          });
-          
-          if (!updateResult.success) {
-            console.error(`Failed to update event ${event.eventData.id} in database:`, updateResult.error);
-          }
-        }
-
-        // Calculate start time for next event
-        newStartTimeMinutes += event.eventData.duration;
-      }
-    }
-
-    return { success: true };
   }
 
   // Get comprehensive teacher statistics
@@ -254,35 +173,39 @@ export class TeacherQueue {
   }
 
   // Cascade time adjustment through the linked list
-  private cascadeTimeAdjustment(startNode: EventNode | null, changeMinutes: number): void {
+  private cascadeTimeAdjustment(
+    startNode: EventNode | null,
+    changeMinutes: number,
+  ): void {
     let current = startNode;
-    
+
     while (current) {
       // Adjust current node's start time using local datetime manipulation
       const currentDateTime = current.eventData.date;
-      if (currentDateTime.includes('T')) {
-        const [datePart, timePart] = currentDateTime.split('T');
-        const [hours, minutes] = timePart.split(':').map(Number);
-        
+      if (currentDateTime.includes("T")) {
+        const [datePart, timePart] = currentDateTime.split("T");
+        const [hours, minutes] = timePart.split(":").map(Number);
+
         const totalMinutes = hours * 60 + minutes + changeMinutes;
         const newHours = Math.floor(totalMinutes / 60);
         const newMinutes = totalMinutes % 60;
-        
-        const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+
+        const newTime = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
         current.eventData.date = `${datePart}T${newTime}:00`;
       }
-      
+
       // Check if we need to continue cascading
       if (current.next) {
-        const currentEndTime = this.getStartTimeMinutes(current) + current.eventData.duration;
+        const currentEndTime =
+          this.getStartTimeMinutes(current) + current.eventData.duration;
         const nextStartTime = this.getStartTimeMinutes(current.next);
-        
+
         // If there's a gap, stop cascading
         if (currentEndTime !== nextStartTime) {
           break;
         }
       }
-      
+
       current = current.next;
     }
   }
@@ -290,7 +213,7 @@ export class TeacherQueue {
   // Restore queue state from a backup
   restoreState(originalEvents: EventNode[]): void {
     this.head = null;
-    originalEvents.forEach(event => {
+    originalEvents.forEach((event) => {
       const restoredEvent: EventNode = {
         ...event,
         eventData: { ...event.eventData },
@@ -320,7 +243,8 @@ export class TeacherQueue {
     }
 
     // Calculate the gap
-    const previousEndTime = this.getStartTimeMinutes(previous) + previous.eventData.duration;
+    const previousEndTime =
+      this.getStartTimeMinutes(previous) + previous.eventData.duration;
     const currentStartTime = this.getStartTimeMinutes(current);
     const gapMinutes = currentStartTime - previousEndTime;
 
@@ -331,23 +255,24 @@ export class TeacherQueue {
 
     // Move the current node earlier to close the gap using local datetime manipulation
     const currentDateTime = current.eventData.date;
-    if (currentDateTime.includes('T')) {
-      const [datePart, timePart] = currentDateTime.split('T');
-      const [hours, minutes] = timePart.split(':').map(Number);
-      
+    if (currentDateTime.includes("T")) {
+      const [datePart, timePart] = currentDateTime.split("T");
+      const [hours, minutes] = timePart.split(":").map(Number);
+
       const totalMinutes = hours * 60 + minutes - gapMinutes;
       const newHours = Math.floor(totalMinutes / 60);
       const newMinutes = totalMinutes % 60;
-      
-      const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+
+      const newTime = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
       current.eventData.date = `${datePart}T${newTime}:00`;
     }
 
     // Check if we need to cascade the change to maintain the chain
     if (current.next) {
-      const newCurrentEndTime = this.getStartTimeMinutes(current) + current.eventData.duration;
+      const newCurrentEndTime =
+        this.getStartTimeMinutes(current) + current.eventData.duration;
       const nextStartTime = this.getStartTimeMinutes(current.next);
-      
+
       // If no gap to next node, cascade the time change
       if (newCurrentEndTime === nextStartTime) {
         this.cascadeTimeAdjustment(current.next, -gapMinutes);
@@ -393,8 +318,10 @@ export class TeacherQueue {
 
     while (current) {
       const originalDate = new Date(current.eventData.date);
-      const newDate = new Date(originalDate.getTime() + offsetMinutes * 60 * 1000);
-      
+      const newDate = new Date(
+        originalDate.getTime() + offsetMinutes * 60 * 1000,
+      );
+
       const updatedEvent: EventNode = {
         ...current,
         eventData: {
@@ -402,7 +329,7 @@ export class TeacherQueue {
           date: newDate.toISOString(),
         },
       };
-      
+
       updatedEvents.push(updatedEvent);
       current = current.next;
     }
@@ -417,7 +344,7 @@ export class TeacherQueue {
       if (current.lessonId === lessonId) {
         const change = increment ? 30 : -30;
         const oldDuration = current.eventData.duration;
-        
+
         // Check if there was a connection BEFORE the change
         let wasConnected = false;
         if (current.next) {
@@ -425,11 +352,14 @@ export class TeacherQueue {
           const nextStartTime = this.getStartTimeMinutes(current.next);
           wasConnected = oldEndTime === nextStartTime;
         }
-        
+
         // Make the duration change
-        current.eventData.duration = Math.max(30, current.eventData.duration + change);
+        current.eventData.duration = Math.max(
+          30,
+          current.eventData.duration + change,
+        );
         const actualChange = current.eventData.duration - oldDuration;
-        
+
         // If there was a connection and duration actually changed, cascade the change
         if (actualChange !== 0 && wasConnected && current.next) {
           this.cascadeTimeAdjustment(current.next, actualChange);
@@ -440,37 +370,38 @@ export class TeacherQueue {
     }
   }
 
-  // Adjust lesson time  
+  // Adjust lesson time
   adjustLessonTime(lessonId: string, increment: boolean): void {
     let current = this.head;
     while (current) {
       if (current.lessonId === lessonId) {
         const change = increment ? 30 : -30;
-        
+
         // Check if there was a connection BEFORE the change
         let wasConnected = false;
         if (current.next) {
-          const oldEndTime = this.getStartTimeMinutes(current) + current.eventData.duration;
+          const oldEndTime =
+            this.getStartTimeMinutes(current) + current.eventData.duration;
           const nextStartTime = this.getStartTimeMinutes(current.next);
           wasConnected = oldEndTime === nextStartTime;
         }
-        
+
         // Work with local datetime string directly to avoid timezone conversion
         const currentDateTime = current.eventData.date;
-        if (currentDateTime.includes('T')) {
+        if (currentDateTime.includes("T")) {
           // Parse as local datetime: "2024-01-15T14:00:00"
-          const [datePart, timePart] = currentDateTime.split('T');
-          const [hours, minutes] = timePart.split(':').map(Number);
-          
+          const [datePart, timePart] = currentDateTime.split("T");
+          const [hours, minutes] = timePart.split(":").map(Number);
+
           const totalMinutes = hours * 60 + minutes + change;
           const newHours = Math.floor(totalMinutes / 60);
           const newMinutes = totalMinutes % 60;
-          
+
           // Create new local datetime string
-          const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+          const newTime = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
           current.eventData.date = `${datePart}T${newTime}:00`;
         }
-        
+
         // If there was a connection, cascade the time change to maintain it
         if (wasConnected && current.next) {
           this.cascadeTimeAdjustment(current.next, change);
@@ -484,10 +415,12 @@ export class TeacherQueue {
   // Move lesson in queue
   moveLessonInQueue(lessonId: string, direction: "up" | "down"): void {
     const events = this.getAllEvents();
-    const currentIndex = events.findIndex(event => event.lessonId === lessonId);
-    
+    const currentIndex = events.findIndex(
+      (event) => event.lessonId === lessonId,
+    );
+
     if (currentIndex === -1) return;
-    
+
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
     if (newIndex < 0 || newIndex >= events.length) return;
 
@@ -497,39 +430,47 @@ export class TeacherQueue {
     const preservedStartTimeMinutes = this.getStartTimeMinutes(earlierEvent);
 
     // Swap events
-    [events[currentIndex], events[newIndex]] = [events[newIndex], events[currentIndex]];
-    
+    [events[currentIndex], events[newIndex]] = [
+      events[newIndex],
+      events[currentIndex],
+    ];
+
     // Rebuild the linked list
     this.head = null;
-    events.forEach(event => {
+    events.forEach((event) => {
       event.next = null;
       this.addToQueue(event);
     });
 
     // Recalculate start times starting from the preserved time
-    this.recalculateStartTimesFromPosition(earlierIndex, preservedStartTimeMinutes);
+    this.recalculateStartTimesFromPosition(
+      earlierIndex,
+      preservedStartTimeMinutes,
+    );
   }
 
   // Recalculate start times from a specific position with a given start time
-  private recalculateStartTimesFromPosition(startIndex: number, startTimeMinutes: number): void {
+  private recalculateStartTimesFromPosition(
+    startIndex: number,
+    startTimeMinutes: number,
+  ): void {
     const events = this.getAllEvents();
     let currentTimeMinutes = startTimeMinutes;
 
     for (let i = startIndex; i < events.length; i++) {
       const event = events[i];
-      
+
       // Update event's start time
-      const [datePart] = event.eventData.date.split('T');
+      const [datePart] = event.eventData.date.split("T");
       const newHours = Math.floor(currentTimeMinutes / 60);
       const newMinutes = currentTimeMinutes % 60;
-      const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+      const newTime = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
       event.eventData.date = `${datePart}T${newTime}:00`;
 
       // Calculate start time for next event (current start + current duration)
       currentTimeMinutes += event.eventData.duration;
     }
   }
-
 
   // Get schedule info
   getSchedule() {
