@@ -1,419 +1,178 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserWallet } from "@/actions/user-actions";
+import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
 import { Shield } from "lucide-react";
 import { HelmetIcon, HeadsetIcon } from "@/svgs";
-import Image from 'next/image';
+import { ENTITY_DATA } from "@/lib/constants";
+import Image from "next/image";
 
-// Role configurations for the what-we-do component
-const ROLE_CONFIGS = {
-    student: {
-        Icon: HelmetIcon,
-        label: "Student",
-        colors: { primary: "#eab308" },
-        route: "/forms",
-    },
-    teacher: {
-        Icon: HeadsetIcon,
-        label: "Teacher",
-        colors: { primary: "#22c55e" },
-        route: "/teacher",
-    },
-    admin: {
-        Icon: Shield,
-        label: "Admin",
-        colors: { primary: "#8b5cf6" },
-        route: "/whiteboard",
-    },
-} as const;
+export default async function WelcomePage() {
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
 
-// Connection colors between roles - declared in this file
-const CONNECTION_COLORS = {
-    studentTeacher: "text-yellow-500 dark:text-yellow-400",
-    studentAdmin: "text-green-500 dark:text-green-400",
-    teacherAdmin: "text-purple-500 dark:text-purple-400",
-} as const;
-
-// Convert role configs to array for iteration
-const ROLE_ICONS = [
-    ROLE_CONFIGS.student,
-    ROLE_CONFIGS.teacher,
-    ROLE_CONFIGS.admin,
-] as const;
-
-// Parent component that only renders children
-export default function HomePage() {
+  // No authenticated user - show login
+  if (!authUser) {
     return (
-        <main className="min-h-screen flex flex-col items-center justify-between bg-background text-foreground">
-            <div className="p-6 sm:p-8 my-auto w-full max-w-4xl">
-                {/* Main content */}
-                <RoleSelectionComponent />
-                <PageTitle />
-            </div>
-            <Footer />
-        </main>
-    );
-}
-
-// Title component
-function PageTitle() {
-    return (
-        <div className="text-center">
-            {/* Subheading with decorative lines and animated title */}
-            <div className="flex items-center justify-center gap-3 mt-4 mb-1">
-                <div className="h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-slate-400 dark:via-slate-400 dark:to-slate-300 w-12 shadow-sm opacity-0 animate-fadeIn" style={{ animationDelay: '300ms' }}></div>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider font-mono">
-                    <div className="opacity-0 animate-fadeIn" style={{ animationDelay: '400ms' }}>
-                        Tarifa
-                    </div>
-                    <div className="opacity-0 animate-fadeIn" style={{ animationDelay: '600ms' }}>
-                        Kite Hostel
-                    </div>
-                </h2>
-                <div className="h-0.5 bg-gradient-to-l from-transparent via-slate-400 to-slate-500 dark:via-slate-400 dark:to-slate-300 w-12 shadow-sm opacity-0 animate-fadeIn" style={{ animationDelay: '300ms' }}></div>
-            </div>
+      <main className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
+        <div className="w-full max-w-md">
+          <GoogleOnlyLoginForm />
         </div>
+      </main>
     );
-}
+  }
 
-// CompassSVG component
-function CompassSVG({ className = "", isLoading = false }: { className?: string; isLoading?: boolean }) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`${className} ${isLoading ? "animate-spin" : ""} transition-transform duration-300 drop-shadow-sm`}
-        >
-            {/* Outer compass ring */}
-            <circle
-                cx="12"
-                cy="12"
-                r="10"
-                className="stroke-current opacity-40"
-                strokeWidth="2"
-            />
+  // Get user wallet data
+  const { pk, role, teacher } = await getCurrentUserWallet();
+  const name = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email;
 
-            {/* Inner compass ring */}
-            <circle
-                cx="12"
-                cy="12"
-                r="8"
-                className="stroke-current opacity-20"
-                strokeWidth="1"
-            />
 
-            {/* Compass markings - 12 equally spaced marks around the circle */}
-            <g className="stroke-current opacity-60">
-                {/* Main cardinal directions (longer marks) */}
-                <line x1="12" y1="2" x2="12" y2="4" strokeWidth="2" />
-                <line x1="22" y1="12" x2="20" y2="12" strokeWidth="2" />
-                <line x1="12" y1="22" x2="12" y2="20" strokeWidth="2" />
-                <line x1="2" y1="12" x2="4" y2="12" strokeWidth="2" />
+  // Authenticated user with role - show menu
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-8">
+      <div className="w-full max-w-2xl text-center">
+        <Image
+          src="/logo-tkh.png"
+          alt="Tarifa Kite Hostel Logo"
+          width={120}
+          height={120}
+          className="mx-auto mb-8"
+        />
+        
+        <h1 className="text-3xl font-bold mb-2">Welcome, {name}</h1>
+        <p className="text-muted-foreground mb-8">Choose your destination</p>
+        
+        {role === "guest" && (
+          <div className="mb-8 p-4 border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+            <p className="text-blue-700 dark:text-blue-300 font-semibold mb-2">👋 Guest Access</p>
+            <p className="text-sm text-blue-600 dark:text-blue-400">You have guest privileges. Check out the invitation page!</p>
+          </div>
+        )}
 
-                {/* Diagonal directions (medium marks) */}
-                <line x1="17.66" y1="6.34" x2="16.95" y2="7.05" strokeWidth="1.5" />
-                <line x1="17.66" y1="17.66" x2="16.95" y2="16.95" strokeWidth="1.5" />
-                <line x1="6.34" y1="17.66" x2="7.05" y2="16.95" strokeWidth="1.5" />
-                <line x1="6.34" y1="6.34" x2="7.05" y2="7.05" strokeWidth="1.5" />
-            </g>
-
-            {/* Compass needle - points north */}
-            <g>
-                <path
-                    d="M12 4 L13.5 10 L12 9 L10.5 10 Z"
-                    fill="currentColor"
-                    className="text-red-500 dark:text-red-400"
-                />
-                <path
-                    d="M12 20 L10.5 14 L12 15 L13.5 14 Z"
-                    fill="currentColor"
-                    className="opacity-60"
-                />
-            </g>
-
-            {/* Center dot */}
-            <circle
-                cx="12"
-                cy="12"
-                r="1.5"
-                fill="currentColor"
-                className="opacity-80"
-            />
-        </svg>
-    );
-}
-
-// Role selection component
-function RoleSelectionComponent() {
-    const [isLoading, setIsLoading] = useState(false);
-    const [hoveredIcon, setHoveredIcon] = useState<number | null>(null);
-    const router = useRouter();
-
-    const handleIconClick = (route: string, index: number) => {
-        router.push(route);
-    };
-
-    useEffect(() => {
-        const last = localStorage.getItem('lastLandingTime');
-        const now = Date.now();
-        // show spinner only if first load or after 60s
-        if (!last || now - parseInt(last) > 60000) {
-            setIsLoading(true);
-            const timer = setTimeout(() => {
-                setIsLoading(false);
-                localStorage.setItem('lastLandingTime', now.toString());
-            }, 800);
-            return () => clearTimeout(timer);
-        } else {
-            setIsLoading(false);
-        }
-    }, []);
-
-    if (isLoading) {
-        return <LoadingSpinners />;
-    }
-
-    return (
-        <>
-            <DesktopRoleSelection 
-                hoveredIcon={hoveredIcon} 
-                setHoveredIcon={setHoveredIcon} 
-                handleIconClick={handleIconClick} 
-            />
-            <MobileRoleSelection 
-                hoveredIcon={hoveredIcon} 
-                setHoveredIcon={setHoveredIcon} 
-                handleIconClick={handleIconClick} 
-            />
-        </>
-    );
-}
-
-// Loading spinners component
-function LoadingSpinners() {
-    return (
-        /* 3 Loading Compass Spinners in Triangle Pattern */
-        <div className="relative flex flex-col items-center gap-12 mb-8 py-8">
-            {/* Top row - 2 compass spinners */}
-            <div className="flex gap-16 relative z-10">
-                {[0, 1].map((index) => (
-                    <div key={index} className="flex justify-center">
-                        <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-xl shadow-inner">
-                            <CompassSVG
-                                className="h-10 w-10 text-slate-600 dark:text-slate-300"
-                                isLoading={true}
-                            />
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Bottom row - 1 compass spinner */}
-            <div className="flex justify-center relative z-10">
-                <div className="flex justify-center">
-                    <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-xl shadow-inner">
-                        <CompassSVG
-                            className="h-10 w-10 text-slate-600 dark:text-slate-300"
-                            isLoading={true}
-                        />
-                    </div>
+        <div className="grid gap-4 max-w-4xl">
+          {/* Primary Routes - Always Visible */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              href="/billboard"
+              className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
+                (role === "admin" || role === "teacherAdmin") 
+                  ? "border-2 border-purple-500 hover:ring-2 hover:ring-purple-500/50 bg-purple-50 dark:bg-purple-900/20"
+                  : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <Shield className="h-8 w-8 text-slate-700 dark:text-slate-200" />
+                <div>
+                  <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">Billboard</h3>
+                  <p className="text-sm text-muted-foreground">Main admin dashboard</p>
                 </div>
-            </div>
-        </div>
-    );
-}
+              </div>
+            </Link>
 
-// Desktop role selection component
-interface RoleSelectionProps {
-    hoveredIcon: number | null;
-    setHoveredIcon: (index: number | null) => void;
-    handleIconClick: (route: string, index: number) => void;
-}
-
-function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
-    return (
-        /* Desktop: Triangle Pattern with Connecting Lines */
-        <div className="hidden md:block relative">
-            <div className="relative flex flex-col items-center gap-12 mb-8 py-8">
-                {/* SVG for connecting lines */}
-                <svg
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                    viewBox="0 0 200 120"
-                    preserveAspectRatio="xMidYMid meet"
-                >
-                    {/* Lines between icons - only show based on hover state */}
-                    {/* Top-left to Top-right line */}
-                    {(hoveredIcon === 0 || hoveredIcon === 1) && (
-                        <line
-                            x1="50"
-                            y1="30"
-                            x2="150"
-                            y2="30"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className={`${CONNECTION_COLORS.studentTeacher} opacity-60 animate-pulse`}
-                            strokeDasharray="4 4"
-                        />
-                    )}
-
-                    {/* Top-left to Bottom-center line */}
-                    {(hoveredIcon === 0 || hoveredIcon === 2) && (
-                        <line
-                            x1="50"
-                            y1="30"
-                            x2="100"
-                            y2="90"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className={`${CONNECTION_COLORS.studentAdmin} opacity-60 animate-pulse`}
-                            strokeDasharray="4 4"
-                        />
-                    )}
-
-                    {/* Top-right to Bottom-center line */}
-                    {(hoveredIcon === 1 || hoveredIcon === 2) && (
-                        <line
-                            x1="150"
-                            y1="30"
-                            x2="100"
-                            y2="90"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className={`${CONNECTION_COLORS.teacherAdmin} opacity-60 animate-pulse`}
-                            strokeDasharray="4 4"
-                        />
-                    )}
-                </svg>
-
-                {/* Top row - 2 icons */}
-                <div className="flex gap-20 relative z-10">
-                    {ROLE_ICONS.slice(0, 2).map(
-                        ({ Icon, label, colors, route }, index) => (
-                            <div
-                                key={label}
-                                className={`flex items-center gap-4 cursor-pointer ${index === 0 ? "flex-row-reverse" : "flex-row"}`}
-                                onMouseEnter={() => setHoveredIcon(index)}
-                                onMouseLeave={() => setHoveredIcon(null)}
-                                onClick={() => handleIconClick(route, index)}
-                            >
-                                <div
-                                    className={`p-5 border-2 bg-transparent rounded-xl shadow-inner transition-all duration-300 ${hoveredIcon === index ? `shadow-lg ring-2 ring-current/50` : ""}`}
-                                    style={{ borderColor: colors.primary }}
-                                >
-                                    <Icon className="h-12 w-12 text-slate-700 dark:text-slate-200" />
-                                </div>
-                                <span className="text-2xl font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                    {label}
-                                </span>
-                            </div>
-                        ),
-                    )}
+            <Link
+              href="/teacher"
+              className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
+                (role === "teacher" || role === "teacherAdmin")
+                  ? "border-2 border-green-500 hover:ring-2 hover:ring-green-500/50 bg-green-50 dark:bg-green-900/20"
+                  : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <HeadsetIcon className="h-8 w-8 text-slate-700 dark:text-slate-200" />
+                <div>
+                  <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">Teacher</h3>
+                  <p className="text-sm text-muted-foreground">Teacher portal & hours</p>
                 </div>
+              </div>
+            </Link>
+          </div>
 
-                {/* Bottom row - 1 centered icon */}
-                <div className="flex justify-center relative z-10">
-                    {ROLE_ICONS.slice(2).map(
-                        ({ Icon, label, colors, route }, index) => (
-                            <div
-                                key={label}
-                                className="flex flex-col items-center gap-2 cursor-pointer"
-                                onMouseEnter={() => setHoveredIcon(2)}
-                                onMouseLeave={() => setHoveredIcon(null)}
-                                onClick={() => handleIconClick(route, index + 2)}
-                            >
-                                <div
-                                    className={`p-5 border-2 bg-transparent rounded-xl shadow-inner transition-all duration-300 ${hoveredIcon === 2 ? `shadow-lg ring-2 ring-current/50` : ""}`}
-                                    style={{ borderColor: colors.primary }}
-                                >
-                                    <Icon className="h-12 w-12 text-slate-700 dark:text-slate-200" />
-                                </div>
-                                <span className="text-2xl font-bold text-slate-700 dark:text-slate-300">
-                                    {label}
-                                </span>
-                            </div>
-                        ),
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Mobile role selection component
-function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
-    return (
-        /* Mobile/Tablet: Row Layout */
-        <div className="md:hidden flex flex-col gap-4 mb-8 py-4">
-            {ROLE_ICONS.map(({ Icon, label, colors, route }, index) => (
-                <div
-                    key={label}
-                    className={`flex items-center gap-4 cursor-pointer p-4 border-4 bg-transparent rounded-xl transition-all duration-300 hover:shadow-lg ${hoveredIcon === index ? `ring-2 ring-current/50 shadow-lg` : ""}`}
-                    style={{ borderColor: colors.primary }}
-                    onMouseEnter={() => setHoveredIcon(index)}
-                    onMouseLeave={() => setHoveredIcon(null)}
-                    onClick={() => handleIconClick(route, index)}
-                >
-                    <div className="p-3 rounded-lg">
-                        <Icon className="h-8 w-8 text-slate-700 dark:text-slate-200" />
-                    </div>
-                    <span className="text-xl font-bold text-slate-700 dark:text-slate-300">
-                        {label}
+          {/* Entity Data Routes - Like RouteNav */}
+          <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Entity Management</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {ENTITY_DATA.map((entity) => {
+                const EntityIcon = entity.icon;
+                return (
+                  <Link
+                    key={entity.name}
+                    href={entity.link}
+                    className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg hover:shadow-sm transition-all duration-200"
+                  >
+                    <EntityIcon className={`h-4 w-4 ${entity.color}`} />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {entity.name}s
                     </span>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-// Footer with logo and description
-function Footer() {
-    const [showInstructions, setShowInstructions] = useState(false);
-    const handleInstall = () => setShowInstructions(true);
-    return (
-        <footer className="w-full bg-card p-6 shadow-inner">
-            <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-6">
-                <Image
-                    src="/logo-tkh.png"
-                    alt="Tarifa Kite School Logo"
-                    width={64}
-                    height={64}
-                    className="flex-shrink-0"
-                />
-                <div className="flex-1 text-slate-800 dark:text-slate-200">
-                    <h3 className="text-lg font-bold mb-2">A Prototype Kite School Management App</h3>
-                    <p className="mb-2"><span className="font-semibold">Mission:</span> To synchronize daily operations seamlessly, empowering kite schools to focus on what matters.</p>
-                    <p className="mb-2"><span className="font-semibold">How:</span> By connecting teachers, students, lessons, and analytics in one unified platform.</p>
-                    <p className="mb-2"><span className="font-semibold">Features:</span></p>
-                    <ul className="list-disc list-inside ml-4 mb-4">
-                        <li>Interactive whiteboard for real-time planning</li>
-                        <li>Comprehensive table dashboard for CRUD operations</li>
-                        <li>Secure user authentication and role management</li>
-                    </ul>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                        By: <a href="mailto:vctrubio@gmail.com" className="underline">vctrubio@gmail.com</a> &bull; Developer at <a href="https://donkeydrills.com" className="underline">donkeydrills.com</a> &bull; <a href="https://x.com/donkeydrills" className="underline">x.com/donkeydrills</a>
-                    </p>
-                    {/* Always show download button */}
-                    <button onClick={handleInstall} className="mt-4 flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-600 rounded hover:bg-gray-100 transform hover:scale-105 transition duration-200">
-                        <Image src="/logo-tkh.png" width={24} height={24} alt="Install" />
-                        Download for Home Screen
-                    </button>
-                    {/* Manual install instructions */}
-                    {showInstructions && (
-                      <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg text-center text-sm text-gray-700 shadow relative">
-                        <button onClick={() => setShowInstructions(false)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">×</button>
-                        <p>To install on your device:</p>
-                        <ol className="list-decimal list-inside text-left mt-2">
-                          <li>Tap the browser’s <strong>Share</strong> icon</li>
-                          <li>Select <strong>Add to Home Screen</strong></li>
-                        </ol>
-                      </div>
-                    )}
-                </div>
+                  </Link>
+                );
+              })}
             </div>
+          </div>
+
+          {/* Secondary Routes */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+            <Link href="/references/form" className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all">
+              <h4 className="font-semibold text-slate-700 dark:text-slate-300">Connect Wallet</h4>
+              <p className="text-xs text-muted-foreground">User wallet management</p>
+            </Link>
+            
+            <Link href="/forms" className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all">
+              <h4 className="font-semibold text-slate-700 dark:text-slate-300">Forms</h4>
+              <p className="text-xs text-muted-foreground">Student forms</p>
+            </Link>
+            
+            <Link href="/invitation" className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all">
+              <h4 className="font-semibold text-slate-700 dark:text-slate-300">Invitation</h4>
+              <p className="text-xs text-muted-foreground">Guest page</p>
+            </Link>
+          </div>
+
+          {/* Development Routes */}
+          <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Development & Prototype Routes</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              <Link href="/dev" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <span className="font-mono">/dev</span>
+              </Link>
+              <Link href="/teachers" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <span className="font-mono">/teachers</span>
+              </Link>
+              <Link href="/whiteboard" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <span className="font-mono">/whiteboard</span>
+              </Link>
+              <Link href="/user" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <span className="font-mono">/user</span>
+              </Link>
+              <Link href="/auth/login" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <span className="font-mono">/auth</span>
+              </Link>
+              <Link href="/page2" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <span className="font-mono">/page2</span>
+              </Link>
+              <Link href="/api" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <span className="font-mono">/api</span>
+              </Link>
+            </div>
+          </div>
+          
+          <div className="mt-4 text-center">
+            <p className="text-xs text-muted-foreground">
+              Role: <span className="font-mono font-semibold">{role}</span> | 
+              User: <span className="font-mono font-semibold">{name}</span>
+            </p>
+          </div>
+        </div>
+        
+        {/* Footer with docs link */}
+        <footer className="mt-12 text-center">
+          <Link
+            href="/docs"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+          >
+            Read the Docs
+          </Link>
         </footer>
-    );
+      </div>
+    </main>
+  );
 }
