@@ -2,13 +2,59 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, LayoutGrid, Share2, Palette, LogOut, Tv } from "lucide-react";
+import { Plus, LayoutGrid, Share2, Tv, Sun, Moon } from "lucide-react";
 import { ENTITY_DATA } from "@/lib/constants";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogoutButtonUserWallet } from "@/components/users/LogoutButtonUserWallet";
-import { ThemeSwitcher } from "@/components/supabase-init/theme-switcher";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+
+// Reusable CSS classes
+const DROPDOWN_ITEM_CLASSES = "w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 dark:text-gray-300 dark:hover:bg-gray-700";
+const ACTIVE_BUTTON_CLASSES = "bg-gray-200 text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-200";
+const INACTIVE_BUTTON_CLASSES = "text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800";
+
+function CustomThemeSwitcher() {
+  const [currentTheme, setCurrentTheme] = useState<string>("light");
+
+  useEffect(() => {
+    const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    setCurrentTheme(theme);
+  }, []);
+
+  const setTheme = (theme: string) => {
+    const isDark = theme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('theme', theme);
+    setCurrentTheme(theme);
+  };
+
+  const buttonClasses = (isActive: boolean) => 
+    `p-1 rounded-md transition-all duration-200 ${
+      isActive
+        ? 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'
+        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700'
+    }`;
+
+  return (
+    <div className="flex items-center space-x-2">
+      <button
+        onClick={() => setTheme('light')}
+        className={buttonClasses(currentTheme === 'light')}
+        title="Light mode"
+      >
+        <Sun className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => setTheme('dark')}
+        className={buttonClasses(currentTheme === 'dark')}
+        title="Dark mode"
+      >
+        <Moon className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
 
 function UserProfile({
   displayName,
@@ -57,10 +103,27 @@ function UserProfile({
 
 function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const displayName = user?.teacher?.name || user?.userAuth.name || "";
   const email = user?.userAuth.email || "";
   const role = user?.role || "";
   const avatar_url = user?.userAuth.avatar_url;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const handleShare = () => {
     const url = "https://kite-hostel.vercel.app/";
@@ -72,7 +135,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
 
   if (!user) {
     return (
-      <div className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 cursor-pointer">
+      <div className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 cursor-pointer dark:text-gray-300 dark:hover:bg-gray-800">
         <Avatar className="h-6 w-6">
           <AvatarImage
             src="/logo-tkh.png"
@@ -87,7 +150,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center transition-all duration-200 hover:ring-2 hover:ring-gray-300 rounded-full"
@@ -102,7 +165,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
         </Avatar>
       </button>
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg border border-gray-200 shadow-lg z-50">
+        <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg border border-gray-200 shadow-lg z-50 dark:bg-gray-800 dark:border-gray-600">
           <div className="p-4">
             <UserProfile
               displayName={displayName}
@@ -111,28 +174,34 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
               avatar_url={avatar_url}
               loading={loading}
             />
-                        <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                        <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 dark:border-gray-600">
               <Link
                 href="/whiteboard"
-                className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200"
+                className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 <span>Whiteboard</span>
-                <Tv className="h-4 w-4" />
+                <Tv className="h-4 w-4 ml-auto" />
               </Link>
-              <div className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200">
+              <div 
+                className={DROPDOWN_ITEM_CLASSES}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <span>Theme</span>
                 <div className="ml-auto">
-                  <ThemeSwitcher />
+                  <CustomThemeSwitcher />
                 </div>
               </div>
               <button
                 onClick={handleShare}
-                className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200"
+                className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 <span>Share</span>
-                <Share2 className="h-4 w-4" />
+                <Share2 className="h-4 w-4 ml-auto" />
               </button>
-              <div className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200">
+              <div 
+                className={DROPDOWN_ITEM_CLASSES}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <span>Logout</span>
                 <div className="ml-auto">
                   <LogoutButtonUserWallet />
@@ -149,7 +218,6 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
 function TableButton({
   entity,
   isActive,
-  isMobile = false,
   showPlus = false,
 }: {
   entity: {
@@ -159,7 +227,6 @@ function TableButton({
     link: string;
   };
   isActive: boolean;
-  isMobile?: boolean;
   showPlus?: boolean;
 }) {
   const EntityIcon = entity.icon;
@@ -168,40 +235,38 @@ function TableButton({
       <Link
         href={entity.link}
         className={`flex items-center space-x-2 px-3 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${
-          isActive
-            ? "bg-gray-200 text-gray-800 shadow-sm"
-            : `${entity.color} hover:bg-gray-100`
-        } ${isMobile ? "justify-center" : ""}`}
+          isActive ? ACTIVE_BUTTON_CLASSES : `${entity.color} hover:bg-gray-100 dark:hover:bg-gray-800`
+        }`}
       >
         <EntityIcon className="h-4 w-4" />
-        {!isMobile && <span>{entity.name}s</span>}
+        <span className="hidden lg:block">{entity.name}s</span>
       </Link>
       {showPlus && (
+        <div className="hidden lg:block">
         <Link
           href={`${entity.link}/form`}
-          className="flex items-center px-2 py-2 rounded-r-lg text-sm font-medium transition-all duration-200 border-l border-gray-300 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+          className="flex items-center px-2 py-2 rounded-r-lg text-sm font-medium transition-all duration-200 border-l border-gray-300 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
           title={`Add new ${entity.name.toLowerCase()}`}
         >
           <Plus className="h-3 w-3" />
         </Link>
+        </div>
       )}
     </div>
   );
 }
 
-function BillboardView({ pathname, isMobile = false }: { pathname: string; isMobile?: boolean }) {
+function BillboardView({ pathname }: { pathname: string }) {
   return (
     <div className="flex items-center space-x-3">
       <Link
         href="/billboard"
         className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-          pathname === "/billboard"
-            ? "bg-gray-200 text-gray-800 shadow-sm"
-            : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+          pathname === "/billboard" ? ACTIVE_BUTTON_CLASSES : INACTIVE_BUTTON_CLASSES
         }`}
       >
         <LayoutGrid className="h-4 w-4" />
-        {!isMobile && <span>Billboard</span>}
+        <span className="hidden lg:block">Billboard</span>
       </Link>
       <div className="flex items-center space-x-2 overflow-x-auto">
         {ENTITY_DATA.map((entity) => {
@@ -211,7 +276,6 @@ function BillboardView({ pathname, isMobile = false }: { pathname: string; isMob
               key={entity.name}
               entity={entity}
               isActive={isActive}
-              isMobile={isMobile}
               showPlus={true}
             />
           );
@@ -221,52 +285,18 @@ function BillboardView({ pathname, isMobile = false }: { pathname: string; isMob
   );
 }
 
-function TablesView({ pathname, isMobile = false }: { pathname: string; isMobile?: boolean }) {
-  return (
-    <div className="flex items-center space-x-3">
-      <Link
-        href="/billboard"
-        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-          pathname === "/billboard"
-            ? "bg-gray-200 text-gray-800 shadow-sm"
-            : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-          }`}
-      >
-        <LayoutGrid className="h-4 w-4" />
-        {!isMobile && <span>Billboard</span>}
-      </Link>
-      <div className="flex items-center space-x-2 overflow-x-auto">
-        {ENTITY_DATA.map((entity) => {
-          const isActive = pathname.startsWith(entity.link);
-          return (
-            <TableButton
-              key={entity.name}
-              entity={entity}
-              isActive={isActive}
-              isMobile={isMobile}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}export function RouteNav() {
+
+export function RouteNav() {
   const pathname = usePathname();
   const { user, loading } = useUserWallet();
 
-  const isOnBillboard = pathname.startsWith("/billboard");
-  const isOnTables = ENTITY_DATA.some((entity) =>
-    pathname.startsWith(entity.link)
-  );
-
   return (
-    <div className="border-b bg-white">
+    <div className="border-b bg-white dark:bg-gray-900 dark:border-gray-700">
       {/* Desktop Layout */}
       <div className="hidden md:block p-4">
         <div className="container mx-auto flex justify-between items-center">
           <div>
-            {isOnBillboard && <BillboardView pathname={pathname} />}
-            {isOnTables && <TablesView pathname={pathname} />}
+            {user && <BillboardView pathname={pathname} />}
           </div>
           <SettingsDropdown user={user} loading={loading} />
         </div>
@@ -277,8 +307,7 @@ function TablesView({ pathname, isMobile = false }: { pathname: string; isMobile
         <div className="flex flex-col space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              {isOnBillboard && <BillboardView pathname={pathname} isMobile />}
-              {isOnTables && <TablesView pathname={pathname} isMobile />}
+              {user && <BillboardView pathname={pathname} />}
             </div>
             <SettingsDropdown user={user} loading={loading} />
           </div>

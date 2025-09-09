@@ -7,6 +7,7 @@ interface UserWallet {
   role: string;
   pk: string | null;
   teacher_name: string | null;
+  note?: string | null;
 }
 
 interface ReferenceBookingTableProps {
@@ -29,10 +30,7 @@ export function BookingReferenceTable({
               Role
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              PK (Teacher Name)
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Note
+              Name
             </th>
           </tr>
         </thead>
@@ -47,10 +45,10 @@ export function BookingReferenceTable({
                 {wallet.role}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {wallet.teacher_name || "N/A"}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {wallet.note || "N/A"}
+                {(wallet.role === "teacher" || wallet.role === "teacherAdmin") 
+                  ? (wallet.teacher_name || "N/A")
+                  : (wallet.note || "N/A")
+                }
               </td>
             </tr>
           ))}

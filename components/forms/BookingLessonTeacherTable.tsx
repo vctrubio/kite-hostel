@@ -37,12 +37,11 @@ export function BookingLessonTeacherTable({
     <div className="space-y-4">
       {/* Teacher Selection */}
       <div className="overflow-x-auto">
-        <h3 className="text-md font-semibold mb-2">Select Teacher</h3>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
+                Teacher Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Languages
@@ -52,29 +51,32 @@ export function BookingLessonTeacherTable({
           <tbody className="divide-y divide-gray-200">
             {teachers.length === 0 ? (
               <tr>
-                <td colSpan={2} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td
+                  colSpan={2}
+                  className="px-6 py-4 text-center text-sm text-gray-500"
+                >
                   No available teachers
                 </td>
               </tr>
             ) : (
               teachers.map((teacher) => (
-              <tr
-                key={teacher.id}
-                className={`cursor-pointer hover:bg-gray-100 ${selectedTeacherId === teacher.id ? "bg-blue-100" : ""}`}
-                onClick={() => {
-                  onSelectTeacher(
-                    selectedTeacherId === teacher.id ? null : teacher.id,
-                  );
-                  onSelectCommission(null);
-                }}
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {teacher.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {teacher.languages?.join(", ") || "N/A"}
-                </td>
-              </tr>
+                <tr
+                  key={teacher.id}
+                  className={`cursor-pointer hover:bg-gray-100 ${selectedTeacherId === teacher.id ? "bg-blue-100" : ""}`}
+                  onClick={() => {
+                    onSelectTeacher(
+                      selectedTeacherId === teacher.id ? null : teacher.id,
+                    );
+                    onSelectCommission(null);
+                  }}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {teacher.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {teacher.languages?.join(", ") || "N/A"}
+                  </td>
+                </tr>
               ))
             )}
           </tbody>
@@ -93,15 +95,18 @@ export function BookingLessonTeacherTable({
                 <button
                   key={commission.id}
                   onClick={() => onSelectCommission(commission.id)}
-                  className={`justify-start text-left p-3 border rounded-md hover:bg-gray-50 transition-colors ${
-                    selectedCommissionId === commission.id 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-200'
-                  }`}
+                  className={`justify-start text-left p-3 border rounded-md hover:bg-gray-50 transition-colors ${selectedCommissionId === commission.id
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200"
+                    }`}
                 >
-                  <div className="font-medium">€{commission.price_per_hour}/h</div>
+                  <div className="font-medium">
+                    €{commission.price_per_hour}/h
+                  </div>
                   {commission.desc && (
-                    <div className="text-sm text-gray-500 mt-1">{commission.desc}</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      {commission.desc}
+                    </div>
                   )}
                 </button>
               ))}

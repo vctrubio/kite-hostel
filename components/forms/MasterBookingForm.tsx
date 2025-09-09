@@ -57,13 +57,14 @@ export default function MasterBookingForm({
   );
   const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
     if (studentIds.length > 0 || packageIdParam) {
-      return new Set(["dates-section", "reference-section"]);
+      return new Set(["dates-section", "reference-section", "lesson-section"]);
     } else {
       return new Set([
         "dates-section",
         "package-section",
         "students-section",
         "reference-section",
+        "lesson-section",
       ]);
     }
   });
@@ -252,6 +253,7 @@ export default function MasterBookingForm({
             "package-section",
             "students-section",
             "reference-section",
+            "lesson-section",
           ]),
         );
         // Re-fetch students to update availability
@@ -294,6 +296,7 @@ export default function MasterBookingForm({
         "package-section",
         "students-section",
         "reference-section",
+        "lesson-section",
       ]),
     );
     setViaStudentParams(false);
