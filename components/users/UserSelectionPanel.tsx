@@ -29,6 +29,7 @@ interface UserWalletInfo {
 interface UserSelectionPanelProps {
   users: User[];
   availableSks: { id: string; email: string; full_name?: string }[];
+  userWallets: UserWalletInfo[]; // Pass user wallets from server instead of fetching
   onUserSelect?: (userId: string | null) => void;
   onUserWalletSelect?: (userWallet: UserWalletInfo | null) => void;
 }
@@ -36,25 +37,11 @@ interface UserSelectionPanelProps {
 export function UserSelectionPanel({ 
   users, 
   availableSks, 
+  userWallets,
   onUserSelect,
   onUserWalletSelect
 }: UserSelectionPanelProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [userWallets, setUserWallets] = useState<UserWalletInfo[]>([]);
-
-  useEffect(() => {
-    const fetchUserWallets = async () => {
-      try {
-        const result = await getUserWallets();
-        if (result.data) {
-          setUserWallets(result.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user wallets:", error);
-      }
-    };
-    fetchUserWallets();
-  }, []);
 
   // Check if user is available (in availableSks list)
   const isUserAvailable = (userId: string) => {
@@ -93,7 +80,8 @@ export function UserSelectionPanel({
   };
 
   const getJoinedDate = (user: User) => {
-    return new Date(user.created_at).toLocaleDateString();
+    const date = new Date(user.created_at);
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD format for consistent server/client rendering
   };
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -31,11 +32,11 @@ export function UpdateUserWalletForm({
   userWallet,
   onUpdate,
 }: UpdateUserWalletFormProps) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     role: "reference",
     note: "",
     pk: "",
-    sk: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -45,14 +46,12 @@ export function UpdateUserWalletForm({
         role: userWallet.role,
         note: userWallet.note || "",
         pk: userWallet.pk || "",
-        sk: userWallet.sk,
       });
     } else {
       setFormData({
         role: "reference",
         note: "",
         pk: "",
-        sk: "",
       });
     }
   }, [userWallet]);
@@ -90,11 +89,12 @@ export function UpdateUserWalletForm({
       role: formData.role,
       pk: formData.pk === "" ? null : formData.pk,
       note: formData.note,
-      sk: formData.sk === "" ? null : formData.sk,
+      sk: userWallet.sk, // Keep the original SK - don't allow changing it
     });
 
     if (result.success) {
       toast.success("User wallet updated successfully!");
+      router.refresh();
       onUpdate?.();
     } else {
       toast.error(result.error || "Failed to update user wallet.");
@@ -104,10 +104,9 @@ export function UpdateUserWalletForm({
 
   const handleClear = () => {
     setFormData({
-      role: "reference",
+      role: "reference", 
       note: "",
       pk: "",
-      sk: "",
     });
   };
 
@@ -200,7 +199,7 @@ export function UpdateUserWalletForm({
           </div>
         )}
 
-        {/* SK Field */}
+        {/* SK Field - Read-only display */}
         <div>
           <label
             htmlFor="sk"
@@ -208,22 +207,12 @@ export function UpdateUserWalletForm({
           >
             SK (User):
           </label>
-          <select
-            id="sk"
-            name="sk"
-            value={formData.sk}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          >
-            <option value="">Select User</option>
-            {availableSks.map((user: any) => (
-              <option key={user.id} value={user.id}>
-                {user.full_name
-                  ? `${user.full_name}: ${user.email}`
-                  : user.email}
-              </option>
-            ))}
-          </select>
+          <div className="mt-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+            {userWallet.sk_full_name || userWallet.sk_email || userWallet.sk}
+            <span className="text-xs text-gray-500 ml-2">
+              (Fixed to selected user)
+            </span>
+          </div>
         </div>
 
         {/* Note Field */}

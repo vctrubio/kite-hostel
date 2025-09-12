@@ -121,8 +121,7 @@ export async function updateUserWallet(id: string, data: UserWalletUpdate) {
       return { success: false, error: "User wallet not found." };
     }
 
-    revalidatePath("/users");
-    revalidatePath("/users/" + id);
+    revalidatePath("/references/form");
 
     // Re-fetch the updated wallet with relations to ensure full data is returned
     const { data: reFetchedWallet, error: reFetchError } =
@@ -180,7 +179,7 @@ export async function createUserWallet(data: UserWalletInsert) {
       return { success: false, error: "Failed to create user wallet." };
     }
 
-    revalidatePath("/users");
+    revalidatePath("/references/form");
     return { success: true, wallet: newWallet[0] };
   } catch (error: any) {
     console.error("Error creating user wallet:", error);

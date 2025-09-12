@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ export function CreateUserWalletForm({
   availableSks,
   initialSk,
 }: CreateUserWalletFormProps) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     role: "reference",
     note: "",
@@ -66,6 +68,7 @@ export function CreateUserWalletForm({
 
     if (result.success) {
       toast.success("User wallet created successfully!");
+      router.refresh();
       setFormData({
         role: "guest",
         note: "",

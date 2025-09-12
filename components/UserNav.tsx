@@ -475,6 +475,27 @@ export function UserNav() {
   const avatar_url = user?.userAuth.avatar_url;
   const note = user?.teacher?.user_wallet?.note || "";
 
+  // Determine which navigation to show based on role
+  const getNavigationComponent = () => {
+    if (!user) return null;
+    
+    switch (role) {
+      case "admin":
+      case "teacherAdmin":
+        return <AdminNavRoutes />;
+      case "teacher":
+        return <TeacherNavRoutes />;
+      case "reference":
+        return <ReferenceNavRoutes />;
+      case "locked":
+        return <LockedNavRoutes />;
+      default:
+        return null;
+    }
+  };
+
+  const NavigationComponent = getNavigationComponent();
+
   return (
     <div className="border-b">
       {/* Desktop Layout */}
@@ -487,7 +508,7 @@ export function UserNav() {
             avatar_url={avatar_url}
             loading={loading}
           />
-          <AdminNavRoutes />
+          {NavigationComponent}
           <ActionButtons user={user} note={note} />
         </div>
       </div>
@@ -506,7 +527,7 @@ export function UserNav() {
             />
             <ActionButtons user={user} note={note} />
           </div>
-          <AdminNavRoutes />
+          {NavigationComponent}
         </div>
       </div>
     </div>
