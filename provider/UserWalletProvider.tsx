@@ -10,7 +10,6 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { getCurrentUserWallet } from "@/actions/user-actions";
 import type { TeacherWithRelations } from "@/actions/teacher-actions";
-import { createClient } from "@/lib/supabase/client";
 
 interface UserAuth {
   name: string | null;
@@ -80,13 +79,6 @@ export function UserWalletProvider({
         teacher,
       };
 
-      const cacheKey = `userWalletData_${userId}`;
-      try {
-        sessionStorage.setItem(cacheKey, JSON.stringify(transformedUser));
-      } catch (error) {
-        console.error("Failed to cache user data:", error);
-      }
-
       setUser(transformedUser);
       return transformedUser;
     } catch (error) {
@@ -98,30 +90,9 @@ export function UserWalletProvider({
   useEffect(() => {
     const resolveUser = async () => {
       if (!initialUser) {
-        sessionStorage.removeItem("userWalletData");
         setUser(null);
         setLoading(false);
         return;
-      }
-
-      const cacheKey = `userWalletData_${initialUser.id}`;
-      try {
-        const cachedData = sessionStorage.getItem(cacheKey);
-        if (cachedData) {
-          const parsed = JSON.parse(cachedData);
-          
-          // Force refresh if cached role is guest but we might have a new role
-          if (parsed.role === 'guest') {
-            sessionStorage.removeItem(cacheKey);
-          } else {
-            setUser(parsed);
-            setLoading(false);
-            return;
-          }
-        }
-      } catch (error) {
-        console.error("Failed to parse cached user data:", error);
-        sessionStorage.removeItem(cacheKey);
       }
 
       await refreshUserData(initialUser.id);
@@ -131,41 +102,6 @@ export function UserWalletProvider({
     resolveUser();
   }, [initialUser]);
 
-  useEffect(() => {
-    if (!initialUser) return;
-
-    const supabase = createClient();
-    
-    const subscription = supabase
-      .channel('user_wallet_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_wallet',
-        },
-        async (payload) => {
-          // Check if this change affects the current user
-          const isCurrentUserNew = payload.new?.sk === initialUser.id;
-          const isCurrentUserOld = payload.old?.sk === initialUser.id;
-          const isCurrentUser = isCurrentUserNew || isCurrentUserOld;
-          
-          if (!isCurrentUser) {
-            return;
-          }
-          
-          // Clear all cache and reload page to get fresh server data
-          sessionStorage.clear();
-          window.location.reload();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [initialUser]);
 
   return (
     <UserWalletContext.Provider value={{ user, loading }}>
