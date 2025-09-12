@@ -1,19 +1,22 @@
 # Claude Code Configuration
 
-This is a kite school management application built with Next.js, focusing on lesson scheduling and whiteboard management.
+This is a comprehensive kite school management application built with Next.js, designed for wind-dependent scheduling operations.
 
 ## Project Overview
 
-A Next.js development MVP for managing kiteboarding lessons with two main user types:
-- **Admins**: Set lesson schedules and manage the whiteboard
-- **Teachers**: Track hours and confirm kite events
+A Next.js production application for managing kiteboarding lessons with multiple user interfaces:
+- **Admins**: Comprehensive lesson scheduling via dual interfaces (Whiteboard + Billboard)
+- **Teachers**: Hour tracking, event confirmation, and portal access
+- **Students**: Booking management and lesson tracking
 
 ## Architecture
 
-- **Backend**: Drizzle ORM with Supabase database
-- **Frontend**: Next.js App Router with server-first approach
-- **Core Route**: `/app/whiteboard/` - Main admin interface for daily lesson management
-- **Development Mode**: Fast iteration for immediate teacher/admin use
+- **Backend**: Drizzle ORM with Supabase PostgreSQL database
+- **Frontend**: Next.js 14 App Router with server-first approach
+- **Core Routes**: 
+  - `/app/whiteboard/` - Mobile-first admin interface for daily operations
+  - `/app/billboard/` - Drag-and-drop desktop interface for complex scheduling
+- **Production Status**: Live deployment with real-world usage
 
 ## Key Conventions
 
@@ -23,21 +26,85 @@ A Next.js development MVP for managing kiteboarding lessons with two main user t
 - All logic declared at top of functions for readability
 - Use existing utilities from `components/formatters/TimeZone.ts` for all time operations
 
-## Main Classes
+## Main Applications
 
-### WHITEBOARD
-The core application route (`/app/whiteboard/`) provides an optimized daily interface for managing kiteboarding lessons and events. All entities are handled within a master table/row system.
+### WHITEBOARD (`/app/whiteboard/`)
+Mobile-first admin interface using **WhiteboardClass** and **TeacherSchedule**:
 
-### TEACHER_SCHEDULING  
-Implements a linked list-based scheduling system (`backend/TeacherSchedule.ts`) for managing teacher daily schedules with conflict detection and gap analysis.
+**Core Classes Used**:
+- **WhiteboardClass** - Wraps booking data for whiteboard-specific calculations
+- **TeacherSchedule** - Original schedule management with time/gap analysis
+- **ShareUtils** - Handles exports (WhatsApp, CSV, PDF, medical emails)
+
+**Features**:
+- Section-based navigation (Bookings, Lessons, Events)
+- Real-time date filtering with booking status filters
+- Quick lesson creation and status management
+- Teacher assignment and equipment tracking
+- Mobile-optimized responsive design
+
+### BILLBOARD (`/app/billboard/`)  
+Desktop drag-and-drop interface using **BillboardClass** and **TeacherQueue**:
+
+**Core Classes Used**:
+- **BillboardClass** - Enhanced booking calculations for drag-and-drop operations
+- **TeacherQueue** - Linked-list queue system for drag-and-drop event management
+- **BillboardExportUtils** - Specialized export utilities (CSV, Excel, WhatsApp, Print)
+- **billboardUtils** - Creates TeacherQueues from BillboardClasses
+
+**Features**:
+- Visual teacher column layout with drag-and-drop
+- StudentBookingColumn as drag source
+- Dynamic duration adjustments and conflict resolution
+- Real-time calculations during drag operations
+- Complex event reordering and queue management
+
+### BACKEND CLASSES
+
+#### WHITEBOARD CLASSES
+
+**TeacherSchedule** (`backend/TeacherSchedule.ts`):
+- **Used by**: Whiteboard interface
+- **Purpose**: Original linked list-based scheduling with time/gap analysis
+- **Features**: Static schedule viewing, conflict detection, gap analysis
+- **Data Structure**: Simple linked list for time slots
+
+**WhiteboardClass** (`backend/WhiteboardClass.tsx`):
+- **Used by**: Whiteboard interface  
+- **Purpose**: Booking data wrapper for whiteboard calculations
+- **Features**: Basic booking stats and status management
+
+#### BILLBOARD CLASSES
+
+**TeacherQueue** (`backend/TeacherQueue.ts`):
+- **Used by**: Billboard interface
+- **Purpose**: Dynamic linked list queue system for drag-and-drop operations
+- **Features**: Event node management, reordering, database integration
+- **Data Structure**: Event nodes with BillboardClass references and lesson IDs
+
+**BillboardClass** (`backend/BillboardClass.tsx`):
+- **Used by**: Billboard interface and TeacherQueue nodes
+- **Purpose**: Enhanced booking calculations for real-time drag-and-drop
+- **Features**: Event minutes tracking, package calculations, remaining time analysis
+- **Integration**: Powers real-time calculations during drag operations
 
 ## File Structure
 
-- `actions/` - API calls using Drizzle ORM
-- `app/whiteboard/` - Core admin whiteboard interface
-- `components/` - Organized by purpose (cards, forms, modals, etc.)
-- `backend/` - Business logic classes
-- `drizzle/` - ORM configuration and migrations
+- `actions/` - Server-side API calls using Drizzle ORM
+- `app/whiteboard/` - Mobile-first admin whiteboard interface
+- `app/billboard/` - Drag-and-drop desktop scheduling interface
+- `components/` - Organized by purpose:
+  - `billboard/` - Billboard-specific UI components and export utilities
+  - `cards/` - Entity display components
+  - `forms/` - Creation and editing forms
+  - `formatters/` - Date/time utilities (UTC-based TimeZone.ts)
+  - `modals/` - Pop-up interfaces
+  - `tables/` - Data table components
+  - `ui/` - Generic UI elements (shadcn/ui)
+- `backend/` - Business logic classes (TeacherQueue, BillboardClass, TeacherSchedule)
+- `drizzle/` - ORM configuration, schema, and migrations
+- `lib/` - Utility functions and configurations
+- `provider/` - React Context providers for global state
 
 ## Entity Relationships
 
@@ -86,12 +153,25 @@ Implements a linked list-based scheduling system (`backend/TeacherSchedule.ts`) 
 
 ### Auth & Roles
 **UserWallet** manages authentication and roles:
-- Roles: guest, teacher, admin, teacherAdmin, reference
+- Roles: admin, teacher, teacherAdmin, locked, reference
 - Links auth users via `sk` (auth user id)
 - Optional `pk` links to Teacher.id for teacher users
 
 ## Development Notes
 
-- MVP focused on immediate usability
-- No testing framework - direct deployment for teacher/admin feedback
-- Rapid iteration cycle for real-world validation
+- **Production Application**: Live deployment at https://kite-hostel.vercel.app/
+- **Wind-Responsive Design**: Built specifically for kiteboarding's weather-dependent nature
+- **Real-Time Operations**: Synchronous updates across interfaces, APIs, PDFs, and Excel exports
+- **Mobile-First Approach**: Whiteboard optimized for on-the-go teacher/admin use
+- **Advanced Scheduling**: Billboard provides desktop drag-and-drop for complex rescheduling
+- **Linked-List Architecture**: Custom queue management for optimal teacher scheduling
+- **UTC Timezone Safety**: All time operations use `components/formatters/TimeZone.ts` utilities
+
+## Key Features
+
+- **Dual Interface Strategy**: Mobile (Whiteboard) + Desktop (Billboard) approaches
+- **Equipment Management**: Kite assignment and tracking via TeacherKite relationships
+- **Commission System**: Locked rates at booking time with flexible teacher pricing
+- **Export Integration**: Multi-format data export (API, PDF, Excel)
+- **Role-Based Access**: Granular permissions for different user types
+- **Soft Delete Support**: Data preservation with recovery capabilities

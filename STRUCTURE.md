@@ -6,8 +6,10 @@ This document outlines the directory structure of the project in a tree format.
 /
 ├─── actions/ # Contains server-side functions for making API calls to the database using Drizzle ORM.
 ├─── app/ # Defines the application's routes and pages, following Next.js App Router conventions.
-├─── whiteboard/ # Core application feature for admins to manage daily kite lessons and events. (INSIDE THE APP DIR/ROUTE)
+│    ├─── whiteboard/ # Core application feature for admins to manage daily kite lessons and events.
+│    └─── billboard/ # **NEW**: Drag-and-drop teacher scheduling interface with queue management
 ├─── components/
+│    ├─── billboard/ # **NEW**: Billboard-specific UI components and export utilities
 │    ├─── cards/ # Components for displaying entity information in a card format.
 │    ├─── views/ # Components for displaying entity
 │    ├─── forms/ # Form components used for creating and editing entities.
@@ -23,7 +25,9 @@ This document outlines the directory structure of the project in a tree format.
 ├─── drizzle/ # Holds Drizzle ORM configuration, schema, and migration files.
 ├─── backend/ # **NEW**: Backend utilities and business logic classes
 │    ├─── types.ts # TypeScript interfaces for backend entities
-│    └─── TeacherSchedule.ts # Linked list implementation for teacher daily schedules
+│    ├─── TeacherSchedule.ts # Linked list implementation for teacher daily schedules
+│    ├─── TeacherQueue.ts # **NEW**: Linked list queue system for managing teacher event scheduling
+│    └─── BillboardClass.tsx # **NEW**: Core business logic class for booking calculations and event management
 ├─── lib/ # Utility functions and library configurations, including Supabase clients.
 ├─── provider/ # React Context providers for managing global state (e.g., UserWalletProvider).
 ├─── public/ # Static assets like images and logos that are served directly.
@@ -74,6 +78,28 @@ A linked list implementation for managing teacher daily schedules:
 
 **Architecture**: Pure linked list with no external dependencies, using TimeZone utilities for all time operations.
 
+### Teacher Queue System (`backend/TeacherQueue.ts`)
+
+Manages linked list queues of events for teachers on specific dates with drag-and-drop support:
+
+- **Event Node Structure**: Nodes contain lesson IDs, BillboardClass references, and event data
+- **Queue Management**: Add, remove, and reorder events in teacher queues
+- **Duration Adjustments**: Dynamically adjust event durations while maintaining queue integrity
+- **Database Integration**: Create, update, and delete events through API actions
+
+**Key Features**: Handles both existing events and new bookings dragged from StudentBookingColumn.
+
+### Billboard Class System (`backend/BillboardClass.tsx`)
+
+Core business logic class for booking calculations and event management:
+
+- **Booking Data Management**: Wraps booking data with calculated properties
+- **Event Minutes Tracking**: Calculates planned, completed, TBC, and cancelled minutes
+- **Package Calculations**: Determines remaining time, pricing, and utilization
+- **State Management**: Tracks booking progress and completion status
+
+**Integration**: Works with TeacherQueue to provide real-time calculations during drag-and-drop operations.
+
 ### Whiteboard Application (`app/whiteboard/`)
 
 The core admin interface for managing daily kite lessons and events:
@@ -84,6 +110,24 @@ The core admin interface for managing daily kite lessons and events:
 - **Event Controller**: Manages event creation settings and real-time schedule coordination
 
 **Data Flow**: Server-side data fetching → Client filtering → Component rendering → User interactions
+
+### Billboard Application (`app/billboard/`)
+
+A drag-and-drop interface for teacher scheduling with advanced queue management:
+
+- **BillboardClient.tsx**: Main container component orchestrating the drag-and-drop scheduling interface
+- **TeacherColumnComplex.tsx**: Complex teacher column component handling drag-and-drop interactions
+- **StudentBookingColumn.tsx**: Source column for available student bookings to be scheduled
+- **TeacherQueueEditor.tsx**: Interface for managing teacher event queues
+- **BillboardHeader.tsx**: Header component with filtering and controls
+
+**Core Features**:
+- Drag-and-drop scheduling from student bookings to teacher columns
+- Real-time queue management with linked list data structures
+- Dynamic duration adjustments and conflict resolution
+- Export utilities for schedule data
+
+**Data Flow**: Server-side data fetching → BillboardClass instantiation → TeacherQueue management → Drag-and-drop interactions → Database updates
 
 ## TODO List
 

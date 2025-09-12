@@ -25,7 +25,7 @@ import {
   generatePrintHTML,
   printHTMLDocument,
   extractShareDataFromTeacherQueues,
-} from "@/components/billboard/BillboardExportUtils";
+} from "@/backend/BillboardExportUtils";
 
 const STORAGE_KEY = "billboard-selected-date";
 interface BillboardClientProps {
