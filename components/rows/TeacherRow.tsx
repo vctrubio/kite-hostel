@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Send } from "lucide-react";
 import { DateSince } from "@/components/formatters/DateSince";
 import { getStatusColors, type LessonStatus } from "@/lib/constants";
+import { EventCountWithDuration } from "@/getters/event-getters";
 
 // Sub-components for better organization
 interface TeacherDetailsProps {
@@ -135,11 +136,10 @@ export function TeacherRow({
         <td className="py-2 px-4 text-left">{teacher.name}</td>
         <td className="py-2 px-4 text-left">{teacher.lessonCount || 0}</td>
         <td className="py-2 px-4 text-left">
-          <div className="flex items-center gap-2">
-            <span>{teacher.eventCount || 0}</span>
-            <span>•</span>
-            <span>{teacher.totalEventHours || 0} h</span>
-          </div>
+          <EventCountWithDuration 
+            eventCount={teacher.eventCount || 0}
+            totalHours={teacher.totalEventHours || 0}
+          />
         </td>
         <td className="py-2 px-4 text-left">
           <span

@@ -1,6 +1,6 @@
 import React from 'react';
 import { FlagIcon } from '@/svgs/FlagIcon';
-import { KiteIcon } from '@/svgs/KiteIcon';
+import { EventHeading } from '@/getters/event-getters';
 
 export interface TableHeader {
   title: string | React.ReactElement;
@@ -19,11 +19,7 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Description", key: "desc", sortable: false },
         { title: "Bookings", key: "bookings", sortable: true },
         { 
-          title: React.createElement('div', 
-            { className: 'flex items-center gap-2' },
-            React.createElement(KiteIcon, { className: 'w-5 h-5' }),
-            'Events'
-          ), 
+          title: React.createElement(EventHeading, { className: 'w-5 h-5' }), 
           key: "eventsAndHours", 
           sortable: true 
         },
@@ -43,11 +39,7 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
           sortable: true 
         },
         { 
-          title: React.createElement('div', 
-            { className: 'flex items-center gap-2' },
-            React.createElement(KiteIcon, { className: 'w-5 h-5' }),
-            'Events'
-          ), 
+          title: React.createElement(EventHeading, { className: 'w-5 h-5' }), 
           key: "eventsAndHours", 
           sortable: true 
         },
@@ -99,7 +91,11 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Teacher", key: "teacher", sortable: true },
         { title: "Commission", key: "commission", sortable: true },
         { title: "Students", key: "students", sortable: false },
-        { title: "Events", key: "events", sortable: true },
+        { 
+          title: React.createElement(EventHeading, { className: 'w-5 h-5' }), 
+          key: "events", 
+          sortable: true 
+        },
         { title: "Status", key: "status", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
@@ -109,7 +105,8 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Status", key: "status", sortable: true },
         { title: "Reference", key: "reference", sortable: true },
         { title: "Students", key: "students", sortable: true },
-        { title: "Lessons", key: "lessons", sortable: true },
+        { title: "Progress", key: "progress", sortable: true },
+        { title: "Lessons", key: "lessons", sortable: false },
         { title: "Actions", key: "actions", sortable: false },
       ];
     case 'reference':

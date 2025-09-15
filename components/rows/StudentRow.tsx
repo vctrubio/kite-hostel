@@ -1,20 +1,13 @@
 "use client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Send } from "lucide-react";
 import { DateSince } from "@/components/formatters/DateSince";
 import { Checkbox } from "@/components/ui/checkbox";
-
 import { InferSelectModel } from "drizzle-orm";
 import { Booking } from "@/drizzle/migrations/schema";
 import { BookingView } from "@/components/views/BookingView";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { EventCountWithDuration } from "@/getters/event-getters";
 
 interface StudentRowProps {
   data: {
@@ -68,24 +61,23 @@ export function StudentRow({ data: student, expandedRow, setExpandedRow, isSelec
         <td className="py-2 px-4 text-left">{student.desc}</td>
         <td className="py-2 px-4 text-left">{student.totalBookings || student.bookings?.length || 0}</td>
         <td className="py-2 px-4 text-left">
-          <div className="flex items-center gap-2">
-            <span>{student.eventCount || 0}</span>
-            <span>•</span>
-            <span>{student.totalEventHours || 0} h</span>
-          </div>
+          <EventCountWithDuration
+            eventCount={student.eventCount || 0}
+            totalHours={student.totalEventHours || 0}
+          />
         </td>
         <td className="py-2 px-4">
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={toggleExpand}
               className="h-8 w-8"
             >
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={(e) => {
                 e.stopPropagation();
@@ -123,7 +115,7 @@ export function StudentRow({ data: student, expandedRow, setExpandedRow, isSelec
                   </div>
                 </div>
               </div>
-              
+
               {/* All Bookings Section */}
               {student.bookings && student.bookings.length > 0 && (
                 <div className="p-3 bg-background/50 rounded-md border-l-4 border-blue-500">

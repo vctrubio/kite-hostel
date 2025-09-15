@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Send } from "lucide-react";
 import { Duration } from "@/components/formatters/Duration";
 import { getStatusColors } from "@/lib/constants";
+import { EventCountWithDuration } from "@/getters/event-getters";
 
 interface LessonRowProps {
   data: InferSelectModel<typeof Lesson> & {
@@ -79,14 +80,10 @@ export function LessonRow({
           {students.length > 0 ? students.join(", ") : "No students"}
         </td>
         <td className="py-2 px-4 text-left">
-          {eventCount > 0 ? (
-            <span>
-              {eventCount} event{eventCount !== 1 ? "s" : ""} •{" "}
-              <Duration minutes={totalEventMinutes} />
-            </span>
-          ) : (
-            "No events"
-          )}
+          <EventCountWithDuration 
+            eventCount={eventCount}
+            totalHours={totalEventMinutes / 60}
+          />
         </td>
         <td className="py-2 px-4 text-left">
           <span
