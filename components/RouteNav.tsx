@@ -29,11 +29,10 @@ function CustomThemeSwitcher() {
     setCurrentTheme(theme);
   };
 
-  const buttonClasses = (isActive: boolean) => 
-    `p-1 rounded-md transition-all duration-200 ${
-      isActive
-        ? 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'
-        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700'
+  const buttonClasses = (isActive: boolean) =>
+    `p-1 rounded-md transition-all duration-200 ${isActive
+      ? 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'
+      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700'
     }`;
 
   return (
@@ -153,7 +152,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center transition-all duration-200 hover:ring-2 hover:ring-gray-300 rounded-full"
+        className="flex items-center ml-6 transition-all duration-200 hover:ring-2 hover:ring-gray-300 rounded-full"
       >
         <Avatar className="h-8 w-8">
           <AvatarImage
@@ -174,7 +173,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
               avatar_url={avatar_url}
               loading={loading}
             />
-                        <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 dark:border-gray-600">
+            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 dark:border-gray-600">
               <Link
                 href="/whiteboard"
                 className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -182,7 +181,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
                 <span>Whiteboard</span>
                 <Tv className="h-4 w-4 ml-auto" />
               </Link>
-              <div 
+              <div
                 className={DROPDOWN_ITEM_CLASSES}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -198,7 +197,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
                 <span>Share</span>
                 <Share2 className="h-4 w-4 ml-auto" />
               </button>
-              <div 
+              <div
                 className={DROPDOWN_ITEM_CLASSES}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -234,22 +233,21 @@ function TableButton({
     <div className="flex items-center">
       <Link
         href={entity.link}
-        className={`flex items-center space-x-2 px-3 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${
-          isActive ? ACTIVE_BUTTON_CLASSES : `${entity.color} hover:bg-gray-100 dark:hover:bg-gray-800`
-        }`}
+        className={`flex items-center space-x-2 px-3 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${isActive ? ACTIVE_BUTTON_CLASSES : `${entity.color} hover:bg-gray-100 dark:hover:bg-gray-800`
+          }`}
       >
         <EntityIcon className="h-4 w-4" />
         <span className="hidden lg:block">{entity.name}s</span>
       </Link>
       {showPlus && (
         <div className="hidden lg:block">
-        <Link
-          href={`${entity.link}/form`}
-          className="flex items-center px-2 py-2 rounded-r-lg text-sm font-medium transition-all duration-200 border-l border-gray-300 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
-          title={`Add new ${entity.name.toLowerCase()}`}
-        >
-          <Plus className="h-3 w-3" />
-        </Link>
+          <Link
+            href={`${entity.link}/form`}
+            className="flex items-center px-2 py-2 rounded-r-lg text-sm font-medium transition-all duration-200 border-l border-gray-300 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+            title={`Add new ${entity.name.toLowerCase()}`}
+          >
+            <Plus className="h-3 w-3" />
+          </Link>
         </div>
       )}
     </div>
@@ -261,9 +259,8 @@ function BillboardView({ pathname }: { pathname: string }) {
     <div className="flex items-center space-x-3">
       <Link
         href="/billboard"
-        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-          pathname === "/billboard" ? ACTIVE_BUTTON_CLASSES : INACTIVE_BUTTON_CLASSES
-        }`}
+        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname === "/billboard" ? ACTIVE_BUTTON_CLASSES : INACTIVE_BUTTON_CLASSES
+          }`}
       >
         <LayoutGrid className="h-4 w-4" />
         <span className="hidden lg:block">Billboard</span>
@@ -294,7 +291,7 @@ export function RouteNav() {
     <div className="border-b bg-white dark:bg-gray-900 dark:border-gray-700">
       {/* Desktop Layout */}
       <div className="hidden md:block p-4">
-        <div className="container mx-auto flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
           <div>
             {user && <BillboardView pathname={pathname} />}
           </div>
@@ -304,7 +301,7 @@ export function RouteNav() {
 
       {/* Mobile Layout */}
       <div className="md:hidden p-3">
-        <div className="flex flex-col space-y-3">
+        <div className="max-w-7xl mx-auto px-2 flex flex-col space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               {user && <BillboardView pathname={pathname} />}

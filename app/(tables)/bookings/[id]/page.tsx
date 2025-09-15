@@ -94,9 +94,12 @@ function Lessons({ lessons, formatEventDate }: { lessons: any[]; formatEventDate
   return (
     <div className="bg-card rounded-lg border border-border p-4 space-y-4">
       <h2 className="text-xl font-semibold flex items-center gap-2">
-        <HeadsetIcon className="w-5 h-5 text-green-600" />
+        <div className="flex items-center gap-1">
+          {Array.from({ length: lessons.length }, (_, index) => (
+            <HeadsetIcon key={index} className="w-4 h-4 text-green-600" />
+          ))}
+        </div>
         <span>Lessons</span>
-        <span className="text-sm text-muted-foreground font-normal">({lessons.length})</span>
       </h2>
 
       {lessons.length > 0 ? (
@@ -121,8 +124,12 @@ function Students({ students }: { students: any[] }) {
   return (
     <div className="bg-card rounded-lg border border-border p-4 space-y-4">
       <h2 className="text-xl font-semibold flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {Array.from({ length: students.length }, (_, index) => (
+            <HelmetIcon key={index} className="w-4 h-4 text-yellow-500" />
+          ))}
+        </div>
         <span>Students</span>
-        <span className="text-sm text-muted-foreground font-normal">({students.length})</span>
       </h2>
       <div className="space-y-4">
         {students.map((student) => (
