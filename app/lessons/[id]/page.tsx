@@ -47,7 +47,7 @@ function BookingCard({ lesson }: { lesson: any }) {
         href={`/bookings/${lesson.booking.id}`}
         className="block p-3 rounded-md bg-background/50 hover:bg-muted/50 transition-colors"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <div>
             <span className="text-muted-foreground">Booking ID:</span>
             <p className="font-medium">{lesson.booking.id}</p>
@@ -60,24 +60,22 @@ function BookingCard({ lesson }: { lesson: any }) {
             <span className="text-muted-foreground">Start Date:</span>
             <p className="font-medium">{format(new Date(lesson.booking.date_start), "PPP")}</p>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-muted-foreground">End Date:</span>
-              <p className="font-medium">{format(new Date(lesson.booking.date_end), "PPP")}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Status:</span>
-              <BookingStatusLabel 
-                bookingId={lesson.booking.id}
-                currentStatus={lesson.booking.status}
-              />
-            </div>
+          <div>
+            <span className="text-muted-foreground">End Date:</span>
+            <p className="font-medium">{format(new Date(lesson.booking.date_end), "PPP")}</p>
           </div>
           <div>
             <span className="text-muted-foreground">Created:</span>
             <span className="font-medium">
               <DateSince dateString={lesson.booking.created_at} />
             </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Status:</span>
+            <BookingStatusLabel 
+              bookingId={lesson.booking.id}
+              currentStatus={lesson.booking.status}
+            />
           </div>
         </div>
       </Link>
@@ -108,7 +106,7 @@ function StudentsCard({ lesson }: { lesson: any }) {
               href={`/students/${bs.student.id}`}
               className="px-2 py-1 text-sm font-medium border border-yellow-500 rounded hover:bg-muted transition-colors"
             >
-              {bs.student.name}
+              {bs.student.name} {bs.student.last_name}
             </Link>
           ))
         ) : (
