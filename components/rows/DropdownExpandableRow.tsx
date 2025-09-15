@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 interface DropdownSection {
-  title: string;
+  title: string | ReactNode;
   icon?: React.ComponentType<{ className?: string }>;
   color: string;
   children: ReactNode;
@@ -24,7 +24,9 @@ export function DropdownExpandableRow({ isExpanded, colSpan, sections }: Dropdow
             <div key={index} className={`p-4 bg-background/50 border-l-4 border-${section.color.replace('text-', '')}`}>
               <div className="flex items-center gap-2 mb-3">
                 {section.icon && <section.icon className={`w-5 h-5 ${section.color}`} />}
-                <h4 className="font-semibold text-foreground">{section.title}</h4>
+                <h4 className="font-semibold text-foreground">
+                  {typeof section.title === 'string' ? section.title : section.title}
+                </h4>
               </div>
               {section.children}
             </div>

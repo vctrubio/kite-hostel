@@ -7,6 +7,7 @@ import { Duration } from "@/components/formatters/Duration";
 import { DateSince } from "@/components/formatters/DateSince";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
+import { PackageDetails } from "@/getters/package-details";
 import {
   BookmarkIcon,
   BookingIcon,
@@ -209,90 +210,6 @@ function Students({ students }: { students: any[] }) {
   );
 }
 
-// Component for displaying package details
-function PackageDetails({ 
-  packageData, 
-  eventHours, 
-  pricePerHourPerStudent, 
-  totalPrice, 
-  priceToPay,
-  referenceId
-}: { 
-  packageData: any;
-  eventHours: number;
-  pricePerHourPerStudent: number;
-  totalPrice: number;
-  priceToPay: number;
-  referenceId?: string;
-}) {
-  if (!packageData) return null;
-
-  return (
-    <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-      <h2 className="text-xl font-semibold flex items-center gap-2">
-        <BookmarkIcon className="w-5 h-5 text-indigo-500" />
-        <span>Package Details</span>
-      </h2>
-
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <span className="text-muted-foreground">Description:</span>
-          <p className="font-medium">
-            {packageData.description || "No description"}
-          </p>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Reference:</span>
-          <p className="font-medium">
-            {referenceId || "NULL"}
-          </p>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Duration:</span>
-          <p className="font-medium">
-            <Duration minutes={packageData.duration} />
-          </p>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Used Hours:</span>
-          <p className="font-medium">
-            <Duration minutes={eventHours * 60} />
-          </p>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Kite Capacity:</span>
-          <p className="font-medium">
-            {packageData.capacity_kites} kites / {packageData.capacity_students} students
-          </p>
-        </div>
-        <div>
-          <span className="text-muted-foreground">
-            Price per Student:
-          </span>
-          <p className="font-medium">
-            €{packageData.price_per_student}
-          </p>
-        </div>
-        <div>
-          <span className="text-muted-foreground">
-            Price per Hour/Student:
-          </span>
-          <p className="font-medium">
-            €{pricePerHourPerStudent.toFixed(2)}/h
-          </p>
-        </div>
-        <div className="col-span-2">
-          <span className="text-muted-foreground">Total Price:</span>
-          <p className="font-medium text-green-600">€{totalPrice}</p>
-        </div>
-        <div className="col-span-2">
-          <span className="text-muted-foreground">Price to Pay/Student:</span>
-          <p className="font-medium text-blue-600">€{priceToPay.toFixed(2)}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Component for displaying booking timeline
 function BookingTimeline({ 
@@ -575,14 +492,21 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
           <Students students={students} />
 
           {/* Package Details Section */}
-          <PackageDetails 
-            packageData={booking.package}
-            eventHours={eventHours}
-            pricePerHourPerStudent={pricePerHourPerStudent}
-            totalPrice={totalPrice}
-            priceToPay={priceToPay}
-            referenceId={booking.reference?.id}
-          />
+          <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <BookmarkIcon className="w-5 h-5 text-orange-500" />
+              <span>Package Details</span>
+            </h2>
+            <PackageDetails 
+              packageData={booking.package}
+              eventHours={eventHours}
+              pricePerHourPerStudent={pricePerHourPerStudent}
+              totalPrice={totalPrice}
+              priceToPay={priceToPay}
+              referenceId={booking.reference?.id}
+              variant="full"
+            />
+          </div>
 
           {/* Booking Dates */}
           <BookingTimeline 

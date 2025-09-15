@@ -14,6 +14,10 @@ import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { WhiteboardClass } from "@/backend/WhiteboardClass";
 import { BookingWithRelations } from "@/backend/types";
 import { getUserWalletName } from "@/getters/user-wallet-getters";
+import { ENTITY_DATA } from "@/lib/constants";
+import { DropdownExpandableRow } from "./DropdownExpandableRow";
+import { LessonFormatter } from "@/getters/lesson-formatters";
+import { PackageDetails } from "@/getters/package-details";
 
 interface BookingRowProps {
   data: BookingWithRelations;
@@ -31,6 +35,25 @@ export function BookingRow({
   const isExpanded = expandedRow === booking.id;
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const packageEntity = ENTITY_DATA.find(entity => entity.name === "Package");
+  const studentEntity = ENTITY_DATA.find(entity => entity.name === "Student");
+  const teacherEntity = ENTITY_DATA.find(entity => entity.name === "Teacher");
+
+  // Calculate event hours and pricing data for the package details
+  const eventHours = booking.lessons?.reduce((total, lesson) => {
+    const lessonEventMinutes = lesson.events?.reduce((sum, event) => sum + (event.duration || 0), 0) || 0;
+    return total + lessonEventMinutes / 60;
+  }, 0) || 0;
+  
+  const pricePerHourPerStudent = booking.package?.duration
+    ? (booking.package.price_per_student || 0) / (booking.package.duration / 60)
+    : 0;
+    
+  // Calculate expected total (package duration * price per student * number of students)
+  const expectedTotal = booking.package
+    ? booking.package.price_per_student * (booking.students?.length || 0)
+    : 0;
 
   const toggleExpand = () => {
     if (isExpanded) {
@@ -140,131 +163,76 @@ export function BookingRow({
           </div>
         </td>
       </tr>
-      {isExpanded && (
-        <tr>
-          <td colSpan={7} className="py-4 px-4 bg-background/30">
-            <div className="w-full space-y-3">
-              {/* Package Info - First Line */}
-              {booking.package && (
-                <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-amber-500">
-                  <BookmarkIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded text-sm font-medium">
-                      <Duration minutes={booking.package.duration || 0} />
-                    </span>
-                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded text-sm font-medium">
-                      €{booking.package.price_per_student}/student
-                    </span>
-                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-sm font-medium">
-                      €
-                      {booking.package.duration
-                        ? Math.round(
-                          (booking.package.price_per_student /
-                            (booking.package.duration / 60)) *
-                          100,
-                        ) / 100
-                        : 0}
-                      /h
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      Students: {booking.package.capacity_students}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      Kites: {booking.package.capacity_kites}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      Created:{" "}
-                      {new Date(booking.created_at).toLocaleDateString()}
-                    </span>
-                    {booking.package.description && (
-                      <span className="text-sm text-muted-foreground italic">
-                        "{booking.package.description}"
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Students - Second Line */}
-              <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-yellow-500">
-                <div className="flex items-center gap-2 flex-wrap">
+      <DropdownExpandableRow
+        isExpanded={isExpanded}
+        colSpan={7}
+        sections={[
+          ...(booking.package ? [{
+            title: "Package Details",
+            icon: packageEntity?.icon,
+            color: packageEntity?.color || "text-orange-500",
+            children: (
+              <PackageDetails 
+                packageData={booking.package}
+                variant="simple"
+                totalPrice={expectedTotal}
+              />
+            )
+          }] : []),
+          {
+            title: (
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
                   {booking.students && booking.students.length > 0 ? (
-                    booking.students.map((bs: any) => (
-                      <button
-                        key={bs.student.id}
-                        onClick={() =>
-                          router.push(`/students/${bs.student.id}`)
-                        }
-                        className="flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 rounded text-sm font-medium hover:bg-yellow-200 dark:hover:bg-yellow-900/30 transition-colors"
-                      >
-                        <HelmetIcon className="w-4 h-4" />
-                        {bs.student.name}
-                      </button>
+                    booking.students.map((_, index) => (
+                      <HelmetIcon key={index} className="w-4 h-4" />
                     ))
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <HelmetIcon className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        No students assigned
-                      </span>
-                    </div>
+                    <HelmetIcon className="w-4 h-4" />
                   )}
                 </div>
+                <span>Students</span>
               </div>
-
-              {/* Lessons - Third Line */}
-              {booking.lessons && booking.lessons.length > 0 && (
-                <div className="w-full p-3 bg-background/50 rounded-md border-l-4 border-green-500">
-                  <div className="space-y-2">
-                    {booking.lessons.map((lesson: any) => (
-                      <div key={lesson.id} className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <HeadsetIcon className="w-4 h-4 text-green-600" />
-                          <span className="text-sm font-medium text-green-600">
-                            {lesson.teacher?.name || "Unassigned"}
-                          </span>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${lesson.status === "planned"
-                              ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300"
-                              : lesson.status === "completed"
-                                ? "bg-gray-100 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300"
-                                : lesson.status === "rest"
-                                  ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                                  : lesson.status === "delegated"
-                                    ? "bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
-                                    : "bg-gray-100 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300"
-                              }`}
-                          >
-                            {lesson.status}
-                          </span>
-                        </div>
-                        {lesson.events && lesson.events.length > 0 && (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {lesson.events.map((event: any) => (
-                              <span
-                                key={event.id}
-                                className="px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded text-xs font-medium flex items-center gap-1"
-                              >
-                                <span>
-                                  {new Date(event.date).toLocaleDateString()}
-                                </span>
-                                <span>•</span>
-                                <Duration minutes={event.duration || 0} />
-                                <span>•</span>
-                                <span>{event.location}</span>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+            ),
+            color: studentEntity?.color || "text-yellow-500",
+            children: (
+              <div className="flex flex-wrap gap-2">
+                {booking.students && booking.students.length > 0 ? (
+                  booking.students.map((bs: any) => (
+                    <button
+                      key={bs.student.id}
+                      onClick={() => router.push(`/students/${bs.student.id}`)}
+                      className="px-2 py-1 text-sm font-medium border border-yellow-500 rounded hover:bg-muted transition-colors"
+                    >
+                      {bs.student.name}
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    No students assigned
+                  </span>
+                )}
+              </div>
+            )
+          },
+          ...(booking.lessons && booking.lessons.length > 0 ? [{
+            title: (
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  {booking.lessons.map((_, index) => (
+                    <HeadsetIcon key={index} className="w-4 h-4" />
+                  ))}
                 </div>
-              )}
-            </div>
-          </td>
-        </tr>
-      )}
+                <span>Lessons</span>
+              </div>
+            ),
+            color: teacherEntity?.color || "text-green-500",
+            children: (
+              <LessonFormatter lessons={booking.lessons} />
+            )
+          }] : [])
+        ]}
+      />
     </>
   );
 }
