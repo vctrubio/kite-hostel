@@ -10,8 +10,10 @@ import { FormatDateRange } from "@/components/formatters/DateRange";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { LessonView } from "@/components/views/LessonView";
+import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
+import { WhiteboardClass } from "@/backend/WhiteboardClass";
 import { BookingWithRelations } from "@/backend/types";
-import { getUserWalletName } from "@/lib/getters";
+import { getUserWalletName } from "@/getters/user-wallet-getters";
 
 interface BookingRowProps {
   data: BookingWithRelations;
@@ -37,6 +39,9 @@ export function BookingRow({
       setExpandedRow(booking.id);
     }
   };
+
+  // Create WhiteboardClass instance for progress calculations
+  const bookingClass = new WhiteboardClass(booking);
 
   return (
     <>
@@ -67,7 +72,24 @@ export function BookingRow({
         </td>
         <td className="py-2 px-4 text-left">
           {booking.lessons && booking.lessons.length > 0 ? (
-            <LessonView booking={booking} />
+            <BookingProgressBar
+              eventMinutes={bookingClass.calculateBookingLessonEventMinutes()}
+              totalMinutes={bookingClass.getTotalMinutes()}
+            />
+          ) : (
+            <span className="text-muted-foreground">No progress</span>
+          )}
+        </td>
+        <td className="py-2 px-4 text-left">
+          {booking.lessons && booking.lessons.length > 0 ? (
+            <div className="flex items-center gap-2">
+              {booking.lessons.map((lesson: any) => (
+                <span key={lesson.id} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700 border border-gray-200">
+                  <HeadsetIcon className="w-3 h-3" />
+                  <span>{lesson.teacher?.name || "N/A"}</span>
+                </span>
+              ))}
+            </div>
           ) : (
             <>
               <Button
@@ -120,7 +142,7 @@ export function BookingRow({
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={6} className="py-4 px-4 bg-background/30">
+          <td colSpan={7} className="py-4 px-4 bg-background/30">
             <div className="w-full space-y-3">
               {/* Package Info - First Line */}
               {booking.package && (
