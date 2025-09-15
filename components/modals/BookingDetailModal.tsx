@@ -1,4 +1,3 @@
-import React from 'react';
 import { DateTime } from '@/components/formatters/DateTime';
 import { Duration } from '@/components/formatters/Duration';
 

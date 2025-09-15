@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { getUserWalletName } from "@/lib/getters";
+import { getUserWalletName } from "@/getters/user-wallet-getters";
 import { FormatDateRange } from "@/components/formatters/DateRange";
 import { DateTime } from "@/components/formatters/DateTime";
 import { Duration } from "@/components/formatters/Duration";
@@ -98,12 +98,10 @@ export function ReferenceBookingRow({
                   <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-sm font-medium">
                     €{booking.packageDuration ? Math.round((booking.packagePrice / (booking.packageDuration / 60)) * 100) / 100 : 0}/h
                   </span>
-                  // eslint-disable-next-line react/no-unescaped-entities
                   <span className="text-sm text-muted-foreground">Students: {booking.packageCapacity}</span>
                   <span className="text-sm text-muted-foreground">Booking: <DateTime dateString={booking.bookingStartDate} formatType="date" /></span>
                   {booking.packageDescription && (
-                    // eslint-disable-next-line react/no-unescaped-entities
-                    <span className="text-sm text-muted-foreground italic">"{booking.packageDescription}"</span>
+                    <span className="text-sm text-muted-foreground italic">&quot;{booking.packageDescription}&quot;</span>
                   )}
                 </div>
               </div>

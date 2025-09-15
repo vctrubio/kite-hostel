@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import type { TeacherStats } from '@/backend/types';
 
 interface TeacherLessonStatsProps {

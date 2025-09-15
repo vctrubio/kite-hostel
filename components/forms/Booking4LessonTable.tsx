@@ -11,7 +11,7 @@ import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { ViewTeacherLessonEvents } from "@/components/views/ViewTeacherLessonEvents";
 import { BookingWithRelations } from "@/backend/types";
-import { getUserWalletName } from "@/lib/getters";
+import { getUserWalletName } from "@/getters/user-wallet-getters";
 import { getTeachers } from "@/actions/teacher-actions";
 import { InferSelectModel } from "drizzle-orm";
 import { Teacher } from "@/drizzle/migrations/schema";
@@ -179,7 +179,6 @@ export function Booking4LessonTable({
                             ? booking.students
                               .map((bs: any) => bs.student.name)
                               .join(", ")
-                            // eslint-disable-next-line react/no-unescaped-entities
                             : "No students"}
                         </span>
                       </div>

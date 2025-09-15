@@ -241,7 +241,7 @@ export function Dashboard({
         setSelectedMonth({ month: savedMonth, filterEnabled: isFilterRangeSelected });
       }
     }
-  }, [entityName]);
+  }, [entityName, isFilterRangeSelected]);
   const [filterEnabled, setFilterEnabled] = useState(isFilterRangeSelected);
   const [customFilter, setCustomFilter] = useState<CustomFilterValue>(
     customFilters.defaultFilter,

@@ -1,4 +1,3 @@
-import React from 'react';
 import { DateTime } from '@/components/formatters/DateTime';
 
 interface EventDetailModalProps {
