@@ -116,3 +116,53 @@ export async function createLesson({
   }
 }
 
+export async function getLessonById(id: string): Promise<{ data: LessonWithDetails | null; error: string | null }> {
+  try {
+    const lesson = await db.query.Lesson.findFirst({
+      where: eq(Lesson.id, id),
+      with: {
+        teacher: true,
+        events: true,
+        commission: true,
+        booking: {
+          with: {
+            package: true,
+            students: {
+              with: {
+                student: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!lesson) {
+      return { data: null, error: "Lesson not found." };
+    }
+
+    const totalEventHours =
+      lesson.events.reduce((sum, event) => sum + event.duration, 0) / 60; // Convert minutes to hours
+
+    const totalKiteEventDuration = lesson.events.reduce((sum, event) => sum + event.duration, 0);
+
+    if (!lesson.booking?.package) {
+      throw new Error(`Lesson ${lesson.id} has no associated package`);
+    }
+    
+    const lessonWithDetails = {
+      ...lesson,
+      totalEventHours,
+      totalKiteEventDuration,
+      packageCapacity: lesson.booking.package.capacity_students,
+      packageDuration: lesson.booking.package.duration,
+    };
+
+    return { data: lessonWithDetails as LessonWithDetails, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error fetching lesson by id:", error);
+    return { data: null, error: errorMessage };
+  }
+}
+

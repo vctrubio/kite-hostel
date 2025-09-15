@@ -11,8 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Send } from "lucide-react";
 import { Duration } from "@/components/formatters/Duration";
-import { getStatusColors } from "@/lib/constants";
+import { getStatusColors, ENTITY_DATA } from "@/lib/constants";
 import { EventCountWithDuration } from "@/getters/event-getters";
+import { DropdownExpandableRow } from "./DropdownExpandableRow";
+import { PackageDetails } from "@/getters/package-details";
+import { KiteIcon, BookingIcon } from "@/svgs";
 
 interface LessonRowProps {
   data: InferSelectModel<typeof Lesson> & {
@@ -71,6 +74,16 @@ export function LessonRow({
   // Get students from booking
   const students = lesson.booking?.students?.map((bs) => bs.student.name) || [];
 
+  // Get entities for colors
+  const bookingEntity = ENTITY_DATA.find(entity => entity.name === "Booking");
+  const packageEntity = ENTITY_DATA.find(entity => entity.name === "Package");
+  const eventEntity = ENTITY_DATA.find(entity => entity.name === "Event");
+
+  // Calculate expected total for package
+  const expectedTotal = lesson.booking?.package && lesson.booking?.students
+    ? lesson.booking.package.price_per_student * lesson.booking.students.length
+    : 0;
+
   return (
     <>
       <tr className="border-b border-border">
@@ -120,107 +133,95 @@ export function LessonRow({
           </div>
         </td>
       </tr>
-      {isExpanded && (
-        <tr>
-          <td colSpan={6} className="py-4 px-4 bg-background/30">
-            <div className="w-full space-y-3">
-              <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-cyan-500">
-                <div className="w-full space-y-4">
-                  {/* Booking and Package Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <DropdownExpandableRow
+        isExpanded={isExpanded}
+        colSpan={6}
+        sections={[
+          ...(lesson.booking ? [{
+            title: "Booking Details",
+            icon: bookingEntity?.icon,
+            color: bookingEntity?.color || "text-blue-500",
+            children: (
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push(`/bookings/${lesson.booking?.id}`)}
+                  className="w-full p-3 bg-background/30 rounded-md border border-border hover:bg-muted/50 transition-colors text-left"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-sm text-muted-foreground">
-                        Booking ID:{" "}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {lesson.booking?.id || "N/A"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground">
-                        Package:{" "}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {lesson.booking?.package?.description || "N/A"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground">
-                        Package Duration:{" "}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {lesson.booking?.package?.duration ? (
-                          <Duration minutes={lesson.booking.package.duration} />
-                        ) : (
-                          "N/A"
-                        )}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground">
-                        Price per Student:{" "}
-                      </span>
-                      <span className="text-sm font-medium">
-                        €{lesson.booking?.package?.price_per_student || 0}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground">
-                        Student Capacity:{" "}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {lesson.booking?.package?.capacity_students || 0}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground">
-                        Kite Capacity:{" "}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {lesson.booking?.package?.capacity_kites || 0}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Events Details */}
-                  <div>
-                    <h4 className="text-sm font-semibold mb-2">Events:</h4>
-                    {lesson.events.length > 0 ? (
-                      <div className="space-y-2">
-                        {lesson.events.map((event) => (
-                          <div
-                            key={event.id}
-                            className="p-2 bg-background/30 rounded border"
-                          >
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium">
-                                {format(new Date(event.date), "PPP")}
-                              </span>
-                              <span
-                                className={`inline-block px-2 py-1 rounded text-xs font-medium ${getStatusColors(event.status as any)}`}
-                              >
-                                {event.status}
-                              </span>
-                            </div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {event.location} •{" "}
-                              <Duration minutes={event.duration} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No events scheduled
+                      <span className="text-muted-foreground">Booking ID:</span>
+                      <p className="font-medium text-blue-600 hover:underline">
+                        {lesson.booking.id}
                       </p>
-                    )}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Start Date:</span>
+                      <p className="font-medium">
+                        {lesson.booking.date_start ? format(new Date(lesson.booking.date_start), "PPP") : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">End Date:</span>
+                      <p className="font-medium">
+                        {lesson.booking.date_end ? format(new Date(lesson.booking.date_end), "PPP") : "N/A"}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </button>
               </div>
-            </div>
-          </td>
-        </tr>
-      )}
+            )
+          }] : []),
+          ...(lesson.booking?.package ? [{
+            title: "Package Details",
+            icon: packageEntity?.icon,
+            color: packageEntity?.color || "text-orange-500",
+            children: (
+              <PackageDetails 
+                packageData={lesson.booking.package}
+                variant="simple"
+                totalPrice={expectedTotal}
+              />
+            )
+          }] : []),
+          ...(lesson.events && lesson.events.length > 0 ? [{
+            title: (
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  {lesson.events.map((_, index) => (
+                    <KiteIcon key={index} className="w-4 h-4" />
+                  ))}
+                </div>
+                <span>Events</span>
+              </div>
+            ),
+            color: eventEntity?.color || "text-teal-500",
+            children: (
+              <div className="space-y-3">
+                {lesson.events.map((event) => (
+                  <div
+                    key={event.id}
+                    className="p-3 bg-background/30 rounded-md border border-border"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">
+                        {format(new Date(event.date), "PPP")}
+                      </span>
+                      <span
+                        className={`inline-block px-2 py-1 rounded text-xs font-medium ${getStatusColors(event.status as any)}`}
+                      >
+                        {event.status}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {event.location} • <Duration minutes={event.duration} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          }] : [])
+        ]}
+      />
     </>
   );
 }
