@@ -433,6 +433,131 @@ export async function bulkDeleteEvents(eventIds: string[]) {
   }
 }
 
+export async function getEventById(id: string) {
+  try {
+    const event = await db.select({
+      id: Event.id,
+      date: Event.date,
+      duration: Event.duration,
+      location: Event.location,
+      status: Event.status,
+      created_at: Event.created_at,
+      lesson: {
+        id: Lesson.id,
+        status: Lesson.status,
+        booking_id: Lesson.booking_id,
+      },
+      teacher: {
+        id: Teacher.id,
+        name: Teacher.name,
+      },
+      commission_per_hour: Commission.price_per_hour,
+      package: {
+        id: PackageStudent.id,
+        description: PackageStudent.description,
+        price_per_student: PackageStudent.price_per_student,
+        duration: PackageStudent.duration,
+        capacity_kites: PackageStudent.capacity_kites,
+        capacity_students: PackageStudent.capacity_students,
+      },
+      kite: {
+        id: Kite.id,
+        model: Kite.model,
+        serial_id: Kite.serial_id,
+        size: Kite.size,
+      },
+      booking: {
+        id: Booking.id,
+        date_start: Booking.date_start,
+        date_end: Booking.date_end,
+        status: Booking.status,
+        created_at: Booking.created_at,
+        reference_id: Booking.reference_id,
+      },
+    })
+    .from(Event)
+    .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
+    .leftJoin(Teacher, eq(Lesson.teacher_id, Teacher.id))
+    .leftJoin(Commission, eq(Lesson.commission_id, Commission.id))
+    .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
+    .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
+    .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
+    .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id))
+    .where(eq(Event.id, id))
+    .limit(1);
+
+    if (event.length === 0) {
+      return { data: null, error: "Event not found." };
+    }
+
+    const eventData = event[0];
+
+    // Fetch students for this event's booking
+    let students: Array<{id: string, name: string, last_name: string | null}> = [];
+    if (eventData.lesson?.booking_id) {
+      students = await db
+        .select({
+          id: Student.id,
+          name: Student.name,
+          last_name: Student.last_name,
+        })
+        .from(Student)
+        .innerJoin(BookingStudent, eq(Student.id, BookingStudent.student_id))
+        .where(eq(BookingStudent.booking_id, eventData.lesson.booking_id));
+    }
+
+    // Fetch all kites for this event
+    let kites: Array<{kite: {id: string, model: string | null, serial_id: string | null, size: number | null}}> = [];
+    const kiteResults = await db
+      .select({
+        kite: {
+          id: Kite.id,
+          model: Kite.model,
+          serial_id: Kite.serial_id,
+          size: Kite.size,
+        }
+      })
+      .from(KiteEvent)
+      .innerJoin(Kite, eq(KiteEvent.kite_id, Kite.id))
+      .where(eq(KiteEvent.event_id, eventData.id));
+
+    kites = kiteResults;
+
+    // Structure the lesson properly with booking nested
+    const lesson = eventData.lesson ? {
+      id: eventData.lesson.id,
+      status: eventData.lesson.status,
+      created_at: eventData.lesson ? null : null, // Lessons don't have created_at in schema, using null
+      booking: eventData.booking ? {
+        ...eventData.booking,
+        package: eventData.package,
+        students: students.map(student => ({ student })) // Match the expected structure
+      } : null
+    } : null;
+
+    return { 
+      data: {
+        id: eventData.id,
+        date: eventData.date,
+        duration: eventData.duration,
+        location: eventData.location,
+        status: eventData.status,
+        created_at: eventData.created_at,
+        lesson,
+        teacher: eventData.teacher,
+        commission_per_hour: eventData.commission_per_hour,
+        kites,
+        students, // Keep for backward compatibility
+        student_count: students.length,
+      }, 
+      error: null 
+    };
+  } catch (error: any) {
+    console.error("Error fetching event by id:", error);
+    return { data: null, error: error.message };
+  }
+}
+
 export async function getEventCsv() {
   try {
     const events = await db.select({

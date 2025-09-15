@@ -144,7 +144,7 @@ function Students({ students }: { students: any[] }) {
                 className="flex items-center gap-2 group"
               >
                 <HelmetIcon className="w-5 h-5 text-yellow-500 group-hover:text-yellow-600" />
-                <span className="font-medium text-lg group-hover:underline">{student.name}</span>
+                <span className="font-medium text-lg group-hover:underline">{student.name} {student.last_name || ''}</span>
               </a>
             </div>
             
@@ -463,7 +463,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
 
   // Generate receipt text for export
   const receiptText = `
-Students: ${students.map(s => s.name).join(', ')}
+Students: ${students.map(s => `${s.name} ${s.last_name || ''}`).join(', ')}
 Package Hours: ${packageHours % 1 === 0 ? Math.floor(packageHours) : packageHours.toFixed(1)}h
 Price per Hour: €${pricePerHourPerStudent.toFixed(2)}
 Total Kited Hours: ${eventHours % 1 === 0 ? Math.floor(eventHours) : eventHours.toFixed(1)}h
@@ -531,7 +531,7 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
 
           {/* Receipt Section */}
           <Receipt
-            studentNames={students.map(s => s.name).join(', ')}
+            studentNames={students.map(s => `${s.name} ${s.last_name || ''}`).join(', ')}
             packageHours={packageHours}
             pricePerHour={pricePerHourPerStudent}
             totalKitedHours={eventHours}

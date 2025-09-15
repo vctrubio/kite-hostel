@@ -7,9 +7,11 @@ import { ChevronDown, ChevronUp, Send, Trash2 } from "lucide-react";
 import { DateSince } from "@/components/formatters/DateSince";
 import { Duration } from "@/components/formatters/Duration";
 import { format } from "date-fns";
-import { getEventStatusColor } from "@/lib/constants";
+import { getEventStatusColor, ENTITY_DATA } from "@/lib/constants";
 import { deleteEvent } from "@/actions/event-actions";
-import { HelmetIcon } from "@/svgs/HelmetIcon";
+import { HelmetIcon, KiteIcon, BookmarkIcon } from "@/svgs";
+import { DropdownExpandableRow } from "./DropdownExpandableRow";
+import { PackageDetails } from "@/getters/package-details";
 
 interface EventRowProps {
   data: {
@@ -87,6 +89,11 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
     ? Math.round(event.package.price_per_student / (event.package.duration / 60))
     : 0;
 
+  // Get entities for colors
+  const packageEntity = ENTITY_DATA.find(entity => entity.name === "Package");
+  const studentEntity = ENTITY_DATA.find(entity => entity.name === "Student");
+  const kiteEntity = ENTITY_DATA.find(entity => entity.name === "Kite");
+
   return (
     <>
       <tr className="border-b border-border">
@@ -149,73 +156,95 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
           </div>
         </td>
       </tr>
-      {isExpanded && (
-        <tr>
-          <td colSpan={8} className="py-4 px-4 bg-background/30">
-            <div className="w-full space-y-3">
-              <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-teal-500">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                  <div>
-                    <span className="text-sm text-muted-foreground">Package: </span>
-                    <span className="text-sm font-medium">{event.package?.description || "N/A"}</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Package Duration: </span>
-                    <span className="text-sm font-medium">
-                      <Duration minutes={event.package?.duration || 0} />
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Kite: </span>
-                    <span className="text-sm font-medium">
-                      {event.kite?.model && event.kite?.serial_id 
-                        ? `${event.kite.model} ${event.kite.size}m (${event.kite.serial_id})`
-                        : "N/A"
-                      }
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Kite Capacity: </span>
-                    <span className="text-sm font-medium">{event.package?.capacity_kites || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Price per Hour per Student: </span>
-                    <span className="text-sm font-medium">€{pricePerHour}/h</span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Commission per Hour: </span>
-                    <span className="text-sm font-medium">€{event.commission_per_hour || 0}/h</span>
-                  </div>
-                  <div className="md:col-span-2">
-                    <span className="text-sm text-muted-foreground">Students: </span>
-                    <span className="text-sm font-medium">
-                      {event.students && event.students.length > 0 ? (
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {event.students.map((student) => (
-                            <button
-                              key={student.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/students/${student.id}`);
-                              }}
-                              className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs hover:bg-yellow-200 transition-colors flex items-center gap-1"
-                            >
-                              <HelmetIcon className="w-3 h-3" />
-                              {student.name} {student.last_name || ''}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        "No students"
-                      )}
-                    </span>
-                  </div>
+      <DropdownExpandableRow
+        isExpanded={isExpanded}
+        colSpan={8}
+        sections={[
+          ...(event.package ? [{
+            title: "Package Details",
+            icon: packageEntity?.icon,
+            color: packageEntity?.color || "text-orange-500",
+            children: (
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Description:</span>
+                  <p className="font-medium">{event.package.description || "No description"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Duration:</span>
+                  <p className="font-medium"><Duration minutes={event.package.duration || 0} /></p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Price per Student:</span>
+                  <p className="font-medium">€{event.package.price_per_student}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Price per Hour:</span>
+                  <p className="font-medium">€{pricePerHour}/h</p>
                 </div>
               </div>
-            </div>
-          </td>
-        </tr>
-      )}
+            )
+          }] : []),
+          {
+            title: (
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  {event.students && event.students.length > 0 ? (
+                    event.students.map((_, index) => (
+                      <HelmetIcon key={index} className="w-4 h-4" />
+                    ))
+                  ) : (
+                    <HelmetIcon className="w-4 h-4" />
+                  )}
+                </div>
+                <span>Students</span>
+              </div>
+            ),
+            color: studentEntity?.color || "text-yellow-500",
+            children: (
+              <div className="flex flex-wrap gap-2">
+                {event.students && event.students.length > 0 ? (
+                  event.students.map((student) => (
+                    <button
+                      key={student.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/students/${student.id}`);
+                      }}
+                      className="px-2 py-1 text-sm font-medium border border-yellow-500 rounded hover:bg-muted transition-colors"
+                    >
+                      {student.name} {student.last_name || ''}
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">No students assigned</span>
+                )}
+              </div>
+            )
+          },
+          ...(event.kite ? [{
+            title: "Equipment",
+            icon: kiteEntity?.icon,
+            color: kiteEntity?.color || "text-purple-500",
+            children: (
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Model:</span>
+                  <p className="font-medium">{event.kite.model || "N/A"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Size:</span>
+                  <p className="font-medium">{event.kite.size ? `${event.kite.size}m` : "N/A"}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Serial ID:</span>
+                  <p className="font-medium">{event.kite.serial_id || "N/A"}</p>
+                </div>
+              </div>
+            )
+          }] : [])
+        ]}
+      />
     </>
   );
 }

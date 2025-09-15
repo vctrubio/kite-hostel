@@ -3,11 +3,22 @@
 import { format, differenceInDays, differenceInMonths } from "date-fns";
 
 interface DateSinceProps {
-  dateString: string;
+  dateString: string | null | undefined;
 }
 
 export function DateSince({ dateString }: DateSinceProps) {
+  // Validate the dateString first
+  if (!dateString) {
+    return <span className="font-semibold text-gray-500">No date</span>;
+  }
+
   const date = new Date(dateString);
+  
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    return <span className="font-semibold text-gray-500">Invalid date</span>;
+  }
+
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const targetDate = new Date(
