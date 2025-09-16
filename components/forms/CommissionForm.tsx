@@ -30,14 +30,14 @@ export function CommissionForm({ teacherId, onCommissionCreated }: CommissionFor
 
     const result = await createCommission({
       teacher_id: teacherId,
-      rate: rate,
-      description: newCommissionDesc || null,
+      price_per_hour: rate,
+      desc: newCommissionDesc || null,
     });
 
     if (result.success) {
       toast.success("New commission created successfully!");
-      if (onCommissionCreated && result.commissionId) {
-        onCommissionCreated(result.commissionId);
+      if (onCommissionCreated && result.commission?.id) {
+        onCommissionCreated(result.commission.id);
       }
       setNewCommissionRate("");
       setNewCommissionDesc("");

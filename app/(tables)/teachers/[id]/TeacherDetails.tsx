@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,8 @@ import { createCommission, deleteCommission } from "@/actions/commission-actions
 import { DateSince } from "@/components/formatters/DateSince";
 import { ENTITY_DATA, LANGUAGES_ENUM_VALUES } from "@/lib/constants";
 import { BookIcon, KiteIcon } from "@/svgs";
-import { UserCheck, Trash2, ChevronDown, Ghost, RotateCcw } from "lucide-react";
+import { UserCheck, Trash2, ChevronDown, Ghost, RotateCcw, Search, ArrowUpDown, Eye, EyeOff } from "lucide-react";
+import { BookingLessonEventCard } from "@/components/cards/BookingLessonEventCard";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -127,6 +128,9 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
   const [teacher, setTeacher] = useState(initialTeacher);
   const [editMode, setEditMode] = useState(false);
   const [showCommissionForm, setShowCommissionForm] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // newest first by default
+  const [studentSearch, setStudentSearch] = useState('');
+  const [compactView, setCompactView] = useState(false);
   const [formData, setFormData] = useState({
     name: initialTeacher.name,
     languages: initialTeacher.languages || [],
@@ -260,6 +264,31 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
       toast.error(result.error || "Failed to restore teacher");
     }
   };
+
+  // Filtered and sorted bookings for teachers
+  const filteredAndSortedBookings = useMemo(() => {
+    if (!teacher.bookings || teacher.bookings.length === 0) return [];
+    
+    // Filter by student name
+    let filtered = teacher.bookings.filter((booking: any) => {
+      if (!studentSearch.trim()) return true;
+      
+      // Search by student name in booking students
+      return booking.students?.some((bookingStudent: any) => 
+        bookingStudent.student?.name?.toLowerCase().includes(studentSearch.toLowerCase()) ||
+        bookingStudent.student?.last_name?.toLowerCase().includes(studentSearch.toLowerCase())
+      );
+    });
+    
+    // Sort by start date
+    filtered.sort((a: any, b: any) => {
+      const dateA = new Date(a.date_start).getTime();
+      const dateB = new Date(b.date_start).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+    
+    return filtered;
+  }, [teacher.bookings, studentSearch, sortOrder]);
 
   const teacherEntity = ENTITY_DATA.find(entity => entity.name === "Teacher");
   const TeacherIcon = teacherEntity?.icon;
@@ -582,23 +611,62 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
           </div>
         </div>
 
-        {/* Right Column - Additional Information */}
+        {/* Right Column - Booking Information */}
         <div className="space-y-6">
-
-          {/* Placeholder for additional sections */}
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Additional Information</h2>
-            <div className="space-y-4 text-gray-600 dark:text-gray-400">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span>Events - Coming soon</span>
+          {/* Booking Controls */}
+          {teacher.bookings && teacher.bookings.length > 0 && (
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search by student name..."
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span>Payments - Coming soon</span>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                className="flex items-center gap-2 whitespace-nowrap"
+              >
+                <ArrowUpDown className="w-4 h-4" />
+                {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCompactView(!compactView)}
+                className="flex items-center gap-2 whitespace-nowrap"
+              >
+                {compactView ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {compactView ? 'Expand' : 'Compact'}
+              </Button>
             </div>
-          </div>
+          )}
+
+          {/* Teacher Bookings */}
+          {filteredAndSortedBookings.length > 0 ? (
+            filteredAndSortedBookings.map((booking: any) => (
+              <BookingLessonEventCard 
+                key={booking.id} 
+                booking={booking}
+                showStudents={true}
+                compact={compactView}
+              />
+            ))
+          ) : teacher.bookings && teacher.bookings.length > 0 ? (
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
+              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">No Results</h2>
+              <p className="text-gray-600 dark:text-gray-400">No bookings found matching your search criteria.</p>
+            </div>
+          ) : (
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
+              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Booking Information</h2>
+              <p className="text-gray-600 dark:text-gray-400">No bookings found for this teacher.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -13,6 +13,7 @@ import { FormatedDateExp } from "@/components/label/FormatedDateExp";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { LessonFormatter } from "@/getters/lesson-formatters";
 import { Duration } from "@/components/formatters/Duration";
+import { PackageDetails } from "@/getters/package-details";
 import {
   Plus,
   ChevronDown,
@@ -84,6 +85,11 @@ function StudentCardFooter({
   // Use BillboardClass methods for calculations
   const packageMinutes = billboardClass.getPackageMinutes();
   const eventMinutes = billboardClass.getEventMinutes();
+  
+  // Calculate event hours for PackageDetails component
+  const eventHours = eventMinutes.completed / 60;
+  const pricePerHourPerStudent = packageMinutes.expected.pricePerHourPerStudent;
+  const priceToPay = eventHours * pricePerHourPerStudent;
 
   return (
     <div className="border-t border-border/50 -mx-4 -mb-4">
@@ -175,64 +181,15 @@ function StudentCardFooter({
               <span>Package Details</span>
             </div>
 
-            {booking.package && (
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Description:</span>
-                  <p className="font-medium">
-                    {booking.package.description || "No description"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Reference:</span>
-                  <p className="font-medium">
-                    {booking.reference?.id || "NULL"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Duration:</span>
-                  <p className="font-medium">
-                    <Duration minutes={booking.package.duration} />
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Used Hours:</span>
-                  <p className="font-medium">
-                    <Duration minutes={eventMinutes.completed} />
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Kite Capacity:</span>
-                  <p className="font-medium">
-                    {booking.package.capacity_kites} kites / {booking.package.capacity_students} students
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">
-                    Price per Student:
-                  </span>
-                  <p className="font-medium">
-                    €{booking.package.price_per_student}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">
-                    Price per Hour/Student:
-                  </span>
-                  <p className="font-medium">
-                    €{packageMinutes.expected.pricePerHourPerStudent.toFixed(2)}/h
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total Price:</span>
-                  <p className="font-medium text-green-600">€{packageMinutes.expected.totalPrice}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Price to Pay/Student:</span>
-                  <p className="font-medium text-blue-600">€{packageMinutes.spent.pricePerStudent.toFixed(2)}</p>
-                </div>
-              </div>
-            )}
+            <PackageDetails 
+              packageData={booking.package}
+              eventHours={eventHours}
+              pricePerHourPerStudent={pricePerHourPerStudent}
+              totalPrice={booking.package ? booking.package.price_per_student * booking.package.capacity_students : 0}
+              priceToPay={priceToPay}
+              referenceId={booking.reference?.id}
+              variant="compact"
+            />
           </div>
 
           {/* Reference Information */}
