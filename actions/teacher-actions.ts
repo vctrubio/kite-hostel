@@ -103,6 +103,7 @@ export type TeacherPortalData = InferSelectModel<typeof Teacher> & {
 export async function getTeachers() {
   try {
     const teachers = await db.query.Teacher.findMany({
+      where: (teachers, { isNull }) => isNull(teachers.deleted_at),
       with: {
         commissions: true,
       },
@@ -503,6 +504,111 @@ export async function cancelTeacherEvent({
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error cancelling event:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function deleteTeacher(teacherId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    // First check if teacher has any lessons
+    const teacherWithLessons = await db.query.Teacher.findFirst({
+      where: eq(Teacher.id, teacherId),
+      with: {
+        lessons: true,
+      },
+    });
+
+    if (!teacherWithLessons) {
+      return { success: false, error: "Teacher not found" };
+    }
+
+    if (teacherWithLessons.lessons && teacherWithLessons.lessons.length > 0) {
+      return { 
+        success: false, 
+        error: `Cannot delete teacher. They have ${teacherWithLessons.lessons.length} lesson(s) associated with them.` 
+      };
+    }
+
+    // Delete related records first (in order due to foreign key constraints)
+    
+    // 1. Delete teacher-kite relationships
+    await db.delete(TeacherKite).where(eq(TeacherKite.teacher_id, teacherId));
+    
+    // 2. Delete commissions
+    await db.delete(Commission).where(eq(Commission.teacher_id, teacherId));
+    
+    // 3. Delete payments
+    await db.delete(Payment).where(eq(Payment.teacher_id, teacherId));
+    
+    // 4. Update user_wallet to remove teacher reference
+    await db.update(user_wallet).set({ pk: null }).where(eq(user_wallet.pk, teacherId));
+    
+    // 5. Finally delete the teacher
+    const deletedTeacher = await db
+      .delete(Teacher)
+      .where(eq(Teacher.id, teacherId))
+      .returning();
+
+    if (deletedTeacher.length === 0) {
+      return { success: false, error: "Failed to delete teacher" };
+    }
+
+    // Revalidate paths
+    revalidatePath("/teachers");
+    revalidatePath("/forms");
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error deleting teacher:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function softDeleteTeacher(teacherId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const updatedTeacher = await db
+      .update(Teacher)
+      .set({ deleted_at: new Date().toISOString() })
+      .where(eq(Teacher.id, teacherId))
+      .returning();
+
+    if (updatedTeacher.length === 0) {
+      return { success: false, error: "Teacher not found" };
+    }
+
+    // Revalidate paths
+    revalidatePath("/teachers");
+    revalidatePath(`/teachers/${teacherId}`);
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error soft deleting teacher:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function restoreTeacher(teacherId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const updatedTeacher = await db
+      .update(Teacher)
+      .set({ deleted_at: null })
+      .where(eq(Teacher.id, teacherId))
+      .returning();
+
+    if (updatedTeacher.length === 0) {
+      return { success: false, error: "Teacher not found" };
+    }
+
+    // Revalidate paths
+    revalidatePath("/teachers");
+    revalidatePath(`/teachers/${teacherId}`);
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error restoring teacher:", error);
     return { success: false, error: errorMessage };
   }
 }

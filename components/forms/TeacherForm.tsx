@@ -149,8 +149,8 @@ export function TeacherForm({
                 for (const commission of validCommissions) {
                     const commissionResult = await createCommission({
                         teacher_id: createdTeacher.id,
-                        rate: commission.rate,
-                        description: commission.description || undefined,
+                        price_per_hour: commission.rate,
+                        desc: commission.description || null,
                     });
                     if (commissionResult.success) {
                         createdCommissions.push(commissionResult);
