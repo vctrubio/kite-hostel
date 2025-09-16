@@ -53,7 +53,10 @@ export async function prepareBookingExport(bookingId: string): Promise<ExportBoo
   const { data: booking, error } = await getBookingById(bookingId);
   
   if (error || !booking) {
-    console.error("Error fetching booking for export:", error);
+    // Only log actual errors, not "booking not found" cases
+    if (error && !error.includes("not found")) {
+      console.error("Error fetching booking for export:", error);
+    }
     return null;
   }
   
@@ -91,7 +94,10 @@ export async function prepareEventsExport(bookingId: string): Promise<ExportEven
   const { data: booking, error } = await getBookingById(bookingId);
   
   if (error || !booking) {
-    console.error("Error fetching booking events for export:", error);
+    // Only log actual errors, not "booking not found" cases
+    if (error && !error.includes("not found")) {
+      console.error("Error fetching booking events for export:", error);
+    }
     return [];
   }
   

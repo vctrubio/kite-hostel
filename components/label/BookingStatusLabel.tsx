@@ -7,21 +7,26 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BOOKING_STATUSES, type BookingStatus, getBookingStatusColor } from "@/lib/constants";
-import { updateBookingStatus } from "@/actions/booking-actions";
+import { updateBookingStatus, deleteBooking } from "@/actions/booking-actions";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface BookingStatusLabelProps {
   bookingId: string;
   currentStatus: BookingStatus;
+  showDeleteOption?: boolean;
 }
 
-export function BookingStatusLabel({ bookingId, currentStatus }: BookingStatusLabelProps) {
+export function BookingStatusLabel({ bookingId, currentStatus, showDeleteOption = false }: BookingStatusLabelProps) {
   const [status, setStatus] = useState<BookingStatus>(currentStatus);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const handleStatusChange = (newStatus: BookingStatus) => {
     if (newStatus === status) return;
@@ -32,6 +37,18 @@ export function BookingStatusLabel({ bookingId, currentStatus }: BookingStatusLa
         setStatus(newStatus);
       } else {
         console.error("Failed to update status:", error);
+      }
+    });
+  };
+
+  const handleDeleteBooking = () => {
+    startTransition(async () => {
+      const { success, error } = await deleteBooking(bookingId);
+      if (success) {
+        toast.success("Booking deleted successfully!");
+        router.push('/bookings');
+      } else {
+        toast.error(error || "Failed to delete booking");
       }
     });
   };
@@ -69,6 +86,18 @@ export function BookingStatusLabel({ bookingId, currentStatus }: BookingStatusLa
             {s.charAt(0).toUpperCase() + s.slice(1)}
           </DropdownMenuItem>
         ))}
+        {showDeleteOption && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleDeleteBooking}
+              disabled={isPending}
+              className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              Delete Booking
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

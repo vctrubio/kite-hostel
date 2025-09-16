@@ -166,3 +166,47 @@ export async function getLessonById(id: string): Promise<{ data: LessonWithDetai
   }
 }
 
+export async function deleteLesson(lessonId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    // First check if lesson has any events
+    const lesson = await db.query.Lesson.findFirst({
+      where: eq(Lesson.id, lessonId),
+      with: {
+        events: true,
+      },
+    });
+
+    if (!lesson) {
+      return { success: false, error: "Lesson not found" };
+    }
+
+    if (lesson.events && lesson.events.length > 0) {
+      return { 
+        success: false, 
+        error: `Cannot delete lesson. It has ${lesson.events.length} event(s) associated with it.` 
+      };
+    }
+
+    // Delete the lesson
+    const deletedLesson = await db
+      .delete(Lesson)
+      .where(eq(Lesson.id, lessonId))
+      .returning();
+
+    if (deletedLesson.length === 0) {
+      return { success: false, error: "Failed to delete lesson" };
+    }
+
+    // Revalidate paths
+    revalidatePath("/lessons");
+    revalidatePath("/bookings");
+    revalidatePath("/teachers");
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error deleting lesson:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+

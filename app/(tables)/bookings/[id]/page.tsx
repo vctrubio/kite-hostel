@@ -82,16 +82,36 @@ function LessonCard({ lesson, formatEventDate }: { lesson: any; formatEventDate:
           </div>
         </div>
       ) : (
-        <div className="text-sm text-muted-foreground text-center py-2">
-          No events scheduled yet
+        <div className="text-sm text-muted-foreground text-center py-2 space-y-2">
+          <div>No Events</div>
+          <form action={async () => {
+            'use server';
+            const { deleteLesson } = await import('@/actions/lesson-actions');
+            await deleteLesson(lesson.id);
+          }}>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs border-2 border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+            >
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete Lesson Plan
+            </button>
+          </form>
         </div>
       )}
     </div>
   );
 }
 
+
+
 // Component for displaying lessons
-function Lessons({ lessons, formatEventDate }: { lessons: any[]; formatEventDate: (dateString: string) => string }) {
+function Lessons({ lessons, formatEventDate }: { 
+  lessons: any[]; 
+  formatEventDate: (dateString: string) => string;
+}) {
   return (
     <div className="bg-card rounded-lg border border-border p-4 space-y-4">
       <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -309,7 +329,8 @@ function BookingHeader({
   totalMinutes,
   dateStart,
   dateEnd,
-  formatReadableDate
+  formatReadableDate,
+  hasAnyEvents
 }: {
   bookingId: string;
   status: "active" | "uncomplete" | "completed";
@@ -318,6 +339,7 @@ function BookingHeader({
   dateStart: string;
   dateEnd: string;
   formatReadableDate: (dateString: string) => string;
+  hasAnyEvents: boolean;
 }) {
   return (
     <div className="col-span-full space-y-3">
@@ -334,7 +356,13 @@ function BookingHeader({
             />
           </div>
         </div>
-        <BookingStatusLabel bookingId={bookingId} currentStatus={status} />
+        <div className="flex flex-col items-end gap-2">
+          <BookingStatusLabel 
+            bookingId={bookingId} 
+            currentStatus={status} 
+            showDeleteOption={!hasAnyEvents}
+          />
+        </div>
       </div>
 
       {/* Dates and Progress bar */}
@@ -386,10 +414,6 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   const { id } = params;
   const { data: booking, error } = await getBookingById(id);
 
-  // Prepare export data
-  const bookingExportData = await getBookingExportData(id);
-  const eventsExportData = await getEventsExportData(id);
-
   if (error) {
     return <div className="text-red-500">Error: {error}</div>;
   }
@@ -397,6 +421,10 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   if (!booking) {
     return <div className="text-gray-500">Booking not found.</div>;
   }
+
+  // Prepare export data (only if booking exists)
+  const bookingExportData = await getBookingExportData(id);
+  const eventsExportData = await getEventsExportData(id);
 
   // Initialize the WhiteboardClass for booking calculations
   const bookingClass = new WhiteboardClass(booking);
@@ -416,6 +444,11 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
     const lessonEventMinutes = lesson.events?.reduce((sum, event) => sum + (event.duration || 0), 0) || 0;
     return total + lessonEventMinutes / 60;
   }, 0) || 0;
+
+  // Check if there are any events across all lessons
+  const hasAnyEvents = booking.lessons?.some(lesson => 
+    lesson.events && lesson.events.length > 0
+  ) || false;
 
   // Calculate price to pay per student based on used hours
   const priceToPay = pricePerHourPerStudent * eventHours;
@@ -484,6 +517,7 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
           dateStart={booking.date_start}
           dateEnd={booking.date_end}
           formatReadableDate={formatReadableDate}
+          hasAnyEvents={hasAnyEvents}
         />
 
         {/* Left Column */}
@@ -526,7 +560,7 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
           {/* Lessons Section */}
           <Lessons 
             lessons={booking.lessons} 
-            formatEventDate={formatEventDate} 
+            formatEventDate={formatEventDate}
           />
 
           {/* Receipt Section */}
@@ -539,13 +573,15 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
             events={receiptEvents}
           />
 
-          {/* Export buttons */}
-          <ExportSection
-            bookingId={booking.id}
-            bookingData={bookingExportData}
-            eventsData={eventsExportData}
-            receiptText={receiptText}
-          />
+          {/* Export buttons - only show if export data is available */}
+          {bookingExportData && eventsExportData && (
+            <ExportSection
+              bookingId={booking.id}
+              bookingData={bookingExportData}
+              eventsData={eventsExportData}
+              receiptText={receiptText}
+            />
+          )}
         </div>
       </div>
     </div>

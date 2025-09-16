@@ -9,6 +9,10 @@ import { Duration } from "@/components/formatters/Duration";
 import { ElegantDate } from "@/components/formatters/DateTime";
 import { PackageDetails } from "@/getters/package-details";
 import { BillboardClass } from "@/backend/BillboardClass";
+import { deleteLesson } from "@/actions/lesson-actions";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface BookingLessonEventCardProps {
   booking: any;
@@ -240,8 +244,27 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500 text-center py-2">
-                    No events scheduled yet
+                  <div className="text-sm text-gray-500 text-center py-2 space-y-2">
+                    <Button
+                      onClick={async () => {
+                        if (!confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
+                          return;
+                        }
+                        
+                        const result = await deleteLesson(lesson.id);
+                        if (result.success) {
+                          toast.success("Lesson deleted successfully!");
+                        } else {
+                          toast.error(result.error || "Failed to delete lesson");
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="border-2 border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete Lesson Plan
+                    </Button>
                   </div>
                 )}
               </div>

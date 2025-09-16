@@ -26,53 +26,17 @@ interface TeacherDetailsProps {
 }
 
 // Commission Form Sub-component
-function CommissionForm({ teacherId, onCommissionCreated, onCancel }: {
-  teacherId: string;
-  onCommissionCreated: (commissionId: string) => void;
-  onCancel: () => void;
+function CommissionForm({ formData, onFormChange }: {
+  formData: { price_per_hour: string; desc: string };
+  onFormChange: (data: { price_per_hour: string; desc: string }) => void;
 }) {
-  const [formData, setFormData] = useState({
-    price_per_hour: '',
-    desc: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.price_per_hour) {
-      toast.error("Price per hour is required");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const result = await createCommission({
-        teacher_id: teacherId,
-        price_per_hour: parseInt(formData.price_per_hour),
-        desc: formData.desc || null
-      });
-
-      if (result.success) {
-        toast.success("Commission created successfully!");
-        setFormData({ price_per_hour: '', desc: '' });
-        onCommissionCreated(result.commission.id);
-      } else {
-        toast.error(result.error || "Failed to create commission");
-      }
-    } catch (error) {
-      toast.error("An error occurred while creating the commission");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    onFormChange({ ...formData, [name]: value });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="price_per_hour">Price per Hour (€)</Label>
@@ -99,28 +63,7 @@ function CommissionForm({ teacherId, onCommissionCreated, onCancel }: {
           />
         </div>
       </div>
-      
-      <div className="flex gap-2 pt-2">
-        <Button 
-          type="submit" 
-          disabled={isSubmitting}
-          size="sm"
-          variant="outline"
-          className="border-2 border-cyan-500 text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
-        >
-          {isSubmitting ? 'Creating...' : 'Save'}
-        </Button>
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="sm"
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }
 
@@ -128,6 +71,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
   const [teacher, setTeacher] = useState(initialTeacher);
   const [editMode, setEditMode] = useState(false);
   const [showCommissionForm, setShowCommissionForm] = useState(false);
+  const [isSubmittingCommission, setIsSubmittingCommission] = useState(false);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // newest first by default
   const [studentSearch, setStudentSearch] = useState('');
   const [compactView, setCompactView] = useState(false);
@@ -137,6 +81,10 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     passport_number: initialTeacher.passport_number || "",
     country: initialTeacher.country || "",
     phone: initialTeacher.phone || "",
+  });
+  const [commissionFormData, setCommissionFormData] = useState({
+    price_per_hour: '',
+    desc: ''
   });
   const router = useRouter();
 
@@ -181,7 +129,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     if (result.success) {
       toast.success("Teacher updated successfully!");
       setEditMode(false);
-      router.refresh();
+      // No need for router.refresh() - rvalidatePath in updateTeacher handles this
     } else {
       toast.error(result.error || "Failed to update teacher.");
     }
@@ -203,8 +151,36 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     if (updatedTeacher) {
       setTeacher(updatedTeacher);
       setShowCommissionForm(false);
+      setCommissionFormData({ price_per_hour: '', desc: '' });
     } else if (error) {
       toast.error(`Failed to refresh teacher data: ${error}`);
+    }
+  };
+
+  const handleSubmitCommission = async () => {
+    if (!commissionFormData.price_per_hour) {
+      toast.error("Price per hour is required");
+      return;
+    }
+
+    setIsSubmittingCommission(true);
+    try {
+      const result = await createCommission({
+        teacher_id: teacher.id,
+        price_per_hour: parseInt(commissionFormData.price_per_hour),
+        desc: commissionFormData.desc || null
+      });
+
+      if (result.success) {
+        toast.success("Commission created successfully!");
+        handleCommissionCreated(result.commission.id);
+      } else {
+        toast.error(result.error || "Failed to create commission");
+      }
+    } catch (error) {
+      toast.error("An error occurred while creating the commission");
+    } finally {
+      setIsSubmittingCommission(false);
     }
   };
 
@@ -297,7 +273,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
       .filter(Boolean);
     
     // Filter by student name
-    let filtered = bookings.filter((booking: any) => {
+    const filtered = bookings.filter((booking: any) => {
       if (!studentSearch.trim()) return true;
       
       // Search by student name in booking students
@@ -525,16 +501,56 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                   <BookIcon className="w-5 h-5 text-cyan-500" />
                   <h3 className="text-xl font-semibold">Commissions</h3>
                 </div>
-                <Button 
-                  onClick={() => setShowCommissionForm(!showCommissionForm)}
-                  variant="outline" 
-                  size="sm"
-                  className="border-2 border-cyan-500 text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
-                >
-                  {showCommissionForm ? 'Cancel Commission' : 'Add Commission'}
-                </Button>
+                {showCommissionForm ? (
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleSubmitCommission}
+                      disabled={isSubmittingCommission}
+                      size="sm"
+                      variant="outline"
+                      className="border-2 border-cyan-500 text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
+                    >
+                      {isSubmittingCommission ? 'Creating...' : 'Save'}
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setShowCommissionForm(false);
+                        setCommissionFormData({ price_per_hour: '', desc: '' });
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      disabled={isSubmittingCommission}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={() => setShowCommissionForm(true)}
+                    variant="outline" 
+                    size="sm"
+                    className="border-2 border-cyan-500 text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
+                  >
+                    Add Commission
+                  </Button>
+                )}
               </div>
               
+              {/* Add Commission Form - Conditionally Rendered */}
+              {showCommissionForm && (
+                <div className="overflow-hidden animate-in slide-in-from-top-2 duration-300 ease-in-out">
+                  <div className="space-y-3 pt-2 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <Label className="text-sm font-medium">Add New Rate</Label>
+                    <div className="transform transition-transform duration-300 ease-in-out">
+                      <CommissionForm 
+                        formData={commissionFormData}
+                        onFormChange={setCommissionFormData}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Current Commissions */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Current Rates</Label>
@@ -581,18 +597,6 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                   </div>
                 )}
               </div>
-
-              {/* Add Commission Form - Conditionally Rendered */}
-              {showCommissionForm && (
-                <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <Label className="text-sm font-medium">Add New Rate</Label>
-                  <CommissionForm 
-                    teacherId={teacher.id} 
-                    onCommissionCreated={handleCommissionCreated}
-                    onCancel={() => setShowCommissionForm(false)}
-                  />
-                </div>
-              )}
             </div>
 
             {/* User Wallet Section */}
