@@ -41,6 +41,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
   const [exportDebugMode, setExportDebugMode] = useState(true);
   const [debugText, setDebugText] = useState<string>("");
   const [showDebugDropdown, setShowDebugDropdown] = useState(false);
+  const [lastDebugAction, setLastDebugAction] = useState<string>("");
   const [controller, setController] = useState<EventController>({
     flag: false,
     location: LOCATION_ENUM_VALUES[0],
@@ -201,6 +202,115 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     };
   }, [teacherQueues]);
 
+  // Update debug content when date changes (if debug dropdown is open)
+  useEffect(() => {
+    if (showDebugDropdown && lastDebugAction && exportDebugMode) {
+      try {
+        const shareData = extractShareDataFromTeacherQueues(
+          selectedDate,
+          teacherQueues,
+        );
+
+        let debugContent = "";
+
+        switch (lastDebugAction) {
+          case "share":
+            debugContent = generateWhatsAppMessage(shareData);
+            break;
+          case "medical":
+            const { subject, body } = generateMedicalEmail(
+              selectedDate,
+              teacherQueues,
+            );
+            debugContent = `${subject}\n\n${body}`;
+            break;
+          case "csv":
+            const csvHeaders =
+              "Time,Duration (hrs),Location,Teacher,Students,Package,Teacher Commission (€),School Revenue (€),Total Revenue (€)";
+            const csvRows = shareData.events
+              .map((event) => {
+                const durationHrs = (event.duration / 60).toFixed(1);
+                const formatCurrency = (num: number): string => {
+                  const roundedNum = Math.round(num * 100) / 100;
+                  return roundedNum % 1 === 0 ? roundedNum.toString() : roundedNum.toFixed(2);
+                };
+                return `${event.startTime},${durationHrs}hrs,${event.location},${event.teacherName},"${event.studentNames.join(" & ")}",${event.packageDescription},${formatCurrency(event.teacherEarning)},${formatCurrency(event.schoolRevenue)},${formatCurrency(event.totalRevenue)}`;
+              })
+              .join("\n");
+            debugContent = `${csvHeaders}\n${csvRows}`;
+            break;
+          case "xlsm":
+            const formatCurrency = (num: number): string => {
+              const roundedNum = Math.round(num * 100) / 100;
+              return roundedNum % 1 === 0 ? roundedNum.toString() : roundedNum.toFixed(2);
+            };
+            
+            // Create HTML table for better visualization
+            const tableHeaders = ["Time", "Duration", "Location", "Teacher", "Students", "Package", "Teacher €", "School €", "Total €"];
+            const tableRows = shareData.events.map((event) => {
+              const durationHrs = (event.duration / 60).toFixed(1);
+              return [
+                event.startTime,
+                `${durationHrs}hrs`,
+                event.location,
+                event.teacherName,
+                event.studentNames.join(" & "),
+                event.packageDescription,
+                formatCurrency(event.teacherEarning),
+                formatCurrency(event.schoolRevenue),
+                formatCurrency(event.totalRevenue)
+              ];
+            });
+            
+            const totalRow = [
+              "", "", "", "", "",
+              "** TOTAL **",
+              formatCurrency(shareData.totalTeacherEarnings),
+              formatCurrency(shareData.totalSchoolRevenue),
+              formatCurrency(shareData.events.reduce((sum, event) => sum + event.totalRevenue, 0))
+            ];
+            
+            debugContent = `
+              <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; font-family: monospace; font-size: 12px;">
+                <thead>
+                  <tr style="background-color: #f5f5f5;">
+                    ${tableHeaders.map(h => `<th>${h}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows.map(row => `
+                    <tr>
+                      ${row.map(cell => `<td>${cell}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                  <tr style="background-color: #e8f4f8; font-weight: bold;">
+                    ${totalRow.map(cell => `<td>${cell}</td>`).join('')}
+                  </tr>
+                </tbody>
+              </table>
+            `;
+            break;
+          case "print":
+            debugContent = generatePrintHTML(shareData);
+            break;
+          default:
+            debugContent = `Unknown action: ${lastDebugAction}`;
+        }
+
+        setDebugText(debugContent);
+      } catch (error) {
+        console.error(`Error updating debug content for ${lastDebugAction}:`, error);
+      }
+    }
+  }, [selectedDate, teacherQueues, showDebugDropdown, lastDebugAction, exportDebugMode]);
+
+  // Close debug dropdown when debug mode is turned off
+  useEffect(() => {
+    if (!exportDebugMode && showDebugDropdown) {
+      setShowDebugDropdown(false);
+    }
+  }, [exportDebugMode, showDebugDropdown]);
+
   const handleActionClick = async (actionId: string) => {
     try {
       // Extract share data using the utility function
@@ -222,7 +332,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
               selectedDate,
               teacherQueues,
             );
-            debugContent = `Subject: ${subject}\n\nBody:\n${body}`;
+            debugContent = `${subject}\n\n${body}`;
             break;
           case "csv":
             const csvHeaders =
@@ -230,14 +340,65 @@ export default function BillboardClient({ data }: BillboardClientProps) {
             const csvRows = shareData.events
               .map((event) => {
                 const durationHrs = (event.duration / 60).toFixed(1);
-                return `${event.startTime},${durationHrs}hrs,${event.location},${event.teacherName},"${event.studentNames.join(" & ")}",${event.packageDescription},${event.teacherEarning.toFixed(2)},${event.schoolRevenue.toFixed(2)},${event.totalRevenue.toFixed(2)}`;
+                const formatCurrency = (num: number): string => {
+                  const roundedNum = Math.round(num * 100) / 100;
+                  return roundedNum % 1 === 0 ? roundedNum.toString() : roundedNum.toFixed(2);
+                };
+                return `${event.startTime},${durationHrs}hrs,${event.location},${event.teacherName},"${event.studentNames.join(" & ")}",${event.packageDescription},${formatCurrency(event.teacherEarning)},${formatCurrency(event.schoolRevenue)},${formatCurrency(event.totalRevenue)}`;
               })
               .join("\n");
             debugContent = `${csvHeaders}\n${csvRows}`;
             break;
           case "xlsm":
-            debugContent =
-              "XLSM export would be generated with the same data as CSV but in Excel format";
+            const formatCurrency = (num: number): string => {
+              const roundedNum = Math.round(num * 100) / 100;
+              return roundedNum % 1 === 0 ? roundedNum.toString() : roundedNum.toFixed(2);
+            };
+            
+            // Create HTML table for better visualization
+            const tableHeaders = ["Time", "Duration", "Location", "Teacher", "Students", "Package", "Teacher €", "School €", "Total €"];
+            const tableRows = shareData.events.map((event) => {
+              const durationHrs = (event.duration / 60).toFixed(1);
+              return [
+                event.startTime,
+                `${durationHrs}hrs`,
+                event.location,
+                event.teacherName,
+                event.studentNames.join(" & "),
+                event.packageDescription,
+                formatCurrency(event.teacherEarning),
+                formatCurrency(event.schoolRevenue),
+                formatCurrency(event.totalRevenue)
+              ];
+            });
+            
+            const totalRow = [
+              "", "", "", "", "",
+              "** TOTAL **",
+              formatCurrency(shareData.totalTeacherEarnings),
+              formatCurrency(shareData.totalSchoolRevenue),
+              formatCurrency(shareData.events.reduce((sum, event) => sum + event.totalRevenue, 0))
+            ];
+            
+            debugContent = `
+              <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; font-family: monospace; font-size: 12px;">
+                <thead>
+                  <tr style="background-color: #f5f5f5;">
+                    ${tableHeaders.map(h => `<th>${h}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows.map(row => `
+                    <tr>
+                      ${row.map(cell => `<td>${cell}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                  <tr style="background-color: #e8f4f8; font-weight: bold;">
+                    ${totalRow.map(cell => `<td>${cell}</td>`).join('')}
+                  </tr>
+                </tbody>
+              </table>
+            `;
             break;
           case "print":
             debugContent = generatePrintHTML(shareData);
@@ -247,6 +408,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         }
 
         setDebugText(debugContent);
+        setLastDebugAction(actionId);
         setShowDebugDropdown(true);
       } else {
         // Normal mode - execute actions
@@ -267,7 +429,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
             exportBillboardEventsToCsv(shareData, csvFilename);
             break;
           case "xlsm":
-            const xlsmFilename = `tkh-billboard-${selectedDate}.xls`;
+            const xlsmFilename = `tkh-billboard-excel-${selectedDate}.csv`;
             exportBillboardEventsToXlsm(shareData, xlsmFilename);
             break;
           case "print":
@@ -311,12 +473,19 @@ export default function BillboardClient({ data }: BillboardClientProps) {
               ✕
             </button>
           </div>
-          <textarea
-            value={debugText}
-            readOnly
-            className="w-full h-64 p-2 border rounded font-mono text-sm"
-            onClick={(e) => e.currentTarget.select()}
-          />
+          {debugText.includes('<table') ? (
+            <div 
+              className="w-full h-64 p-2 border rounded text-sm overflow-auto"
+              dangerouslySetInnerHTML={{ __html: debugText }}
+            />
+          ) : (
+            <textarea
+              value={debugText}
+              readOnly
+              className="w-full h-64 p-2 border rounded font-mono text-sm"
+              onClick={(e) => e.currentTarget.select()}
+            />
+          )}
           <div className="mt-2 flex gap-2">
             <button
               onClick={() => navigator.clipboard.writeText(debugText)}

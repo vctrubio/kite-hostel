@@ -175,24 +175,29 @@ export class TeacherQueue {
         totalDuration += eventNode.eventData.duration;
         eventCount++;
 
-        // Teacher earnings
-        const lesson = eventNode.billboardClass.lessons?.find(
-          (l) => l.id === eventNode.lessonId,
-        );
-        if (lesson?.commission?.price_per_hour) {
-          const hours = eventNode.eventData.duration / 60;
-          teacherEarnings += lesson.commission.price_per_hour * hours;
-        }
-
-        // School revenue
+        // Calculate total revenue first
         const pkg = eventNode.billboardClass?.booking.package;
+        let eventTotalRevenue = 0;
         if (pkg?.price_per_student && pkg?.capacity_students && pkg?.duration) {
           const packageHours = pkg.duration / 60;
           const eventHours = eventNode.eventData.duration / 60;
           const pricePerHourPerStudent = pkg.price_per_student / packageHours;
-          schoolRevenue +=
-            pricePerHourPerStudent * pkg.capacity_students * eventHours;
+          eventTotalRevenue = pricePerHourPerStudent * pkg.capacity_students * eventHours;
         }
+
+        // Teacher earnings for this specific event
+        const lesson = eventNode.billboardClass.lessons?.find(
+          (l) => l.id === eventNode.lessonId,
+        );
+        let eventTeacherEarning = 0;
+        if ((lesson as any)?.commission?.price_per_hour) {
+          const hours = eventNode.eventData.duration / 60;
+          eventTeacherEarning = (lesson as any).commission.price_per_hour * hours;
+          teacherEarnings += eventTeacherEarning;
+        }
+
+        // School revenue = Total revenue - Teacher earnings for this event
+        schoolRevenue += Math.max(0, eventTotalRevenue - eventTeacherEarning);
       } catch (error) {
         // Skip events with missing data
         console.warn(

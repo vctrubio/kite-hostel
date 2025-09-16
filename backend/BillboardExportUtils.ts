@@ -47,10 +47,7 @@ export function exportBillboardEventsToCsv(
 
   const formatCurrency = (num: number): string => {
     const roundedNum = Math.round(num * 100) / 100;
-    if (roundedNum % 1 === 0) {
-      return roundedNum.toString();
-    }
-    return roundedNum.toFixed(2);
+    return roundedNum % 1 === 0 ? roundedNum.toString() : roundedNum.toFixed(2);
   };
 
   const csvData = shareData.events.map(event => {
@@ -94,7 +91,7 @@ export function exportBillboardEventsToCsv(
 
 export function exportBillboardEventsToXlsm(
   shareData: BillboardShareData,
-  fileName: string = 'billboard-events.xls'  // Changed to .xls for tab-separated format
+  fileName: string = 'billboard-events.csv'  // Use .csv extension instead
 ) {
   if (!shareData.events || shareData.events.length === 0) {
     alert("No events to export");
@@ -115,44 +112,39 @@ export function exportBillboardEventsToXlsm(
 
   const formatCurrency = (num: number): string => {
     const roundedNum = Math.round(num * 100) / 100;
-    if (roundedNum % 1 === 0) {
-      return roundedNum.toString();
-    }
-    return roundedNum.toFixed(2);
+    return roundedNum % 1 === 0 ? roundedNum.toString() : roundedNum.toFixed(2);
   };
 
-  // Create CSV-like content for Excel
-  const csvRows = [
-    headers.join('\t'), // Use tabs for better Excel compatibility
+  // Create proper CSV content that Excel can open
+  const csvContent = [
+    headers.join(','),
     ...shareData.events.map(event => {
       const durationInHours = (event.duration / 60).toFixed(1);
       return [
         event.startTime,
         `${durationInHours}hrs`,
-        event.location,
-        event.teacherName,
-        event.studentNames.join(" & "),
-        event.packageDescription,
+        `"${event.location}"`,
+        `"${event.teacherName}"`,
+        `"${event.studentNames.join(" & ")}"`,
+        `"${event.packageDescription}"`,
         formatCurrency(event.teacherEarning),
         formatCurrency(event.schoolRevenue),
         formatCurrency(event.totalRevenue)
-      ].join('\t');
+      ].join(',');
     }),
     // Add totals row
     [
-      "", "", "", "", "",
-      "** TOTAL **",
+      '""', '""', '""', '""', '""',
+      '"** TOTAL **"',
       formatCurrency(shareData.totalTeacherEarnings),
       formatCurrency(shareData.totalSchoolRevenue),
       formatCurrency(shareData.events.reduce((sum, event) => sum + event.totalRevenue, 0))
-    ].join('\t')
-  ];
+    ].join(',')
+  ].join('\n');
 
-  const content = csvRows.join('\n');
-
-  // Use Excel MIME type but tab-separated format which Excel handles well
-  const blob = new Blob([content], { 
-    type: 'application/vnd.ms-excel' 
+  // Use proper CSV MIME type
+  const blob = new Blob([csvContent], { 
+    type: 'text/csv;charset=utf-8;'
   });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -263,28 +255,24 @@ export function generateMedicalEmail(
 
   const subject = `Tarifa Kite Hostel Students @ ${dateFormatted}`;
 
-  let body = `Dear Medical Team,\n\n`;
-  body += `Please find below the list of students participating in kitesurfing lessons on ${dateFormatted}:\n\n`;
+  let body = '';
 
   if (students.length === 0) {
     body += "No students scheduled for today.\n";
   } else {
-    students.forEach((student, index) => {
-      body += `${index + 1}. ${student.fullName}`;
+    students.forEach((student) => {
+      body += student.fullName;
       if (student.passportNumber) {
-        body += ` - Passport: ${student.passportNumber}`;
+        body += ` - ${student.passportNumber}`;
       }
       if (student.country) {
-        body += ` - Country: ${student.country}`;
+        body += ` - ${student.country}`;
       }
       body += "\n";
     });
   }
 
-  body += "\nTotal students: " + students.length + "\n\n";
-  body += "Please ensure all medical protocols are in place.\n\n";
-  body += "Best regards,\n";
-  body += "Tarifa Kite Hostel Team";
+  body += "\nTotal students: " + students.length;
 
   return { subject, body };
 }
@@ -554,13 +542,26 @@ export function extractShareDataFromTeacherQueues(
       
       totalStudents += studentNames.length;
       
-      // Calculate earnings per event
-      if (teacherStats.eventCount === 0) {
-        throw new Error(`No events found for teacher ${teacherName}`);
-      }
+      // Calculate per-event values correctly
+      const eventDurationHours = eventNode.eventData.duration / 60;
       
-      const eventTeacherEarning = teacherStats.earnings.teacher / teacherStats.eventCount;
-      const eventSchoolRevenue = teacherStats.earnings.school / teacherStats.eventCount;
+      // Calculate total revenue first
+      let eventTotalRevenue = 0;
+      const eventPkg = eventNode.billboardClass?.booking.package;
+      if (eventPkg?.price_per_student && eventPkg?.duration) {
+        const packageHours = eventPkg.duration / 60;
+        const pricePerHourPerStudent = eventPkg.price_per_student / packageHours;
+        // Use actual number of students attending this event
+        eventTotalRevenue = pricePerHourPerStudent * studentNames.length * eventDurationHours;
+      }
+
+      // Teacher earning: Use the average for now (this comes from commission rate * hours)
+      const eventTeacherEarning = teacherStats.eventCount > 0 
+        ? (teacherStats.earnings.teacher / teacherStats.eventCount) 
+        : 0;
+
+      // School revenue = Total revenue - Teacher earning
+      const eventSchoolRevenue = Math.max(0, eventTotalRevenue - eventTeacherEarning);
       
       totalTeacherEarnings += eventTeacherEarning;
       totalSchoolRevenue += eventSchoolRevenue;
@@ -583,12 +584,8 @@ export function extractShareDataFromTeacherQueues(
         throw new Error(`No package description found for booking ${eventNode.billboardClass.booking.id}`);
       }
 
-      // Calculate total revenue = package price per student * capacity of students * duration of event in hours
-      const pkg = eventNode.billboardClass.booking.package;
-      const eventHours = eventNode.eventData.duration / 60;
-      const packageHours = pkg.duration / 60;
-      const pricePerHour = pkg.price_per_student / packageHours;
-      const totalRevenue = pricePerHour * pkg.capacity_students * eventHours;
+      // Use the total revenue we already calculated above
+      const totalRevenue = eventTotalRevenue;
 
       events.push({
         teacherName,
