@@ -6,118 +6,97 @@ import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { EventStatusLabel } from "@/components/label/EventStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
+import { ElegantDate } from "@/components/formatters/DateTime";
 import { PackageDetails } from "@/getters/package-details";
-import { WhiteboardClass } from "@/backend/WhiteboardClass";
+import { BillboardClass } from "@/backend/BillboardClass";
 
 interface BookingLessonEventCardProps {
   booking: any;
-  showStudents?: boolean; // For teacher view
-  showTeacher?: boolean;  // For student view
+  showStudents?: boolean; // for student view, if students length > 1, (not itself = show more studfents)
   compact?: boolean;      // For compact view mode
 }
 
-export function BookingLessonEventCard({
-  booking,
-  showStudents = false,
-  showTeacher = false,
-  compact = false
-}: BookingLessonEventCardProps) {
-  // Initialize WhiteboardClass for calculations
-  const bookingClass = new WhiteboardClass(booking);
+interface ViewProps {
+  booking: any;
+  bookingClass: BillboardClass;
+  eventHours: number;
+  pricePerHourPerStudent: number;
+  priceToPay: number;
+  showStudents?: boolean;
+}
 
-  // Calculate event hours (used hours) from booking's lessons and events
-  const eventHours = booking.lessons?.reduce((total: number, lesson: any) => {
-    const lessonEventMinutes = lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0;
-    return total + lessonEventMinutes / 60;
-  }, 0) || 0;
-
-  // Calculate package and pricing details
-  const packageHours = booking.package ? booking.package.duration / 60 : 0;
-  const pricePerHourPerStudent = packageHours > 0
-    ? (booking.package?.price_per_student || 0) / packageHours
-    : 0;
-  const priceToPay = pricePerHourPerStudent * eventHours;
-
-  // Format date function
-  const formatReadableDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getUTCDate();
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'];
-    const month = monthNames[date.getUTCMonth()];
-    const year = date.getUTCFullYear();
-    return `${day} ${month} ${year}`;
-  };
-
-  // Format date for event dates - simplified version for events
-  const formatEventDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getUTCDate();
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const month = monthNames[date.getUTCMonth()];
-    return `${day} ${month}`;
-  };
-
-  // Compact view - show only booking header and student names
-  if (compact) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-        {/* Compact Booking Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href={`/bookings/${booking.id}`}>
-              <h3 className="text-lg font-semibold flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors">
-                <BookingIcon className="w-5 h-5 text-blue-500" />
-                <span>Booking</span>
-              </h3>
-            </Link>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {formatReadableDate(booking.date_start)} - {formatReadableDate(booking.date_end)}
+// Compact View Sub-component
+function CompactView({ booking, bookingClass }: ViewProps) {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+      {/* Compact Booking Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href={`/bookings/${booking.id}`}>
+            <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+              <BookingIcon className="w-5 h-5 text-blue-500" />
+              <BookingProgressBar
+                eventMinutes={bookingClass.getEventMinutes()}
+                totalMinutes={bookingClass.package?.duration || 0}
+              />
             </div>
+          </Link>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            <ElegantDate dateString={booking.date_start} /> - <ElegantDate dateString={booking.date_end} />
           </div>
-          <BookingStatusLabel bookingId={booking.id} currentStatus={booking.status} />
         </div>
-
-        {/* Student Names Only */}
-        {booking.students && booking.students.length > 0 && (
-          <div className="flex items-center gap-2 mt-2">
-            <div className="flex gap-1">
-              {Array.from({ length: booking.students.length }, (_, index) => (
-                <HelmetIcon key={index} className="w-4 h-4 text-yellow-500" />
-              ))}
-            </div>
-            <div className="text-sm font-medium">
-              {booking.students.map((bookingStudent: any, index: number) => (
-                <Link key={bookingStudent.student.id} href={`/students/${bookingStudent.student.id}`} className="hover:text-blue-600 transition-colors">
-                  {bookingStudent.student.name} {bookingStudent.student.last_name || ''}
-                  {index < booking.students.length - 1 && ', '}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Teacher Name Only (for student view) */}
-        {showTeacher && booking.lessons && booking.lessons.length > 0 && (
-          <div className="flex items-center gap-2 mt-2">
-            <HeadsetIcon className="w-4 h-4 text-green-600" />
-            <div className="text-sm font-medium">
-              {booking.lessons[0].teacher?.id ? (
-                <Link href={`/teachers/${booking.lessons[0].teacher.id}`} className="hover:text-blue-600 transition-colors cursor-pointer">
-                  {booking.lessons[0].teacher.name || "Unknown Teacher"}
-                </Link>
-              ) : (
-                <span>{booking.lessons[0].teacher?.name || "Unknown Teacher"}</span>
-              )}
-              {booking.lessons.length > 1 && ` +${booking.lessons.length - 1} more`}
-            </div>
-          </div>
-        )}
+        <BookingStatusLabel bookingId={booking.id} currentStatus={booking.status} />
       </div>
-    );
-  }
 
-  // Full view
+      {/* Student Names Only */}
+      {booking.students && booking.students.length > 0 && (
+        <div className="flex items-center gap-2 mt-2">
+          <div className="flex gap-1">
+            {Array.from({ length: booking.students.length }, (_, index) => (
+              <HelmetIcon key={index} className="w-4 h-4 text-yellow-500" />
+            ))}
+          </div>
+          <div className="text-sm font-medium">
+            {booking.students.map((bookingStudent: any, index: number) => (
+              <Link key={bookingStudent.student.id} href={`/students/${bookingStudent.student.id}`} className="hover:text-blue-600 transition-colors">
+                {bookingStudent.student.name} {bookingStudent.student.last_name || ''}
+                {index < booking.students.length - 1 && ', '}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Teacher Names (iterate like students) */}
+      {booking.lessons && booking.lessons.length > 0 && (
+        <div className="flex items-center gap-2 mt-2">
+          <div className="flex gap-1">
+            {Array.from({ length: booking.lessons.length }, (_, index) => (
+              <HeadsetIcon key={index} className="w-4 h-4 text-green-600" />
+            ))}
+          </div>
+          <div className="text-sm font-medium">
+            {booking.lessons.map((lesson: any, index: number) => (
+              <span key={lesson.id}>
+                {lesson.teacher?.id ? (
+                  <Link href={`/teachers/${lesson.teacher.id}`} className="hover:text-blue-600 transition-colors cursor-pointer">
+                    {lesson.teacher.name || "Unknown Teacher"}
+                  </Link>
+                ) : (
+                  <span>{lesson.teacher?.name || "Unknown Teacher"}</span>
+                )}
+                {index < booking.lessons.length - 1 && ', '}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Full View Sub-component
+function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, priceToPay, showStudents }: ViewProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border p-6 space-y-6">
       {/* Booking Header */}
@@ -132,8 +111,8 @@ export function BookingLessonEventCard({
             </Link>
             <div className="pt-1">
               <BookingProgressBar
-                eventMinutes={bookingClass.calculateBookingLessonEventMinutes()}
-                totalMinutes={bookingClass.getTotalMinutes()}
+                eventMinutes={bookingClass.getEventMinutes()}
+                totalMinutes={bookingClass.package?.duration || 0}
               />
             </div>
           </div>
@@ -142,9 +121,9 @@ export function BookingLessonEventCard({
 
         {/* Dates */}
         <div className="flex items-center gap-3 text-sm font-medium text-gray-600 dark:text-gray-400">
-          <span>{formatReadableDate(booking.date_start)}</span>
+          <ElegantDate dateString={booking.date_start} />
           <span>to</span>
-          <span>{formatReadableDate(booking.date_end)}</span>
+          <ElegantDate dateString={booking.date_end} />
         </div>
       </div>
 
@@ -253,7 +232,7 @@ export function BookingLessonEventCard({
                     {lesson.events.map((event: any) => (
                       <div key={event.id} className="flex items-center gap-3 text-sm">
                         <FlagIcon className="w-3.5 h-3.5 text-orange-500" />
-                        <span>{formatEventDate(event.date)}</span>
+                        <ElegantDate dateString={event.date} />
                         <Duration minutes={event.duration || 0} />
                         <span className="text-gray-500">{event.location}</span>
                         <EventStatusLabel eventId={event.id} currentStatus={event.status} />
@@ -274,4 +253,43 @@ export function BookingLessonEventCard({
       </div>
     </div>
   );
+}
+
+export function BookingLessonEventCard({
+  booking,
+  showStudents = false,
+  compact = false
+}: BookingLessonEventCardProps) {
+  // Initialize BillboardClass for calculations
+  const bookingClass = new BillboardClass(booking);
+
+  // Calculate event hours (used hours) from booking's lessons and events
+  const eventHours = booking.lessons?.reduce((total: number, lesson: any) => {
+    const lessonEventMinutes = lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0;
+    return total + lessonEventMinutes / 60;
+  }, 0) || 0;
+
+  // Calculate package and pricing details
+  const packageHours = booking.package ? booking.package.duration / 60 : 0;
+  const pricePerHourPerStudent = packageHours > 0
+    ? (booking.package?.price_per_student || 0) / packageHours
+    : 0;
+  const priceToPay = pricePerHourPerStudent * eventHours;
+
+  // Common props for both views
+  const commonProps: ViewProps = {
+    booking,
+    bookingClass,
+    eventHours,
+    pricePerHourPerStudent,
+    priceToPay,
+    showStudents
+  };
+
+  // Render appropriate view based on compact prop
+  if (compact) {
+    return <CompactView {...commonProps} />;
+  }
+
+  return <FullView {...commonProps} />;
 }

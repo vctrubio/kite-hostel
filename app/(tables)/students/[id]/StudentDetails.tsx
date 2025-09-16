@@ -315,7 +315,6 @@ function BookingList({
           <BookingLessonEventCard
             key={booking.id}
             booking={booking}
-            showTeacher={true}
             compact={compactView}
           />
         ))}

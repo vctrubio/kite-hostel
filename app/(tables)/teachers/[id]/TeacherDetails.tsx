@@ -12,7 +12,7 @@ import { createCommission, deleteCommission } from "@/actions/commission-actions
 import { DateSince } from "@/components/formatters/DateSince";
 import { ENTITY_DATA, LANGUAGES_ENUM_VALUES } from "@/lib/constants";
 import { BookIcon, KiteIcon } from "@/svgs";
-import { UserCheck, Trash2, ChevronDown, Ghost, RotateCcw, Search, ArrowUpDown, Eye, EyeOff } from "lucide-react";
+import { UserCheck, Trash2, ChevronDown, Ghost, Search, ArrowUpDown, Eye, EyeOff } from "lucide-react";
 import { BookingLessonEventCard } from "@/components/cards/BookingLessonEventCard";
 import { 
   DropdownMenu,
@@ -328,9 +328,11 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
           {/* Header */}
           <div className="flex items-center gap-4 pb-6 border-b">
             {TeacherIcon && (
-              <div className="p-3 rounded-lg">
-                <TeacherIcon className={`w-8 h-8 ${teacherEntity?.color}`} />
-              </div>
+              <Link href={`/teacher/${teacher.id}`}>
+                <div className="p-3 rounded-lg border-2 border-transparent cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200">
+                  <TeacherIcon className={`w-8 h-8 ${teacherEntity?.color}`} />
+                </div>
+              </Link>
             )}
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">

@@ -109,3 +109,51 @@ export function formatMinutesToTime(minutes: number): string {
   const mins = minutes % 60;
   return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
+
+// Helper function to get ordinal suffix for day
+function getOrdinalSuffix(day: number): string {
+  if (day > 3 && day < 21) return 'th';
+  switch (day % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
+}
+
+// Elegant date formatter: "7th September 25'"
+export function formatElegantDate(dateString: string): string {
+  if (!dateString || dateString === 'No date') {
+    return 'No date';
+  }
+
+  const date = new Date(dateString);
+  
+  if (!isValid(date)) {
+    return 'Invalid date';
+  }
+
+  try {
+    const day = date.getUTCDate();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const month = monthNames[date.getUTCMonth()];
+    const year = date.getUTCFullYear().toString().slice(-2); // Get last 2 digits
+    const ordinalSuffix = getOrdinalSuffix(day);
+    
+    return `${day}${ordinalSuffix} ${month} ${year}'`;
+  } catch (error) {
+    return 'Invalid date';
+  }
+}
+
+// Elegant date component
+interface ElegantDateProps {
+  dateString: string;
+}
+
+export function ElegantDate({ dateString }: ElegantDateProps) {
+  return <span>{formatElegantDate(dateString)}</span>;
+}

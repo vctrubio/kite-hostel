@@ -3,7 +3,7 @@
 import db from "@/drizzle";
 import { InferSelectModel } from "drizzle-orm";
 import { Teacher, Commission, Lesson, TeacherKite, Payment, Kite, user_wallet, Event, Student, BookingStudent, Booking, PackageStudent, KiteEvent } from "@/drizzle/migrations/schema";
-import { eq, and } from "drizzle-orm";
+import { eq} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -142,7 +142,6 @@ export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetri
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayString = today.toISOString().split('T')[0];
 
     const teachers = await db.query.Teacher.findMany({
       with: {
