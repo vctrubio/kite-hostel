@@ -267,10 +267,28 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
 
   // Filtered and sorted bookings for teachers
   const filteredAndSortedBookings = useMemo(() => {
-    if (!teacher.bookings || teacher.bookings.length === 0) return [];
+    if (!teacher.lessons || teacher.lessons.length === 0) return [];
+    
+    // Get unique bookings from lessons
+    const bookings = Array.from(new Set(teacher.lessons.map((lesson: any) => lesson.booking_id)))
+      .map(bookingId => {
+        // Find the first lesson with this booking_id to get booking data
+        const lesson = teacher.lessons.find((l: any) => l.booking_id === bookingId);
+        if (!lesson?.booking) return null;
+        
+        // Get all lessons for this booking from this teacher
+        const bookingLessons = teacher.lessons.filter((l: any) => l.booking_id === bookingId);
+        
+        // Add the lessons to the booking object
+        return {
+          ...lesson.booking,
+          lessons: bookingLessons
+        };
+      })
+      .filter(Boolean);
     
     // Filter by student name
-    let filtered = teacher.bookings.filter((booking: any) => {
+    let filtered = bookings.filter((booking: any) => {
       if (!studentSearch.trim()) return true;
       
       // Search by student name in booking students
@@ -288,7 +306,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     });
     
     return filtered;
-  }, [teacher.bookings, studentSearch, sortOrder]);
+  }, [teacher.lessons, studentSearch, sortOrder]);
 
   const teacherEntity = ENTITY_DATA.find(entity => entity.name === "Teacher");
   const TeacherIcon = teacherEntity?.icon;
@@ -614,7 +632,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
         {/* Right Column - Booking Information */}
         <div className="space-y-6">
           {/* Booking Controls */}
-          {teacher.bookings && teacher.bookings.length > 0 && (
+          {teacher.lessons && teacher.lessons.length > 0 && (
             <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -656,7 +674,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                 compact={compactView}
               />
             ))
-          ) : teacher.bookings && teacher.bookings.length > 0 ? (
+          ) : teacher.lessons && teacher.lessons.length > 0 ? (
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
               <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">No Results</h2>
               <p className="text-gray-600 dark:text-gray-400">No bookings found matching your search criteria.</p>

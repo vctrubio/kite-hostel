@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookingIcon, HeadsetIcon, FlagIcon, BookmarkIcon, HelmetIcon } from "@/svgs";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
+import { EventStatusLabel } from "@/components/label/EventStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
 import { PackageDetails } from "@/getters/package-details";
 import { WhiteboardClass } from "@/backend/WhiteboardClass";
@@ -101,7 +102,13 @@ export function BookingLessonEventCard({
           <div className="flex items-center gap-2 mt-2">
             <HeadsetIcon className="w-4 h-4 text-green-600" />
             <div className="text-sm font-medium">
-              {booking.lessons[0].teacher?.name || "Unknown Teacher"}
+              {booking.lessons[0].teacher?.id ? (
+                <Link href={`/teachers/${booking.lessons[0].teacher.id}`} className="hover:text-blue-600 transition-colors cursor-pointer">
+                  {booking.lessons[0].teacher.name || "Unknown Teacher"}
+                </Link>
+              ) : (
+                <span>{booking.lessons[0].teacher?.name || "Unknown Teacher"}</span>
+              )}
               {booking.lessons.length > 1 && ` +${booking.lessons.length - 1} more`}
             </div>
           </div>
@@ -210,8 +217,14 @@ export function BookingLessonEventCard({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <HeadsetIcon className="w-4 h-4 text-green-600" />
-                    {(
-                      <span className="font-medium">{lesson.teacher?.name || "Unknown Teacher"}</span>
+                    {showTeacher && (
+                      lesson.teacher?.id ? (
+                        <Link href={`/teachers/${lesson.teacher.id}`} className="font-medium hover:text-blue-600 transition-colors cursor-pointer">
+                          {lesson.teacher.name || "Unknown Teacher"}
+                        </Link>
+                      ) : (
+                        <span className="font-medium">{lesson.teacher?.name || "Unknown Teacher"}</span>
+                      )
                     )}
                     <span className="text-xs text-gray-500 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded-full">
                       {lesson.status}
@@ -245,6 +258,7 @@ export function BookingLessonEventCard({
                         <span>{formatEventDate(event.date)}</span>
                         <Duration minutes={event.duration || 0} />
                         <span className="text-gray-500">{event.location}</span>
+                        <EventStatusLabel eventId={event.id} currentStatus={event.status} />
                       </div>
                     ))}
                   </div>
