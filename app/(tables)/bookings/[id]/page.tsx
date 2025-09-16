@@ -3,8 +3,9 @@ import { getBookingExportData, getEventsExportData } from "@/actions/export-acti
 import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
 import { Receipt } from "@/components/export/Receipt";
 import { ExportButtons } from "@/components/export/ExportButtons";
-import { Duration } from "@/components/formatters/Duration";
+import { ShowEventsInLessons } from "@/components/cards/BookingLessonEventCard";
 import { DateSince } from "@/components/formatters/DateSince";
+import { ElegantDate } from "@/components/formatters/DateTime";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { PackageDetails } from "@/getters/package-details";
@@ -12,14 +13,13 @@ import {
   BookmarkIcon,
   BookingIcon,
   HeadsetIcon,
-  FlagIcon,
   HelmetIcon
 } from "@/svgs";
 
 // ===== SUB-COMPONENTS =====
 
 // Component for displaying lesson information
-function LessonCard({ lesson, formatEventDate }: { lesson: any; formatEventDate: (dateString: string) => string }) {
+function LessonCard({ lesson }: { lesson: any }) {
   // Check if commission exists on the lesson object
   const hasCommission = 'commission' in lesson && lesson.commission;
   
@@ -64,43 +64,8 @@ function LessonCard({ lesson, formatEventDate }: { lesson: any; formatEventDate:
         </div>
       </div>
 
-      {/* Events list */}
-      {hasEvents ? (
-        <div className="space-y-2 mt-2 bg-muted/20 rounded-md p-2">
-          <div className="ml-2 space-y-2">
-            {lesson.events.map((event: any) => (
-              <div
-                key={event.id}
-                className="flex items-center gap-3 text-sm"
-              >
-                <FlagIcon className="w-3.5 h-3.5 text-orange-500" />
-                <span>{formatEventDate(event.date)}</span>
-                <Duration minutes={event.duration || 0} />
-                <span className="text-muted-foreground">{event.location}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="text-sm text-muted-foreground text-center py-2 space-y-2">
-          <div>No Events</div>
-          <form action={async () => {
-            'use server';
-            const { deleteLesson } = await import('@/actions/lesson-actions');
-            await deleteLesson(lesson.id);
-          }}>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs border-2 border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-            >
-              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Delete Lesson Plan
-            </button>
-          </form>
-        </div>
-      )}
+            {/* Events list */}
+      <ShowEventsInLessons events={lesson.events || []} lessonId={lesson.id} />
     </div>
   );
 }
@@ -108,9 +73,8 @@ function LessonCard({ lesson, formatEventDate }: { lesson: any; formatEventDate:
 
 
 // Component for displaying lessons
-function Lessons({ lessons, formatEventDate }: { 
+function Lessons({ lessons }: { 
   lessons: any[]; 
-  formatEventDate: (dateString: string) => string;
 }) {
   return (
     <div className="bg-card rounded-lg border border-border p-4 space-y-4">
@@ -129,7 +93,6 @@ function Lessons({ lessons, formatEventDate }: {
             <LessonCard 
               key={lesson.id} 
               lesson={lesson} 
-              formatEventDate={formatEventDate} 
             />
           ))}
         </div>
@@ -147,7 +110,7 @@ function Students({ students }: { students: any[] }) {
       <h2 className="text-xl font-semibold flex items-center gap-2">
         <div className="flex items-center gap-1">
           {Array.from({ length: students.length }, (_, index) => (
-            <HelmetIcon key={index} className="w-4 h-4 text-yellow-500" />
+            <HelmetIcon key={index} className="w-5 h-5 text-yellow-500" />
           ))}
         </div>
         <span>Students</span>
@@ -236,14 +199,12 @@ function BookingTimeline({
   createdAt, 
   dateStart, 
   dateEnd,
-  daysDifference,
-  formatReadableDate
+  daysDifference
 }: {
   createdAt?: string;
   dateStart: string;
   dateEnd: string;
   daysDifference: number;
-  formatReadableDate: (dateString: string) => string;
 }) {
   return (
     <div className="bg-card rounded-lg border border-border p-4 space-y-4">
@@ -252,19 +213,19 @@ function BookingTimeline({
         <div className="flex justify-between">
           <span className="text-muted-foreground">Created:</span>
           <span className="font-medium">
-            {createdAt ? formatReadableDate(createdAt) : "N/A"}
+            {createdAt ? <ElegantDate dateString={createdAt} /> : "N/A"}
           </span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Start Date:</span>
           <span className="font-medium">
-            {formatReadableDate(dateStart)}
+            <ElegantDate dateString={dateStart} />
           </span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">End Date:</span>
           <span className="font-medium">
-            {formatReadableDate(dateEnd)}
+            <ElegantDate dateString={dateEnd} />
           </span>
         </div>
         <div className="flex justify-between items-center pt-1 border-t border-border">
@@ -329,7 +290,6 @@ function BookingHeader({
   totalMinutes,
   dateStart,
   dateEnd,
-  formatReadableDate,
   hasAnyEvents
 }: {
   bookingId: string;
@@ -338,7 +298,6 @@ function BookingHeader({
   totalMinutes: number;
   dateStart: string;
   dateEnd: string;
-  formatReadableDate: (dateString: string) => string;
   hasAnyEvents: boolean;
 }) {
   return (
@@ -369,9 +328,9 @@ function BookingHeader({
       <div className="w-full max-w-2xl mb-4">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
           <div className="text-base font-medium flex items-center gap-2">
-            <span>{formatReadableDate(dateStart)}</span>
+            <ElegantDate dateString={dateStart} />
             <span>to</span>
-            <span>{formatReadableDate(dateEnd)}</span>
+            <ElegantDate dateString={dateEnd} />
           </div>
         </div>
       </div>
@@ -477,23 +436,6 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   const endDate = new Date(booking.date_end);
   const daysDifference = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
 
-  // Server-side date formatting function - for human-readable dates
-  const formatReadableDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleString('default', { month: 'long' });
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
-  };
-
-  // Format date for event dates - simplified version for events
-  const formatEventDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleString('default', { month: 'short' });
-    return `${day} ${month}`;
-  };
-
   // Generate receipt text for export
   const receiptText = `
 Students: ${students.map(s => `${s.name} ${s.last_name || ''}`).join(', ')}
@@ -516,7 +458,6 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
           totalMinutes={bookingClass.getTotalMinutes()}
           dateStart={booking.date_start}
           dateEnd={booking.date_end}
-          formatReadableDate={formatReadableDate}
           hasAnyEvents={hasAnyEvents}
         />
 
@@ -548,7 +489,6 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
             dateStart={booking.date_start}
             dateEnd={booking.date_end}
             daysDifference={daysDifference}
-            formatReadableDate={formatReadableDate}
           />
         </div>
 
@@ -560,7 +500,6 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
           {/* Lessons Section */}
           <Lessons 
             lessons={booking.lessons} 
-            formatEventDate={formatEventDate}
           />
 
           {/* Receipt Section */}

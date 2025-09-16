@@ -1,14 +1,21 @@
 "use client";
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { updateStudent } from "@/actions/student-actions";
+import { updateStudent, getStudentById, deleteStudent, softDeleteStudent, restoreStudent } from "@/actions/student-actions";
 import { toast } from "sonner";
 import { DateSince } from "@/components/formatters/DateSince";
 import { ENTITY_DATA, LANGUAGES_ENUM_VALUES } from "@/lib/constants";
 import { BookingLessonEventCard } from "@/components/cards/BookingLessonEventCard";
-import { Search, ArrowUpDown, Eye, EyeOff } from "lucide-react";
+import { Search, ArrowUpDown, Eye, EyeOff, Trash2, ChevronDown, Ghost } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface StudentDetailsProps {
   student: any;
@@ -22,7 +29,10 @@ function StudentHeader({
   onEditToggle,
   onSave,
   onCancel,
-  studentEntity
+  studentEntity,
+  onDeleteStudent,
+  onSoftDeleteStudent,
+  onRestoreStudent
 }: {
   student: any;
   editMode: boolean;
@@ -30,6 +40,9 @@ function StudentHeader({
   onSave: () => void;
   onCancel: () => void;
   studentEntity: any;
+  onDeleteStudent: () => void;
+  onSoftDeleteStudent: () => void;
+  onRestoreStudent: () => void;
 }) {
   const StudentIcon = studentEntity?.icon;
 
@@ -56,14 +69,80 @@ function StudentHeader({
             <Button variant="outline" onClick={onCancel} size="sm">Cancel</Button>
           </>
         ) : (
-          <Button
-            onClick={onEditToggle}
-            variant="outline"
-            size="sm"
-            className={`border-2 ${studentEntity?.color?.replace('text-', 'border-')} hover:${studentEntity?.hoverColor ? `bg-[${studentEntity.hoverColor}]` : 'bg-gray-50'}`}
-          >
-            Edit
-          </Button>
+          <>
+            <Button
+              onClick={onEditToggle}
+              variant="outline"
+              size="sm"
+              className={`border-2 ${studentEntity?.color?.replace('text-', 'border-')} hover:${studentEntity?.hoverColor ? `bg-[${studentEntity.hoverColor}]` : 'bg-gray-50'}`}
+            >
+              Edit
+            </Button>
+            
+            {/* Delete/Restore Student Dropdown */}
+            {student.deleted_at ? (
+              // If soft deleted, show red ghost icon (no dropdown - just visual indicator)
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-2 border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 cursor-default"
+                onClick={onRestoreStudent}
+              >
+                <Ghost className="h-4 w-4" />
+              </Button>
+            ) : (
+              // If not soft deleted, show delete options
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-2 border-gray-300 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900/20 px-2"
+                  >
+                    {(!student.bookings || student.bookings.length === 0) ? (
+                      <Trash2 className="h-4 w-4" />
+                    ) : (
+                      <Ghost className="h-4 w-4" />
+                    )}
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  {(!student.bookings || student.bookings.length === 0) ? (
+                    <DropdownMenuItem
+                      onClick={onDeleteStudent}
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 p-3"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <Trash2 className="h-4 w-4" />
+                          <span className="font-medium">Delete Student</span>
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Are you sure you want to delete <strong>{student.name}</strong>? This action is irreversible.
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      onClick={onSoftDeleteStudent}
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 p-3"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <Ghost className="h-4 w-4" />
+                          <span className="font-medium">Soft Delete Student</span>
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          You are about to soft delete <strong>{student.name}</strong>. Their data will be present but you won't be able to access it through the app.
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -355,6 +434,7 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
     size: initialStudent.size,
     desc: initialStudent.desc,
   });
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -384,6 +464,45 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
       desc: student.desc,
     });
     setEditMode(false);
+  };
+
+  const handleDeleteStudent = async () => {
+    const result = await deleteStudent(student.id);
+    if (result.success) {
+      toast.success("Student deleted successfully!");
+      // Redirect to students list
+      router.push('/students');
+    } else {
+      toast.error(result.error || "Failed to delete student");
+    }
+  };
+
+  const handleSoftDeleteStudent = async () => {
+    const result = await softDeleteStudent(student.id);
+    if (result.success) {
+      toast.success("Student soft deleted successfully!");
+      // Refresh student data to show soft deleted state
+      const { data: updatedStudent } = await getStudentById(student.id);
+      if (updatedStudent) {
+        setStudent(updatedStudent);
+      }
+    } else {
+      toast.error(result.error || "Failed to soft delete student");
+    }
+  };
+
+  const handleRestoreStudent = async () => {
+    const result = await restoreStudent(student.id);
+    if (result.success) {
+      toast.success("Student restored successfully!");
+      // Refresh student data to show restored state
+      const { data: updatedStudent } = await getStudentById(student.id);
+      if (updatedStudent) {
+        setStudent(updatedStudent);
+      }
+    } else {
+      toast.error(result.error || "Failed to restore student");
+    }
   };
 
   // Filtered and sorted bookings
@@ -425,6 +544,9 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
             onSave={handleSave}
             onCancel={handleCancel}
             studentEntity={studentEntity}
+            onDeleteStudent={handleDeleteStudent}
+            onSoftDeleteStudent={handleSoftDeleteStudent}
+            onRestoreStudent={handleRestoreStudent}
           />
 
           <StudentFormFields

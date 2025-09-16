@@ -20,6 +20,60 @@ interface BookingLessonEventCardProps {
   compact?: boolean;      // For compact view mode
 }
 
+interface ShowEventsInLessonsProps {
+  events: any[];
+  lessonId: string;
+}
+
+// Reusable ShowEventsInLessons Component
+export function ShowEventsInLessons({ events, lessonId }: ShowEventsInLessonsProps) {
+  if (events && events.length > 0) {
+    return (
+      <div className="space-y-2 bg-white dark:bg-gray-800 rounded-md p-3">
+        {events.map((event: any, index: number) => (
+          <div key={event.id}>
+            <div className="flex items-center gap-3 text-sm py-2">
+              <FlagIcon className="w-3.5 h-3.5 text-orange-500" />
+              <ElegantDate dateString={event.date} />
+              <Duration minutes={event.duration || 0} />
+              <span className="text-gray-500">{event.location}</span>
+              <EventStatusLabel eventId={event.id} currentStatus={event.status} />
+            </div>
+            {index < events.length - 1 && (
+              <div className="border-b border-gray-200 dark:border-gray-600 mt-2"></div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-sm text-gray-500 text-center py-2 space-y-2">
+      <Button
+        onClick={async () => {
+          if (!confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
+            return;
+          }
+          
+          const result = await deleteLesson(lessonId);
+          if (result.success) {
+            toast.success("Lesson deleted successfully!");
+          } else {
+            toast.error(result.error || "Failed to delete lesson");
+          }
+        }}
+        variant="outline"
+        size="sm"
+        className="border-2 border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+      >
+        <Trash2 className="h-3 w-3 mr-1" />
+        Delete Lesson Plan
+      </Button>
+    </div>
+  );
+}
+
 interface ViewProps {
   booking: any;
   bookingClass: BillboardClass;
@@ -212,61 +266,24 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
                     </span>
                   </div>
 
-                  {/* Commission calculation */}
-                  {lesson.commission && (
-                    <div className="flex items-center gap-1 text-sm bg-white dark:bg-gray-800 rounded-md px-2.5 py-1 shadow-sm border">
-                      <span className="font-semibold text-green-600">€{lesson.commission.price_per_hour}</span>
-                      <span className="text-gray-500">×</span>
-                      <span className="font-semibold text-orange-500">
-                        {lesson.events ? (lesson.events.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) / 60).toFixed(1) : "0.0"}h
-                      </span>
-                      <span className="text-gray-500">=</span>
-                      <span className="font-semibold text-gray-600">
-                        €{lesson.commission ? (
-                          ((lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0) / 60) * lesson.commission.price_per_hour
-                        ).toFixed(2) : "0.00"}
-                      </span>
-                    </div>
-                  )}
+                  {/* Commission calculation - Always show */}
+                  <div className="flex items-center gap-1 text-sm bg-white dark:bg-gray-800 rounded-md px-2.5 py-1 shadow-sm border">
+                    <span className="font-semibold text-green-600">€{lesson.commission?.price_per_hour || 0}</span>
+                    <span className="text-gray-500">×</span>
+                    <span className="font-semibold text-orange-500">
+                      {lesson.events ? (lesson.events.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) / 60).toFixed(1) : "0.0"}h
+                    </span>
+                    <span className="text-gray-500">=</span>
+                    <span className="font-semibold text-gray-600">
+                      €{lesson.commission ? (
+                        ((lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0) / 60) * lesson.commission.price_per_hour
+                      ).toFixed(2) : "0.00"}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Events list */}
-                {lesson.events && lesson.events.length > 0 ? (
-                  <div className="space-y-2 bg-white dark:bg-gray-800 rounded-md p-3">
-                    {lesson.events.map((event: any) => (
-                      <div key={event.id} className="flex items-center gap-3 text-sm">
-                        <FlagIcon className="w-3.5 h-3.5 text-orange-500" />
-                        <ElegantDate dateString={event.date} />
-                        <Duration minutes={event.duration || 0} />
-                        <span className="text-gray-500">{event.location}</span>
-                        <EventStatusLabel eventId={event.id} currentStatus={event.status} />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500 text-center py-2 space-y-2">
-                    <Button
-                      onClick={async () => {
-                        if (!confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
-                          return;
-                        }
-                        
-                        const result = await deleteLesson(lesson.id);
-                        if (result.success) {
-                          toast.success("Lesson deleted successfully!");
-                        } else {
-                          toast.error(result.error || "Failed to delete lesson");
-                        }
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="border-2 border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Delete Lesson Plan
-                    </Button>
-                  </div>
-                )}
+                <ShowEventsInLessons events={lesson.events || []} lessonId={lesson.id} />
               </div>
             ))}
           </div>

@@ -245,6 +245,7 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
                   with: {
                     teacher: true,
                     events: true,
+                    commission: true,
                   },
                 },
               },

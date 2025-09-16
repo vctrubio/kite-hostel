@@ -2,7 +2,7 @@
 
 import db from "@/drizzle";
 import { BookingWithRelations } from "@/backend/types";
-import { Student } from "@/drizzle/migrations/schema";
+import { Student, BookingStudent } from "@/drizzle/migrations/schema";
 import { eq, InferSelectModel } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -248,5 +248,101 @@ export async function getStudentById(
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     return { data: null, error: errorMessage };
+  }
+}
+
+export async function deleteStudent(studentId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    // First check if student has any bookings
+    const studentWithBookings = await db.query.Student.findFirst({
+      where: eq(Student.id, studentId),
+      with: {
+        bookings: true,
+      },
+    });
+
+    if (!studentWithBookings) {
+      return { success: false, error: "Student not found" };
+    }
+
+    if (studentWithBookings.bookings && studentWithBookings.bookings.length > 0) {
+      return { 
+        success: false, 
+        error: `Cannot delete student. They have ${studentWithBookings.bookings.length} booking(s) associated with them.` 
+      };
+    }
+
+    // Delete related records first (in order due to foreign key constraints)
+    
+    // Delete booking-student relationships (though there shouldn't be any if we got here)
+    await db.delete(BookingStudent).where(eq(BookingStudent.student_id, studentId));
+    
+    // Finally delete the student
+    const deletedStudent = await db
+      .delete(Student)
+      .where(eq(Student.id, studentId))
+      .returning();
+
+    if (deletedStudent.length === 0) {
+      return { success: false, error: "Failed to delete student" };
+    }
+
+    // Revalidate paths
+    revalidatePath("/students");
+    revalidatePath("/forms");
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error deleting student:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function softDeleteStudent(studentId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const updatedStudent = await db
+      .update(Student)
+      .set({ deleted_at: new Date().toISOString() })
+      .where(eq(Student.id, studentId))
+      .returning();
+
+    if (updatedStudent.length === 0) {
+      return { success: false, error: "Student not found" };
+    }
+
+    // Revalidate paths
+    revalidatePath("/students");
+    revalidatePath(`/students/${studentId}`);
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error soft deleting student:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function restoreStudent(studentId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const updatedStudent = await db
+      .update(Student)
+      .set({ deleted_at: null })
+      .where(eq(Student.id, studentId))
+      .returning();
+
+    if (updatedStudent.length === 0) {
+      return { success: false, error: "Student not found" };
+    }
+
+    // Revalidate paths
+    revalidatePath("/students");
+    revalidatePath(`/students/${studentId}`);
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error restoring student:", error);
+    return { success: false, error: errorMessage };
   }
 }
