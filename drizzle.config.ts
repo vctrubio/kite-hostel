@@ -13,6 +13,6 @@ export default defineConfig({
   introspect: {
     casing: "preserve",
   },
-  verbose: true,
+  verbose: false,
   strict: true,
 });

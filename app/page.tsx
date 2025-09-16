@@ -163,11 +163,17 @@ export default async function WelcomePage() {
           </div>
         </div>
         
-        {/* Footer with docs link */}
-        <footer className="mt-12 text-center">
+        {/* Footer with user and docs links */}
+        <footer className="mt-12 text-center space-y-3">
+          <Link
+            href="/user"
+            className="block text-sm text-primary hover:text-primary/80 transition-colors underline font-medium"
+          >
+            Go to User Page
+          </Link>
           <Link
             href="/docs"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+            className="block text-sm text-muted-foreground hover:text-foreground transition-colors underline"
           >
             Read the Docs
           </Link>

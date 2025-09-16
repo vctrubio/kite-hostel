@@ -4,17 +4,12 @@ import Image from "next/image";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { useState } from 'react';
+import { PWAInstallButton, usePWAInstallation } from "@/components/PWAInstallButton";
+import { Download, Smartphone, Monitor } from "lucide-react";
 
 export default function UserPage() {
-  // State to show manual install instructions
-  const [showInstructions, setShowInstructions] = useState(false);
-  const handleInstall = () => {
-    // For iOS/Safari manual install
-    setShowInstructions(true);
-  };
-
   const { user, loading } = useUserWallet();
+  const { isInstalled, canInstall } = usePWAInstallation();
 
   if (loading) {
     return (
@@ -52,30 +47,81 @@ export default function UserPage() {
           </Link>
         </nav>
       </div>
-      {/* Always show download button */}
-      <button
-        onClick={handleInstall}
-        className="mt-6 mx-auto flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-600 rounded hover:bg-gray-100 transform hover:scale-105 transition duration-200"
-      >
-        <Image src="/logo-tkh.png" width={24} height={24} alt="Install" />
-        Download for Home Screen
-      </button>
-      {/* Manual install instructions for iOS */}
-      {showInstructions && (
-        <div className="mt-4 mx-auto max-w-sm p-4 bg-white border border-gray-200 rounded-lg text-center text-sm text-gray-700 shadow">
-          <button
-            onClick={() => setShowInstructions(false)}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-          >
-            ×
-          </button>
-          <p>To install on your device:</p>
-          <ol className="list-decimal list-inside text-left mt-2">
-            <li>Tap the browser’s <strong>Share</strong> icon</li>
-            <li>Select <strong>Add to Home Screen</strong></li>
-          </ol>
-        </div>
-      )}
+
+      {/* PWA Installation Section */}
+      <div className="mt-8 w-full max-w-md">
+        {isInstalled ? (
+          // Already installed
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center dark:bg-green-900/20 dark:border-green-800">
+            <div className="flex items-center justify-center mb-3">
+              <div className="bg-green-100 rounded-full p-3 dark:bg-green-800">
+                <Monitor className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
+              App Installed!
+            </h3>
+            <p className="text-sm text-green-700 dark:text-green-300">
+              Tarifa Kite Hostel is now installed on your device. You can access it from your home screen.
+            </p>
+          </div>
+        ) : canInstall ? (
+          // Can be installed
+          <div className="bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-200 rounded-lg p-6 text-center dark:from-sky-900/20 dark:to-blue-900/20 dark:border-sky-800">
+            <div className="flex items-center justify-center mb-4">
+              <Image
+                src="/logo-tkh.png"
+                width={80}
+                height={80}
+                alt="Tarifa Kite Hostel"
+                className="rounded-2xl shadow-lg"
+              />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              Download the Mobile Web App
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <span className="text-lg font-bold text-sky-600 dark:text-sky-400 font-mono">Download</span> Tarifa Kite Hostel on your mobile device with offline access and home screen installation
+            </p>
+
+            <div className="space-y-3">
+              <PWAInstallButton
+                className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-3 px-6 rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
+                showInstructions={true}
+              />
+
+              <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center justify-center space-x-1">
+                  <Smartphone className="w-4 h-4" />
+                  <span>Works on Mobile</span>
+                </div>
+                <div className="flex items-center justify-center space-x-1">
+                  <Monitor className="w-4 h-4" />
+                  <span>Works on Desktop</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+              <p>✓ Offline access</p>
+              <p>✓ Push notifications</p>
+              <p>✓ Native app experience</p>
+            </div>
+          </div>
+        ) : (
+          // Cannot be installed (fallback)
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center dark:bg-gray-800 dark:border-gray-700">
+            <div className="flex items-center justify-center mb-3">
+              <div className="bg-gray-100 rounded-full p-3 dark:bg-gray-700">
+                <Download className="w-6 h-6 text-gray-500" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+              -- Not on Mobile -- Cannot Install --
+            </h3>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

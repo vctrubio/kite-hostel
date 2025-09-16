@@ -25,7 +25,7 @@ const db =
   globalForDb.db ??
   drizzle(client, {
     schema: fullSchema,
-    logger: true,
+    logger: false,
   });
 
 if (process.env.NODE_ENV !== "production") {

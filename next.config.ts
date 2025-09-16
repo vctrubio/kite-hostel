@@ -20,6 +20,8 @@ const pwaConfig = {
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching,
+  buildExcludes: [/manifest\.json$/],
+  publicExcludes: ['!manifest.json'],
 }
 
 // Export Next.js config wrapped with PWA support
