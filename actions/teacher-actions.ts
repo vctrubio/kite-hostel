@@ -231,6 +231,7 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
         payments: true,
         lessons: {
           with: {
+            teacher: true,
             events: true,
             commission: true,
             booking: {

@@ -217,14 +217,12 @@ export function BookingLessonEventCard({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <HeadsetIcon className="w-4 h-4 text-green-600" />
-                    {showTeacher && (
-                      lesson.teacher?.id ? (
-                        <Link href={`/teachers/${lesson.teacher.id}`} className="font-medium hover:text-blue-600 transition-colors cursor-pointer">
-                          {lesson.teacher.name || "Unknown Teacher"}
-                        </Link>
-                      ) : (
-                        <span className="font-medium">{lesson.teacher?.name || "Unknown Teacher"}</span>
-                      )
+                    {lesson.teacher?.id ? (
+                      <Link href={`/teachers/${lesson.teacher.id}`} className="font-medium hover:text-blue-600 transition-colors cursor-pointer">
+                        {lesson.teacher.name || "Unknown Teacher"}
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{lesson.teacher?.name || "Unknown Teacher"}</span>
                     )}
                     <span className="text-xs text-gray-500 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded-full">
                       {lesson.status}
