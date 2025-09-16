@@ -109,17 +109,7 @@ export default function UserPage() {
             </div>
           </div>
         ) : (
-          // Cannot be installed (fallback)
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center dark:bg-gray-800 dark:border-gray-700">
-            <div className="flex items-center justify-center mb-3">
-              <div className="bg-gray-100 rounded-full p-3 dark:bg-gray-700">
-                <Download className="w-6 h-6 text-gray-500" />
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-              -- Not on Mobile -- Cannot Install --
-            </h3>
-          </div>
+          <></>
         )}
       </div>
     </div>
