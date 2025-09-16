@@ -276,14 +276,23 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
         const lesson = teacher.lessons.find((l: any) => l.booking_id === bookingId);
         if (!lesson?.booking) return null;
         
-        // Get all lessons for this booking from this teacher
-        const bookingLessons = teacher.lessons.filter((l: any) => l.booking_id === bookingId);
-        
-        // Add the lessons to the booking object
-        return {
-          ...lesson.booking,
-          lessons: bookingLessons
-        };
+        // The `lesson.booking` object, fetched from the updated `getTeacherById` action,
+        // now contains a complete list of all lessons associated with the booking.
+        const booking = lesson.booking;
+
+        // Sort the lessons within the booking so that lessons belonging to the current teacher
+        // are displayed first in the BookingLessonEventCard.
+        if (booking.lessons && Array.isArray(booking.lessons)) {
+          booking.lessons.sort((a: any, b: any) => {
+            if (a.teacher_id === teacher.id && b.teacher_id !== teacher.id) return -1;
+            if (a.teacher_id !== teacher.id && b.teacher_id === teacher.id) return 1;
+            return 0;
+          });
+        }
+
+        // We return `lesson.booking` directly, ensuring the BookingLessonEventCard
+        // receives all lessons, not just those of the current teacher.
+        return booking;
       })
       .filter(Boolean);
     

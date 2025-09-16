@@ -16,13 +16,13 @@ interface StudentDetailsProps {
 }
 
 // Sub-component for the header section
-function StudentHeader({ 
-  student, 
-  editMode, 
-  onEditToggle, 
-  onSave, 
+function StudentHeader({
+  student,
+  editMode,
+  onEditToggle,
+  onSave,
   onCancel,
-  studentEntity 
+  studentEntity
 }: {
   student: any;
   editMode: boolean;
@@ -56,9 +56,9 @@ function StudentHeader({
             <Button variant="outline" onClick={onCancel} size="sm">Cancel</Button>
           </>
         ) : (
-          <Button 
-            onClick={onEditToggle} 
-            variant="outline" 
+          <Button
+            onClick={onEditToggle}
+            variant="outline"
             size="sm"
             className={`border-2 ${studentEntity?.color?.replace('text-', 'border-')} hover:${studentEntity?.hoverColor ? `bg-[${studentEntity.hoverColor}]` : 'bg-gray-50'}`}
           >
@@ -71,11 +71,11 @@ function StudentHeader({
 }
 
 // Sub-component for form fields
-function StudentFormFields({ 
-  student, 
-  formData, 
-  editMode, 
-  onChange 
+function StudentFormFields({
+  student,
+  formData,
+  editMode,
+  onChange
 }: {
   student: any;
   formData: any;
@@ -86,7 +86,7 @@ function StudentFormFields({
     const event = {
       target: {
         name: 'languages',
-        value: isChecked 
+        value: isChecked
           ? [...formData.languages, language]
           : formData.languages.filter((lang: string) => lang !== language)
       }
@@ -100,11 +100,11 @@ function StudentFormFields({
         <div className="space-y-2">
           <Label htmlFor="name">First Name</Label>
           {editMode ? (
-            <Input 
+            <Input
               id="name"
-              name="name" 
-              value={formData.name} 
-              onChange={onChange} 
+              name="name"
+              value={formData.name}
+              onChange={onChange}
             />
           ) : (
             <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
@@ -112,15 +112,15 @@ function StudentFormFields({
             </div>
           )}
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="last_name">Last Name</Label>
           {editMode ? (
-            <Input 
+            <Input
               id="last_name"
-              name="last_name" 
-              value={formData.last_name || ''} 
-              onChange={onChange} 
+              name="last_name"
+              value={formData.last_name || ''}
+              onChange={onChange}
             />
           ) : (
             <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
@@ -161,11 +161,11 @@ function StudentFormFields({
       <div className="space-y-2">
         <Label htmlFor="passport_number">Passport Number</Label>
         {editMode ? (
-          <Input 
+          <Input
             id="passport_number"
-            name="passport_number" 
-            value={formData.passport_number || ''} 
-            onChange={onChange} 
+            name="passport_number"
+            value={formData.passport_number || ''}
+            onChange={onChange}
           />
         ) : (
           <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
@@ -178,11 +178,11 @@ function StudentFormFields({
         <div className="space-y-2">
           <Label htmlFor="country">Country</Label>
           {editMode ? (
-            <Input 
+            <Input
               id="country"
-              name="country" 
-              value={formData.country || ''} 
-              onChange={onChange} 
+              name="country"
+              value={formData.country || ''}
+              onChange={onChange}
             />
           ) : (
             <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
@@ -194,11 +194,11 @@ function StudentFormFields({
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
           {editMode ? (
-            <Input 
+            <Input
               id="phone"
-              name="phone" 
-              value={formData.phone || ''} 
-              onChange={onChange} 
+              name="phone"
+              value={formData.phone || ''}
+              onChange={onChange}
             />
           ) : (
             <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
@@ -211,11 +211,11 @@ function StudentFormFields({
       <div className="space-y-2">
         <Label htmlFor="size">Size</Label>
         {editMode ? (
-          <Input 
+          <Input
             id="size"
-            name="size" 
-            value={formData.size || ''} 
-            onChange={onChange} 
+            name="size"
+            value={formData.size || ''}
+            onChange={onChange}
           />
         ) : (
           <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
@@ -227,11 +227,11 @@ function StudentFormFields({
       <div className="space-y-2">
         <Label htmlFor="desc">Description</Label>
         {editMode ? (
-          <textarea 
+          <textarea
             id="desc"
-            name="desc" 
-            value={formData.desc || ''} 
-            onChange={onChange} 
+            name="desc"
+            value={formData.desc || ''}
+            onChange={onChange}
             rows={3}
             className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
@@ -246,11 +246,11 @@ function StudentFormFields({
 }
 
 // Sub-component for booking controls
-function BookingControls({ 
-  hasBookings, 
-  teacherSearch, 
-  onSearchChange, 
-  sortOrder, 
+function BookingControls({
+  hasBookings,
+  teacherSearch,
+  onSearchChange,
+  sortOrder,
   onSortToggle,
   compactView,
   onCompactToggle
@@ -299,10 +299,10 @@ function BookingControls({
 }
 
 // Sub-component for booking list
-function BookingList({ 
-  bookings, 
+function BookingList({
+  bookings,
   hasBookings,
-  compactView 
+  compactView
 }: {
   bookings: any[];
   hasBookings: boolean;
@@ -312,8 +312,8 @@ function BookingList({
     return (
       <>
         {bookings.map((booking: any) => (
-          <BookingLessonEventCard 
-            key={booking.id} 
+          <BookingLessonEventCard
+            key={booking.id}
             booking={booking}
             showTeacher={true}
             compact={compactView}
@@ -390,20 +390,20 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
   // Filtered and sorted bookings
   const filteredAndSortedBookings = useMemo(() => {
     if (!student.bookings || student.bookings.length === 0) return [];
-    
-    let filtered = student.bookings.filter((booking: any) => {
+
+    const filtered = student.bookings.filter((booking: any) => {
       if (!teacherSearch.trim()) return true;
-      return booking.lessons?.some((lesson: any) => 
+      return booking.lessons?.some((lesson: any) =>
         lesson.teacher?.name?.toLowerCase().includes(teacherSearch.toLowerCase())
       );
     });
-    
+
     filtered.sort((a: any, b: any) => {
       const dateA = new Date(a.date_start).getTime();
       const dateB = new Date(b.date_start).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-    
+
     return filtered;
   }, [student.bookings, teacherSearch, sortOrder]);
 
@@ -419,7 +419,7 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column - Student Details */}
         <div className="space-y-6">
-          <StudentHeader 
+          <StudentHeader
             student={student}
             editMode={editMode}
             onEditToggle={() => setEditMode(true)}
@@ -427,8 +427,8 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
             onCancel={handleCancel}
             studentEntity={studentEntity}
           />
-          
-          <StudentFormFields 
+
+          <StudentFormFields
             student={student}
             formData={formData}
             editMode={editMode}
@@ -438,7 +438,7 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
 
         {/* Right Column - Booking Information */}
         <div className="space-y-6">
-          <BookingControls 
+          <BookingControls
             hasBookings={hasBookings}
             teacherSearch={teacherSearch}
             onSearchChange={setTeacherSearch}
@@ -447,8 +447,8 @@ export function StudentDetails({ student: initialStudent, availableLanguages }: 
             compactView={compactView}
             onCompactToggle={() => setCompactView(!compactView)}
           />
-          
-          <BookingList 
+
+          <BookingList
             bookings={filteredAndSortedBookings}
             hasBookings={hasBookings}
             compactView={compactView}
