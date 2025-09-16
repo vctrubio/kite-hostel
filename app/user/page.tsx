@@ -5,7 +5,7 @@ import { useUserWallet } from "@/provider/UserWalletProvider";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PWAInstallButton, usePWAInstallation } from "@/components/PWAInstallButton";
-import { Download, Smartphone, Monitor } from "lucide-react";
+import { Smartphone, Monitor } from "lucide-react";
 
 export default function UserPage() {
   const { user, loading } = useUserWallet();
