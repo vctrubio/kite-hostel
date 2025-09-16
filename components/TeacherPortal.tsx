@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Eye, EyeOff, Share, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 import { FlagIcon } from "@/svgs/FlagIcon";
 import { KiteIcon } from "@/svgs/KiteIcon";
@@ -26,19 +27,25 @@ function TeacherHeader({
   eventsCount,
   totalDuration,
   totalEarnings,
+  teacherId,
 }: {
   name: string;
   lessonsCount: number;
   eventsCount: number;
   totalDuration: number;
   totalEarnings: number;
+  teacherId: string;
 }) {
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center space-x-4">
-            <HeadsetIcon className="h-8 w-8 text-green-600" />
+            <Link href={`/teachers/${teacherId}`}>
+              <div className="p-2 rounded-lg border-2 border-transparent cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200">
+                <HeadsetIcon className="h-8 w-8 text-green-600" />
+              </div>
+            </Link>
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
                 {name}
@@ -247,6 +254,7 @@ export default function TeacherPortal({ teacherData }: TeacherPortalProps) {
         eventsCount={stats.eventsCount}
         totalDuration={stats.totalDuration}
         totalEarnings={stats.totalEarnings}
+        teacherId={teacherPortal.getTeacher().id}
       />
       
       {/* TBC Events Notification */}
