@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Calendar, CalendarX2, ChevronDown, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, CalendarX2, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { DateFilter } from "@/backend/types";
 
 interface DateFilterProps {
@@ -30,30 +30,7 @@ export function DateFilterPicker({ filter, onFilterChange }: DateFilterProps) {
     setTempStartMonth(newMonth);
   };
 
-  const navigateEndMonth = (direction: 'prev' | 'next') => {
-    if (!tempEndMonth) return;
-    const [year, month] = tempEndMonth.split('-').map(Number);
-    const currentDate = new Date(year, month - 1, 1);
-    if (direction === 'prev') {
-      currentDate.setMonth(currentDate.getMonth() - 1);
-    } else {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-    const newMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-    setTempEndMonth(newMonth);
-  };
 
-  const adjustDay = (type: 'startDay' | 'endDay', direction: 'prev' | 'next') => {
-    if (type === 'startDay') {
-      const current = parseInt(tempStartDay) || 1;
-      const newDay = direction === 'prev' ? Math.max(1, current - 1) : Math.min(31, current + 1);
-      setTempStartDay(String(newDay));
-    } else {
-      const current = parseInt(tempEndDay) || 31;
-      const newDay = direction === 'prev' ? Math.max(1, current - 1) : Math.min(31, current + 1);
-      setTempEndDay(String(newDay));
-    }
-  };
 
   useEffect(() => {
     console.log("Date filter changed:", filter);
@@ -73,10 +50,6 @@ export function DateFilterPicker({ filter, onFilterChange }: DateFilterProps) {
     }
   }, [filter.startDate, filter.endDate]);
 
-  const getCurrentMonth = () => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  };
 
   const handleNoFilter = () => {
     onFilterChange({ type: 'off', startDate: null, endDate: null });
@@ -170,12 +143,6 @@ export function DateFilterPicker({ filter, onFilterChange }: DateFilterProps) {
     return 'Custom Range';
   };
 
-  const isCurrentMonth = () => {
-    if (filter.type !== 'month' || !filter.startDate) return false;
-    const filterDate = new Date(filter.startDate);
-    const now = new Date();
-    return filterDate.getFullYear() === now.getFullYear() && filterDate.getMonth() === now.getMonth();
-  };
 
   return (
     <div className="relative">

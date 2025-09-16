@@ -17,22 +17,22 @@ interface PackageFormData {
   capacity_kites: number;
 }
 
-interface FormFieldDescriptor {
-    key: keyof PackageFormData;
-    label: string;
-    type: 'number' | 'text';
-    required: boolean;
-    placeholder?: string;
-    min?: number;
-    step?: number;
-}
+// interface FormFieldDescriptor {
+//     key: keyof PackageFormData;
+//     label: string;
+//     type: 'number' | 'text';
+//     required: boolean;
+//     placeholder?: string;
+//     min?: number;
+//     step?: number;
+// }
 
-const FORM_FIELDS: FormFieldDescriptor[] = [
-    { key: 'duration_hours', label: 'Duration (hours)', type: 'number', required: true, placeholder: '2', min: 1, step: 0.5 },
-    { key: 'price_per_student', label: 'Price per Student (€)', type: 'number', required: true, placeholder: '85', min: 1 },
-    { key: 'capacity_students', label: 'Student Capacity', type: 'number', required: true, placeholder: '4', min: 1 },
-    { key: 'capacity_kites', label: 'Kites Required', type: 'number', required: true, placeholder: '1', min: 1 },
-] as const;
+// const _FORM_FIELDS: FormFieldDescriptor[] = [
+//     { key: 'duration_hours', label: 'Duration (hours)', type: 'number', required: true, placeholder: '2', min: 1, step: 0.5 },
+//     { key: 'price_per_student', label: 'Price per Student (€)', type: 'number', required: true, placeholder: '85', min: 1 },
+//     { key: 'capacity_students', label: 'Student Capacity', type: 'number', required: true, placeholder: '4', min: 1 },
+//     { key: 'capacity_kites', label: 'Kites Required', type: 'number', required: true, placeholder: '1', min: 1 },
+// ] as const;
 
 export function PackageForm({
     onSubmit

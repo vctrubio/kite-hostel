@@ -10,10 +10,7 @@ import {
   BookIcon,
   CalendarIcon,
   FlagIcon,
-  LocationIcon,
-  ClockIcon,
   AdminIcon,
-  EquipmentIcon,
 } from "@/svgs";
 
 const entityData = [

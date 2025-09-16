@@ -481,7 +481,7 @@ export default function MasterBookingForm({
               {activeForm === "student" && (
                 <div className="-m-4">
                   <StudentForm
-                    onSubmit={(data) => {
+                    onSubmit={() => {
                       // Handle student creation success
                       // Switch to booking form only if toggle is off
                       if (!stayOnFormAfterSubmit) {
@@ -495,7 +495,7 @@ export default function MasterBookingForm({
               {activeForm === "package" && (
                 <div className="-m-4">
                   <PackageForm
-                    onSubmit={(data) => {
+                    onSubmit={() => {
                       // Handle package creation success
                       // Switch to booking form only if toggle is off
                       if (!stayOnFormAfterSubmit) {

@@ -15,7 +15,7 @@ import { getStatusColors, ENTITY_DATA } from "@/lib/constants";
 import { EventCountWithDuration } from "@/getters/event-getters";
 import { DropdownExpandableRow } from "./DropdownExpandableRow";
 import { PackageDetails } from "@/getters/package-details";
-import { KiteIcon, BookingIcon } from "@/svgs";
+import { KiteIcon } from "@/svgs";
 
 interface LessonRowProps {
   data: InferSelectModel<typeof Lesson> & {

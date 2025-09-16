@@ -4,14 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Send, Trash2 } from "lucide-react";
-import { DateSince } from "@/components/formatters/DateSince";
 import { Duration } from "@/components/formatters/Duration";
 import { format } from "date-fns";
 import { getEventStatusColor, ENTITY_DATA } from "@/lib/constants";
 import { deleteEvent } from "@/actions/event-actions";
-import { HelmetIcon, KiteIcon, BookmarkIcon } from "@/svgs";
+import { HelmetIcon } from "@/svgs";
 import { DropdownExpandableRow } from "./DropdownExpandableRow";
-import { PackageDetails } from "@/getters/package-details";
 
 interface EventRowProps {
   data: {

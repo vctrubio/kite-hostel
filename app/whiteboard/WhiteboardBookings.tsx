@@ -1,10 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
 import BookingCard from "@/components/cards/BookingCard";
 import {
   WhiteboardClass,
-  createBookingClasses,
 } from "@/backend/WhiteboardClass";
 import { CheckCircle } from "lucide-react";
 import { TeacherSchedule } from "@/backend/TeacherSchedule";

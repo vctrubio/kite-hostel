@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { MapPin, Trash2, Send } from 'lucide-react';
 import { TeacherSchedule, type QueuedLesson as TeacherQueuedLesson } from '@/backend/TeacherSchedule';
-import { HelmetIcon, FlagIcon } from '@/svgs';
+import { FlagIcon } from '@/svgs';
 import { extractStudents } from '@/backend/WhiteboardClass';
-import { timeToMinutes, minutesToTime, createUTCDateTime } from '@/components/formatters/TimeZone';
+import { timeToMinutes, createUTCDateTime } from '@/components/formatters/TimeZone';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
 import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
 
@@ -17,8 +17,6 @@ interface DurationSettings {
 }
 
 interface TeacherLessonQueueProps {
-  teacherId: string;
-  teacherName: string;
   teacherSchedule?: TeacherSchedule;
   selectedDate: string;
   durationSettings: DurationSettings;
@@ -32,8 +30,8 @@ interface TeacherLessonQueueProps {
 }
 
 export default function TeacherLessonQueue({ 
-  teacherId, 
-  teacherName, 
+  teacherId: _teacherId, 
+  teacherName: _teacherName, 
   teacherSchedule, 
   selectedDate,
   durationSettings,

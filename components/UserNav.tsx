@@ -13,7 +13,6 @@ import {
   UserPlus,
   ChevronDown,
   Plus,
-  LogIn,
   Home,
   LayoutGrid,
 } from "lucide-react";

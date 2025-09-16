@@ -23,13 +23,6 @@ export function MonthPicker({ selectedMonth, onMonthChange }: MonthPickerProps) 
     }
   }
 
-  const getCurrentMonthLabel = () => {
-    const [year, month] = selectedMonth.split('-');
-    return new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleDateString('en-US', { 
-      month: 'long', 
-      year: 'numeric' 
-    });
-  };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     const [year, month] = selectedMonth.split('-').map(Number);

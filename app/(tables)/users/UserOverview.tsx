@@ -14,7 +14,6 @@ interface UserOverviewProps {
 
 export function UserOverview({
   userWallets,
-  usersData, // Keep for debug display if needed, but not for unassignedAuthUsers calculation
   allTeachers,
   availableSks,
   availablePks,

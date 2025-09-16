@@ -1,5 +1,5 @@
+
 import { DateTime } from '@/components/formatters/DateTime';
-import { Duration } from '@/components/formatters/Duration';
 
 interface BookingDetailModalProps {
   bookings: any[];

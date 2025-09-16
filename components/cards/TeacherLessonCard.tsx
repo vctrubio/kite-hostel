@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Duration } from "@/components/formatters/Duration";
 import { DateTime } from "@/components/formatters/DateTime";
-import { ChevronDown, ChevronUp, Calendar, Euro, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, Calendar } from "lucide-react";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
 import { KiteIcon } from "@/svgs/KiteIcon";
 import { type LessonWithDetails } from "@/backend/TeacherPortal";

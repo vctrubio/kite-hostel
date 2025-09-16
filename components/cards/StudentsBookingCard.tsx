@@ -5,14 +5,10 @@ import { BillboardClass } from "@/backend/BillboardClass";
 import {
   HelmetIcon,
   BookingIcon,
-  HeadsetIcon,
-  FlagIcon,
-  BookmarkIcon,
 } from "@/svgs";
 import { FormatedDateExp } from "@/components/label/FormatedDateExp";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { LessonFormatter } from "@/getters/lesson-formatters";
-import { Duration } from "@/components/formatters/Duration";
 import { PackageDetails } from "@/getters/package-details";
 import {
   Plus,
@@ -177,7 +173,7 @@ function StudentCardFooter({
           {/* Package Information */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <BookmarkIcon className="w-4 h-4" />
+              <BookingIcon className="w-4 h-4" />
               <span>Package Details</span>
             </div>
 

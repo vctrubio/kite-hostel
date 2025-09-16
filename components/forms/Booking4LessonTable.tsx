@@ -7,7 +7,6 @@ import { BookmarkIcon, HelmetIcon, HeadsetIcon } from "@/svgs";
 import { FormatDateRange } from "@/components/formatters/DateRange";
 import { Duration } from "@/components/formatters/Duration";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
-import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { ViewTeacherLessonEvents } from "@/components/views/ViewTeacherLessonEvents";
 import { BookingWithRelations } from "@/backend/types";
@@ -36,7 +35,7 @@ export function Booking4LessonTable({
   const [filter, setFilter] = useState<FilterType>("all");
 
   const [teachers, setTeachers] = useState<InferSelectModel<typeof Teacher>[]>([]);
-  const [loadingTeachers, setLoadingTeachers] = useState(true);
+  const [, setLoadingTeachers] = useState(true);
 
   const fetchTeachersData = async () => {
     setLoadingTeachers(true);

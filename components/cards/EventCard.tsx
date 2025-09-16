@@ -55,7 +55,7 @@ const STATUS_COLORS = {
 } as const;
 
 // Sub-components
-const StudentsDisplay = ({ students, teacherSchedule }: { students: string, teacherSchedule?: any }) => {
+const StudentsDisplay = ({ students }: { students: string }) => {
   const studentList = students
     .split(", ")
     .filter((name) => name.trim() !== "" && name !== "No students");
@@ -148,16 +148,13 @@ const CompletionDropdown = ({
   eventId,
   duration: originalDuration,
   date,
-  teacherSchedule,
   onComplete,
 }: {
   eventId: string;
   duration: number;
   date: string;
-  teacherSchedule?: any; // TeacherSchedule - contains all the info we need
   onComplete: () => void;
 }) => {
-  const [selectedKiteIds, setSelectedKiteIds] = useState<string[]>([]);
   const [duration, setDuration] = useState(originalDuration);
   const [continueTomorrow, setContinueTomorrow] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -166,8 +163,7 @@ const CompletionDropdown = ({
   const durationDifference = duration - originalDuration;
   
   // Extract info from TeacherSchedule
-  const teacherKites: any[] = []; // TODO: Get from teacherSchedule.getTeacherKites() or similar
-  const packageCapacityKites = 1; // TODO: Get from teacherSchedule.getPackageInfo() or similar  
+  // const packageCapacityKites = 1; // TODO: Get from teacherSchedule.getPackageInfo() or similar  
   const bookingEndDate = null; // TODO: Get from teacherSchedule.getBookingInfo() or similar
   
   // Calculate if it's the last day
@@ -181,16 +177,6 @@ const CompletionDropdown = ({
     }
   }, [isLastDay]);
 
-  const handleKiteToggle = (kiteId: string) => {
-    setSelectedKiteIds(prev => {
-      if (prev.includes(kiteId)) {
-        return prev.filter(id => id !== kiteId);
-      } else if (prev.length < packageCapacityKites) {
-        return [...prev, kiteId];
-      }
-      return prev;
-    });
-  };
 
   const adjustDuration = (increment: number) => {
     setDuration(prev => Math.max(30, prev + increment));
@@ -559,7 +545,6 @@ const DropdownCard = ({
         eventId={eventId}
         duration={duration || 0}
         date={date || ""}
-        teacherSchedule={teacherSchedule}
         onComplete={onCompletionComplete}
       />
     );
@@ -621,7 +606,6 @@ const DropdownCard = ({
 const AdminControls = ({
   status,
   onStatusChange,
-  onDelete,
   reorganizationOptions,
   onCancelReorganization,
   showDeleteDropdown,
@@ -821,7 +805,7 @@ export default function EventCard({
         <div className="flex-1 p-4">
           {/* Students Display */}
           <div className="mb-3">
-            <StudentsDisplay students={students} teacherSchedule={teacherSchedule} />
+            <StudentsDisplay students={students} />
           </div>
 
           {/* Event Details */}
@@ -834,7 +818,6 @@ export default function EventCard({
           <AdminControls
             status={status}
             onStatusChange={onStatusChange}
-            onDelete={onDelete}
             reorganizationOptions={reorganizationOptions}
             onCancelReorganization={onCancelReorganization}
             showDeleteDropdown={showDeleteDropdown}

@@ -3,9 +3,9 @@
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle, ArrowUp, ArrowDown, MapPin } from 'lucide-react';
 import { HelmetIcon } from '@/svgs';
 import { Duration } from '@/components/formatters/Duration';
-import { DateTime, formatTime } from '@/components/formatters/DateTime';
+import { formatTime } from '@/components/formatters/DateTime';
 import { type QueuedLesson } from '@/backend/TeacherSchedule';
-import { addMinutes, format } from 'date-fns';
+import { addMinutes } from 'date-fns';
 
 interface TeacherLessonQueueCardProps {
   queuedLesson: QueuedLesson & { scheduledDateTime: string };

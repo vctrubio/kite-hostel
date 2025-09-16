@@ -8,7 +8,6 @@ import {
   getTodayDateString,
 } from "@/components/formatters/DateTime";
 import BillboardHeader from "./BillboardHeader";
-import BillboardDev from "./BillboardDev";
 import TeacherColumnComplex from "./TeacherColumnComplex";
 import StudentBookingColumn from "./StudentBookingColumn";
 import { BillboardClass } from "@/backend/BillboardClass";
@@ -455,7 +454,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     }
   };
 
-  const handleBookingDragEnd = (bookingId: string, wasDropped: boolean) => {
+  const handleBookingDragEnd = () => {
     setDraggedBooking(null);
   };
 
@@ -531,8 +530,6 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         />
       </div>
 
-      {/* Dev Component - JSON View */}
-      {/* <BillboardDev bookingsData={data.bookings} /> */}
     </div>
   );
 }

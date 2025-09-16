@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ interface UserWalletFormProps {
 }
 
 export function UserWalletForm({ initialUserWallet, allTeachers, availableSks }: UserWalletFormProps) {
-  const router = useRouter();
+  // const _router = useRouter();
   const [userWallet, setUserWallet] = useState(initialUserWallet);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({

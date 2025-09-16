@@ -1,19 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Users } from "lucide-react";
-import { getUserWallets } from "@/actions/user-actions";
 import { getRoleColor } from "@/lib/constants";
 import type { User } from "@supabase/supabase-js";
 
-interface UserWalletData {
-  pk: string | null;
-  sk: string;
-  role: string;
-}
 
 interface UserWalletInfo {
   id: string;

@@ -1,5 +1,3 @@
-import { getUserWallets } from "@/actions/user-actions";
-import { getUsers } from "@/actions/auth-actions";
 import { UserCard } from "@/components/cards/User";
 import { CreateUserWalletForm } from "@/components/forms/CreateUserWalletForm";
 

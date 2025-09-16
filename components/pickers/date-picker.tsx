@@ -93,7 +93,7 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
   }
 
   // Helper function to convert local date to ISO string
-  const formatToISOString = (date: Date, isEndDate = false): string => {
+  const formatToISOString = (date: Date, _isEndDate = false): string => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');

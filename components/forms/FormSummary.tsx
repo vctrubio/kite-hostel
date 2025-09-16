@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { formatHours } from "@/components/formatters/Duration";
 import { BookingIcon, HelmetIcon, BookmarkIcon } from "@/svgs";
 import { Button } from "@/components/ui/button";
 import { createStudent } from "@/actions/student-actions";

@@ -244,7 +244,7 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
           { label: "All", value: "all" },
         ],
         defaultFilter: "all",
-        filterFunction: (payment: any, filterValue: string) => {
+        filterFunction: () => {
           return true;
         },
       };

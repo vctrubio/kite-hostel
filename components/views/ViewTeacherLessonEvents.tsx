@@ -1,6 +1,6 @@
 "use client";
 
-import { HeadsetIcon, KiteIcon, FlagIcon } from "@/svgs";
+import { KiteIcon, FlagIcon } from "@/svgs";
 import { Duration } from "@/components/formatters/Duration";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 
@@ -35,15 +35,6 @@ export function ViewTeacherLessonEvents({ lessons }: ViewTeacherLessonEventsProp
     return null;
   }
 
-  // Calculate totals
-  const totalEvents = lessons.reduce((sum, lesson) => 
-    sum + (lesson.events?.length || 0), 0
-  );
-  
-  const totalMinutes = lessons.reduce((sum, lesson) => 
-    sum + (lesson.events?.reduce((eventSum, event) => 
-      eventSum + event.duration, 0) || 0), 0
-  );
 
   const formatEventDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', { 

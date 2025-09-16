@@ -4,7 +4,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { UserWalletProvider } from "@/provider/UserWalletProvider";
 import { createClient } from "@/lib/supabase/server";
-import { UserNav } from "@/components/UserNav";
 import { RouteNav } from "@/components/RouteNav";
 
 import "./globals.css";

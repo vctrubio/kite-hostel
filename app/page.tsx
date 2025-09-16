@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserWallet } from "@/actions/user-actions";
 import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
 import { Shield } from "lucide-react";
-import { HelmetIcon, HeadsetIcon } from "@/svgs";
+import { HeadsetIcon } from "@/svgs";
 import { ENTITY_DATA } from "@/lib/constants";
 import Image from "next/image";
 
@@ -23,7 +23,7 @@ export default async function WelcomePage() {
   }
 
   // Get user wallet data
-  const { pk, role, teacher } = await getCurrentUserWallet();
+  const { role } = await getCurrentUserWallet();
   const name = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email;
 
 

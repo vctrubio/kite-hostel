@@ -28,7 +28,7 @@ interface UpdateUserWalletFormProps {
 
 export function UpdateUserWalletForm({
   availablePks,
-  availableSks,
+  availableSks: _availableSks,
   userWallet,
   onUpdate,
 }: UpdateUserWalletFormProps) {

@@ -251,7 +251,7 @@ const EventControlsDropdown = ({
       } else {
         setError(result.error || "Failed to update event");
       }
-    } catch (error) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
@@ -277,7 +277,7 @@ const EventControlsDropdown = ({
       } else {
         setError(result.error || "Failed to cancel event");
       }
-    } catch (error) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);

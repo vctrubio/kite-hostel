@@ -1,13 +1,11 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { HeadsetIcon } from "@/svgs";
 import { Flag, ChevronLeft, ChevronRight } from "lucide-react";
 import { TeacherQueue } from "@/backend/TeacherQueue";
 import { BillboardClass } from "@/backend/BillboardClass";
 import { type EventController } from "@/backend/types";
-import { timeToMinutes, minutesToTime } from "@/components/formatters/TimeZone";
 import { toast } from "sonner";
 
 // Types

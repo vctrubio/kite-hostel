@@ -12,13 +12,10 @@ import {
   BookmarkIcon,
   BookingIcon,
   KiteIcon,
+  EquipmentIcon,
   PaymentIcon,
-  UsersIcon,
-  BookIcon,
-  CalendarIcon,
   FlagIcon,
   AdminIcon,
-  EquipmentIcon,
 } from "@/svgs";
 import { UserCheck, Circle, Play, CheckCircle, XCircle } from "lucide-react";
 

@@ -13,7 +13,7 @@ import { TeacherSchedule } from "@/backend/TeacherSchedule";
 import { WhiteboardClass } from "@/backend/WhiteboardClass";
 import { createTeacherSchedulesFromLessons } from "@/app/whiteboard/WhiteboardMethods";
 import { getUserWalletName } from "@/getters/user-wallet-getters";
-import { LessonStatus, type Location } from "@/lib/constants";
+import { type Location } from "@/lib/constants";
 import { type LessonWithDetails } from "@/actions/lesson-actions";
 
 type FilterType =

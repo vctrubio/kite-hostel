@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { getUserWalletName } from "@/getters/user-wallet-getters";
-import { FormatDateRange } from "@/components/formatters/DateRange";
 import { DateTime } from "@/components/formatters/DateTime";
 import { Duration } from "@/components/formatters/Duration";
 import { BookmarkIcon } from "@/svgs";

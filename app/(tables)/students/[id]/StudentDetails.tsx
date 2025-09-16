@@ -418,7 +418,7 @@ function BookingList({
   );
 }
 
-export function StudentDetails({ student: initialStudent, availableLanguages }: StudentDetailsProps) {
+export function StudentDetails({ student: initialStudent }: StudentDetailsProps) {
   const [student, setStudent] = useState(initialStudent);
   const [editMode, setEditMode] = useState(false);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');

@@ -146,7 +146,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     setEditMode(false);
   };
 
-  const handleCommissionCreated = async (commissionId: string) => {
+  const handleCommissionCreated = async () => {
     const { data: updatedTeacher, error } = await getTeacherById(teacher.id);
     if (updatedTeacher) {
       setTeacher(updatedTeacher);
@@ -173,11 +173,11 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
 
       if (result.success) {
         toast.success("Commission created successfully!");
-        handleCommissionCreated(result.commission.id);
+        handleCommissionCreated();
       } else {
         toast.error(result.error || "Failed to create commission");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred while creating the commission");
     } finally {
       setIsSubmittingCommission(false);
@@ -291,7 +291,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     });
     
     return filtered;
-  }, [teacher.lessons, studentSearch, sortOrder]);
+  }, [teacher.lessons, teacher.id, studentSearch, sortOrder]);
 
   const teacherEntity = ENTITY_DATA.find(entity => entity.name === "Teacher");
   const TeacherIcon = teacherEntity?.icon;

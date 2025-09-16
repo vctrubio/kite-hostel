@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { FlagIcon } from "@/svgs";
 import { toast } from "sonner";
 import { Booking4LessonTable } from "@/components/forms/Booking4LessonTable";
 import { getBookings } from "@/actions/booking-actions";
@@ -12,7 +10,7 @@ interface LessonFormProps {
   onSubmit?: () => void;
 }
 
-export function LessonForm({ onSubmit }: LessonFormProps) {
+export function LessonForm({}: LessonFormProps) {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, AlertTriangle, Calendar, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { X, AlertTriangle, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { type EventController } from '@/backend/types';
 import { TeacherSchedule, type ConflictInfo, type AvailableSlot } from '@/backend/TeacherSchedule';
 import { LOCATION_ENUM_VALUES, EVENT_STATUS_ENUM_VALUES, type Location, type EventStatus } from '@/lib/constants';
@@ -110,7 +110,7 @@ function EventModalHeader({ teacherName, date, onDateChange, onClose, lesson, al
 }
 
 // Sub-component: Summary (Airbnb-style card)
-function EventModalSummary({ students, startTime, duration, location, date, remainingMinutes }: { students: any[]; startTime: string; duration: number; location: string; date: string; remainingMinutes?: number;}) {
+function EventModalSummary({ students, startTime, duration, remainingMinutes }: { students: any[]; startTime: string; duration: number; remainingMinutes?: number;}) {
   const remainingHours = remainingMinutes ? remainingMinutes / 60 : 0;
   const exceedsRemaining = remainingMinutes ? duration > remainingMinutes : false;
   
@@ -180,7 +180,7 @@ function EventModalForm({ formData, onFormDataChange, onAdjustTime, onAdjustDura
       </FormField>
       <FormField label="Location">
         <select value={formData.location} onChange={(e) => onFormDataChange({ location: e.target.value as Location })} className="w-full px-3 py-2 border border-border rounded-lg bg-background">
-          {LOCATION_ENUM_VALUES.map(location => <option key={location} value={location}>{location}</option>)}
+          {LOCATION_ENUM_VALUES.map(locationValue => <option key={locationValue} value={locationValue}>{locationValue}</option>)}
         </select>
       </FormField>
       <FormField label="Event Status">
@@ -410,10 +410,10 @@ export default function EventToTeacherModal({
         <EventModalHeader 
           teacherName={lesson.teacher?.name || 'Teacher'} 
           date={formData.date} 
-          onDateChange={(date) => {
-            handleFormDataChange({ date });
+          onDateChange={(newDate) => {
+            handleFormDataChange({ date: newDate });
             if (onDateChange) {
-              onDateChange(date);
+              onDateChange(newDate);
             }
           }}
           onClose={onClose}
@@ -421,7 +421,7 @@ export default function EventToTeacherModal({
           allowDateEdit={allowDateEdit}
         />
         <StatusWarning lesson={lesson} />
-        <EventModalSummary students={lesson.students || []} startTime={formData.startTime} duration={formData.duration} location={formData.location} date={formData.date} remainingMinutes={remainingMinutes} />
+        <EventModalSummary students={lesson.students || []} startTime={formData.startTime} duration={formData.duration} remainingMinutes={remainingMinutes} />
         {isActionAllowed && (
           <>
             <EventModalForm formData={formData} onFormDataChange={handleFormDataChange} onAdjustTime={adjustTime} onAdjustDuration={adjustDuration} remainingMinutes={remainingMinutes} />

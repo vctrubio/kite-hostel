@@ -27,19 +27,19 @@ interface CommissionData {
   description: string;
 }
 
-interface FormFieldDescriptor {
-    key: keyof TeacherFormData;
-    label: string;
-    type: 'text' | 'tel';
-    required: boolean;
-    placeholder?: string;
-}
+// interface FormFieldDescriptor {
+//     key: keyof TeacherFormData;
+//     label: string;
+//     type: 'text' | 'tel';
+//     required: boolean;
+//     placeholder?: string;
+// }
 
-const FORM_FIELDS: FormFieldDescriptor[] = [
-    { key: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Full name' },
-    { key: 'passport_number', label: 'Passport Number', type: 'text', required: false, placeholder: 'ABC123456' },
-    { key: 'phone', label: 'Phone', type: 'tel', required: false, placeholder: 'Phone number' },
-] as const;
+// const _FORM_FIELDS: FormFieldDescriptor[] = [
+//     { key: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Full name' },
+//     { key: 'passport_number', label: 'Passport Number', type: 'text', required: false, placeholder: 'ABC123456' },
+//     { key: 'phone', label: 'Phone', type: 'tel', required: false, placeholder: 'Phone number' },
+// ] as const;
 
 export function TeacherForm({
     onSubmit
@@ -188,26 +188,26 @@ export function TeacherForm({
         }
     };
 
-    const renderField = (field: FormFieldDescriptor) => {
-        return (
-            <div key={field.key} className="flex flex-col gap-2 min-w-fit">
-                <Label htmlFor={field.key} className="text-xs font-medium whitespace-nowrap">
-                    {field.label}{field.required && <span className="text-red-500">*</span>}
-                </Label>
-                <Input
-                    id={field.key}
-                    name={field.key}
-                    type={field.type}
-                    required={field.required}
-                    disabled={isLoading}
-                    value={formData[field.key] || ''}
-                    onChange={(e) => handleInputChange(field.key, e.target.value)}
-                    className="h-9 w-32 text-sm"
-                    placeholder={field.placeholder || field.label}
-                />
-            </div>
-        );
-    };
+    // const _renderField = (field: FormFieldDescriptor) => {
+    //     return (
+    //         <div key={field.key} className="flex flex-col gap-2 min-w-fit">
+    //             <Label htmlFor={field.key} className="text-xs font-medium whitespace-nowrap">
+    //                 {field.label}{field.required && <span className="text-red-500">*</span>}
+    //             </Label>
+    //             <Input
+    //                 id={field.key}
+    //                 name={field.key}
+    //                 type={field.type}
+    //                 required={field.required}
+    //                 disabled={isLoading}
+    //                 value={formData[field.key] || ''}
+    //                 onChange={(e) => handleInputChange(field.key, e.target.value)}
+    //                 className="h-9 w-32 text-sm"
+    //                 placeholder={field.placeholder || field.label}
+    //             />
+    //         </div>
+    //     );
+    // };
 
     return (
         <div className="w-full p-6">

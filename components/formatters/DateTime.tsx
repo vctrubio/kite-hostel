@@ -28,7 +28,7 @@ export function DateTime({ dateString, formatType = 'datetime' }: DateTimeProps)
   
   try {
     return <span>{format(date, formatString)}</span>;
-  } catch (error) {
+  } catch {
     return <span>Invalid date</span>;
   }
 }
@@ -46,7 +46,7 @@ export function formatTime(dateString: string): string {
 
   try {
     return format(date, 'HH:mm');
-  } catch (error) {
+  } catch {
     return 'Invalid time';
   }
 }
@@ -64,7 +64,7 @@ export function formatDate(dateString: string): string {
 
   try {
     return format(date, 'dd/MM/yyyy');
-  } catch (error) {
+  } catch {
     return 'Invalid date';
   }
 }
@@ -82,7 +82,7 @@ export function getStoredDate(key: string, fallback: string = getTodayDateString
   
   try {
     return localStorage.getItem(key) || fallback;
-  } catch (error) {
+  } catch {
     return fallback;
   }
 }
@@ -92,7 +92,7 @@ export function setStoredDate(key: string, date: string): void {
   
   try {
     localStorage.setItem(key, date);
-  } catch (error) {
+  } catch {
     // Silently fail if localStorage is not available
   }
 }
@@ -144,7 +144,7 @@ export function formatElegantDate(dateString: string): string {
     const ordinalSuffix = getOrdinalSuffix(day);
     
     return `${day}${ordinalSuffix} ${month} ${year}'`;
-  } catch (error) {
+  } catch {
     return 'Invalid date';
   }
 }

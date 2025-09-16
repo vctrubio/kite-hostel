@@ -4,12 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Send } from "lucide-react";
-import { BookmarkIcon, HelmetIcon, HeadsetIcon } from "@/svgs";
-import { Duration } from "@/components/formatters/Duration";
+import { HelmetIcon, HeadsetIcon } from "@/svgs";
 import { FormatDateRange } from "@/components/formatters/DateRange";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
-import { LessonView } from "@/components/views/LessonView";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { WhiteboardClass } from "@/backend/WhiteboardClass";
 import { BookingWithRelations } from "@/backend/types";
@@ -40,15 +38,6 @@ export function BookingRow({
   const studentEntity = ENTITY_DATA.find(entity => entity.name === "Student");
   const teacherEntity = ENTITY_DATA.find(entity => entity.name === "Teacher");
 
-  // Calculate event hours and pricing data for the package details
-  const eventHours = booking.lessons?.reduce((total, lesson) => {
-    const lessonEventMinutes = lesson.events?.reduce((sum, event) => sum + (event.duration || 0), 0) || 0;
-    return total + lessonEventMinutes / 60;
-  }, 0) || 0;
-  
-  const pricePerHourPerStudent = booking.package?.duration
-    ? (booking.package.price_per_student || 0) / (booking.package.duration / 60)
-    : 0;
     
   // Calculate expected total (package duration * price per student * number of students)
   const expectedTotal = booking.package

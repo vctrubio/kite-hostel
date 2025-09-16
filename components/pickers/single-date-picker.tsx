@@ -18,7 +18,6 @@ export function SingleDatePicker({
 }: SingleDatePickerProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [tempDate, setTempDate] = useState(selectedDate || "");
   const [isToday, setIsToday] = useState(false);
   const [relativeLabel, setRelativeLabel] = useState("");
   const [isMounted, setIsMounted] = useState(false);
@@ -41,7 +40,6 @@ export function SingleDatePicker({
   }, [selectedDate]);
 
   const updateDate = (newDate: string) => {
-    setTempDate(newDate);
 
     // If callback is provided, use it instead of URL params
     if (onDateChange) {

@@ -53,7 +53,7 @@ export default function TeacherEventQueue({
   };
   return (
     <>
-      {scheduleNodes.map((node, index) => {
+      {scheduleNodes.map((node, _index) => {
         if (node.type === "gap") return null;
 
         const eventData = events.find(
