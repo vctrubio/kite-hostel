@@ -9,7 +9,9 @@ import Image from "next/image";
 
 export default async function WelcomePage() {
   const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
 
   // No authenticated user - show login
   if (!authUser) {
@@ -24,8 +26,11 @@ export default async function WelcomePage() {
 
   // Get user wallet data
   const { role } = await getCurrentUserWallet();
-  const name = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email;
 
+  const name =
+    authUser.user_metadata?.full_name ||
+    authUser.user_metadata?.name ||
+    authUser.email;
 
   // Authenticated user with role - show menu
   return (
@@ -38,14 +43,18 @@ export default async function WelcomePage() {
           height={120}
           className="mx-auto mb-8"
         />
-        
+
         <h1 className="text-3xl font-bold mb-2">Welcome, {name}</h1>
         <p className="text-muted-foreground mb-8">Choose your destination</p>
-        
+
         {role === "guest" && (
           <div className="mb-8 p-4 border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-            <p className="text-blue-700 dark:text-blue-300 font-semibold mb-2">👋 Guest Access</p>
-            <p className="text-sm text-blue-600 dark:text-blue-400">You have guest privileges. Check out the invitation page!</p>
+            <p className="text-blue-700 dark:text-blue-300 font-semibold mb-2">
+              👋 Guest Access
+            </p>
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              You have guest privileges. Check out the invitation page!
+            </p>
           </div>
         )}
 
@@ -55,7 +64,7 @@ export default async function WelcomePage() {
             <Link
               href="/billboard"
               className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
-                (role === "admin" || role === "teacherAdmin") 
+                role === "admin" || role === "teacherAdmin"
                   ? "border-2 border-purple-500 hover:ring-2 hover:ring-purple-500/50 bg-purple-50 dark:bg-purple-900/20"
                   : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
               }`}
@@ -63,8 +72,12 @@ export default async function WelcomePage() {
               <div className="flex items-center gap-4">
                 <Shield className="h-8 w-8 text-slate-700 dark:text-slate-200" />
                 <div>
-                  <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">Billboard</h3>
-                  <p className="text-sm text-muted-foreground">Main admin dashboard</p>
+                  <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
+                    Billboard
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Main admin dashboard
+                  </p>
                 </div>
               </div>
             </Link>
@@ -72,7 +85,7 @@ export default async function WelcomePage() {
             <Link
               href="/teacher"
               className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
-                (role === "teacher" || role === "teacherAdmin")
+                role === "teacher" || role === "teacherAdmin"
                   ? "border-2 border-green-500 hover:ring-2 hover:ring-green-500/50 bg-green-50 dark:bg-green-900/20"
                   : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
               }`}
@@ -80,8 +93,12 @@ export default async function WelcomePage() {
               <div className="flex items-center gap-4">
                 <HeadsetIcon className="h-8 w-8 text-slate-700 dark:text-slate-200" />
                 <div>
-                  <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">Teacher</h3>
-                  <p className="text-sm text-muted-foreground">Teacher portal & hours</p>
+                  <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
+                    Teacher
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Teacher portal & hours
+                  </p>
                 </div>
               </div>
             </Link>
@@ -89,7 +106,9 @@ export default async function WelcomePage() {
 
           {/* Entity Data Routes - Like RouteNav */}
           <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Entity Management</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+              Entity Management
+            </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {ENTITY_DATA.map((entity) => {
                 const EntityIcon = entity.icon;
@@ -111,58 +130,98 @@ export default async function WelcomePage() {
 
           {/* Secondary Routes */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-            <Link href="/references/form" className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all">
-              <h4 className="font-semibold text-slate-700 dark:text-slate-300">Connect Wallet</h4>
-              <p className="text-xs text-muted-foreground">User wallet management</p>
+            <Link
+              href="/references/form"
+              className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
+            >
+              <h4 className="font-semibold text-slate-700 dark:text-slate-300">
+                Connect Wallet
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                User wallet management
+              </p>
             </Link>
-            
-            <Link href="/forms" className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all">
-              <h4 className="font-semibold text-slate-700 dark:text-slate-300">Forms</h4>
+
+            <Link
+              href="/forms"
+              className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
+            >
+              <h4 className="font-semibold text-slate-700 dark:text-slate-300">
+                Forms
+              </h4>
               <p className="text-xs text-muted-foreground">Student forms</p>
             </Link>
-            
-            <Link href="/invitation" className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all">
-              <h4 className="font-semibold text-slate-700 dark:text-slate-300">Invitation</h4>
+
+            <Link
+              href="/invitation"
+              className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
+            >
+              <h4 className="font-semibold text-slate-700 dark:text-slate-300">
+                Invitation
+              </h4>
               <p className="text-xs text-muted-foreground">Guest page</p>
             </Link>
           </div>
 
           {/* Development Routes */}
           <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Development & Prototype Routes</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+              Development & Prototype Routes
+            </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              <Link href="/dev" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+              <Link
+                href="/dev"
+                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
                 <span className="font-mono">/dev</span>
               </Link>
-              <Link href="/teachers" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+              <Link
+                href="/teachers"
+                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
                 <span className="font-mono">/teachers</span>
               </Link>
-              <Link href="/whiteboard" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+              <Link
+                href="/whiteboard"
+                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
                 <span className="font-mono">/whiteboard</span>
               </Link>
-              <Link href="/user" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+              <Link
+                href="/user"
+                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
                 <span className="font-mono">/user</span>
               </Link>
-              <Link href="/auth/login" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+              <Link
+                href="/auth/login"
+                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
                 <span className="font-mono">/auth</span>
               </Link>
-              <Link href="/page2" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+              <Link
+                href="/page2"
+                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
                 <span className="font-mono">/page2</span>
               </Link>
-              <Link href="/api" className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+              <Link
+                href="/api"
+                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
                 <span className="font-mono">/api</span>
               </Link>
             </div>
           </div>
-          
+
           <div className="mt-4 text-center">
             <p className="text-xs text-muted-foreground">
-              Role: <span className="font-mono font-semibold">{role}</span> | 
+              Role: <span className="font-mono font-semibold">{role}</span> |
               User: <span className="font-mono font-semibold">{name}</span>
             </p>
           </div>
         </div>
-        
+
         {/* Footer with user and docs links */}
         <footer className="mt-12 text-center space-y-3">
           <Link
