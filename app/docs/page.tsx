@@ -1,3 +1,5 @@
+"use client";
+
 import {
   HelmetIcon,
   HeadsetIcon,
@@ -12,6 +14,9 @@ import {
   BookmarkIcon,
   UsersIcon,
 } from "@/svgs";
+import { BillboardClass } from "@/backend/BillboardClass";
+import StudentsBookingCard from "@/components/cards/StudentsBookingCard";
+import { useState } from "react";
 
 // Sub-components for each entity
 function StudentCard() {
@@ -243,6 +248,196 @@ function PackageCard() {
 }
 
 export default function DocsPage() {
+  // State for tracking drag events in the showcase
+  const [dragEvents, setDragEvents] = useState<string[]>([]);
+
+  const addDragEvent = (message: string) => {
+    setDragEvents(prev => [message, ...prev.slice(0, 4)]); // Keep last 5 events
+  };
+
+  // Mock data for StudentsBookingCard showcase
+  const mockTeachers = [
+    {
+      id: "teacher-123",
+      name: "Miguel Sanchez",
+      languages: ["Spanish", "English", "French"],
+      passport_number: "MS345678",
+      country: "Spain",
+      phone: "+34 666 123 456",
+      created_at: "2024-01-15T00:00:00.000Z",
+      deleted_at: null
+    },
+    {
+      id: "teacher-456",
+      name: "Anna Kowalski",
+      languages: ["English", "Polish", "German"],
+      passport_number: "AK567890",
+      country: "Poland",
+      phone: "+48 123 456 789",
+      created_at: "2024-02-01T00:00:00.000Z",
+      deleted_at: null
+    }
+  ];
+
+  const mockBillboardClass = new BillboardClass({
+    // Main booking data
+    id: "booking-123",
+    package_id: "package-456",
+    date_start: "2025-09-15T00:00:00.000Z",
+    date_end: "2025-09-20T00:00:00.000Z",
+    status: "active",
+    reference_id: "ref-789",
+    created_at: "2025-09-10T10:30:00.000Z",
+    deleted_at: null,
+
+    // Package details
+    package: {
+      id: "package-456",
+      duration: 480, // 8 hours total (in minutes)
+      description: "Beginner Kite Surfing Package",
+      price_per_student: 400, // €400 total per student
+      capacity_students: 2,
+      capacity_kites: 2,
+      created_at: "2025-01-01T00:00:00.000Z"
+    },
+
+    // Reference information
+    reference: {
+      id: "ref-789",
+      role: "reference",
+      sk: "user-auth-123",
+      pk: null,
+      note: "VIP customer - prefers morning sessions",
+      created_at: "2025-09-01T00:00:00.000Z",
+      updated_at: "2025-09-01T00:00:00.000Z",
+      teacher: null
+    },
+
+    // Students in this booking
+    students: [
+      {
+        id: "bs-1",
+        booking_id: "booking-123",
+        student_id: "student-001",
+        student: {
+          id: "student-001",
+          name: "Emma",
+          last_name: "Johnson",
+          languages: ["English", "Spanish"],
+          passport_number: "EJ123456",
+          country: "United Kingdom",
+          phone: "+44 123 456 7890",
+          size: "M",
+          desc: "Beginner kiter, excited to learn!",
+          created_at: "2025-09-05T00:00:00.000Z",
+          deleted_at: null
+        }
+      },
+      {
+        id: "bs-2",
+        booking_id: "booking-123",
+        student_id: "student-002",
+        student: {
+          id: "student-002",
+          name: "Carlos",
+          last_name: "Rodriguez",
+          languages: ["Spanish", "English"],
+          passport_number: "CR789012",
+          country: "Spain",
+          phone: "+34 987 654 321",
+          size: "L",
+          desc: "Has some windsurfing experience",
+          created_at: "2025-09-05T00:00:00.000Z",
+          deleted_at: null
+        }
+      }
+    ],
+
+    // Lessons assigned to this booking
+    lessons: [
+      {
+        id: "lesson-001",
+        teacher_id: "teacher-123",
+        booking_id: "booking-123",
+        commission_id: "commission-456",
+        status: "planned",
+        created_at: "2025-09-12T00:00:00.000Z",
+        deleted_at: null,
+
+        // Teacher information
+        teacher: {
+          id: "teacher-123",
+          name: "Miguel Sanchez",
+          languages: ["Spanish", "English", "French"],
+          passport_number: "MS345678",
+          country: "Spain",
+          phone: "+34 666 123 456",
+          created_at: "2024-01-15T00:00:00.000Z",
+          deleted_at: null
+        },
+
+        // Events within this lesson
+        events: [
+          {
+            id: "event-001",
+            lesson_id: "lesson-001",
+            date: "2025-09-16T10:00:00.000Z", // 10:00 AM
+            duration: 120, // 2 hours
+            location: "Los Lances",
+            status: "completed",
+            created_at: "2025-09-12T00:00:00.000Z",
+
+            // Kites used in this event
+            kites: [
+              {
+                id: "kite-event-001",
+                event_id: "event-001",
+                kite_id: "kite-001",
+                created_at: "2025-09-16T10:00:00.000Z",
+                kite: {
+                  id: "kite-001",
+                  serial_id: "KS-2024-001",
+                  model: "Cabrinha Switchblade",
+                  size: 12,
+                  created_at: "2024-03-01T00:00:00.000Z",
+                  updated_at: "2024-03-01T00:00:00.000Z"
+                }
+              },
+              {
+                id: "kite-event-002",
+                event_id: "event-001",
+                kite_id: "kite-002",
+                created_at: "2025-09-16T10:00:00.000Z",
+                kite: {
+                  id: "kite-002",
+                  serial_id: "KS-2024-002",
+                  model: "Cabrinha Switchblade",
+                  size: 10,
+                  created_at: "2024-03-01T00:00:00.000Z",
+                  updated_at: "2024-03-01T00:00:00.000Z"
+                }
+              }
+            ]
+          },
+          {
+            id: "event-002",
+            lesson_id: "lesson-001",
+            date: "2025-09-18T14:00:00.000Z", // 2:00 PM
+            duration: 90, // 1.5 hours
+            location: "Los Lances",
+            status: "planned",
+            created_at: "2025-09-12T00:00:00.000Z",
+            kites: [] // No kites assigned yet
+          }
+        ],
+
+        totalKiteEventDuration: 120
+      }
+    ],
+
+    lessonCount: 1
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header */}
@@ -481,6 +676,77 @@ export default function DocsPage() {
           </div>
 
         </div>
+
+        {/* StudentsBookingCard Showcase */}
+        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 px-6 py-3 rounded-full mb-4">
+              <BookingIcon className="w-8 h-8 text-blue-600" />
+              <span className="text-xl font-semibold text-blue-800 dark:text-blue-200">StudentsBookingCard Showcase</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              Interactive booking card component showing student details, progress tracking, and teacher assignment functionality
+            </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/20 p-6 rounded-xl border-2 border-slate-200 dark:border-slate-700 shadow-lg">
+              <StudentsBookingCard
+                billboardClass={mockBillboardClass}
+                selectedDate="2025-09-16"
+                teachers={mockTeachers}
+                isDraggable={true}
+                onDragStart={(bookingId) => addDragEvent(`🚀 Drag started for booking: ${bookingId}`)}
+                onDragEnd={(bookingId, wasDropped) => addDragEvent(`🎯 Drag ended for booking: ${bookingId} (${wasDropped ? 'dropped' : 'cancelled'})`)}
+              />
+            </div>
+
+            {/* Drag Events Log */}
+            {dragEvents.length > 0 && (
+              <div className="mt-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                <h4 className="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-2">🎮 Drag Events Log:</h4>
+                <div className="space-y-1 max-h-24 overflow-y-auto">
+                  {dragEvents.map((event, index) => (
+                    <div key={index} className="text-xs text-slate-700 dark:text-slate-300 font-mono">
+                      {event}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
+              <h4 className="text-sm font-semibold text-green-800 dark:text-green-200 mb-2">Mock Data Features:</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span>2 students: Emma & Carlos</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span>8-hour package (€400 each)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span>120min completed, 90min planned</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span>Teacher: Miguel Sanchez</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span>2 kites assigned to completed event</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span>Interactive dropdown & status change</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
