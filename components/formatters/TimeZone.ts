@@ -6,13 +6,13 @@
  */
 
 /**
- * Create a UTC datetime from date and time strings
+ * Create a local datetime from date and time strings
  * @param date - Date string (YYYY-MM-DD)
  * @param time - Time string (HH:MM)
- * @returns Date object representing the exact UTC time
+ * @returns Date object representing the local time without timezone conversion
  */
 export function createUTCDateTime(date: string, time: string): Date {
-  return new Date(`${date}T${time}:00.000Z`);
+  return new Date(`${date}T${time}:00`); //Unecsarry 00.000Z implementiation
 }
 
 /**
