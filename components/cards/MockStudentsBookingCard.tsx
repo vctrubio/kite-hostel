@@ -7,7 +7,6 @@ import {
   BookingIcon,
 } from "@/svgs";
 import { FormatedDateExp } from "@/components/label/FormatedDateExp";
-import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { LessonFormatter } from "@/getters/lesson-formatters";
 import { PackageDetails } from "@/getters/package-details";
 import {
@@ -16,9 +15,7 @@ import {
   ChevronUp,
   ExternalLink,
 } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,56 +23,41 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { BOOKING_STATUSES, type BookingStatus, getBookingStatusColor } from "@/lib/constants";
-import { updateBookingStatus } from "@/actions/booking-actions";
+import { BOOKING_STATUSES, getBookingStatusColor } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { BookmarkIcon } from "@/svgs";
-interface StudentsBookingCardProps {
+import { toast } from "sonner";
+
+interface MockStudentsBookingCardProps {
   billboardClass: BillboardClass;
   selectedDate?: string;
   teachers: any[];
-  isDraggable?: boolean;
-  onDragStart?: (bookingId: string) => void;
-  onDragEnd?: (bookingId: string, wasDropped: boolean) => void;
 }
 
-
-interface StudentCardFooterProps {
+interface MockStudentCardFooterProps {
   billboardClass: BillboardClass;
   availableTeachers: any[];
-  onAssignTeacherClick: () => void;
-  onBookingComplete?: (bookingId: string) => void;
 }
 
-function StudentCardFooter({
+function MockStudentCardFooter({
   billboardClass,
   availableTeachers,
-  onAssignTeacherClick,
-  onBookingComplete,
-}: StudentCardFooterProps) {
+}: MockStudentCardFooterProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
   const booking = billboardClass.booking;
 
   const handleDropdownToggle = () => setIsOpen(!isOpen);
 
-  const handleStatusChange = (newStatus: BookingStatus) => {
-    if (newStatus === booking.status) return;
-    startTransition(async () => {
-      const { success, error } = await updateBookingStatus(
-        booking.id,
-        newStatus,
-      );
-      if (success) {
-        if (newStatus === "completed" && onBookingComplete) {
-          onBookingComplete(booking.id);
-        }
-        router.refresh();
-      } else {
-        console.error("Failed to update status:", error);
-      }
-    });
+  const handleAssignTeacherClick = () => {
+    toast.info("This assigns a new teacher to booking");
+  };
+
+  const handleStatusChange = () => {
+    toast.info("This changes the status");
+  };
+
+  const handleBookingDetailsClick = () => {
+    toast.info(`This goes to booking ${booking.id}`);
   };
 
   // Use BillboardClass methods for calculations
@@ -105,18 +87,9 @@ function StudentCardFooter({
         
         <div className="flex flex-wrap items-center gap-3 px-2">
           <button
-            onClick={onAssignTeacherClick}
-            disabled={availableTeachers.length === 0}
-            className={`flex items-center gap-2 transition-colors ${
-              availableTeachers.length === 0
-                ? "text-muted-foreground cursor-not-allowed opacity-50"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-            title={
-              availableTeachers.length === 0
-                ? "No available teachers (all already assigned)"
-                : "Assign Teacher"
-            }
+            onClick={handleAssignTeacherClick}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer opacity-50"
+            title="Mock: Assign Teacher (disabled)"
           >
             <Plus className="w-4 h-4" />
             <span className="text-xs">
@@ -129,12 +102,9 @@ function StudentCardFooter({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className={cn(
-                  "flex items-center transition-colors",
-                  isPending && "opacity-50 cursor-not-allowed",
-                )}
-                title="Booking status"
-                disabled={isPending}
+                className="flex items-center transition-colors opacity-50 cursor-pointer"
+                title="Mock: Booking status (disabled)"
+                onClick={handleStatusChange}
               >
                 <div className={cn(
                   "px-2 py-0.5 rounded-full text-xs font-medium",
@@ -146,16 +116,15 @@ function StudentCardFooter({
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48" align="end">
               <div className="p-2 text-xs text-muted-foreground">
-                Change Status
+                Change Status (Mock)
               </div>
               <DropdownMenuSeparator />
-              {BOOKING_STATUSES.map((status) => (
+              {BOOKING_STATUSES.map((status: any) => (
                 <DropdownMenuItem
                   key={status}
-                  onClick={() => handleStatusChange(status)}
-                  disabled={isPending}
+                  onClick={handleStatusChange}
                   className={cn(
-                    "cursor-pointer",
+                    "cursor-pointer opacity-50",
                     status === booking.status &&
                       "bg-accent text-accent-foreground",
                   )}
@@ -184,32 +153,9 @@ function StudentCardFooter({
               totalPrice={booking.package ? booking.package.price_per_student * booking.package.capacity_students : 0}
               priceToPay={priceToPay}
               referenceId={booking.reference?.id}
-              variant="compact"
+              variant="simple"
             />
           </div>
-
-          {/* Reference Information */}
-          {/* {booking.reference && (
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-muted-foreground">
-                Reference Information
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Reference:</span>
-                  <p className="font-medium">{booking.reference.id}</p>
-                </div>
-                {booking.reference.teacher && (
-                  <div>
-                    <span className="text-muted-foreground">Teacher:</span>
-                    <p className="font-medium">
-                      {booking.reference.teacher.name}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )} */}
 
           {/* Booking Dates */}
           <div className="space-y-3">
@@ -237,15 +183,16 @@ function StudentCardFooter({
             </div>
           </div>
 
-          {/* Booking Link */}
+          {/* Booking Link - Disabled */}
           <div className="mt-4 pt-3 border-t border-border/30">
-            <Link 
-              href={`/bookings/${booking.id}`}
-              className="flex items-center justify-center gap-1.5 w-full py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm transition-colors"
+            <button 
+              onClick={handleBookingDetailsClick}
+              className="flex items-center justify-center gap-1.5 w-full py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm transition-colors opacity-50 cursor-pointer"
+              title="Mock: Go to Booking Details (disabled)"
             >
               <span>Go to Booking Details</span>
               <ExternalLink className="h-3.5 w-3.5" />
-            </Link>
+            </button>
           </div>
         </div>
       )}
@@ -253,15 +200,11 @@ function StudentCardFooter({
   );
 }
 
-export default function StudentsBookingCard({
+export default function MockStudentsBookingCard({
   billboardClass,
   selectedDate,
   teachers,
-  isDraggable = false,
-  onDragStart,
-  onDragEnd,
-}: StudentsBookingCardProps) {
-  const [showLessonModal, setShowLessonModal] = useState(false);
+}: MockStudentsBookingCardProps) {
   const booking = billboardClass.booking;
 
   // Extract students using BillboardClass method
@@ -274,7 +217,7 @@ export default function StudentsBookingCard({
   
   const assignedTeacherIds = useMemo(() => {
     return new Set(
-      existingLessons.map((lesson) => lesson.teacher?.id).filter(Boolean),
+      existingLessons.map((lesson: any) => lesson.teacher?.id).filter(Boolean),
     );
   }, [existingLessons]);
 
@@ -283,36 +226,9 @@ export default function StudentsBookingCard({
     return teachers.filter((teacher) => !assignedTeacherIds.has(teacher.id));
   }, [teachers, assignedTeacherIds]);
 
-  const handleDragStart = (e: React.DragEvent) => {
-    // Create a serializable object with the billboardClass data
-    const dragData = {
-      booking: billboardClass.booking,
-      lessons: billboardClass.lessons,
-      package: billboardClass.package,
-    };
-    
-    e.dataTransfer.setData(
-      "application/json",
-      JSON.stringify(dragData),
-    );
-    onDragStart?.(booking.id);
-  };
-
-  const handleDragEnd = (e: React.DragEvent) => {
-    const wasDropped = e.dataTransfer.dropEffect !== "none";
-    onDragEnd?.(booking.id, wasDropped);
-  };
-
   return (
     <div
-      draggable={isDraggable}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      className={`p-4 bg-card rounded-lg border border-border transition-shadow ${
-        isDraggable
-          ? "cursor-grab hover:shadow-md active:cursor-grabbing border-green-200 dark:border-green-800"
-          : "opacity-75"
-      }`}
+      className="p-4 bg-card rounded-lg border border-border transition-shadow opacity-75 border-orange-200 dark:border-orange-800"
       style={{ position: "relative" }}
     >
       <div className="flex flex-col gap-3 mb-2">
@@ -341,14 +257,14 @@ export default function StudentsBookingCard({
         <div className="flex items-center gap-2 px-2">
           {/* Helmet icons */}
           <div className="flex gap-1 flex-shrink-0">
-            {students.map((_, index) => (
+            {students.map((_: any, index: number) => (
               <HelmetIcon key={index} className="w-4 h-4" />
             ))}
           </div>
 
           {/* Student names */}
           <div className="flex flex-wrap gap-1">
-            {students.map((student, index) => (
+            {students.map((student: any, index: number) => (
               <span
                 key={student.id}
                 className="text-sm font-medium text-foreground"
@@ -364,29 +280,10 @@ export default function StudentsBookingCard({
         <LessonFormatter lessons={existingLessons} />
       </div>
 
-      <StudentCardFooter
+      <MockStudentCardFooter
         billboardClass={billboardClass}
         availableTeachers={availableTeachers}
-        onAssignTeacherClick={() => {
-          if (availableTeachers.length > 0) {
-            setShowLessonModal(true);
-          }
-        }}
       />
-
-      {/* Lesson Modal for Teacher Assignment */}
-      {showLessonModal && availableTeachers.length > 0 && (
-        <BookingToLessonModal
-          bookingId={booking.id}
-          bookingReference={booking.reference}
-          onClose={() => setShowLessonModal(false)}
-          teachers={availableTeachers}
-          onCommissionCreated={() => {
-            // You can add a refresh callback here if needed
-            setShowLessonModal(false);
-          }}
-        />
-      )}
     </div>
   );
 }

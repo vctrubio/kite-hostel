@@ -3,7 +3,6 @@
 import {
   HelmetIcon,
   HeadsetIcon,
-  PackageIcon,
   BookingIcon,
   KiteIcon,
   PaymentIcon,
@@ -15,7 +14,7 @@ import {
   UsersIcon,
 } from "@/svgs";
 import { BillboardClass } from "@/backend/BillboardClass";
-import StudentsBookingCard from "@/components/cards/StudentsBookingCard";
+import MockStudentsBookingCard from "@/components/cards/MockStudentsBookingCard";
 
 // Header Component
 function PageHeader() {
@@ -117,21 +116,20 @@ function LiveBookingExample({ mockBillboardClass, mockTeachers }: { mockBillboar
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+      <div className="flex flex-wrap gap-8 max-w-6xl mx-auto justify-around items-center">
         {/* BookingCard Component */}
-        <div className="lg:order-1">
-          <div className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/20 p-6 rounded-xl border-2 border-slate-200 dark:border-slate-700 shadow-lg">
-            <StudentsBookingCard
+        <div className="flex">
+          <div className="">
+            <MockStudentsBookingCard
               billboardClass={mockBillboardClass}
               selectedDate="2025-09-16"
               teachers={mockTeachers}
-              isDraggable={false}
             />
           </div>
         </div>
 
         {/* Detailed Explanation */}
-        <div className="lg:order-2 space-y-6">
+        <div className="flex-1 min-w-[320px] max-w-[480px] space-y-6">
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg">
             <div className="space-y-4 text-sm">
               {/* Booking Dates & Progress */}
