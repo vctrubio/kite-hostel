@@ -2,10 +2,232 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserWallet } from "@/actions/user-actions";
 import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
-import { Shield } from "lucide-react";
+import { Shield, Book } from "lucide-react";
 import { HeadsetIcon } from "@/svgs";
 import { ENTITY_DATA } from "@/lib/constants";
 import Image from "next/image";
+
+// Sub-components
+function LoginSection() {
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <Image
+            src="/logo-tkh.png"
+            alt="Tarifa Kite Hostel Logo"
+            width={80}
+            height={80}
+            className="mx-auto mb-4"
+          />
+          <h1 className="text-2xl font-bold mb-2">Tarifa Kite Hostel</h1>
+          <p className="text-muted-foreground mb-6">Sign in to access the system</p>
+        </div>
+        
+        <GoogleOnlyLoginForm />
+        
+        <div className="text-center">
+          <Link
+            href="/docs"
+            className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors underline font-medium"
+          >
+            <Book className="h-4 w-4" />
+            Read our documentation
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function PrimaryRoutes({ role }: { role: string }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Link
+        href="/billboard"
+        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
+          role === "admin" || role === "teacherAdmin"
+            ? "border-2 border-purple-500 hover:ring-2 hover:ring-purple-500/50 bg-purple-50 dark:bg-purple-900/20"
+            : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          <Shield className="h-8 w-8 text-slate-700 dark:text-slate-200" />
+          <div>
+            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
+              Billboard
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Main admin dashboard
+            </p>
+          </div>
+        </div>
+      </Link>
+
+      <Link
+        href="/teacher"
+        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
+          role === "teacher" || role === "teacherAdmin"
+            ? "border-2 border-green-500 hover:ring-2 hover:ring-green-500/50 bg-green-50 dark:bg-green-900/20"
+            : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          <HeadsetIcon className="h-8 w-8 text-slate-700 dark:text-slate-200" />
+          <div>
+            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
+              Teacher
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Teacher portal & hours
+            </p>
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+function EntityManagement() {
+  return (
+    <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+      <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+        Entity Management
+      </h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {ENTITY_DATA.map((entity) => {
+          const EntityIcon = entity.icon;
+          return (
+            <Link
+              key={entity.name}
+              href={entity.link}
+              className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg hover:shadow-sm transition-all duration-200"
+            >
+              <EntityIcon className={`h-4 w-4 ${entity.color}`} />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {entity.name}s
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SecondaryRoutes() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+      <Link
+        href="/references/form"
+        className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
+      >
+        <h4 className="font-semibold text-slate-700 dark:text-slate-300">
+          Connect Wallet
+        </h4>
+        <p className="text-xs text-muted-foreground">
+          User wallet management
+        </p>
+      </Link>
+
+      <Link
+        href="/forms"
+        className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
+      >
+        <h4 className="font-semibold text-slate-700 dark:text-slate-300">
+          Forms
+        </h4>
+        <p className="text-xs text-muted-foreground">Student forms</p>
+      </Link>
+
+      <Link
+        href="/invitation"
+        className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
+      >
+        <h4 className="font-semibold text-slate-700 dark:text-slate-300">
+          Invitation
+        </h4>
+        <p className="text-xs text-muted-foreground">Guest page</p>
+      </Link>
+    </div>
+  );
+}
+
+function DevelopmentRoutes() {
+  const devRoutes = [
+    { href: "/dev", label: "/dev" },
+    { href: "/teachers", label: "/teachers" },
+    { href: "/whiteboard", label: "/whiteboard" },
+    { href: "/user", label: "/user" },
+    { href: "/auth/login", label: "/auth" },
+    { href: "/page2", label: "/page2" },
+    { href: "/api", label: "/api" },
+  ];
+
+  return (
+    <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+      <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+        Development & Prototype Routes
+      </h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+        {devRoutes.map((route) => (
+          <Link
+            key={route.href}
+            href={route.href}
+            className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+          >
+            <span className="font-mono">{route.label}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UserStatus({ role, name }: { role: string; name: string }) {
+  return (
+    <div className="mt-4 text-center">
+      <p className="text-xs text-muted-foreground">
+        Role: <span className="font-mono font-semibold">{role}</span> |
+        User: <span className="font-mono font-semibold">{name}</span>
+      </p>
+    </div>
+  );
+}
+
+function GuestBanner({ role }: { role: string }) {
+  if (role !== "guest") return null;
+  
+  return (
+    <div className="mb-8 p-4 border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+      <p className="text-blue-700 dark:text-blue-300 font-semibold mb-2">
+        👋 Guest Access
+      </p>
+      <p className="text-sm text-blue-600 dark:text-blue-400">
+        You have guest privileges. Check out the invitation page!
+      </p>
+    </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="mt-12 text-center space-y-3">
+      <Link
+        href="/user"
+        className="block text-sm text-primary hover:text-primary/80 transition-colors underline font-medium"
+      >
+        Go to User Page
+      </Link>
+      <Link
+        href="/docs"
+        className="block text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+      >
+        Read the Docs
+      </Link>
+    </footer>
+  );
+}
 
 export default async function WelcomePage() {
   const supabase = await createClient();
@@ -13,15 +235,9 @@ export default async function WelcomePage() {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  // No authenticated user - show login
+  // No authenticated user - show login with docs link
   if (!authUser) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
-        <div className="w-full max-w-md">
-          <GoogleOnlyLoginForm />
-        </div>
-      </main>
-    );
+    return <LoginSection />;
   }
 
   // Get user wallet data
@@ -47,196 +263,17 @@ export default async function WelcomePage() {
         <h1 className="text-3xl font-bold mb-2">Welcome, {name}</h1>
         <p className="text-muted-foreground mb-8">Choose your destination</p>
 
-        {role === "guest" && (
-          <div className="mb-8 p-4 border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-            <p className="text-blue-700 dark:text-blue-300 font-semibold mb-2">
-              👋 Guest Access
-            </p>
-            <p className="text-sm text-blue-600 dark:text-blue-400">
-              You have guest privileges. Check out the invitation page!
-            </p>
-          </div>
-        )}
+        <GuestBanner role={role} />
 
         <div className="grid gap-4 max-w-4xl">
-          {/* Primary Routes - Always Visible */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link
-              href="/billboard"
-              className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
-                role === "admin" || role === "teacherAdmin"
-                  ? "border-2 border-purple-500 hover:ring-2 hover:ring-purple-500/50 bg-purple-50 dark:bg-purple-900/20"
-                  : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <Shield className="h-8 w-8 text-slate-700 dark:text-slate-200" />
-                <div>
-                  <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
-                    Billboard
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Main admin dashboard
-                  </p>
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              href="/teacher"
-              className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
-                role === "teacher" || role === "teacherAdmin"
-                  ? "border-2 border-green-500 hover:ring-2 hover:ring-green-500/50 bg-green-50 dark:bg-green-900/20"
-                  : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <HeadsetIcon className="h-8 w-8 text-slate-700 dark:text-slate-200" />
-                <div>
-                  <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
-                    Teacher
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Teacher portal & hours
-                  </p>
-                </div>
-              </div>
-            </Link>
-          </div>
-
-          {/* Entity Data Routes - Like RouteNav */}
-          <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-              Entity Management
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {ENTITY_DATA.map((entity) => {
-                const EntityIcon = entity.icon;
-                return (
-                  <Link
-                    key={entity.name}
-                    href={entity.link}
-                    className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg hover:shadow-sm transition-all duration-200"
-                  >
-                    <EntityIcon className={`h-4 w-4 ${entity.color}`} />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {entity.name}s
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Secondary Routes */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-            <Link
-              href="/references/form"
-              className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
-            >
-              <h4 className="font-semibold text-slate-700 dark:text-slate-300">
-                Connect Wallet
-              </h4>
-              <p className="text-xs text-muted-foreground">
-                User wallet management
-              </p>
-            </Link>
-
-            <Link
-              href="/forms"
-              className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
-            >
-              <h4 className="font-semibold text-slate-700 dark:text-slate-300">
-                Forms
-              </h4>
-              <p className="text-xs text-muted-foreground">Student forms</p>
-            </Link>
-
-            <Link
-              href="/invitation"
-              className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
-            >
-              <h4 className="font-semibold text-slate-700 dark:text-slate-300">
-                Invitation
-              </h4>
-              <p className="text-xs text-muted-foreground">Guest page</p>
-            </Link>
-          </div>
-
-          {/* Development Routes */}
-          <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-              Development & Prototype Routes
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              <Link
-                href="/dev"
-                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
-                <span className="font-mono">/dev</span>
-              </Link>
-              <Link
-                href="/teachers"
-                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
-                <span className="font-mono">/teachers</span>
-              </Link>
-              <Link
-                href="/whiteboard"
-                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
-                <span className="font-mono">/whiteboard</span>
-              </Link>
-              <Link
-                href="/user"
-                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
-                <span className="font-mono">/user</span>
-              </Link>
-              <Link
-                href="/auth/login"
-                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
-                <span className="font-mono">/auth</span>
-              </Link>
-              <Link
-                href="/page2"
-                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
-                <span className="font-mono">/page2</span>
-              </Link>
-              <Link
-                href="/api"
-                className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
-                <span className="font-mono">/api</span>
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-4 text-center">
-            <p className="text-xs text-muted-foreground">
-              Role: <span className="font-mono font-semibold">{role}</span> |
-              User: <span className="font-mono font-semibold">{name}</span>
-            </p>
-          </div>
+          <PrimaryRoutes role={role} />
+          <EntityManagement />
+          <SecondaryRoutes />
+          <DevelopmentRoutes />
+          <UserStatus role={role} name={name} />
         </div>
 
-        {/* Footer with user and docs links */}
-        <footer className="mt-12 text-center space-y-3">
-          <Link
-            href="/user"
-            className="block text-sm text-primary hover:text-primary/80 transition-colors underline font-medium"
-          >
-            Go to User Page
-          </Link>
-          <Link
-            href="/docs"
-            className="block text-sm text-muted-foreground hover:text-foreground transition-colors underline"
-          >
-            Read the Docs
-          </Link>
-        </footer>
+        <Footer />
       </div>
     </main>
   );

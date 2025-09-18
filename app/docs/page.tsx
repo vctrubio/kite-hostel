@@ -16,7 +16,377 @@ import {
 } from "@/svgs";
 import { BillboardClass } from "@/backend/BillboardClass";
 import StudentsBookingCard from "@/components/cards/StudentsBookingCard";
-import { useState } from "react";
+
+// Header Component
+function PageHeader() {
+  return (
+    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-10">
+      <div className="px-4 py-6">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2 text-center">
+        How the kite system works
+        </h1>
+      </div>
+    </div>
+  );
+}
+
+// Step 1: Teacher Setup Component
+function Step1TeacherSetup() {
+  return (
+    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-3 bg-green-100 dark:bg-green-900/30 px-6 py-3 rounded-full mb-4">
+          <HeadsetIcon className="w-8 h-8 text-green-600" />
+          <span className="text-xl font-semibold text-green-800 dark:text-green-200">Step 1: Set Up Your Team</span>
+        </div>
+        <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+          First, we create teacher profiles and set their commission rates - this is our employment contract
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-8">
+        <TeacherCard />
+        <div className="flex items-center gap-2 text-4xl text-green-600">
+          <span>→</span>
+          <span className="text-sm font-medium text-green-700 dark:text-green-300">sets contract</span>
+          <span>→</span>
+        </div>
+        <CommissionCard />
+      </div>
+    </div>
+  );
+}
+
+// Flow Diagram Component
+function StudentJourneyFlowDiagram() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-6 mb-12">
+      <div className="text-center">
+        <StudentCard />
+        <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
+          Creates booking
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-4xl text-blue-600">
+        <span>→</span>
+        <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">creates</span>
+      </div>
+
+      <div className="text-center">
+        <BookingCard />
+        <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
+          Chooses dates & package
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-4xl text-cyan-600">
+        <span>→</span>
+        <span className="text-xs text-cyan-700 dark:text-cyan-300 font-medium">assigns</span>
+      </div>
+
+      <div className="text-center">
+        <LessonCard />
+        <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
+          Picks teacher & commission
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-4xl text-teal-600">
+        <span>→</span>
+        <span className="text-xs text-teal-700 dark:text-teal-300 font-medium">creates</span>
+      </div>
+
+      <div className="text-center">
+        <EventCard />
+        <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
+          Within booking date range
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Live Example Component
+function LiveBookingExample({ mockBillboardClass, mockTeachers }: { mockBillboardClass: BillboardClass, mockTeachers: any[] }) {
+  return (
+    <div className="border-t border-slate-200 dark:border-slate-700 pt-8">
+      <div className="text-center mb-8">
+        <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">
+          Live Example: Complete Student Booking
+        </h3>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        {/* BookingCard Component */}
+        <div className="lg:order-1">
+          <div className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/20 p-6 rounded-xl border-2 border-slate-200 dark:border-slate-700 shadow-lg">
+            <StudentsBookingCard
+              billboardClass={mockBillboardClass}
+              selectedDate="2025-09-16"
+              teachers={mockTeachers}
+              isDraggable={false}
+            />
+          </div>
+        </div>
+
+        {/* Detailed Explanation */}
+        <div className="lg:order-2 space-y-6">
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg">
+            <div className="space-y-4 text-sm">
+              {/* Booking Dates & Progress */}
+              <div className="flex items-start gap-3">
+                <BookingIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                <div>
+                  <h5 className="font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <span className="text-blue-600 dark:text-blue-400">Booking Dates</span> & Progress Bar
+                  </h5>
+                  <p className="text-slate-600 dark:text-slate-400 text-xs">
+                    Top section shows booking period with progress visualization:
+                  </p>
+                  <ul className="mt-1 ml-2 space-y-1 text-xs">
+                    <li>• <span className="font-semibold text-green-700 dark:text-green-400">Dark Green</span>: Completed lessons/events</li>
+                    <li>• <span className="font-semibold text-green-400 dark:text-green-300">Light Green</span>: Pending confirmation</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Student Names */}
+              <div className="flex items-start gap-3">
+                <HelmetIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <div>
+                  <h5 className="font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <span className="text-yellow-600 dark:text-yellow-400">Student Names</span>
+                  </h5>
+                  <p className="text-slate-600 dark:text-slate-400 text-xs">
+                    Displays all students in this booking: <span className="font-mono font-semibold">Emma & Carlos</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Lessons & Events */}
+              <div className="flex items-start gap-3">
+                <HeadsetIcon className="w-5 h-5 text-cyan-600 dark:text-cyan-400 mt-0.5" />
+                <div>
+                  <h5 className="font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <span className="text-cyan-600 dark:text-cyan-400">Lessons</span> with <FlagIcon className="inline w-4 h-4 text-teal-600 dark:text-teal-400 mx-1" />Events
+                  </h5>
+                  <p className="text-slate-600 dark:text-slate-400 text-xs">
+                    Shows detailed lesson information:
+                  </p>
+                  <ul className="mt-1 ml-2 space-y-1 text-xs">
+                    <li>• <span className="font-semibold">Teacher Name</span>: Miguel Sanchez</li>
+                    <li>• <span className="font-semibold">Event Duration</span>: 120min completed, 90min planned</li>
+                    <li>• <span className="font-semibold">Event Dates</span>: Sep 16 (completed), Sep 18 (planned)</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Interactive Elements */}
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div>
+                      <h6 className="font-semibold text-slate-700 dark:text-slate-300 text-xs">
+                        <span className="text-orange-600 dark:text-orange-400">Details Dropdown</span>
+                      </h6>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs">
+                        Package, Booking, References 
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+  
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Step 2: Student Journey Component
+function Step2StudentJourney({ mockBillboardClass, mockTeachers }: { mockBillboardClass: BillboardClass, mockTeachers: any[] }) {
+  return (
+    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-3 bg-blue-100 dark:bg-blue-900/30 px-6 py-3 rounded-full mb-4">
+          <HelmetIcon className="w-8 h-8 text-yellow-600" />
+          <span className="text-xl font-semibold text-blue-800 dark:text-blue-200">Step 2: Student Journey</span>
+        </div>
+        <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+          <span className="font-bold text-yellow-700 dark:text-yellow-300">Students</span> create <span className="font-bold text-blue-700 dark:text-blue-300">bookings</span>, we assign <span className="font-bold text-cyan-400 dark:text-cyan-300">lessons</span>, and track everything with <span className="font-bold text-teal-700 dark:text-teal-300">events</span>
+        </p>
+      </div>
+
+      <StudentJourneyFlowDiagram />
+      <LiveBookingExample mockBillboardClass={mockBillboardClass} mockTeachers={mockTeachers} />
+    </div>
+  );
+}
+
+// Supporting Systems Component
+function SupportingSystems() {
+  return (
+    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">Extras, yet important systems ...</h2>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-6">
+        <KiteCard />
+        <PaymentCard />
+        <PackageCard />
+      </div>
+    </div>
+  );
+}
+
+// User Authentication Section
+function UserAuthenticationSection() {
+  return (
+    <div className="space-y-6">
+      <div className="bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border-2 border-purple-200 dark:border-purple-700 shadow-lg">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-purple-500 rounded-lg">
+            <UsersIcon className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-purple-800 dark:text-purple-200">User Wallet</h3>
+            <p className="text-sm text-purple-600 dark:text-purple-300">References</p>
+          </div>
+        </div>
+        <div className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+            <span>Teacher Admin - Full system access</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+            <span>Teacher - Lesson management</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+            <span>Reception - Booking coordination</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+            <span>Reference - Client tracking</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-indigo-900/20 dark:to-blue-900/20 p-6 rounded-xl border-2 border-indigo-200 dark:border-indigo-700 shadow-lg">
+        <h4 className="text-lg font-semibold text-indigo-800 dark:text-indigo-200 mb-3">How Authentication Works</h4>
+        <div className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+            <span>Supabase auth users link to User Wallet profiles</span>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+            <span>Role-based permissions control access levels</span>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+            <span>Secure session management for daily operations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Billboard Management Section
+function BillboardManagementSection() {
+  return (
+    <div className="space-y-6">
+      <div className="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20 p-6 rounded-xl border-2 border-green-200 dark:border-green-700 shadow-lg">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-green-500 rounded-lg">
+            <CalendarIcon className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-green-800 dark:text-green-200">Billboard System</h3>
+            <p className="text-sm text-green-600 dark:text-green-300">Daily Operations Hub</p>
+          </div>
+        </div>
+        <div className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span>Drag & drop event scheduling</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span>Real-time date filtering</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span>Global statistics dashboard</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span>Multi-format export system</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-teal-50 to-cyan-100 dark:from-teal-900/20 dark:to-cyan-900/20 p-6 rounded-xl border-2 border-teal-200 dark:border-teal-700 shadow-lg">
+        <h4 className="text-lg font-semibold text-teal-800 dark:text-teal-200 mb-3">Power Features</h4>
+        <div className="grid grid-cols-2 gap-3 text-sm text-slate-700 dark:text-slate-300">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+            <span>CSV Export</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+            <span>WhatsApp Share</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+            <span>Medical Reports</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+            <span>Print Ready</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+            <span>Debug Mode</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+            <span>Real-time Updates</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// User Authentication & Billboard Management Component
+function UserAuthAndBillboardManagement() {
+  return (
+    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-3 bg-purple-100 dark:bg-purple-900/30 px-6 py-3 rounded-full mb-4">
+          <UsersIcon className="w-8 h-8 text-purple-600" />
+          <span className="text-xl font-semibold text-purple-800 dark:text-purple-200">User Authentication & Daily Operations</span>
+        </div>
+        <p className="text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+          Secure role-based access for teachers, admins, and reception staff to manage the complete booking lifecycle
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <UserAuthenticationSection />
+        <BillboardManagementSection />
+      </div>
+    </div>
+  );
+}
 
 // Sub-components for each entity
 function StudentCard() {
@@ -248,14 +618,7 @@ function PackageCard() {
 }
 
 export default function DocsPage() {
-  // State for tracking drag events in the showcase
-  const [dragEvents, setDragEvents] = useState<string[]>([]);
-
-  const addDragEvent = (message: string) => {
-    setDragEvents(prev => [message, ...prev.slice(0, 4)]); // Keep last 5 events
-  };
-
-  // Mock data for StudentsBookingCard showcase
+  // Mock data for StudentsBookingCard in Step 2
   const mockTeachers = [
     {
       id: "teacher-123",
@@ -440,313 +803,13 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      {/* Header */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-10">
-        <div className="px-4 py-6">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2 text-center">
-          How the kite system works
-          </h1>
-        </div>
-      </div>
-
+      <PageHeader />
+      
       <div className="px-4 py-8 space-y-12">
-
-        {/* Step 1: Teacher Setup */}
-        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-3 bg-green-100 dark:bg-green-900/30 px-6 py-3 rounded-full mb-4">
-              <HeadsetIcon className="w-8 h-8 text-green-600" />
-              <span className="text-xl font-semibold text-green-800 dark:text-green-200">Step 1: Set Up Your Team</span>
-            </div>
-            <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-              First, we create teacher profiles and set their commission rates - this is our employment contract
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-8">
-            <TeacherCard />
-            <div className="flex items-center gap-2 text-4xl text-green-600">
-              <span>→</span>
-              <span className="text-sm font-medium text-green-700 dark:text-green-300">sets contract</span>
-              <span>→</span>
-            </div>
-            <CommissionCard />
-          </div>
-        </div>
-
-        {/* Step 2: Student Booking Flow */}
-        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-3 bg-blue-100 dark:bg-blue-900/30 px-6 py-3 rounded-full mb-4">
-              <HelmetIcon className="w-8 h-8 text-yellow-600" />
-              <span className="text-xl font-semibold text-blue-800 dark:text-blue-200">Step 2: Student Journey</span>
-            </div>
-            <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-              <span className="font-bold text-yellow-700 dark:text-yellow-300">Students</span> create <span className="font-bold text-blue-700 dark:text-blue-300">bookings</span>, we assign <span className="font-bold text-cyan-400 dark:text-cyan-300">lessons</span>, and track everything with <span className="font-bold text-teal-700 dark:text-teal-300">events</span>
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            <div className="text-center">
-              <StudentCard />
-              <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
-                Creates booking
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-4xl text-blue-600">
-              <span>→</span>
-              <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">creates</span>
-            </div>
-
-            <div className="text-center">
-              <BookingCard />
-              <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
-                Chooses dates & package
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-4xl text-cyan-600">
-              <span>→</span>
-              <span className="text-xs text-cyan-700 dark:text-cyan-300 font-medium">assigns</span>
-            </div>
-
-            <div className="text-center">
-              <LessonCard />
-              <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
-                Picks teacher & commission
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-4xl text-teal-600">
-              <span>→</span>
-              <span className="text-xs text-teal-700 dark:text-teal-300 font-medium">creates</span>
-            </div>
-
-            <div className="text-center">
-              <EventCard />
-              <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
-                Within booking date range
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer: Supporting Systems */}
-        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">Extras, yet important systems ...</h2>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-6">
-            <KiteCard />
-            <PaymentCard />
-            <PackageCard />
-          </div>
-        </div>
-
-        {/* User Wallet & Billboard Management */}
-        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-3 bg-purple-100 dark:bg-purple-900/30 px-6 py-3 rounded-full mb-4">
-              <UsersIcon className="w-8 h-8 text-purple-600" />
-              <span className="text-xl font-semibold text-purple-800 dark:text-purple-200">User Authentication & Daily Operations</span>
-            </div>
-            <p className="text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-              Secure role-based access for teachers, admins, and reception staff to manage the complete booking lifecycle
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* User Wallet Authentication */}
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border-2 border-purple-200 dark:border-purple-700 shadow-lg">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-purple-500 rounded-lg">
-                    <UsersIcon className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-purple-800 dark:text-purple-200">User Wallet</h3>
-                    <p className="text-sm text-purple-600 dark:text-purple-300">References</p>
-                  </div>
-                </div>
-                <div className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                    <span>Teacher Admin - Full system access</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                    <span>Teacher - Lesson management</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                    <span>Reception - Booking coordination</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                    <span>Reference - Client tracking</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Authentication Flow */}
-              <div className="bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-indigo-900/20 dark:to-blue-900/20 p-6 rounded-xl border-2 border-indigo-200 dark:border-indigo-700 shadow-lg">
-                <h4 className="text-lg font-semibold text-indigo-800 dark:text-indigo-200 mb-3">How Authentication Works</h4>
-                <div className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
-                  <div className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                    <span>Supabase auth users link to User Wallet profiles</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                    <span>Role-based permissions control access levels</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                    <span>Secure session management for daily operations</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Billboard Management System */}
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20 p-6 rounded-xl border-2 border-green-200 dark:border-green-700 shadow-lg">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-green-500 rounded-lg">
-                    <CalendarIcon className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-green-800 dark:text-green-200">Billboard System</h3>
-                    <p className="text-sm text-green-600 dark:text-green-300">Daily Operations Hub</p>
-                  </div>
-                </div>
-                <div className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    <span>Drag & drop event scheduling</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    <span>Real-time date filtering</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    <span>Global statistics dashboard</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    <span>Multi-format export system</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Key Features */}
-              <div className="bg-gradient-to-br from-teal-50 to-cyan-100 dark:from-teal-900/20 dark:to-cyan-900/20 p-6 rounded-xl border-2 border-teal-200 dark:border-teal-700 shadow-lg">
-                <h4 className="text-lg font-semibold text-teal-800 dark:text-teal-200 mb-3">Power Features</h4>
-                <div className="grid grid-cols-2 gap-3 text-sm text-slate-700 dark:text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-                    <span>CSV Export</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-                    <span>WhatsApp Share</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-                    <span>Medical Reports</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-                    <span>Print Ready</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-                    <span>Debug Mode</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-                    <span>Real-time Updates</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* StudentsBookingCard Showcase */}
-        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 px-6 py-3 rounded-full mb-4">
-              <BookingIcon className="w-8 h-8 text-blue-600" />
-              <span className="text-xl font-semibold text-blue-800 dark:text-blue-200">StudentsBookingCard Showcase</span>
-            </div>
-            <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-              Interactive booking card component showing student details, progress tracking, and teacher assignment functionality
-            </p>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/20 p-6 rounded-xl border-2 border-slate-200 dark:border-slate-700 shadow-lg">
-              <StudentsBookingCard
-                billboardClass={mockBillboardClass}
-                selectedDate="2025-09-16"
-                teachers={mockTeachers}
-                isDraggable={true}
-                onDragStart={(bookingId) => addDragEvent(`🚀 Drag started for booking: ${bookingId}`)}
-                onDragEnd={(bookingId, wasDropped) => addDragEvent(`🎯 Drag ended for booking: ${bookingId} (${wasDropped ? 'dropped' : 'cancelled'})`)}
-              />
-            </div>
-
-            {/* Drag Events Log */}
-            {dragEvents.length > 0 && (
-              <div className="mt-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
-                <h4 className="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-2">🎮 Drag Events Log:</h4>
-                <div className="space-y-1 max-h-24 overflow-y-auto">
-                  {dragEvents.map((event, index) => (
-                    <div key={index} className="text-xs text-slate-700 dark:text-slate-300 font-mono">
-                      {event}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
-              <h4 className="text-sm font-semibold text-green-800 dark:text-green-200 mb-2">Mock Data Features:</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>2 students: Emma & Carlos</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>8-hour package (€400 each)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>120min completed, 90min planned</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>Teacher: Miguel Sanchez</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>2 kites assigned to completed event</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>Interactive dropdown & status change</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <Step1TeacherSetup />
+        <Step2StudentJourney mockBillboardClass={mockBillboardClass} mockTeachers={mockTeachers} />
+        <SupportingSystems />
+        <UserAuthAndBillboardManagement />
       </div>
     </div>
   );

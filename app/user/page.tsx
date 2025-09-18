@@ -5,7 +5,7 @@ import { useUserWallet } from "@/provider/UserWalletProvider";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PWAInstallButton, usePWAInstallation } from "@/components/PWAInstallButton";
-import { Smartphone, Monitor } from "lucide-react";
+import { Smartphone, Monitor, Book } from "lucide-react";
 
 export default function UserPage() {
   const { user, loading } = useUserWallet();
@@ -41,10 +41,18 @@ export default function UserPage() {
         <p className="text-muted-foreground mb-6">
           Your role is: {user.role}
         </p>
-        <nav className="text-sm">
-          <Link href="/" className="text-primary hover:underline">
-            ← Back to Main
-          </Link>
+        <nav className="text-sm space-y-4">
+          <div>
+            <Link href="/" className="text-primary hover:underline">
+              ← Back to Main
+            </Link>
+          </div>
+          <div>
+            <Link href="/docs" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors underline">
+              <Book className="h-4 w-4" />
+              Read the docs
+            </Link>
+          </div>
         </nav>
       </div>
 

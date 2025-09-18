@@ -189,7 +189,7 @@ function StudentCardFooter({
           </div>
 
           {/* Reference Information */}
-          {booking.reference && (
+          {/* {booking.reference && (
             <div className="space-y-3">
               <div className="text-sm font-medium text-muted-foreground">
                 Reference Information
@@ -209,7 +209,7 @@ function StudentCardFooter({
                 )}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Booking Dates */}
           <div className="space-y-3">
