@@ -234,6 +234,41 @@ export async function updateBookingStatus(
   }
 }
 
+export async function updateBookingDates(
+  bookingId: string,
+  dateStart: string,
+  dateEnd: string,
+): Promise<{ success: boolean; error: string | null }> {
+  try {
+    await db
+      .update(Booking)
+      .set({ 
+        date_start: dateStart,
+        date_end: dateEnd 
+      })
+      .where(eq(Booking.id, bookingId));
+
+    revalidatePath("/bookings");
+    revalidatePath("/whiteboard");
+    revalidatePath("/billboard");
+    revalidatePath(`/bookings/${bookingId}`);
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to update booking dates.";
+    console.error(
+      `Error updating booking dates for booking ${bookingId}:`,
+      error,
+      "Full error object:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    );
+    return { success: false, error: errorMessage };
+  }
+}
+
 export async function deleteBooking(
   bookingId: string,
 ): Promise<{ success: boolean; error: string | null }> {

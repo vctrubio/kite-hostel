@@ -11,6 +11,7 @@ interface DatePickerProps {
   dateRange: DateRange;
   setDateRange: (dateRange: DateRange) => void;
   disabled?: boolean;
+  allowPastDates?: boolean;
 }
 
 // Helper function to get relative date label
@@ -40,6 +41,7 @@ export function DatePicker({
   dateRange,
   setDateRange,
   disabled = false,
+  allowPastDates = false,
 }: DatePickerProps) {
   // Helper function to create today's date in ISO format
   const getTodayISO = () => {
@@ -82,11 +84,11 @@ export function DatePicker({
     return checkDate < today;
   };
 
-  // Force dates to be valid - if start date is before today, use today
+  // Force dates to be valid - if start date is before today and past dates not allowed, use today
   let safeStartDate = dateRange.startDate || getTodayISO();
   let safeEndDate = dateRange.endDate || getTomorrowISO();
 
-  if (isBeforeToday(safeStartDate)) {
+  if (!allowPastDates && isBeforeToday(safeStartDate)) {
     safeStartDate = getTodayISO();
     safeEndDate = getTomorrowISO();
 
@@ -154,7 +156,7 @@ export function DatePicker({
     if (disabled) return;
     const newStartDate = new Date(startDate);
     newStartDate.setDate(newStartDate.getDate() - 1);
-    if (isBeforeToday(newStartDate.toISOString())) return;
+    if (!allowPastDates && isBeforeToday(newStartDate.toISOString())) return;
     updateParent(newStartDate, endDate);
   };
 
@@ -201,6 +203,11 @@ export function DatePicker({
     return formatDateForInput(today);
   };
 
+  const getMinStartDate = () => {
+    if (allowPastDates) return undefined;
+    return getTodayDate();
+  };
+
   return (
     <div
       className={`rounded-lg border border-border bg-card p-4 space-y-4 ${disabled ? "opacity-50 pointer-events-none" : ""}`}
@@ -237,7 +244,7 @@ export function DatePicker({
             type="date"
             value={formatDateForInput(startDate)}
             onChange={handleStartDateChange}
-            min={getTodayDate()}
+            min={getMinStartDate()}
             className="w-full p-3 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
           />
         </div>

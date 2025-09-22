@@ -1,4 +1,4 @@
-import { getBookingById } from "@/actions/booking-actions";
+import { getBookingById, updateBookingDates } from "@/actions/booking-actions";
 import { getBookingExportData, getEventsExportData } from "@/actions/export-actions";
 import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
 import { Receipt } from "@/components/export/Receipt";
@@ -9,12 +9,14 @@ import { ElegantDate } from "@/components/formatters/DateTime";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { PackageDetails } from "@/getters/package-details";
+import { DatePicker, DateRange } from "@/components/pickers/date-picker";
 import {
   BookmarkIcon,
   BookingIcon,
   HeadsetIcon,
   HelmetIcon
 } from "@/svgs";
+import { EditableDatePicker } from "./EditableDatePicker";
 
 // ===== SUB-COMPONENTS =====
 
@@ -194,17 +196,21 @@ function Students({ students }: { students: any[] }) {
 }
 
 
-// Component for displaying booking timeline
+// Component for displaying booking timeline with editable dates
 function BookingTimeline({ 
+  bookingId,
   createdAt, 
   dateStart, 
   dateEnd,
-  daysDifference
+  daysDifference,
+  totalMinutes
 }: {
+  bookingId: string;
   createdAt?: string;
   dateStart: string;
   dateEnd: string;
   daysDifference: number;
+  totalMinutes: number;
 }) {
   return (
     <div className="bg-card rounded-lg border border-border p-4 space-y-4">
@@ -239,6 +245,14 @@ function BookingTimeline({
           <DateSince dateString={dateStart} />
         </div>
       </div>
+      
+      {/* Editable Date Picker */}
+      <EditableDatePicker 
+        bookingId={bookingId}
+        initialDateStart={dateStart}
+        initialDateEnd={dateEnd}
+        hasAnyEvents={totalMinutes > 0}
+      />
     </div>
   );
 }
@@ -485,10 +499,12 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
 
           {/* Booking Dates */}
           <BookingTimeline 
+            bookingId={booking.id}
             createdAt={booking.created_at}
             dateStart={booking.date_start}
             dateEnd={booking.date_end}
             daysDifference={daysDifference}
+            totalMinutes={bookingClass.getTotalMinutes()}
           />
         </div>
 
