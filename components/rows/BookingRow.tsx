@@ -71,7 +71,14 @@ export function BookingRow({
           />
         </td>
         <td className="py-2 px-4 text-left">
-          {getUserWalletName(booking.reference)}
+          <div className="flex flex-col">
+            <span>{getUserWalletName(booking.reference)}</span>
+            {booking.reference?.note && (
+              <span className="text-xs text-muted-foreground">
+                {booking.reference.note}
+              </span>
+            )}
+          </div>
         </td>
         <td className="py-2 px-4 text-left">
           {booking.students && booking.students.length > 0 ? (
