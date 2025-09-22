@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 export interface DateRange {
   startDate: string;
@@ -17,18 +17,18 @@ interface DatePickerProps {
 function getRelativeDateLabel(date: Date): string {
   const today = new Date();
   today.setHours(12, 0, 0, 0);
-  
+
   const targetDate = new Date(date);
   targetDate.setHours(12, 0, 0, 0);
-  
+
   const todayDateString = today.toDateString();
   const targetDateString = targetDate.toDateString();
-  
+
   if (todayDateString === targetDateString) return "Today";
-  
+
   const diffTime = targetDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 1) return "Tomorrow";
   if (diffDays === -1) return "Yesterday";
   if (diffDays > 1) return `In ${diffDays} days`;
@@ -36,25 +36,29 @@ function getRelativeDateLabel(date: Date): string {
   return "";
 }
 
-export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePickerProps) {
+export function DatePicker({
+  dateRange,
+  setDateRange,
+  disabled = false,
+}: DatePickerProps) {
   // Helper function to create today's date in ISO format
   const getTodayISO = () => {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
     const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}T12:00:00.000Z`;
   };
 
-  // Helper function to create tomorrow's date in ISO format  
+  // Helper function to create tomorrow's date in ISO format
   const getTomorrowISO = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(12, 0, 0, 0);
     const year = tomorrow.getFullYear();
-    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const day = String(tomorrow.getDate()).padStart(2, '0');
+    const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
+    const day = String(tomorrow.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}T12:00:00.000Z`;
   };
 
@@ -63,7 +67,7 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
     if (!dateRange.startDate || !dateRange.endDate) {
       setDateRange({
         startDate: getTodayISO(),
-        endDate: getTomorrowISO()
+        endDate: getTomorrowISO(),
       });
     }
   }, [dateRange.startDate, dateRange.endDate, setDateRange]);
@@ -73,7 +77,7 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
     if (!dateString) return true;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const checkDate = new Date(dateString.split('T')[0]);
+    const checkDate = new Date(dateString.split("T")[0]);
     checkDate.setHours(0, 0, 0, 0);
     return checkDate < today;
   };
@@ -81,11 +85,11 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
   // Force dates to be valid - if start date is before today, use today
   let safeStartDate = dateRange.startDate || getTodayISO();
   let safeEndDate = dateRange.endDate || getTomorrowISO();
-  
+
   if (isBeforeToday(safeStartDate)) {
     safeStartDate = getTodayISO();
     safeEndDate = getTomorrowISO();
-    
+
     // Update parent immediately with correct dates
     setTimeout(() => {
       setDateRange({ startDate: safeStartDate, endDate: safeEndDate });
@@ -95,8 +99,8 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
   // Helper function to convert local date to ISO string
   const formatToISOString = (date: Date, _isEndDate = false): string => {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}T12:00:00.000Z`;
   };
 
@@ -106,7 +110,12 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
   const startRelativeLabel = getRelativeDateLabel(startDate);
   const endRelativeLabel = getRelativeDateLabel(endDate);
 
-  const daysDifference = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+  const daysDifference = Math.max(
+    1,
+    Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    ),
+  );
 
   const updateParent = (newStartDate: Date, newEndDate: Date) => {
     const startISO = formatToISOString(newStartDate, false);
@@ -152,33 +161,33 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
     const dateString = e.target.value;
-    const [year, month, day] = dateString.split('-').map(Number);
+    const [year, month, day] = dateString.split("-").map(Number);
     const selectedDate = new Date(year, month - 1, day);
     selectedDate.setHours(12, 0, 0, 0);
-    
+
     let newEndDate = new Date(endDate);
     if (selectedDate >= endDate) {
       newEndDate = new Date(selectedDate);
       newEndDate.setDate(newEndDate.getDate() + 1);
     }
-    
+
     updateParent(selectedDate, newEndDate);
   };
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
     const dateString = e.target.value;
-    const [year, month, day] = dateString.split('-').map(Number);
+    const [year, month, day] = dateString.split("-").map(Number);
     const selectedDate = new Date(year, month - 1, day);
     selectedDate.setHours(12, 0, 0, 0);
-    
+
     if (selectedDate <= startDate) return;
-    
+
     updateParent(startDate, selectedDate);
   };
 
   const formatDateForInput = (date: Date) => {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
 
   const getMinEndDate = () => {
@@ -193,7 +202,9 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
   };
 
   return (
-    <div className={`rounded-lg border border-border bg-card p-4 space-y-4 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div
+      className={`rounded-lg border border-border bg-card p-4 space-y-4 ${disabled ? "opacity-50 pointer-events-none" : ""}`}
+    >
       {/* Start and End Date Side by Side */}
       <div className="grid grid-cols-2 gap-4">
         {/* Start Date */}
@@ -206,8 +217,20 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
               </span>
             )}
             <div className="flex items-center gap-1 ml-auto">
-              <button type="button" onClick={decrementStartDate} className="btn-icon-round-sm">-</button>
-              <button type="button" onClick={incrementStartDate} className="btn-icon-round-sm">+</button>
+              <button
+                type="button"
+                onClick={decrementStartDate}
+                className="btn-icon-round-sm"
+              >
+                -
+              </button>
+              <button
+                type="button"
+                onClick={incrementStartDate}
+                className="btn-icon-round-sm"
+              >
+                +
+              </button>
             </div>
           </label>
           <input
@@ -249,11 +272,11 @@ export function DatePicker({ dateRange, setDateRange, disabled = false }: DatePi
         >
           - 1 Day
         </button>
-        
+
         <span className="text-sm font-medium text-foreground px-2">
-          {daysDifference} day{daysDifference !== 1 ? 's' : ''}
+          {daysDifference} day{daysDifference !== 1 ? "s" : ""}
         </span>
-        
+
         <button
           type="button"
           onClick={incrementEndDate}
