@@ -1,6 +1,6 @@
-import React from 'react';
-import { FlagIcon } from '@/svgs/FlagIcon';
-import { EventHeading } from '@/getters/event-getters';
+import React from "react";
+import { FlagIcon } from "@/svgs/FlagIcon";
+import { EventHeading } from "@/getters/event-getters";
 
 export interface TableHeader {
   title: string | React.ReactElement;
@@ -10,7 +10,7 @@ export interface TableHeader {
 
 export function getEntityColumnHeaders(entityName: string): TableHeader[] {
   switch (entityName.toLowerCase()) {
-    case 'student':
+    case "student":
       return [
         { title: "Select", key: "select", sortable: false },
         { title: "Date", key: "created_at", sortable: true },
@@ -18,54 +18,55 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Last Name", key: "last_name", sortable: true },
         { title: "Description", key: "desc", sortable: false },
         { title: "Bookings", key: "bookings", sortable: true },
-        { 
-          title: React.createElement(EventHeading, { className: 'w-5 h-5' }), 
-          key: "eventsAndHours", 
-          sortable: true 
+        {
+          title: React.createElement(EventHeading, { className: "w-5 h-5" }),
+          key: "eventsAndHours",
+          sortable: true,
         },
         { title: "Actions", key: "actions", sortable: false },
       ];
-    case 'teacher':
+    case "teacher":
       return [
         { title: "Date", key: "created_at", sortable: true },
         { title: "Name", key: "name", sortable: true },
-        { 
-          title: React.createElement('div', 
-            { className: 'flex items-center gap-2' },
-            React.createElement(FlagIcon, { className: 'w-5 h-5' }),
-            'Lessons'
-          ), 
-          key: "lessonCount", 
-          sortable: true 
+        {
+          title: React.createElement(
+            "div",
+            { className: "flex items-center gap-2" },
+            React.createElement(FlagIcon, { className: "w-5 h-5" }),
+            "Lessons",
+          ),
+          key: "lessonCount",
+          sortable: true,
         },
-        { 
-          title: React.createElement(EventHeading, { className: 'w-5 h-5' }), 
-          key: "eventsAndHours", 
-          sortable: true 
+        {
+          title: React.createElement(EventHeading, { className: "w-5 h-5" }),
+          key: "eventsAndHours",
+          sortable: true,
         },
         { title: "Status", key: "status", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
-    case 'package':
+    case "package":
       return [
         { title: "Description", key: "description", sortable: true },
         { title: "Kites", key: "capacity_kites", sortable: true },
         { title: "Students", key: "capacity_students", sortable: true },
         { title: "Duration", key: "duration", sortable: true },
         { title: "Price", key: "price_per_student", sortable: true },
-        { title: "Rate/h", key: "hourly_rate", sortable: true },
+        { title: "Rate/pp", key: "hourly_rate", sortable: true },
         { title: "Revenue", key: "revenue", sortable: true },
         { title: "Bookings", key: "bookingCount", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
-    case 'payment':
+    case "payment":
       return [
         { title: "Date", key: "created_at", sortable: true },
         { title: "Teacher", key: "teacher", sortable: true },
         { title: "Amount", key: "amount", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
-    case 'kite':
+    case "kite":
       return [
         { title: "Date", key: "created_at", sortable: true },
         { title: "Model", key: "model", sortable: true },
@@ -75,7 +76,7 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Events", key: "events", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
-    case 'event':
+    case "event":
       return [
         { title: "Date", key: "date", sortable: true },
         { title: "Teacher", key: "teacher", sortable: true },
@@ -86,20 +87,20 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Status", key: "status", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
-    case 'lesson':
+    case "lesson":
       return [
         { title: "Teacher", key: "teacher", sortable: true },
         { title: "Commission", key: "commission", sortable: true },
         { title: "Students", key: "students", sortable: false },
-        { 
-          title: React.createElement(EventHeading, { className: 'w-5 h-5' }), 
-          key: "events", 
-          sortable: true 
+        {
+          title: React.createElement(EventHeading, { className: "w-5 h-5" }),
+          key: "events",
+          sortable: true,
         },
         { title: "Status", key: "status", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
-    case 'booking':
+    case "booking":
       return [
         { title: "Start Date", key: "date_start", sortable: true },
         { title: "Status", key: "status", sortable: true },
@@ -109,7 +110,7 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Lessons", key: "lessons", sortable: false },
         { title: "Actions", key: "actions", sortable: false },
       ];
-    case 'reference':
+    case "reference":
       return [
         { title: "Name", key: "name", sortable: true },
         { title: "When", key: "created_at", sortable: true },
