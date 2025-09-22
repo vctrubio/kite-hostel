@@ -1,6 +1,6 @@
 /**
  * TimeZone Utility - Ensures consistent date/time handling across the application
- * 
+ *
  * All times in this app are treated as UTC to avoid timezone conversion issues.
  * Use these utilities instead of native Date operations.
  */
@@ -12,7 +12,7 @@
  * @returns Date object representing the local time without timezone conversion
  */
 export function createUTCDateTime(date: string, time: string): Date {
-  return new Date(`${date}T${time}:00`); //Unecsarry 00.000Z implementiation
+  return new Date(`${date}T${time}:00.000Z`); //Unecsarry 00.000Z implementiation
 }
 
 /**
@@ -31,7 +31,7 @@ export function toUTCString(date: Date): string {
  */
 export function extractTimeFromUTC(isoString: string): string {
   const date = new Date(isoString);
-  return `${date.getUTCHours().toString().padStart(2, '0')}:${date.getUTCMinutes().toString().padStart(2, '0')}`;
+  return `${date.getUTCHours().toString().padStart(2, "0")}:${date.getUTCMinutes().toString().padStart(2, "0")}`;
 }
 
 /**
@@ -41,7 +41,7 @@ export function extractTimeFromUTC(isoString: string): string {
  */
 export function extractDateFromUTC(isoString: string): string {
   const date = new Date(isoString);
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 /**
@@ -61,11 +61,11 @@ export function isSameUTCDate(date1: string, date2: string): boolean {
  * @returns New time string (HH:MM)
  */
 export function addMinutesToTime(time: string, minutes: number): string {
-  const [h, m] = time.split(':').map(Number);
+  const [h, m] = time.split(":").map(Number);
   const totalMinutes = h * 60 + m + minutes;
   const newHours = Math.floor(totalMinutes / 60) % 24;
   const newMins = totalMinutes % 60;
-  return `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`;
+  return `${newHours.toString().padStart(2, "0")}:${newMins.toString().padStart(2, "0")}`;
 }
 
 /**
@@ -74,7 +74,7 @@ export function addMinutesToTime(time: string, minutes: number): string {
  * @returns Minutes since midnight
  */
 export function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(':').map(Number);
+  const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
 }
 
@@ -86,7 +86,7 @@ export function timeToMinutes(time: string): number {
 export function minutesToTime(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
 
 /**
@@ -97,7 +97,9 @@ export function minutesToTime(minutes: number): string {
 export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  return mins > 0 ? `${hours}:${mins.toString().padStart(2, '0')}hrs` : `${hours}:00hrs`;
+  return mins > 0
+    ? `${hours}:${mins.toString().padStart(2, "0")}hrs`
+    : `${hours}:00hrs`;
 }
 
 /**
@@ -105,7 +107,7 @@ export function formatDuration(minutes: number): string {
  * @returns Current date in UTC
  */
 export function getCurrentUTCDate(): string {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split("T")[0];
 }
 
 /**
@@ -114,5 +116,5 @@ export function getCurrentUTCDate(): string {
  */
 export function getCurrentUTCTime(): string {
   const now = new Date();
-  return `${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}`;
+  return `${now.getUTCHours().toString().padStart(2, "0")}:${now.getUTCMinutes().toString().padStart(2, "0")}`;
 }
