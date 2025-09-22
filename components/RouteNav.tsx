@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, LayoutGrid, Share2, Tv, Sun, Moon } from "lucide-react";
+import { Plus, LayoutGrid, Home, Tv, Sun, Moon } from "lucide-react";
 import { ENTITY_DATA } from "@/lib/constants";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -124,11 +124,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
     };
   }, [isOpen]);
 
-  const handleShare = () => {
-    const url = "https://kite-hostel.vercel.app/";
-    const message = `Check out Kite Hostel App: ${url}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+  const handleHome = () => {
     setIsOpen(false);
   };
 
@@ -190,13 +186,14 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
                   <CustomThemeSwitcher />
                 </div>
               </div>
-              <button
-                onClick={handleShare}
+              <Link
+                href="/"
+                onClick={handleHome}
                 className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                <span>Share</span>
-                <Share2 className="h-4 w-4 ml-auto" />
-              </button>
+                <span>Home</span>
+                <Home className="h-4 w-4 ml-auto" />
+              </Link>
               <div
                 className={DROPDOWN_ITEM_CLASSES}
                 onClick={(e) => e.stopPropagation()}
