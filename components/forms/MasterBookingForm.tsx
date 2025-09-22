@@ -15,8 +15,224 @@ import { createBooking } from "@/actions/booking-actions";
 import { getStudents } from "@/actions/student-actions";
 import { createLesson } from "@/actions/lesson-actions";
 import { toast } from "sonner";
+import { ENTITY_DATA } from "@/lib/constants";
+import { UserCheck } from "lucide-react";
 
 type FormType = "booking" | "student" | "package";
+
+// Extract icons from ENTITY_DATA
+const BookingIcon = ENTITY_DATA.find(
+  (entity) => entity.name === "Booking",
+)?.icon;
+const PackageIcon = ENTITY_DATA.find(
+  (entity) => entity.name === "Package",
+)?.icon;
+const StudentIcon = ENTITY_DATA.find(
+  (entity) => entity.name === "Student",
+)?.icon;
+const TeacherIcon = ENTITY_DATA.find(
+  (entity) => entity.name === "Teacher",
+)?.icon;
+
+// Reusable Section Component
+const Section = ({
+  id,
+  title,
+  icon: Icon,
+  iconColor,
+  isExpanded,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
+  isExpanded: boolean;
+  onToggle: (sectionId: string) => void;
+  children: React.ReactNode;
+}) => (
+  <div id={id} className="scroll-mt-4">
+    <div
+      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
+      onClick={() => onToggle(id)}
+    >
+      <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        {Icon && <Icon className={`h-5 w-5 ${iconColor}`} />}
+        {title}
+      </h2>
+      <span className="text-sm text-muted-foreground">
+        {isExpanded ? "−" : "+"}
+      </span>
+    </div>
+    {isExpanded && <div className="mt-3">{children}</div>}
+  </div>
+);
+
+// Individual Section Components
+const DatesSection = ({ 
+  dateRange, 
+  onDatesChange, 
+  isExpanded, 
+  onToggle 
+}: {
+  dateRange: DateRange;
+  onDatesChange: (dateRange: DateRange) => void;
+  isExpanded: boolean;
+  onToggle: (sectionId: string) => void;
+}) => (
+  <Section
+    id="dates-section"
+    title="Booking Dates"
+    icon={BookingIcon}
+    iconColor="text-blue-500"
+    isExpanded={isExpanded}
+    onToggle={onToggle}
+  >
+    <DatePicker dateRange={dateRange} setDateRange={onDatesChange} />
+  </Section>
+);
+
+const PackageSection = ({
+  packages,
+  selectedPackageId,
+  viaStudentParams,
+  selectedStudentIds,
+  onPackageChange,
+  isExpanded,
+  onToggle,
+}: {
+  packages: any[];
+  selectedPackageId: string;
+  viaStudentParams: boolean;
+  selectedStudentIds: string[];
+  onPackageChange: (packageId: string) => void;
+  isExpanded: boolean;
+  onToggle: (sectionId: string) => void;
+}) => (
+  <Section
+    id="package-section"
+    title="Select Package"
+    icon={PackageIcon}
+    iconColor="text-orange-500"
+    isExpanded={isExpanded}
+    onToggle={onToggle}
+  >
+    <BookingPackageTable
+      packages={packages}
+      onSelectPackage={onPackageChange}
+      selectedPackageId={selectedPackageId}
+      viaStudentParams={viaStudentParams}
+      selectedStudentIds={selectedStudentIds}
+    />
+  </Section>
+);
+
+const StudentsSection = ({
+  students,
+  selectedStudentIds,
+  selectedPackageCapacity,
+  availableStudents,
+  onStudentChange,
+  isExpanded,
+  onToggle,
+}: {
+  students: any[];
+  selectedStudentIds: string[];
+  selectedPackageCapacity: number;
+  availableStudents: Set<string>;
+  onStudentChange: (studentId: string) => void;
+  isExpanded: boolean;
+  onToggle: (sectionId: string) => void;
+}) => (
+  <Section
+    id="students-section"
+    title={
+      <>
+        Select Students{" "}
+        <span className="text-sm font-normal text-muted-foreground">
+          (Max: {selectedPackageCapacity})
+        </span>
+      </>
+    }
+    icon={StudentIcon}
+    iconColor="text-yellow-500"
+    isExpanded={isExpanded}
+    onToggle={onToggle}
+  >
+    <BookingStudentTable
+      students={students}
+      selectedStudentIds={selectedStudentIds}
+      onSelectStudent={onStudentChange}
+      packageCapacity={selectedPackageCapacity}
+      availableStudents={availableStudents}
+    />
+  </Section>
+);
+
+const ReferenceSection = ({
+  userWallets,
+  selectedReferenceId,
+  onReferenceChange,
+  isExpanded,
+  onToggle,
+}: {
+  userWallets: any[];
+  selectedReferenceId: string | null;
+  onReferenceChange: (referenceId: string | null) => void;
+  isExpanded: boolean;
+  onToggle: (sectionId: string) => void;
+}) => (
+  <Section
+    id="reference-section"
+    title="Select Reference (Optional)"
+    icon={UserCheck}
+    iconColor="text-gray-500"
+    isExpanded={isExpanded}
+    onToggle={onToggle}
+  >
+    <BookingReferenceTable
+      userWallets={userWallets}
+      onSelectReference={onReferenceChange}
+      selectedReferenceId={selectedReferenceId}
+    />
+  </Section>
+);
+
+const LessonSection = ({
+  teachers,
+  selectedLessonTeacherId,
+  selectedLessonCommissionId,
+  onSelectTeacher,
+  onSelectCommission,
+  isExpanded,
+  onToggle,
+}: {
+  teachers: any[];
+  selectedLessonTeacherId: string | null;
+  selectedLessonCommissionId: string | null;
+  onSelectTeacher: (teacherId: string | null) => void;
+  onSelectCommission: (commissionId: string | null) => void;
+  isExpanded: boolean;
+  onToggle: (sectionId: string) => void;
+}) => (
+  <Section
+    id="lesson-section"
+    title="Lesson Details (Optional)"
+    icon={TeacherIcon}
+    iconColor="text-green-500"
+    isExpanded={isExpanded}
+    onToggle={onToggle}
+  >
+    <BookingLessonTeacherTable
+      teachers={teachers}
+      selectedTeacherId={selectedLessonTeacherId}
+      selectedCommissionId={selectedLessonCommissionId}
+      onSelectTeacher={onSelectTeacher}
+      onSelectCommission={onSelectCommission}
+    />
+  </Section>
+);
 
 export default function MasterBookingForm({
   packages,
@@ -348,133 +564,50 @@ export default function MasterBookingForm({
               {/* Render the appropriate form based on activeForm */}
               {activeForm === "booking" && (
                 <div className="space-y-6">
-                  {/* Dates Section - First */}
-                  <div id="dates-section" className="scroll-mt-4">
-                    <div
-                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                      onClick={() => handleEditSection("dates-section")}
-                    >
-                      <h2 className="text-lg font-semibold text-foreground">
-                        Booking Dates
-                      </h2>
-                      <span className="text-sm text-muted-foreground">
-                        {expandedSections.has("dates-section") ? "−" : "+"}
-                      </span>
-                    </div>
-                    {expandedSections.has("dates-section") && (
-                      <div className="mt-3">
-                        <DatePicker
-                          dateRange={dateRange}
-                          setDateRange={handleDatesChange}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <DatesSection
+                    dateRange={dateRange}
+                    onDatesChange={handleDatesChange}
+                    isExpanded={expandedSections.has("dates-section")}
+                    onToggle={handleEditSection}
+                  />
 
-                  {/* Package Section - Second */}
-                  <div id="package-section" className="scroll-mt-4">
-                    <div
-                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                      onClick={() => handleEditSection("package-section")}
-                    >
-                      <h2 className="text-lg font-semibold text-foreground">
-                        Select Package
-                      </h2>
-                      <span className="text-sm text-muted-foreground">
-                        {expandedSections.has("package-section") ? "−" : "+"}
-                      </span>
-                    </div>
-                    {expandedSections.has("package-section") && (
-                      <div className="mt-3">
-                        <BookingPackageTable
-                          packages={packages}
-                          onSelectPackage={handlePackageChange}
-                          selectedPackageId={selectedPackageId}
-                          viaStudentParams={viaStudentParams}
-                          selectedStudentIds={selectedStudentIds}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <PackageSection
+                    packages={packages}
+                    selectedPackageId={selectedPackageId}
+                    viaStudentParams={viaStudentParams}
+                    selectedStudentIds={selectedStudentIds}
+                    onPackageChange={handlePackageChange}
+                    isExpanded={expandedSections.has("package-section")}
+                    onToggle={handleEditSection}
+                  />
 
-                  {/* Students Section - Third */}
-                  <div id="students-section" className="scroll-mt-4">
-                    <div
-                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                      onClick={() => handleEditSection("students-section")}
-                    >
-                      <h2 className="text-lg font-semibold text-foreground">
-                        Select Students{" "}
-                        <span className="text-sm font-normal text-muted-foreground">
-                          (Max: {selectedPackageCapacity})
-                        </span>
-                      </h2>
-                      <span className="text-sm text-muted-foreground">
-                        {expandedSections.has("students-section") ? "−" : "+"}
-                      </span>
-                    </div>
-                    {expandedSections.has("students-section") && (
-                      <div className="mt-3">
-                        <BookingStudentTable
-                          students={students}
-                          selectedStudentIds={selectedStudentIds}
-                          onSelectStudent={handleStudentChange}
-                          packageCapacity={selectedPackageCapacity}
-                          availableStudents={availableStudents}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <StudentsSection
+                    students={students}
+                    selectedStudentIds={selectedStudentIds}
+                    selectedPackageCapacity={selectedPackageCapacity}
+                    availableStudents={availableStudents}
+                    onStudentChange={handleStudentChange}
+                    isExpanded={expandedSections.has("students-section")}
+                    onToggle={handleEditSection}
+                  />
 
-                  {/* Reference Section - Fourth */}
-                  <div id="reference-section" className="scroll-mt-4">
-                    <div
-                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                      onClick={() => handleEditSection("reference-section")}
-                    >
-                      <h2 className="text-lg font-semibold text-foreground">
-                        Select Reference
-                      </h2>
-                      <span className="text-sm text-muted-foreground">
-                        {expandedSections.has("reference-section") ? "−" : "+"}
-                      </span>
-                    </div>
-                    {expandedSections.has("reference-section") && (
-                      <div className="mt-3">
-                        <BookingReferenceTable
-                          userWallets={userWallets}
-                          onSelectReference={handleReferenceChange}
-                          selectedReferenceId={selectedReferenceId}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <ReferenceSection
+                    userWallets={userWallets}
+                    selectedReferenceId={selectedReferenceId}
+                    onReferenceChange={handleReferenceChange}
+                    isExpanded={expandedSections.has("reference-section")}
+                    onToggle={handleEditSection}
+                  />
 
-                  {/* Lesson Details Section - Fifth */}
-                  <div id="lesson-section" className="scroll-mt-4">
-                    <div
-                      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
-                      onClick={() => handleEditSection("lesson-section")}
-                    >
-                      <h2 className="text-lg font-semibold text-foreground">
-                        Lesson Details (Optional)
-                      </h2>
-                      <span className="text-sm text-muted-foreground">
-                        {expandedSections.has("lesson-section") ? "−" : "+"}
-                      </span>
-                    </div>
-                    {expandedSections.has("lesson-section") && (
-                      <div className="mt-3">
-                        <BookingLessonTeacherTable
-                          teachers={teachers}
-                          selectedTeacherId={selectedLessonTeacherId}
-                          selectedCommissionId={selectedLessonCommissionId}
-                          onSelectTeacher={setSelectedLessonTeacherId}
-                          onSelectCommission={setSelectedLessonCommissionId}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <LessonSection
+                    teachers={teachers}
+                    selectedLessonTeacherId={selectedLessonTeacherId}
+                    selectedLessonCommissionId={selectedLessonCommissionId}
+                    onSelectTeacher={setSelectedLessonTeacherId}
+                    onSelectCommission={setSelectedLessonCommissionId}
+                    isExpanded={expandedSections.has("lesson-section")}
+                    onToggle={handleEditSection}
+                  />
                 </div>
               )}
 

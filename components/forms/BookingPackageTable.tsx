@@ -81,14 +81,14 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
             </th>
             <th 
               scope="col" 
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               onClick={() => handleSort('capacity')}
             >
               Capacity {getSortIcon('capacity')}
             </th>
             <th 
               scope="col" 
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               onClick={() => handleSort('kites')}
             >
               Kites {getSortIcon('kites')}
@@ -125,10 +125,10 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {pkg.description}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
                 {pkg.capacity_students}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
                 {pkg.capacity_kites}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
