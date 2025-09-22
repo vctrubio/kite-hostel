@@ -27,6 +27,55 @@ import {
 } from "@/backend/BillboardExportUtils";
 
 const STORAGE_KEY = "billboard-selected-date";
+
+// Debug Component
+function DebugDropdown({
+  showDebugDropdown,
+  setShowDebugDropdown,
+  debugText,
+}: {
+  showDebugDropdown: boolean;
+  setShowDebugDropdown: (show: boolean) => void;
+  debugText: string;
+}) {
+  if (!showDebugDropdown) return null;
+
+  return (
+    <div className="mb-4 p-4 bg-gray-100 border rounded">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="font-semibold">Export Debug Content:</h3>
+        <button
+          onClick={() => setShowDebugDropdown(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+      </div>
+      {debugText.includes('<table') ? (
+        <div 
+          className="w-full h-64 p-2 border rounded text-sm overflow-auto"
+          dangerouslySetInnerHTML={{ __html: debugText }}
+        />
+      ) : (
+        <textarea
+          value={debugText}
+          readOnly
+          className="w-full h-64 p-2 border rounded font-mono text-sm"
+          onClick={(e) => e.currentTarget.select()}
+        />
+      )}
+      <div className="mt-2 flex gap-2">
+        <button
+          onClick={() => navigator.clipboard.writeText(debugText)}
+          className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+        >
+          Copy to Clipboard
+        </button>
+      </div>
+    </div>
+  );
+}
+
 interface BillboardClientProps {
   data: BillboardData;
 }
@@ -460,43 +509,12 @@ export default function BillboardClient({ data }: BillboardClientProps) {
 
   return (
     <div className="min-h-screen p-4">
-      {/* Debug Dropdown */}
-      {showDebugDropdown && (
-        <div className="mb-4 p-4 bg-gray-100 border rounded">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-semibold">Export Debug Content:</h3>
-            <button
-              onClick={() => setShowDebugDropdown(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
-          </div>
-          {debugText.includes('<table') ? (
-            <div 
-              className="w-full h-64 p-2 border rounded text-sm overflow-auto"
-              dangerouslySetInnerHTML={{ __html: debugText }}
-            />
-          ) : (
-            <textarea
-              value={debugText}
-              readOnly
-              className="w-full h-64 p-2 border rounded font-mono text-sm"
-              onClick={(e) => e.currentTarget.select()}
-            />
-          )}
-          <div className="mt-2 flex gap-2">
-            <button
-              onClick={() => navigator.clipboard.writeText(debugText)}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-            >
-              Copy to Clipboard
-            </button>
-          </div>
-        </div>
-      )}
+      <DebugDropdown
+        showDebugDropdown={showDebugDropdown}
+        setShowDebugDropdown={setShowDebugDropdown}
+        debugText={debugText}
+      />
 
-      {/* Header with date picker and controller */}
       <BillboardHeader
         selectedDate={selectedDate}
         onDateChange={handleDateChange}
@@ -511,7 +529,6 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         eventStatus={eventStatus}
       />
 
-      {/* Main content - Teacher Column and Student Column */}
       <div className="grid grid-cols-4 gap-4">
         <TeacherColumnComplex
           teachers={data.teachers || []}
@@ -529,7 +546,6 @@ export default function BillboardClient({ data }: BillboardClientProps) {
           onBookingDragEnd={handleBookingDragEnd}
         />
       </div>
-
     </div>
   );
 }
