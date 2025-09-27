@@ -13,17 +13,24 @@ export interface TeacherQueueGroupHandle {
   submit: () => Promise<void>;
 }
 
-interface TeacherQueueGroupProps {
+interface ParentTime {
+  adjustmentMode: boolean;
+  globalTime: string | null;
+  onAdjustment: (minutesOffset: number) => void;
+  onAccept: () => void;
+  onCancel: () => void;
+  onFlagClick: () => void;
+}
+
+interface TeacherGroupingProps {
   teacherQueue: TeacherQueue;
   selectedDate: string;
   draggedBooking?: BillboardClass | null;
-  parentTimeAdjustmentMode?: boolean;
-  parentGlobalTime?: string | null;
+  parentTime: ParentTime;
   isPendingParentUpdate: boolean;
   onCompleteOrOptOut?: (teacherId: string) => void;
   onOptInToParentUpdate?: (teacherId: string) => void;
   controller: EventController;
-  // UI handlers
   viewMode: "event" | "queue";
   timeAdjustmentMode: boolean;
   globalTimeOffset: number;
@@ -46,12 +53,13 @@ function TeacherLeftColumn({
   displayTime,
   timeAdjustmentMode,
   proposedTimeOffset,
-  parentTimeAdjustmentMode,
+  parentTime,
   teacherStats,
   viewMode,
   isPendingParentUpdate,
   teacherId,
   hasEvents,
+  globalTimeOffset,
   onTimeAdjustment,
   onSetTimeAdjustmentMode,
   onSetViewMode,
@@ -66,12 +74,13 @@ function TeacherLeftColumn({
   displayTime: string;
   timeAdjustmentMode: boolean;
   proposedTimeOffset: number;
-  parentTimeAdjustmentMode: boolean;
+  parentTime: ParentTime;
   teacherStats: any;
   viewMode: "event" | "queue";
   isPendingParentUpdate: boolean;
   teacherId: string;
   hasEvents: boolean;
+  globalTimeOffset: number;
   onTimeAdjustment: (offset: number) => void;
   onSetTimeAdjustmentMode: (mode: boolean) => void;
   onSetViewMode: (mode: "event" | "queue") => void;
@@ -110,7 +119,7 @@ function TeacherLeftColumn({
             <span className="min-w-[60px] text-center font-mono">
               {displayTime}
               {proposedTimeOffset !== 0 &&
-                !parentTimeAdjustmentMode &&
+                !parentTime.adjustmentMode &&
                 hasEvents && (
                   <span className="text-orange-600 dark:text-orange-400 ml-1">
                     ({proposedTimeOffset > 0 ? "+" : ""}
@@ -195,7 +204,7 @@ function TeacherLeftColumn({
             onClick={() => {
               if (
                 hasEvents &&
-                parentTimeAdjustmentMode &&
+                parentTime.adjustmentMode &&
                 !isPendingParentUpdate
               ) {
                 onOptInToParentUpdate?.(teacherId);
@@ -312,12 +321,12 @@ function TeacherRightContent({
 // Main Component
 export const TeacherGrouping = forwardRef<
   TeacherQueueGroupHandle,
-  TeacherQueueGroupProps
+  TeacherGroupingProps
 >((props, ref) => {
   const {
     teacherQueue,
     draggedBooking: externalDraggedBooking,
-    parentTimeAdjustmentMode = false,
+    parentTime,
     isPendingParentUpdate,
     onOptInToParentUpdate,
     controller,
@@ -432,12 +441,13 @@ export const TeacherGrouping = forwardRef<
           displayTime={displayTime}
           timeAdjustmentMode={timeAdjustmentMode}
           proposedTimeOffset={globalTimeOffset}
-          parentTimeAdjustmentMode={parentTimeAdjustmentMode}
+          parentTime={parentTime}
           teacherStats={teacherStats}
           viewMode={viewMode}
           isPendingParentUpdate={isPendingParentUpdate}
           teacherId={teacherId}
           hasEvents={hasEvents}
+          globalTimeOffset={globalTimeOffset}
           onTimeAdjustment={onTimeAdjustment}
           onSetTimeAdjustmentMode={onSetTimeAdjustmentMode}
           onSetViewMode={onSetViewMode}
