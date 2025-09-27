@@ -31,12 +31,20 @@ interface TeacherColumnProps {
   draggedBooking?: BillboardClass | null;
 }
 
+interface ParentTime {
+  adjustmentMode: boolean;
+  globalTime: string | null;
+  onAdjustment: (minutesOffset: number) => void;
+  onAccept: () => void;
+  onCancel: () => void;
+  onFlagClick: () => void;
+}
+
 interface TeacherColumnRowProps {
   teacherQueue: TeacherQueue;
   selectedDate: string;
   draggedBooking?: BillboardClass | null;
-  parentTimeAdjustmentMode?: boolean;
-  parentGlobalTime?: string | null;
+  parentTime: ParentTime;
   isPendingParentUpdate: boolean;
   onCompleteOrOptOut?: (teacherId: string) => void;
   onOptInToParentUpdate?: (teacherId: string) => void;
@@ -51,8 +59,7 @@ const TeacherColumnRow = forwardRef<
     teacherQueue,
     selectedDate,
     draggedBooking,
-    parentTimeAdjustmentMode = false,
-    parentGlobalTime = null,
+    parentTime,
     isPendingParentUpdate,
     onCompleteOrOptOut,
     onOptInToParentUpdate,
@@ -110,9 +117,9 @@ const TeacherColumnRow = forwardRef<
   }));
 
   useEffect(() => {
-    if (parentTimeAdjustmentMode && parentGlobalTime && isPendingParentUpdate) {
+    if (parentTime.adjustmentMode && parentTime.globalTime && isPendingParentUpdate) {
       const offsetMinutes =
-        timeToMinutes(parentGlobalTime) -
+        timeToMinutes(parentTime.globalTime) -
         timeToMinutes(scheduleNodes[0]?.startTime || "00:00");
 
       // Update UI nodes
@@ -135,7 +142,7 @@ const TeacherColumnRow = forwardRef<
           currentEvents[index].eventData.date = localDateTimeString;
         }
       });
-    } else if (!parentTimeAdjustmentMode || !isPendingParentUpdate) {
+    } else if (!parentTime.adjustmentMode || !isPendingParentUpdate) {
       // Reset TeacherQueue events back to original times when exiting parent mode
       // or when this teacher is not pending parent update
       const currentEvents = teacherQueue.getAllEvents();
@@ -155,8 +162,8 @@ const TeacherColumnRow = forwardRef<
       setTimeAdjustmentMode(false);
     }
   }, [
-    parentTimeAdjustmentMode,
-    parentGlobalTime,
+    parentTime.adjustmentMode,
+    parentTime.globalTime,
     isPendingParentUpdate,
     scheduleNodes,
     teacherQueue,
@@ -261,7 +268,7 @@ const TeacherColumnRow = forwardRef<
           console.log("✅ All events updated successfully");
         }
 
-        if (parentTimeAdjustmentMode) {
+        if (parentTime.adjustmentMode) {
           onCompleteOrOptOut?.(teacherId);
         }
       } catch (error) {
@@ -269,7 +276,7 @@ const TeacherColumnRow = forwardRef<
         toast.error("Failed to submit changes");
       }
     },
-    [teacherId, teacherQueue, parentTimeAdjustmentMode, onCompleteOrOptOut],
+    [teacherId, teacherQueue, parentTime.adjustmentMode, onCompleteOrOptOut],
   );
 
   const handleResetQueue = useCallback(() => {
@@ -283,14 +290,14 @@ const TeacherColumnRow = forwardRef<
   }, [teacherQueue]);
 
   const handleCancelQueue = useCallback(() => {
-    if (parentTimeAdjustmentMode) {
+    if (parentTime.adjustmentMode) {
       exitAndOptOut();
     } else {
       // Reset to original state and exit edit mode
       handleResetQueue();
       setViewMode("event");
     }
-  }, [parentTimeAdjustmentMode, exitAndOptOut, handleResetQueue]);
+  }, [parentTime.adjustmentMode, exitAndOptOut, handleResetQueue]);
 
   const handleSubmitAndExit = useCallback(async () => {
     await handleSubmitQueueChanges(false); // Keep success messages for individual submissions
@@ -343,7 +350,7 @@ const TeacherColumnRow = forwardRef<
   const handleAcceptTimeAdjustment = useCallback(async () => {
     console.log("Accepting time adjustment for teacher:", teacherId);
 
-    if (parentTimeAdjustmentMode) {
+    if (parentTime.adjustmentMode) {
       onCompleteOrOptOut?.(teacherId);
     } else {
       // For individual mode, we need to submit the changes to the database
@@ -354,13 +361,13 @@ const TeacherColumnRow = forwardRef<
     }
   }, [
     teacherId,
-    parentTimeAdjustmentMode,
+    parentTime.adjustmentMode,
     onCompleteOrOptOut,
     handleSubmitQueueChanges,
   ]);
 
   const handleCancelTimeAdjustment = useCallback(() => {
-    if (parentTimeAdjustmentMode) {
+    if (parentTime.adjustmentMode) {
       // Reset TeacherQueue events back to original times before exiting
       const currentEvents = teacherQueue.getAllEvents();
       scheduleNodes.forEach((node, index) => {
@@ -388,7 +395,7 @@ const TeacherColumnRow = forwardRef<
       setViewMode("event");
     }
   }, [
-    parentTimeAdjustmentMode,
+    parentTime.adjustmentMode,
     exitAndOptOut,
     scheduleNodes,
     teacherQueue,
@@ -495,21 +502,11 @@ TeacherColumnRow.displayName = "TeacherColumnRow";
 function ParentControlFlag({
   selectedDate,
   earliestTime,
-  parentTimeAdjustmentMode,
-  parentGlobalTime,
-  onParentTimeAdjustment,
-  onParentAcceptTimeAdjustment,
-  onParentCancelTimeAdjustment,
-  onParentFlagClick,
+  parentTime,
 }: {
   selectedDate: string;
   earliestTime: string | null;
-  parentTimeAdjustmentMode: boolean;
-  parentGlobalTime: string | null;
-  onParentTimeAdjustment: (minutesOffset: number) => void;
-  onParentAcceptTimeAdjustment: () => void;
-  onParentCancelTimeAdjustment: () => void;
-  onParentFlagClick: () => void;
+  parentTime: ParentTime;
 }) {
   const dayOfWeek = useMemo(
     () =>
@@ -526,44 +523,44 @@ function ParentControlFlag({
           </h3>
           <div className="flex items-center gap-2">
             <button
-              onClick={onParentFlagClick}
+              onClick={parentTime.onFlagClick}
               title="Toggle Global Time Adjustment"
             >
-              {parentTimeAdjustmentMode ? (
+              {parentTime.adjustmentMode ? (
                 <FlagOff className="w-5 h-5 text-blue-500" />
               ) : (
                 <Flag className="w-5 h-5 text-muted-foreground" />
               )}
             </button>
 
-            {parentTimeAdjustmentMode ? (
+            {parentTime.adjustmentMode ? (
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => onParentTimeAdjustment(-30)}
+                  onClick={() => parentTime.onAdjustment(-30)}
                   className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                   title="Move all schedules back 30 minutes"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="min-w-[60px] text-center font-mono">
-                  {parentGlobalTime || "No Lessons Set"}
+                  {parentTime.globalTime || "No Lessons Set"}
                 </span>
                 <button
-                  onClick={() => onParentTimeAdjustment(30)}
+                  onClick={() => parentTime.onAdjustment(30)}
                   className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                   title="Move all schedules forward 30 minutes"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={onParentAcceptTimeAdjustment}
+                  onClick={parentTime.onAccept}
                   className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 border border-green-300"
                   title="Apply global time adjustment to all teachers"
                 >
                   Submit All
                 </button>
                 <button
-                  onClick={onParentCancelTimeAdjustment}
+                  onClick={parentTime.onCancel}
                   className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 border border-gray-300"
                   title="Cancel global time adjustment"
                 >
@@ -728,12 +725,14 @@ export default function TeacherColumn({
       <ParentControlFlag
         selectedDate={selectedDate}
         earliestTime={earliestTime}
-        parentTimeAdjustmentMode={parentTimeAdjustmentMode}
-        parentGlobalTime={parentGlobalTime}
-        onParentTimeAdjustment={handleParentTimeAdjustment}
-        onParentAcceptTimeAdjustment={handleParentAcceptTimeAdjustment}
-        onParentCancelTimeAdjustment={handleParentCancelTimeAdjustment}
-        onParentFlagClick={handleParentFlagClick}
+        parentTime={{
+          adjustmentMode: parentTimeAdjustmentMode,
+          globalTime: parentGlobalTime,
+          onAdjustment: handleParentTimeAdjustment,
+          onAccept: handleParentAcceptTimeAdjustment,
+          onCancel: handleParentCancelTimeAdjustment,
+          onFlagClick: handleParentFlagClick,
+        }}
       />
 
       {teacherQueueGroups.length > 0 && (
@@ -747,8 +746,14 @@ export default function TeacherColumn({
               teacherQueue={group.teacherQueue}
               selectedDate={selectedDate}
               draggedBooking={draggedBooking}
-              parentTimeAdjustmentMode={parentTimeAdjustmentMode}
-              parentGlobalTime={parentGlobalTime}
+              parentTime={{
+                adjustmentMode: parentTimeAdjustmentMode,
+                globalTime: parentGlobalTime,
+                onAdjustment: handleParentTimeAdjustment,
+                onAccept: handleParentAcceptTimeAdjustment,
+                onCancel: handleParentCancelTimeAdjustment,
+                onFlagClick: handleParentFlagClick,
+              }}
               isPendingParentUpdate={pendingParentUpdateTeachers.has(
                 group.teacherId,
               )}
