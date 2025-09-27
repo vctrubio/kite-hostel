@@ -23,23 +23,14 @@ export default function StudentBookingColumn({
 }: StudentBookingColumnProps) {
   const [filter, setFilter] = useState<BookingFilter>("available");
 
-  const filteredBillboardClasses = useMemo(() => {
-    const baseFiltered = billboardClasses.filter((billboardClass) => {
-      if (filter === "completed") {
-        return billboardClass.booking.status === "completed";
-      }
-      return billboardClass.booking.status !== "completed";
-    });
-
-    if (filter === "all" || filter === "completed") {
-      return baseFiltered;
-    }
-
-    // Available = bookings that DO NOT have an event today
-    return baseFiltered.filter((billboardClass) => {
+  const { filteredBillboardClasses, counts } = useMemo(() => {
+    // Calculate all counts first
+    const allBookings = billboardClasses.filter(bc => bc.booking.status !== "completed");
+    const completedBookings = billboardClasses.filter(bc => bc.booking.status === "completed");
+    
+    // Available = non-completed bookings that DO NOT have an event today
+    const availableBookings = allBookings.filter((billboardClass) => {
       const lessons = billboardClass.lessons || [];
-
-      // Check if any lesson has events for the selected date
       const hasEventToday = lessons.some((lesson) => {
         const events = lesson.events || [];
         return events.some((event: any) => {
@@ -51,19 +42,34 @@ export default function StudentBookingColumn({
           return eventDate.getTime() === filterDate.getTime();
         });
       });
-
-      return !hasEventToday; // Available = no events today
+      return !hasEventToday;
     });
+
+    const counts = {
+      all: allBookings.length,
+      available: availableBookings.length,
+      completed: completedBookings.length,
+    };
+
+    // Return filtered data based on current filter
+    let filteredData;
+    if (filter === "completed") {
+      filteredData = completedBookings;
+    } else if (filter === "available") {
+      filteredData = availableBookings;
+    } else {
+      filteredData = allBookings;
+    }
+
+    return { filteredBillboardClasses: filteredData, counts };
   }, [billboardClasses, selectedDate, filter]);
 
   return (
     <div className="col-span-1">
       <div className="flex items-center justify-between mb-4 p-3 border rounded-lg">
-        <h2 className="text-xl font-semibold">
-          Bookings ({filteredBillboardClasses.length})
-        </h2>
+        <h2 className="text-xl font-semibold">Bookings</h2>
 
-        {/* All/Available Toggle */}
+        {/* Filter Toggle with Counts */}
         <div className="flex items-center gap-1 bg-muted rounded-md p-1">
           <button
             onClick={() => setFilter("available")}
@@ -72,7 +78,7 @@ export default function StudentBookingColumn({
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
-            Available
+            Available ({counts.available})
           </button>
           <button
             onClick={() => setFilter("all")}
@@ -81,7 +87,7 @@ export default function StudentBookingColumn({
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
-            All
+            All ({counts.all})
           </button>
           <button
             onClick={() => setFilter("completed")}
@@ -90,7 +96,7 @@ export default function StudentBookingColumn({
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
-            Completed
+            Completed ({counts.completed})
           </button>
         </div>
       </div>

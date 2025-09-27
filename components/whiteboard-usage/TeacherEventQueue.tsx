@@ -23,7 +23,7 @@ export default function TeacherEventQueue({
   originalScheduleNodes,
   events,
   teacherSchedule,
-  selectedDate,
+  selectedDate: _selectedDate,
   onRemove,
   onAdjustDuration,
   onAdjustTime,

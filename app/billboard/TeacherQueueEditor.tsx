@@ -21,7 +21,7 @@ export default function TeacherQueueEditor({
   originalScheduleNodes,
   events,
   teacherQueue,
-  selectedDate,
+  selectedDate: _selectedDate,
   onRemove,
   onRefresh,
 }: TeacherQueueEditorProps) {

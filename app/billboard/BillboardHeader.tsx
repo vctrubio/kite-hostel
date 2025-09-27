@@ -306,7 +306,7 @@ function ActionSettingsSection({
   onActionClick, 
   exportDebugMode, 
   onExportDebugModeChange,
-  eventStatus
+  eventStatus: _eventStatus
 }: Pick<BillboardHeaderProps, "onActionClick" | "exportDebugMode" | "onExportDebugModeChange" | "eventStatus">) {
   return (
     <div>
