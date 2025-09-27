@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { Duration } from "@/components/formatters/Duration";
 import { DateTime } from "@/components/formatters/DateTime";
-import { createUTCDateTime, extractDateFromUTC } from "@/components/formatters/TimeZone";
+import {
+  createUTCDateTime,
+  extractDateFromUTC,
+} from "@/components/formatters/TimeZone";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
 import {
   Trash2,
@@ -65,10 +68,10 @@ const StudentsDisplay = ({ students }: { students: string }) => {
     // TODO: Extract student details and phone number from teacherSchedule
     // For now, create a generic WhatsApp message
     // TODO: Get student phone from teacherSchedule.getStudentDetails(studentName) or similar
-    
+
     const message = `Hi ${studentName}! This is regarding your kite lesson.`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    window.open(whatsappUrl, "_blank");
   };
 
   return (
@@ -130,16 +133,16 @@ const LocationDisplay = ({ location }: { location: string }) => (
 const calculateBookingDays = (selectedDate: string, bookingEndDate: string) => {
   const currentDateStr = extractDateFromUTC(selectedDate);
   const endDateStr = extractDateFromUTC(bookingEndDate);
-  
+
   const currentDate = new Date(currentDateStr);
   const endDate = new Date(endDateStr);
-  
+
   const timeDiff = endDate.getTime() - currentDate.getTime();
   const daysRemaining = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-  
+
   return {
     daysRemaining,
-    isLastDay: daysRemaining <= 0
+    isLastDay: daysRemaining <= 0,
   };
 };
 
@@ -159,27 +162,27 @@ const CompletionDropdown = ({
   const [continueTomorrow, setContinueTomorrow] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const durationDifference = duration - originalDuration;
-  
+
   // Extract info from TeacherSchedule
-  // const packageCapacityKites = 1; // TODO: Get from teacherSchedule.getPackageInfo() or similar  
+  // const packageCapacityKites = 1; // TODO: Get from teacherSchedule.getPackageInfo() or similar
   const bookingEndDate = null; // TODO: Get from teacherSchedule.getBookingInfo() or similar
-  
+
   // Calculate if it's the last day
-  const { isLastDay } = bookingEndDate && date 
-    ? calculateBookingDays(date, bookingEndDate)
-    : { isLastDay: false };
-  
+  const { isLastDay } =
+    bookingEndDate && date
+      ? calculateBookingDays(date, bookingEndDate)
+      : { isLastDay: false };
+
   useEffect(() => {
     if (isLastDay) {
       setContinueTomorrow(false);
     }
   }, [isLastDay]);
 
-
   const adjustDuration = (increment: number) => {
-    setDuration(prev => Math.max(30, prev + increment));
+    setDuration((prev) => Math.max(30, prev + increment));
   };
 
   const handleComplete = async () => {
@@ -196,13 +199,13 @@ const CompletionDropdown = ({
       console.log("✅ Completing event:", {
         eventId,
         duration,
-        continueTomorrow
+        continueTomorrow,
       });
 
       // Update event status to completed and duration
       const updateResult = await updateEvent(eventId, {
         status: "completed",
-        duration: duration
+        duration: duration,
       });
 
       if (!updateResult.success) {
@@ -214,7 +217,7 @@ const CompletionDropdown = ({
       // TODO: Add kite assignment logic here
       // This would involve calling an action to create KiteEvent records
       // TODO: Handle continueTomorrow logic (create next day's lesson)
-      
+
       console.log("✅ Event completed successfully");
       onComplete();
     } catch (error) {
@@ -241,7 +244,8 @@ const CompletionDropdown = ({
             Select Kites (TODO: Will be implemented with teacher kite data)
           </label>
           <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600">
-            Kite selection will be available when integrated with teacher kite assignments
+            Kite selection will be available when integrated with teacher kite
+            assignments
           </div>
         </div>
 
@@ -265,12 +269,15 @@ const CompletionDropdown = ({
               <Plus className="w-3 h-3 text-gray-600" />
             </button>
             {durationDifference !== 0 && (
-              <div className={`text-xs px-2 py-1 rounded ${
-                durationDifference > 0 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-red-100 text-red-700'
-              }`}>
-                {durationDifference > 0 ? '+' : ''}<Duration minutes={Math.abs(durationDifference)} />
+              <div
+                className={`text-xs px-2 py-1 rounded ${
+                  durationDifference > 0
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {durationDifference > 0 ? "+" : ""}
+                <Duration minutes={Math.abs(durationDifference)} />
               </div>
             )}
           </div>
@@ -283,13 +290,13 @@ const CompletionDropdown = ({
               onClick={() => setContinueTomorrow(!continueTomorrow)}
               disabled={isSubmitting}
               className={`flex items-center gap-1 px-3 py-2 text-sm rounded ${
-                continueTomorrow 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'text-gray-600 hover:bg-gray-100'
+                continueTomorrow
+                  ? "bg-green-100 text-green-800"
+                  : "text-gray-600 hover:bg-gray-100"
               }`}
             >
               <CheckCircle className="w-4 h-4" />
-              Student will {continueTomorrow ? 'Continue' : 'Rest'}
+              Student will {continueTomorrow ? "Continue" : "Rest"}
             </button>
           </div>
         )}
@@ -356,20 +363,26 @@ const EnhancedDeleteDropdown = ({
 
   const handleDelete = async (moveNextEvent: boolean) => {
     if (!eventId) return;
-    
+
     setIsLoading(true);
     console.log("🗑️ Deleting event:", eventId, "lessonId:", lessonId);
-    
+
     try {
       if (moveNextEvent && teacherSchedule && lessonId && selectedDate) {
-        console.log("🔄 Starting shift operation - will move ALL subsequent events");
-        
+        console.log(
+          "🔄 Starting shift operation - will move ALL subsequent events",
+        );
+
         // STEP 1: Build complete eventIdMap for ALL events in teacher schedule
         const allScheduleNodes = teacherSchedule.getStoredNodes();
-        const allEventNodes = allScheduleNodes.filter((node: any) => node.type === 'event');
-        
-        console.log(`📋 Found ${allEventNodes.length} total events in schedule`);
-        
+        const allEventNodes = allScheduleNodes.filter(
+          (node: any) => node.type === "event",
+        );
+
+        console.log(
+          `📋 Found ${allEventNodes.length} total events in schedule`,
+        );
+
         // Create eventIdMap by finding corresponding events in the events array passed from parent
         // TODO: We need access to the full events array from WhiteboardEvents to map all lessonIds to eventIds
         // For now, we'll create a simplified version
@@ -378,33 +391,48 @@ const EnhancedDeleteDropdown = ({
         if (nextEvent?.lessonId) {
           eventIdMap.set(nextEvent.lessonId, nextEvent.id);
         }
-        
-        console.log(`🗺️ EventIdMap has ${eventIdMap.size} entries (this may be incomplete)`);
-        
+
+        console.log(
+          `🗺️ EventIdMap has ${eventIdMap.size} entries (this may be incomplete)`,
+        );
+
         // STEP 2: Apply the shift operation to TeacherSchedule
         const result = teacherSchedule.removeEventAndShiftNodes(lessonId);
-        
+
         if (result.success) {
           console.log(`✅ TeacherSchedule shift completed:`);
-          console.log(`  • Removed event start time: ${result.removedEventStartTime}`);
-          console.log(`  • Shifted ${result.shiftedEventIds?.length || 0} events: [${result.shiftedEventIds?.join(', ')}]`);
-          
+          console.log(
+            `  • Removed event start time: ${result.removedEventStartTime}`,
+          );
+          console.log(
+            `  • Shifted ${result.shiftedEventIds?.length || 0} events: [${result.shiftedEventIds?.join(", ")}]`,
+          );
+
           // STEP 3: Get database updates AFTER the schedule modification
-          const updates = teacherSchedule.getDatabaseUpdatesForShiftNodes(lessonId, selectedDate, eventIdMap);
+          const updates = teacherSchedule.getDatabaseUpdatesForShiftNodes(
+            lessonId,
+            selectedDate,
+            eventIdMap,
+          );
           console.log(`📡 Generated ${updates.length} database updates`);
-          
+
           // STEP 4: Apply database updates for all shifted events
           if (updates.length > 0) {
             console.log("🔄 Applying database updates for shifted events...");
             const reorganizeResult = await reorganizeEventTimes(updates);
-            
+
             if (reorganizeResult.success) {
               console.log("✅ All database updates applied successfully");
             } else {
-              console.error("❌ Database update failed:", reorganizeResult.error);
+              console.error(
+                "❌ Database update failed:",
+                reorganizeResult.error,
+              );
             }
           } else {
-            console.warn("⚠️ No database updates generated - eventIdMap may be incomplete");
+            console.warn(
+              "⚠️ No database updates generated - eventIdMap may be incomplete",
+            );
           }
         } else {
           console.error("❌ TeacherSchedule shift operation failed");
@@ -413,7 +441,7 @@ const EnhancedDeleteDropdown = ({
 
       // Always delete the event from database
       const deleteResult = await deleteEvent(eventId);
-      
+
       if (!deleteResult.success) {
         console.error("❌ Delete failed:", deleteResult.error);
         setIsLoading(false);
@@ -438,11 +466,12 @@ const EnhancedDeleteDropdown = ({
             Delete Event?
           </span>
         </div>
-        
+
         {nextEvent ? (
           <div className="space-y-3">
             <p className="text-xs text-red-700 mb-3">
-              There's a lesson scheduled after this one. What should happen to it?
+              There's a lesson scheduled after this one. What should happen to
+              it?
             </p>
             <div className="space-y-2">
               <button
@@ -456,7 +485,9 @@ const EnhancedDeleteDropdown = ({
                     Move next lesson here
                   </span>
                 </div>
-                {isLoading && <Loader className="w-3 h-3 animate-spin text-blue-600" />}
+                {isLoading && (
+                  <Loader className="w-3 h-3 animate-spin text-blue-600" />
+                )}
               </button>
               <button
                 onClick={() => handleDelete(false)}
@@ -469,7 +500,9 @@ const EnhancedDeleteDropdown = ({
                     Just delete (keep gap)
                   </span>
                 </div>
-                {isLoading && <Loader className="w-3 h-3 animate-spin text-red-600" />}
+                {isLoading && (
+                  <Loader className="w-3 h-3 animate-spin text-red-600" />
+                )}
               </button>
             </div>
           </div>
@@ -537,7 +570,12 @@ const DropdownCard = ({
   const hasReorganizationOptions =
     reorganizationOptions && reorganizationOptions.length > 0;
 
-  if (!hasReorganizationOptions && !showDeleteDropdown && !showCompletionDropdown) return null;
+  if (
+    !hasReorganizationOptions &&
+    !showDeleteDropdown &&
+    !showCompletionDropdown
+  )
+    return null;
 
   if (showCompletionDropdown && eventId && onCompletionComplete) {
     return (
@@ -636,20 +674,22 @@ const AdminControls = ({
         <div className="flex gap-1">
           <button
             onClick={() => onStatusChange?.("planned")}
-            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${status === "planned"
-              ? "bg-blue-500 text-white"
-              : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-              }`}
+            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${
+              status === "planned"
+                ? "bg-blue-500 text-white"
+                : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+            }`}
             title="Set to Planned"
           >
             Planned
           </button>
           <button
             onClick={() => onStatusChange?.("tbc")}
-            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${status === "tbc"
-              ? "bg-purple-500 text-white"
-              : "bg-purple-100 text-purple-800 hover:bg-purple-200"
-              }`}
+            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${
+              status === "tbc"
+                ? "bg-purple-500 text-white"
+                : "bg-purple-100 text-purple-800 hover:bg-purple-200"
+            }`}
             title="Set to To Be Confirmed"
           >
             TBC
@@ -669,17 +709,20 @@ const AdminControls = ({
                   ? "bg-gray-100 text-gray-800"
                   : "bg-green-100 text-green-800 hover:bg-green-200"
             }`}
-            title={showCompletionDropdown ? "Cancel completion" : "Complete lesson"}
+            title={
+              showCompletionDropdown ? "Cancel completion" : "Complete lesson"
+            }
             disabled={status === "completed"}
           >
             {showCompletionDropdown ? "Cancel" : "Done"}
           </button>
           <button
             onClick={() => onStatusChange?.("cancelled")}
-            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${status === "cancelled"
-              ? "bg-orange-500 text-white"
-              : "bg-orange-100 text-orange-800 hover:bg-orange-200"
-              }`}
+            className={`px-2 py-1 text-xs rounded hover:opacity-80 transition-opacity ${
+              status === "cancelled"
+                ? "bg-orange-500 text-white"
+                : "bg-orange-100 text-orange-800 hover:bg-orange-200"
+            }`}
             title="Cancel Event"
           >
             Cancel
@@ -696,15 +739,18 @@ const AdminControls = ({
               onShowDeleteDropdown?.(true);
             }
           }}
-          disabled={isCompleted && !hasReorganizationOptions && !showDeleteDropdown}
-          className={`p-1 rounded transition-colors duration-200 ${isCompleted && !hasReorganizationOptions && !showDeleteDropdown
-            ? "text-gray-400 cursor-not-allowed"
-            : hasReorganizationOptions
-              ? "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              : showDeleteDropdown
+          disabled={
+            isCompleted && !hasReorganizationOptions && !showDeleteDropdown
+          }
+          className={`p-1 rounded transition-colors duration-200 ${
+            isCompleted && !hasReorganizationOptions && !showDeleteDropdown
+              ? "text-gray-400 cursor-not-allowed"
+              : hasReorganizationOptions
                 ? "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                : "text-red-500 hover:text-red-700 hover:bg-red-50"
-            }`}
+                : showDeleteDropdown
+                  ? "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  : "text-red-500 hover:text-red-700 hover:bg-red-50"
+          }`}
           title={
             hasReorganizationOptions
               ? "Cancel reorganization"
@@ -736,7 +782,7 @@ export function GapCard({
   startTime: string;
   selectedDate: string;
 }) {
-  const dateString = createUTCDateTime(selectedDate, startTime).toISOString();
+  const dateString = new Date(selectedDate + "T" + startTime); //remove UTCDATETIME BS
 
   return (
     <div className="flex bg-card border border-border rounded-lg overflow-hidden h-full">
@@ -780,7 +826,7 @@ export default function EventCard({
 }: EventCardProps) {
   const [showDeleteDropdown, setShowDeleteDropdown] = useState(false);
   const [showCompletionDropdown, setShowCompletionDropdown] = useState(false);
-  
+
   const sidebarColor =
     STATUS_COLORS[status as keyof typeof STATUS_COLORS] || "bg-gray-500";
 
