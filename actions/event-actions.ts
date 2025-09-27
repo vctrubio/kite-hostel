@@ -1,13 +1,27 @@
 "use server";
 
 import db from "@/drizzle";
-import { Event, Lesson, Booking, BookingStudent, Student, Teacher, KiteEvent, Kite, PackageStudent, Commission } from "@/drizzle/migrations/schema";
-import { eq, sql } from "drizzle-orm";
+import {
+  Event,
+  Lesson,
+  Booking,
+  BookingStudent,
+  Student,
+  Teacher,
+  KiteEvent,
+  Kite,
+  PackageStudent,
+  Commission,
+} from "@/drizzle/migrations/schema";
+import { eq } from "drizzle-orm";
 import { format } from "date-fns";
 import { revalidatePath } from "next/cache";
-import { LOCATION_ENUM_VALUES, type Location } from "@/lib/constants";
-import { createClient } from '@/lib/supabase/server';
-import { createUTCDateTime, toUTCString } from '@/components/formatters/TimeZone';
+import { type Location } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/server";
+import {
+  createUTCDateTime,
+  toUTCString,
+} from "@/components/formatters/TimeZone";
 
 interface EventData {
   lessonId: string;
@@ -26,14 +40,19 @@ interface QueueEventData {
   [key: string]: any; // Allow additional properties from queue
 }
 
-export async function createEvent(eventData: EventData & { status?: "planned" | "completed" | "tbc" | "cancelled" }) {
+export async function createEvent(
+  eventData: EventData & {
+    status?: "planned" | "completed" | "tbc" | "cancelled";
+  },
+) {
   try {
     const supabase = await createClient();
 
     // Validate that event date falls within booking date range
     const { data: lessonData, error: lessonError } = await supabase
-      .from('lesson')
-      .select(`
+      .from("lesson")
+      .select(
+        `
         id,
         booking:booking_id (
           id,
@@ -41,13 +60,14 @@ export async function createEvent(eventData: EventData & { status?: "planned" | 
           date_end,
           status
         )
-      `)
-      .eq('id', eventData.lessonId)
+      `,
+      )
+      .eq("id", eventData.lessonId)
       .single();
 
     if (lessonError || !lessonData?.booking) {
-      console.error('❌ Failed to fetch lesson/booking data:', lessonError);
-      return { success: false, error: 'Invalid lesson or booking not found' };
+      console.error("❌ Failed to fetch lesson/booking data:", lessonError);
+      return { success: false, error: "Invalid lesson or booking not found" };
     }
 
     const booking = lessonData.booking;
@@ -62,47 +82,49 @@ export async function createEvent(eventData: EventData & { status?: "planned" | 
 
     // Validate event date is within booking range
     if (eventDate < bookingStartDate || eventDate > bookingEndDate) {
-      return { 
-        success: false, 
-        error: `Event date must be between ${bookingStartDate.toISOString().split('T')[0]} and ${bookingEndDate.toISOString().split('T')[0]}` 
+      return {
+        success: false,
+        error: `Event date must be between ${bookingStartDate.toISOString().split("T")[0]} and ${bookingEndDate.toISOString().split("T")[0]}`,
       };
     }
 
     // Validate booking is active
-    if (booking.status !== 'active') {
-      return { 
-        success: false, 
-        error: `Cannot create event for ${booking.status} booking` 
+    if (booking.status !== "active") {
+      return {
+        success: false,
+        error: `Cannot create event for ${booking.status} booking`,
       };
     }
 
     // Create UTC datetime using our timezone utility
-    const eventDateTimeISO = toUTCString(createUTCDateTime(eventData.date, eventData.startTime));
+    const eventDateTimeISO = toUTCString(
+      createUTCDateTime(eventData.date, eventData.startTime),
+    );
 
     // Insert the event
     const { data: eventResult, error: eventError } = await supabase
-      .from('event')
+      .from("event")
       .insert({
         lesson_id: eventData.lessonId,
         date: eventDateTimeISO,
         duration: eventData.durationMinutes,
         location: eventData.location,
-        status: eventData.status || 'planned'
+        status: eventData.status || "planned",
       })
       .select()
       .single();
 
     if (eventError) {
-      console.error('❌ Event creation failed:', eventError);
+      console.error("❌ Event creation failed:", eventError);
       return { success: false, error: eventError.message };
     }
 
-    revalidatePath('/whiteboard');
-    revalidatePath('/billboard');
+    revalidatePath("/whiteboard");
+    revalidatePath("/billboard");
     return { success: true, data: eventResult };
   } catch (error) {
-    console.error('🔥 Error creating event:', error);
-    return { success: false, error: 'Failed to create event' };
+    console.error("🔥 Error creating event:", error);
+    return { success: false, error: "Failed to create event" };
   }
 }
 
@@ -111,16 +133,17 @@ export async function createTeacherQueueEvents(events: QueueEventData[]) {
     const supabase = await createClient();
     const results = [];
 
-    console.log('🚀 Creating teacher queue events:', events.length);
+    console.log("🚀 Creating teacher queue events:", events.length);
 
     // Process events sequentially to avoid database conflicts
     for (const eventData of events) {
-      console.log('📝 Creating event:', eventData);
-      
+      console.log("📝 Creating event:", eventData);
+
       // Validate that event date falls within booking date range
       const { data: lessonData, error: lessonError } = await supabase
-        .from('lesson')
-        .select(`
+        .from("lesson")
+        .select(
+          `
           id,
           booking:booking_id (
             id,
@@ -128,13 +151,21 @@ export async function createTeacherQueueEvents(events: QueueEventData[]) {
             date_end,
             status
           )
-        `)
-        .eq('id', eventData.lessonId)
+        `,
+        )
+        .eq("id", eventData.lessonId)
         .single();
 
       if (lessonError || !lessonData?.booking) {
-        console.error('❌ Failed to fetch lesson/booking data for queue event:', lessonError);
-        results.push({ success: false, lessonId: eventData.lessonId, error: 'Invalid lesson or booking not found' });
+        console.error(
+          "❌ Failed to fetch lesson/booking data for queue event:",
+          lessonError,
+        );
+        results.push({
+          success: false,
+          lessonId: eventData.lessonId,
+          error: "Invalid lesson or booking not found",
+        });
         continue;
       }
 
@@ -150,60 +181,90 @@ export async function createTeacherQueueEvents(events: QueueEventData[]) {
 
       // Validate event date is within booking range
       if (eventDate < bookingStartDate || eventDate > bookingEndDate) {
-        const errorMsg = `Event date must be between ${bookingStartDate.toISOString().split('T')[0]} and ${bookingEndDate.toISOString().split('T')[0]}`;
-        console.error('❌ Date validation failed for queue event:', errorMsg);
-        results.push({ success: false, lessonId: eventData.lessonId, error: errorMsg });
+        const errorMsg = `Event date must be between ${bookingStartDate.toISOString().split("T")[0]} and ${bookingEndDate.toISOString().split("T")[0]}`;
+        console.error("❌ Date validation failed for queue event:", errorMsg);
+        results.push({
+          success: false,
+          lessonId: eventData.lessonId,
+          error: errorMsg,
+        });
         continue;
       }
 
       // Validate booking is active
-      if (booking.status !== 'active') {
+      if (booking.status !== "active") {
         const errorMsg = `Cannot create event for ${booking.status} booking`;
-        console.error('❌ Booking status validation failed for queue event:', errorMsg);
-        results.push({ success: false, lessonId: eventData.lessonId, error: errorMsg });
+        console.error(
+          "❌ Booking status validation failed for queue event:",
+          errorMsg,
+        );
+        results.push({
+          success: false,
+          lessonId: eventData.lessonId,
+          error: errorMsg,
+        });
         continue;
       }
-      
+
       // Create UTC datetime using our timezone utility
-      const eventDateTimeISO = toUTCString(createUTCDateTime(eventData.date, eventData.startTime));
+      const eventDateTimeISO = toUTCString(
+        createUTCDateTime(eventData.date, eventData.startTime),
+      );
 
       // Insert the event
       const { data: eventResult, error: eventError } = await supabase
-        .from('event')
+        .from("event")
         .insert({
           lesson_id: eventData.lessonId,
           date: eventDateTimeISO,
           duration: eventData.duration, // Queue events use 'duration' property
           location: eventData.location,
-          status: 'planned'
+          status: "planned",
         })
         .select()
         .single();
 
       if (eventError) {
-        console.error('❌ Event creation failed for lesson:', eventData.lessonId, eventError);
-        results.push({ success: false, lessonId: eventData.lessonId, error: eventError.message });
+        console.error(
+          "❌ Event creation failed for lesson:",
+          eventData.lessonId,
+          eventError,
+        );
+        results.push({
+          success: false,
+          lessonId: eventData.lessonId,
+          error: eventError.message,
+        });
       } else {
-        console.log('✅ Event created successfully for lesson:', eventData.lessonId);
-        results.push({ success: true, lessonId: eventData.lessonId, data: eventResult });
+        console.log(
+          "✅ Event created successfully for lesson:",
+          eventData.lessonId,
+        );
+        results.push({
+          success: true,
+          lessonId: eventData.lessonId,
+          data: eventResult,
+        });
       }
     }
 
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.filter((r) => !r.success).length;
 
-    console.log(`📊 Queue creation complete: ${successCount} success, ${failureCount} failures`);
+    console.log(
+      `📊 Queue creation complete: ${successCount} success, ${failureCount} failures`,
+    );
 
-    revalidatePath('/whiteboard');
-    revalidatePath('/billboard');
-    return { 
-      success: failureCount === 0, 
+    revalidatePath("/whiteboard");
+    revalidatePath("/billboard");
+    return {
+      success: failureCount === 0,
       results,
-      summary: { successCount, failureCount, total: events.length }
+      summary: { successCount, failureCount, total: events.length },
     };
   } catch (error) {
-    console.error('🔥 Error creating teacher queue events:', error);
-    return { success: false, error: 'Failed to create queue events' };
+    console.error("🔥 Error creating teacher queue events:", error);
+    return { success: false, error: "Failed to create queue events" };
   }
 }
 
@@ -213,42 +274,45 @@ export async function deleteEvent(eventId: string) {
 
     // First, delete any KiteEvent associations (cascade should handle this, but let's be explicit)
     const { error: kiteEventError } = await supabase
-      .from('kite_event')
+      .from("kite_event")
       .delete()
-      .eq('event_id', eventId);
+      .eq("event_id", eventId);
 
     if (kiteEventError) {
-      console.error('❌ KiteEvent deletion failed:', kiteEventError);
+      console.error("❌ KiteEvent deletion failed:", kiteEventError);
       return { success: false, error: kiteEventError.message };
     }
 
     // Then delete the event itself
     const { error: deleteError } = await supabase
-      .from('event')
+      .from("event")
       .delete()
-      .eq('id', eventId);
+      .eq("id", eventId);
 
     if (deleteError) {
-      console.error('❌ Event deletion failed:', deleteError);
+      console.error("❌ Event deletion failed:", deleteError);
       return { success: false, error: deleteError.message };
     }
 
-    revalidatePath('/whiteboard');
-    revalidatePath('/billboard');
-    revalidatePath('/events');
+    revalidatePath("/whiteboard");
+    revalidatePath("/billboard");
+    revalidatePath("/events");
     return { success: true };
   } catch (error) {
-    console.error('🔥 Error deleting event:', error);
-    return { success: false, error: 'Failed to delete event' };
+    console.error("🔥 Error deleting event:", error);
+    return { success: false, error: "Failed to delete event" };
   }
 }
 
-export async function updateEvent(eventId: string, updates: {
-  date?: string;
-  status?: "planned" | "completed" | "tbc" | "cancelled";
-  location?: "Los Lances" | "Valdevaqueros" | "Palmones";
-  duration?: number;
-}) {
+export async function updateEvent(
+  eventId: string,
+  updates: {
+    date?: string;
+    status?: "planned" | "completed" | "tbc" | "cancelled";
+    location?: "Los Lances" | "Valdevaqueros" | "Palmones";
+    duration?: number;
+  },
+) {
   try {
     const supabase = await createClient();
 
@@ -264,15 +328,15 @@ export async function updateEvent(eventId: string, updates: {
     }
 
     const { error: updateError } = await supabase
-      .from('event')
+      .from("event")
       .update(updateData)
-      .eq('id', eventId);
+      .eq("id", eventId);
 
     if (updateError) {
-      console.error('❌ Event update failed:', updateError);
+      console.error("❌ Event update failed:", updateError);
       return { success: false, error: updateError.message };
     }
-    
+
     revalidatePath("/whiteboard");
     revalidatePath("/billboard");
     revalidatePath("/events");
@@ -285,39 +349,40 @@ export async function updateEvent(eventId: string, updates: {
 
 export async function getEvents() {
   try {
-    const events = await db.select({
-      id: Event.id,
-      date: Event.date,
-      duration: Event.duration,
-      location: Event.location,
-      status: Event.status,
-      created_at: Event.created_at,
-      teacher: {
-        id: Teacher.id,
-        name: Teacher.name,
-      },
-      commission_per_hour: Commission.price_per_hour,
-      package: {
-        description: PackageStudent.description,
-        price_per_student: PackageStudent.price_per_student,
-        duration: PackageStudent.duration,
-        capacity_kites: PackageStudent.capacity_kites,
-      },
-      kite: {
-        model: Kite.model,
-        serial_id: Kite.serial_id,
-        size: Kite.size,
-      },
-      booking_id: Booking.id,
-    })
-    .from(Event)
-    .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
-    .leftJoin(Teacher, eq(Lesson.teacher_id, Teacher.id))
-    .leftJoin(Commission, eq(Lesson.commission_id, Commission.id))
-    .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
-    .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
-    .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
-    .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
+    const events = await db
+      .select({
+        id: Event.id,
+        date: Event.date,
+        duration: Event.duration,
+        location: Event.location,
+        status: Event.status,
+        created_at: Event.created_at,
+        teacher: {
+          id: Teacher.id,
+          name: Teacher.name,
+        },
+        commission_per_hour: Commission.price_per_hour,
+        package: {
+          description: PackageStudent.description,
+          price_per_student: PackageStudent.price_per_student,
+          duration: PackageStudent.duration,
+          capacity_kites: PackageStudent.capacity_kites,
+        },
+        kite: {
+          model: Kite.model,
+          serial_id: Kite.serial_id,
+          size: Kite.size,
+        },
+        booking_id: Booking.id,
+      })
+      .from(Event)
+      .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
+      .leftJoin(Teacher, eq(Lesson.teacher_id, Teacher.id))
+      .leftJoin(Commission, eq(Lesson.commission_id, Commission.id))
+      .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
+      .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
+      .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
+      .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
 
     // Now fetch students for each event using Drizzle subqueries
     const eventsWithStudents = await Promise.all(
@@ -346,7 +411,7 @@ export async function getEvents() {
           student_count: students.length,
           booking_id: undefined, // Remove booking_id from final result
         };
-      })
+      }),
     );
 
     return { data: eventsWithStudents, error: null };
@@ -356,9 +421,12 @@ export async function getEvents() {
   }
 }
 
-export async function bulkUpdateEvents(eventIds: string[], updates: {
-  status?: "planned" | "completed" | "tbc" | "cancelled";
-}) {
+export async function bulkUpdateEvents(
+  eventIds: string[],
+  updates: {
+    status?: "planned" | "completed" | "tbc" | "cancelled";
+  },
+) {
   try {
     const supabase = await createClient();
 
@@ -374,15 +442,15 @@ export async function bulkUpdateEvents(eventIds: string[], updates: {
     }
 
     const { error: updateError } = await supabase
-      .from('event')
+      .from("event")
       .update(updateData)
-      .in('id', eventIds);
+      .in("id", eventIds);
 
     if (updateError) {
-      console.error('❌ Bulk event update failed:', updateError);
+      console.error("❌ Bulk event update failed:", updateError);
       return { success: false, error: updateError.message };
     }
-    
+
     revalidatePath("/whiteboard");
     revalidatePath("/billboard");
     revalidatePath("/events");
@@ -403,88 +471,89 @@ export async function bulkDeleteEvents(eventIds: string[]) {
 
     // First, delete any KiteEvent associations
     const { error: kiteEventError } = await supabase
-      .from('kite_event')
+      .from("kite_event")
       .delete()
-      .in('event_id', eventIds);
+      .in("event_id", eventIds);
 
     if (kiteEventError) {
-      console.error('❌ Bulk KiteEvent deletion failed:', kiteEventError);
+      console.error("❌ Bulk KiteEvent deletion failed:", kiteEventError);
       return { success: false, error: kiteEventError.message };
     }
 
     // Then delete the events themselves
     const { error: deleteError } = await supabase
-      .from('event')
+      .from("event")
       .delete()
-      .in('id', eventIds);
+      .in("id", eventIds);
 
     if (deleteError) {
-      console.error('❌ Bulk event deletion failed:', deleteError);
+      console.error("❌ Bulk event deletion failed:", deleteError);
       return { success: false, error: deleteError.message };
     }
 
-    revalidatePath('/whiteboard');
-    revalidatePath('/billboard');
-    revalidatePath('/events');
+    revalidatePath("/whiteboard");
+    revalidatePath("/billboard");
+    revalidatePath("/events");
     return { success: true, deletedCount: eventIds.length };
   } catch (error) {
-    console.error('🔥 Error bulk deleting events:', error);
-    return { success: false, error: 'Failed to bulk delete events' };
+    console.error("🔥 Error bulk deleting events:", error);
+    return { success: false, error: "Failed to bulk delete events" };
   }
 }
 
 export async function getEventById(id: string) {
   try {
-    const event = await db.select({
-      id: Event.id,
-      date: Event.date,
-      duration: Event.duration,
-      location: Event.location,
-      status: Event.status,
-      created_at: Event.created_at,
-      lesson: {
-        id: Lesson.id,
-        status: Lesson.status,
-        booking_id: Lesson.booking_id,
-      },
-      teacher: {
-        id: Teacher.id,
-        name: Teacher.name,
-      },
-      commission_per_hour: Commission.price_per_hour,
-      package: {
-        id: PackageStudent.id,
-        description: PackageStudent.description,
-        price_per_student: PackageStudent.price_per_student,
-        duration: PackageStudent.duration,
-        capacity_kites: PackageStudent.capacity_kites,
-        capacity_students: PackageStudent.capacity_students,
-      },
-      kite: {
-        id: Kite.id,
-        model: Kite.model,
-        serial_id: Kite.serial_id,
-        size: Kite.size,
-      },
-      booking: {
-        id: Booking.id,
-        date_start: Booking.date_start,
-        date_end: Booking.date_end,
-        status: Booking.status,
-        created_at: Booking.created_at,
-        reference_id: Booking.reference_id,
-      },
-    })
-    .from(Event)
-    .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
-    .leftJoin(Teacher, eq(Lesson.teacher_id, Teacher.id))
-    .leftJoin(Commission, eq(Lesson.commission_id, Commission.id))
-    .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
-    .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
-    .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
-    .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id))
-    .where(eq(Event.id, id))
-    .limit(1);
+    const event = await db
+      .select({
+        id: Event.id,
+        date: Event.date,
+        duration: Event.duration,
+        location: Event.location,
+        status: Event.status,
+        created_at: Event.created_at,
+        lesson: {
+          id: Lesson.id,
+          status: Lesson.status,
+          booking_id: Lesson.booking_id,
+        },
+        teacher: {
+          id: Teacher.id,
+          name: Teacher.name,
+        },
+        commission_per_hour: Commission.price_per_hour,
+        package: {
+          id: PackageStudent.id,
+          description: PackageStudent.description,
+          price_per_student: PackageStudent.price_per_student,
+          duration: PackageStudent.duration,
+          capacity_kites: PackageStudent.capacity_kites,
+          capacity_students: PackageStudent.capacity_students,
+        },
+        kite: {
+          id: Kite.id,
+          model: Kite.model,
+          serial_id: Kite.serial_id,
+          size: Kite.size,
+        },
+        booking: {
+          id: Booking.id,
+          date_start: Booking.date_start,
+          date_end: Booking.date_end,
+          status: Booking.status,
+          created_at: Booking.created_at,
+          reference_id: Booking.reference_id,
+        },
+      })
+      .from(Event)
+      .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
+      .leftJoin(Teacher, eq(Lesson.teacher_id, Teacher.id))
+      .leftJoin(Commission, eq(Lesson.commission_id, Commission.id))
+      .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
+      .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
+      .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
+      .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id))
+      .where(eq(Event.id, id))
+      .limit(1);
 
     if (event.length === 0) {
       return { data: null, error: "Event not found." };
@@ -493,7 +562,11 @@ export async function getEventById(id: string) {
     const eventData = event[0];
 
     // Fetch students for this event's booking
-    let students: Array<{id: string, name: string, last_name: string | null}> = [];
+    let students: Array<{
+      id: string;
+      name: string;
+      last_name: string | null;
+    }> = [];
     if (eventData.lesson?.booking_id) {
       students = await db
         .select({
@@ -507,7 +580,14 @@ export async function getEventById(id: string) {
     }
 
     // Fetch all kites for this event
-    let kites: Array<{kite: {id: string, model: string | null, serial_id: string | null, size: number | null}}> = [];
+    let kites: Array<{
+      kite: {
+        id: string;
+        model: string | null;
+        serial_id: string | null;
+        size: number | null;
+      };
+    }> = [];
     const kiteResults = await db
       .select({
         kite: {
@@ -515,7 +595,7 @@ export async function getEventById(id: string) {
           model: Kite.model,
           serial_id: Kite.serial_id,
           size: Kite.size,
-        }
+        },
       })
       .from(KiteEvent)
       .innerJoin(Kite, eq(KiteEvent.kite_id, Kite.id))
@@ -524,18 +604,22 @@ export async function getEventById(id: string) {
     kites = kiteResults;
 
     // Structure the lesson properly with booking nested
-    const lesson = eventData.lesson ? {
-      id: eventData.lesson.id,
-      status: eventData.lesson.status,
-      created_at: eventData.lesson ? null : null, // Lessons don't have created_at in schema, using null
-      booking: eventData.booking ? {
-        ...eventData.booking,
-        package: eventData.package,
-        students: students.map(student => ({ student })) // Match the expected structure
-      } : null
-    } : null;
+    const lesson = eventData.lesson
+      ? {
+        id: eventData.lesson.id,
+        status: eventData.lesson.status,
+        created_at: eventData.lesson ? null : null, // Lessons don't have created_at in schema, using null
+        booking: eventData.booking
+          ? {
+            ...eventData.booking,
+            package: eventData.package,
+            students: students.map((student) => ({ student })), // Match the expected structure
+          }
+          : null,
+      }
+      : null;
 
-    return { 
+    return {
       data: {
         id: eventData.id,
         date: eventData.date,
@@ -549,8 +633,8 @@ export async function getEventById(id: string) {
         kites,
         students, // Keep for backward compatibility
         student_count: students.length,
-      }, 
-      error: null 
+      },
+      error: null,
     };
   } catch (error: any) {
     console.error("Error fetching event by id:", error);
@@ -560,35 +644,40 @@ export async function getEventById(id: string) {
 
 export async function getEventCsv() {
   try {
-    const events = await db.select({
-      eventId: Event.id,
-      eventDate: Event.date,
-      eventDuration: Event.duration,
-      eventLocation: Event.location,
-      teacher: Teacher.name,
-      commissionPerHour: Commission.price_per_hour,
-      packageName: PackageStudent.description,
-      packagePricePerStudent: PackageStudent.price_per_student,
-      packageDuration: PackageStudent.duration,
-      kiteModel: Kite.model,
-      kiteSerialId: Kite.serial_id,
-      kiteSize: Kite.size,
-      booking_id: Booking.id,
-    })
-    .from(Event)
-    .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
-    .leftJoin(Teacher, eq(Lesson.teacher_id, Teacher.id))
-    .leftJoin(Commission, eq(Lesson.commission_id, Commission.id))
-    .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
-    .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
-    .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
-    .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
+    const events = await db
+      .select({
+        eventId: Event.id,
+        eventDate: Event.date,
+        eventDuration: Event.duration,
+        eventLocation: Event.location,
+        teacher: Teacher.name,
+        commissionPerHour: Commission.price_per_hour,
+        packageName: PackageStudent.description,
+        packagePricePerStudent: PackageStudent.price_per_student,
+        packageDuration: PackageStudent.duration,
+        kiteModel: Kite.model,
+        kiteSerialId: Kite.serial_id,
+        kiteSize: Kite.size,
+        booking_id: Booking.id,
+      })
+      .from(Event)
+      .leftJoin(Lesson, eq(Event.lesson_id, Lesson.id))
+      .leftJoin(Teacher, eq(Lesson.teacher_id, Teacher.id))
+      .leftJoin(Commission, eq(Lesson.commission_id, Commission.id))
+      .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
+      .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
+      .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
+      .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
 
     // Fetch students for each event using proper Drizzle queries
     const eventsWithStudents = await Promise.all(
       events.map(async (event) => {
-        let students: Array<{id: string, name: string, last_name: string | null}> = [];
-        
+        let students: Array<{
+          id: string;
+          name: string;
+          last_name: string | null;
+        }> = [];
+
         if (event.booking_id) {
           students = await db
             .select({
@@ -597,42 +686,62 @@ export async function getEventCsv() {
               last_name: Student.last_name,
             })
             .from(Student)
-            .innerJoin(BookingStudent, eq(Student.id, BookingStudent.student_id))
+            .innerJoin(
+              BookingStudent,
+              eq(Student.id, BookingStudent.student_id),
+            )
             .where(eq(BookingStudent.booking_id, event.booking_id));
         }
 
         return { ...event, students };
-      })
+      }),
     );
 
     const formattedEvents = eventsWithStudents.map((event) => {
-      if (!event.packagePricePerStudent || !event.packageDuration || !event.teacher || 
-          !event.eventLocation || !event.commissionPerHour) {
+      if (
+        !event.packagePricePerStudent ||
+        !event.packageDuration ||
+        !event.teacher ||
+        !event.eventLocation ||
+        !event.commissionPerHour
+      ) {
         throw new Error(`Missing required data for event ${event.eventId}`);
       }
 
       const eventDate = new Date(event.eventDate);
       const formattedDate = format(eventDate, "dd-MM-yy | HH:mm");
-      
+
       // Format student names properly
-      const studentsList = event.students.map(student => 
-        `${student.name} ${student.last_name || ''}`).join(", ");
-      
+      const studentsList = event.students
+        .map((student) => `${student.name} ${student.last_name || ""}`)
+        .join(", ");
+
       // Format kite info
-      const kiteInfo = event.kiteModel && event.kiteSerialId 
-        ? `${event.kiteModel} ${event.kiteSize}m (${event.kiteSerialId})` 
-        : "No kite assigned";
-      
+      const kiteInfo =
+        event.kiteModel && event.kiteSerialId
+          ? `${event.kiteModel} ${event.kiteSize}m (${event.kiteSerialId})`
+          : "No kite assigned";
+
       // Calculate price per hour per student and format cleanly
-      const pricePerHour = event.packagePricePerStudent / (event.packageDuration / 60);
-      const formattedPricePerHour = pricePerHour % 1 === 0 ? pricePerHour.toString() : pricePerHour.toFixed(2);
-      
-      // Format commission per hour cleanly  
-      const formattedCommission = event.commissionPerHour % 1 === 0 ? event.commissionPerHour.toString() : event.commissionPerHour.toFixed(2);
-      
+      const pricePerHour =
+        event.packagePricePerStudent / (event.packageDuration / 60);
+      const formattedPricePerHour =
+        pricePerHour % 1 === 0
+          ? pricePerHour.toString()
+          : pricePerHour.toFixed(2);
+
+      // Format commission per hour cleanly
+      const formattedCommission =
+        event.commissionPerHour % 1 === 0
+          ? event.commissionPerHour.toString()
+          : event.commissionPerHour.toFixed(2);
+
       // Convert duration to hours
       const durationInHours = event.eventDuration / 60;
-      const formattedDuration = durationInHours % 1 === 0 ? `${durationInHours}h` : `${durationInHours.toFixed(2)}h`;
+      const formattedDuration =
+        durationInHours % 1 === 0
+          ? `${durationInHours}h`
+          : `${durationInHours.toFixed(2)}h`;
 
       return {
         date: formattedDate,

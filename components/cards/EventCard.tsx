@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { Duration } from "@/components/formatters/Duration";
 import { DateTime } from "@/components/formatters/DateTime";
-import {
-  createUTCDateTime,
-  extractDateFromUTC,
-} from "@/components/formatters/TimeZone";
+import { extractDateFromUTC } from "@/components/formatters/TimeZone";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
 import {
   Trash2,

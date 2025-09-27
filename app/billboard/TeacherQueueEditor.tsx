@@ -96,9 +96,6 @@ export default function TeacherQueueEditor({
           throw new Error(`Missing startTime for lesson ${node.eventData?.lessonId}`);
         }
         
-        // Create local datetime string: YYYY-MM-DDTHH:MM:SS
-        const localDateTimeString = `${selectedDate}T${node.startTime}:00`;
-        
         // Get time in minutes for bounds checking
         const currentTimeMinutes = timeToMinutes(node.startTime);
 
@@ -110,7 +107,7 @@ export default function TeacherQueueEditor({
           students: studentList,
           duration: node.duration,
           remainingMinutes: remainingMinutes,
-          scheduledDateTime: localDateTimeString,
+          scheduledDateTime: node.startTime, // Just pass the time string
           hasGap: hasGap,
           timeAdjustment: timeAdjustment,
           gapDuration: gapDuration,

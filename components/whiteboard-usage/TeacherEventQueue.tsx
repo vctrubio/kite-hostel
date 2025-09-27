@@ -4,7 +4,6 @@ import TeacherLessonQueueCard from "@/components/cards/LessonQueueCard";
 import { extractStudentNames } from "@/backend/WhiteboardClass";
 import {
   timeToMinutes,
-  createUTCDateTime,
 } from "@/components/formatters/TimeZone";
 
 interface TeacherEventQueueProps {
@@ -97,28 +96,15 @@ export default function TeacherEventQueue({
           }
         }
 
-        // Check time bounds and create safe datetime
+        // Calculate current time for bounds checking
         const currentTimeMinutes = timeToMinutes(node.startTime);
-        let localDateTimeString: string;
-        if (currentTimeMinutes >= 360 && currentTimeMinutes <= 1380) {
-          localDateTimeString = createUTCDateTime(
-            selectedDate,
-            node.startTime,
-          ).toISOString();
-        } else {
-          // Fallback to a safe time if invalid
-          localDateTimeString = createUTCDateTime(
-            selectedDate,
-            "09:00",
-          ).toISOString();
-        }
 
         const queuedLesson = {
           lessonId: eventData.lesson.id,
           students: studentList,
           duration: node.duration,
           remainingMinutes: 2400, // Placeholder
-          scheduledDateTime: localDateTimeString, // Pass the full ISO string
+          scheduledDateTime: node.startTime, // Just pass the time string
           hasGap: hasGapBefore,
           timeAdjustment: timeAdjustment,
           gapDuration: gapDuration, // Add gap duration for display

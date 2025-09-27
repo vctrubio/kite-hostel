@@ -1,11 +1,20 @@
-'use client';
+"use client";
 
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle, ArrowUp, ArrowDown, MapPin } from 'lucide-react';
-import { HelmetIcon } from '@/svgs';
-import { Duration } from '@/components/formatters/Duration';
-import { formatTime } from '@/components/formatters/DateTime';
-import { type QueuedLesson } from '@/backend/TeacherSchedule';
-import { addMinutes } from 'date-fns';
+import {
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  AlertTriangle,
+  ArrowUp,
+  ArrowDown,
+  MapPin,
+} from "lucide-react";
+import { HelmetIcon } from "@/svgs";
+import { Duration } from "@/components/formatters/Duration";
+import { type QueuedLesson } from "@/backend/TeacherSchedule";
+import { timeToMinutes, minutesToTime } from "@/components/formatters/TimeZone";
 
 interface TeacherLessonQueueCardProps {
   queuedLesson: QueuedLesson & { scheduledDateTime: string };
@@ -34,7 +43,7 @@ export default function TeacherLessonQueueCard({
   onAdjustTime,
   onMoveUp,
   onMoveDown,
-  onRemoveGap
+  onRemoveGap,
 }: TeacherLessonQueueCardProps) {
   // --- Logic at the top ---
   const {
@@ -44,26 +53,28 @@ export default function TeacherLessonQueueCard({
     lessonId,
     hasGap,
     timeAdjustment,
-    scheduledDateTime
+    scheduledDateTime,
   } = queuedLesson;
 
   // Use the duration directly from props since backend handles adjustments
   const currentDuration = originalDuration;
   const remainingMinutes = originalRemainingMinutes;
 
-  const endTime = scheduledDateTime ? formatTime(addMinutes(new Date(scheduledDateTime), currentDuration).toISOString()) : '';
+  const endTime = scheduledDateTime
+    ? minutesToTime(timeToMinutes(scheduledDateTime) + currentDuration)
+    : "";
   const remaining = remainingMinutes;
-  const studentNames = students.join(', ');
+  const studentNames = students.join(", ");
   const gapDuration = (queuedLesson as any).gapDuration || 0;
 
   // Duration adjustment handler - delegate to parent
   const handleLocalDurationAdjustment = (increment: boolean) => {
     const adjustment = increment ? 30 : -30;
     const newDuration = currentDuration + adjustment;
-    
+
     // Don't allow duration below 60 minutes
     if (newDuration < 60) return;
-    
+
     // Call the parent handler to update the actual data
     onAdjustDuration(lessonId, increment);
   };
@@ -72,8 +83,8 @@ export default function TeacherLessonQueueCard({
   return (
     <div
       className={`p-4 rounded-lg border max-w-[420px] min-w-[240] ${hasGap && !isFirst
-          ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
-          : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+        ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
+        : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
         }`}
     >
       {/* Header: Helmets, names, controls */}
@@ -123,13 +134,19 @@ export default function TeacherLessonQueueCard({
         <div className="flex-grow min-w-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center mb-2 w-full justify-between">
-              <span className="text-xs text-gray-600 dark:text-gray-400">Start</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                Start
+              </span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => onAdjustTime(lessonId, false)}
                   disabled={!canMoveEarlier}
                   className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={canMoveEarlier ? '30 minutes earlier' : 'Cannot move earlier - would overlap'}
+                  title={
+                    canMoveEarlier
+                      ? "30 minutes earlier"
+                      : "Cannot move earlier - would overlap"
+                  }
                 >
                   <ChevronLeft className="w-3 h-3" />
                 </button>
@@ -137,7 +154,11 @@ export default function TeacherLessonQueueCard({
                   onClick={() => onAdjustTime(lessonId, true)}
                   disabled={!canMoveLater}
                   className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={canMoveLater ? "30 minutes later" : "Cannot move later - would exceed 23:00"}
+                  title={
+                    canMoveLater
+                      ? "30 minutes later"
+                      : "Cannot move later - would exceed 23:00"
+                  }
                 >
                   <ChevronRight className="w-3 h-3" />
                 </button>
@@ -147,14 +168,14 @@ export default function TeacherLessonQueueCard({
           <div className="flex items-center gap-2 justify-end">
             {timeAdjustment !== 0 && (
               <div className="text-xs text-blue-600 dark:text-blue-400 mr-2">
-                {timeAdjustment > 0 && '+'}
+                {timeAdjustment > 0 && "+"}
                 <Duration minutes={timeAdjustment} />
               </div>
             )}
             <div className="flex flex-col text-center">
               {scheduledDateTime && (
                 <div className="text-sm font-medium text-green-600 dark:text-green-400">
-                  {formatTime(scheduledDateTime)}
+                  {scheduledDateTime}
                 </div>
               )}
               {endTime && (
@@ -173,27 +194,25 @@ export default function TeacherLessonQueueCard({
         <div className="flex gap-2 justify-center w-16 min-w-[4rem]">
           {/* <div>time icon</div> */}
           <div className="flex flex-col">
-
-          <button
-            onClick={() => handleLocalDurationAdjustment(true)}
-            className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="30 minutes more"
-          >
-            <ChevronUp className="w-3 h-3" />
-          </button>
-          <div className="text-sm font-medium text-gray-900 dark:text-white my-1">
-            +<Duration minutes={currentDuration} />
+            <button
+              onClick={() => handleLocalDurationAdjustment(true)}
+              className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title="30 minutes more"
+            >
+              <ChevronUp className="w-3 h-3" />
+            </button>
+            <div className="text-sm font-medium text-gray-900 dark:text-white my-1">
+              +<Duration minutes={currentDuration} />
+            </div>
+            <button
+              onClick={() => handleLocalDurationAdjustment(false)}
+              disabled={currentDuration <= 60}
+              className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="30 minutes less (minimum 60 minutes)"
+            >
+              <ChevronDown className="w-3 h-3" />
+            </button>
           </div>
-          <button
-            onClick={() => handleLocalDurationAdjustment(false)}
-            disabled={currentDuration <= 60}
-            className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="30 minutes less (minimum 60 minutes)"
-          >
-            <ChevronDown className="w-3 h-3" />
-          </button>
-          </div>
-
         </div>
       </div>
 
@@ -204,8 +223,15 @@ export default function TeacherLessonQueueCard({
           <span>{location}</span>
         </div>
         <span>•</span>
-        <span className={remaining < 0 ? "text-orange-600 dark:text-orange-400 font-medium" : ""}>
-          <Duration minutes={Math.abs(remaining)} /> {remaining < 0 ? "over limit" : "remaining"}
+        <span
+          className={
+            remaining < 0
+              ? "text-orange-600 dark:text-orange-400 font-medium"
+              : ""
+          }
+        >
+          <Duration minutes={Math.abs(remaining)} />{" "}
+          {remaining < 0 ? "over limit" : "remaining"}
         </span>
         {remaining < 0 && (
           <AlertTriangle className="w-3 h-3 text-orange-600 dark:text-orange-400" />

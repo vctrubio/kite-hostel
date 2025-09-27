@@ -5,7 +5,7 @@ import { MapPin, Trash2, Send } from 'lucide-react';
 import { TeacherSchedule, type QueuedLesson as TeacherQueuedLesson } from '@/backend/TeacherSchedule';
 import { FlagIcon } from '@/svgs';
 import { extractStudents } from '@/backend/WhiteboardClass';
-import { timeToMinutes, createUTCDateTime } from '@/components/formatters/TimeZone';
+import { timeToMinutes } from '@/components/formatters/TimeZone';
 import { LOCATION_ENUM_VALUES } from '@/lib/constants';
 import TeacherLessonQueueCard from '@/components/cards/LessonQueueCard';
 
@@ -249,14 +249,10 @@ export default function TeacherLessonQueue({
             const canMoveEarlier = currentTimeMinutes > 360 && (teacherSchedule?.canMoveQueueLessonEarlier(queuedLesson.lessonId) ?? false);
             const canMoveLater = currentTimeMinutes < 1380;
             
-            const scheduledDateTime = queuedLesson.scheduledStartTime && currentTimeMinutes >= 360 && currentTimeMinutes <= 1380
-              ? createUTCDateTime(selectedDate, queuedLesson.scheduledStartTime).toISOString()
-              : createUTCDateTime(selectedDate, '09:00').toISOString();
-            
             return (
               <TeacherLessonQueueCard
                 key={queuedLesson.lessonId}
-                queuedLesson={{ ...queuedLesson, scheduledDateTime }}
+                queuedLesson={{ ...queuedLesson, scheduledDateTime: queuedLesson.scheduledStartTime }}
                 location={queueLocation}
                 isFirst={index === 0}
                 isLast={index === queue.length - 1}
