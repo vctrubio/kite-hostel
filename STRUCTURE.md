@@ -116,16 +116,21 @@ The core admin interface for managing daily kite lessons and events:
 A drag-and-drop interface for teacher scheduling with advanced queue management:
 
 - **BillboardClient.tsx**: Main container component orchestrating the drag-and-drop scheduling interface
-- **TeacherColumnComplex.tsx**: Complex teacher column component handling drag-and-drop interactions
-- **StudentBookingColumn.tsx**: Source column for available student bookings to be scheduled
-- **TeacherQueueEditor.tsx**: Interface for managing teacher event queues
-- **BillboardHeader.tsx**: Header component with filtering and controls
+- **TeacherColumn.tsx**: Teacher column component with multi-teacher coordination and global time management
+- **TeacherGrouping.tsx**: Individual teacher UI wrapper with drag-and-drop handling
+- **StudentBookingColumn.tsx**: Source column for available student bookings with filtering
+- **TeacherQueueEditor.tsx**: Streamlined interface for managing teacher event queues
+- **BillboardHeader.tsx**: Header component with statistics, settings, and bulk operations
 
 **Core Features**:
 - Drag-and-drop scheduling from student bookings to teacher columns
 - Real-time queue management with linked list data structures
 - Dynamic duration adjustments and conflict resolution
-- Export utilities for schedule data
+- Global time coordination across multiple teachers
+- Streamlined prop management with consolidated objects
+- Export utilities for schedule data (CSV, Excel, WhatsApp, Print)
+- Filter-enabled booking column with dynamic counts
+- Direct TeacherQueue integration for optimal performance
 
 **Data Flow**: Server-side data fetching → BillboardClass instantiation → TeacherQueue management → Drag-and-drop interactions → Database updates
 
