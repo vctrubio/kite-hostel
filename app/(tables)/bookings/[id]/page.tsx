@@ -1,4 +1,4 @@
-import { getBookingById, updateBookingDates } from "@/actions/booking-actions";
+import { getBookingById } from "@/actions/booking-actions";
 import { getBookingExportData, getEventsExportData } from "@/actions/export-actions";
 import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
 import { Receipt } from "@/components/export/Receipt";
@@ -9,7 +9,6 @@ import { ElegantDate } from "@/components/formatters/DateTime";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { PackageDetails } from "@/getters/package-details";
-import { DatePicker, DateRange } from "@/components/pickers/date-picker";
 import {
   BookmarkIcon,
   BookingIcon,
