@@ -490,6 +490,7 @@ const TeacherColumnRow = forwardRef<
     </TeacherGrouping>
   );
 });
+TeacherColumnRow.displayName = "TeacherColumnRow";
 
 function ParentControlFlag({
   selectedDate,
