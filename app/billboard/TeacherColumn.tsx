@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { timeToMinutes, minutesToTime } from "@/components/formatters/TimeZone";
 import { updateEvent } from "@/actions/event-actions";
 
-interface TeacherColumnComplexProps {
+interface TeacherColumnProps {
   teachers: any[];
   teacherQueues: TeacherQueue[];
   controller: EventController;
@@ -31,7 +31,7 @@ interface TeacherColumnComplexProps {
   draggedBooking?: BillboardClass | null;
 }
 
-interface TeacherQueueGroupProps {
+interface TeacherColumnRowProps {
   teacherQueue: TeacherQueue;
   selectedDate: string;
   draggedBooking?: BillboardClass | null;
@@ -43,9 +43,9 @@ interface TeacherQueueGroupProps {
   controller: EventController;
 }
 
-const TeacherQueueGroup = forwardRef<
+const TeacherColumnRow = forwardRef<
   TeacherQueueGroupHandle,
-  TeacherQueueGroupProps
+  TeacherColumnRowProps
 >((props, ref) => {
   const {
     teacherQueue,
@@ -490,7 +490,6 @@ const TeacherQueueGroup = forwardRef<
     </TeacherGrouping>
   );
 });
-TeacherQueueGroup.displayName = "TeacherQueueGroup";
 
 function ParentControlFlag({
   selectedDate,
@@ -582,12 +581,12 @@ function ParentControlFlag({
   );
 }
 
-export default function TeacherColumnComplex({
+export default function TeacherColumn({
   teacherQueues,
   controller,
   selectedDate,
   draggedBooking,
-}: TeacherColumnComplexProps) {
+}: TeacherColumnProps) {
   const [parentTimeAdjustmentMode, setParentTimeAdjustmentMode] =
     useState(false);
   const [parentGlobalTime, setParentGlobalTime] = useState<string | null>(null);
@@ -739,7 +738,7 @@ export default function TeacherColumnComplex({
       {teacherQueueGroups.length > 0 && (
         <div className="space-y-4 mt-4">
           {teacherQueueGroups.map((group) => (
-            <TeacherQueueGroup
+            <TeacherColumnRow
               key={group.teacherId}
               ref={(el: TeacherQueueGroupHandle | null) => {
                 teacherGroupRefs.current.set(group.teacherId, el);

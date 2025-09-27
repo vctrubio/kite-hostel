@@ -8,7 +8,7 @@ import {
   getTodayDateString,
 } from "@/components/formatters/DateTime";
 import BillboardHeader from "./BillboardHeader";
-import TeacherColumnComplex from "./TeacherColumnComplex";
+import TeacherColumn from "./TeacherColumn";
 import StudentBookingColumn from "./StudentBookingColumn";
 import { BillboardClass } from "@/backend/BillboardClass";
 import { type EventController } from "@/backend/types";
@@ -548,7 +548,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
       />
 
       <div className="grid grid-cols-4 gap-4">
-        <TeacherColumnComplex
+        <TeacherColumn
           teachers={data.teachers || []}
           teacherQueues={teacherQueues}
           controller={controller}
