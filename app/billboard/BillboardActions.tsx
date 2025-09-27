@@ -7,7 +7,6 @@ type BillboardAction = "share" | "medical" | "csv" | "xlsm" | "print";
 
 interface BillboardActionsProps {
   onActionClick: (action: BillboardAction) => void;
-  events: any[];
 }
 
 export default function BillboardActions({ onActionClick }: BillboardActionsProps) {

@@ -5,7 +5,7 @@ import ControllerSettings from "@/components/whiteboard-usage/ControllerSettings
 import { type EventController } from "@/backend/types";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
-import BillboardActions from "@/app/billboard/BillboardActions";
+import BillboardActions from "./BillboardActions";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -333,10 +333,7 @@ function ActionSettingsSection({
             </div>
           </div>
           <div className="border-t border-border p-3">
-            <BillboardActions 
-              onActionClick={onActionClick} 
-              events={eventStatus.allIds.map(id => ({ id }))} 
-            />
+            <BillboardActions onActionClick={onActionClick} />
           </div>
         </div>
       </div>

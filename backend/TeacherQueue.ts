@@ -258,29 +258,30 @@ export class TeacherQueue {
     return eventDate.getHours() * 60 + eventDate.getMinutes();
   }
 
+  // Helper method to update event time from datetime string
+  private updateEventDateTime(eventNode: EventNode, changeMinutes: number): void {
+    const currentDateTime = eventNode.eventData.date;
+    if (currentDateTime.includes("T")) {
+      const [datePart, timePart] = currentDateTime.split("T");
+      const [hours, minutes] = timePart.split(":").map(Number);
+
+      const totalMinutes = hours * 60 + minutes + changeMinutes;
+      const newHours = Math.floor(totalMinutes / 60);
+      const newMinutes = totalMinutes % 60;
+
+      const newTime = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
+      eventNode.eventData.date = `${datePart}T${newTime}:00`;
+    }
+  }
+
   // Cascade time adjustment through the linked list - affects ALL subsequent nodes
   private cascadeTimeAdjustment(
     startNode: EventNode | null,
     changeMinutes: number,
   ): void {
     let current = startNode;
-
     while (current) {
-      // Adjust current node's start time using local datetime manipulation
-      const currentDateTime = current.eventData.date;
-      if (currentDateTime.includes("T")) {
-        const [datePart, timePart] = currentDateTime.split("T");
-        const [hours, minutes] = timePart.split(":").map(Number);
-
-        const totalMinutes = hours * 60 + minutes + changeMinutes;
-        const newHours = Math.floor(totalMinutes / 60);
-        const newMinutes = totalMinutes % 60;
-
-        const newTime = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
-        current.eventData.date = `${datePart}T${newTime}:00`;
-      }
-
-      // Always continue to next node - cascade through entire chain
+      this.updateEventDateTime(current, changeMinutes);
       current = current.next;
     }
   }
@@ -328,19 +329,8 @@ export class TeacherQueue {
       return;
     }
 
-    // Move the current node earlier to close the gap using local datetime manipulation
-    const currentDateTime = current.eventData.date;
-    if (currentDateTime.includes("T")) {
-      const [datePart, timePart] = currentDateTime.split("T");
-      const [hours, minutes] = timePart.split(":").map(Number);
-
-      const totalMinutes = hours * 60 + minutes - gapMinutes;
-      const newHours = Math.floor(totalMinutes / 60);
-      const newMinutes = totalMinutes % 60;
-
-      const newTime = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
-      current.eventData.date = `${datePart}T${newTime}:00`;
-    }
+    // Move the current node earlier to close the gap
+    this.updateEventDateTime(current, -gapMinutes);
 
     // Check if we need to cascade the change to maintain the chain
     if (current.next) {
@@ -365,75 +355,13 @@ export class TeacherQueue {
     }
   }
 
-  // Move lesson in queue (up/down)
+  // Move lesson in queue (up/down) - consolidated method
   moveLessonUp(lessonId: string): void {
-    const events = this.getAllEvents();
-    const currentIndex = events.findIndex(
-      (event) => event.lessonId === lessonId,
-    );
-
-    if (currentIndex <= 0) return; // Can't move up if first or not found
-
-    const newIndex = currentIndex - 1;
-    
-    // Store the start time of the earlier position (the one that will keep its time)
-    const earlierEvent = events[newIndex];
-    const preservedStartTimeMinutes = this.getStartTimeMinutes(earlierEvent);
-
-    // Swap events
-    [events[currentIndex], events[newIndex]] = [
-      events[newIndex],
-      events[currentIndex],
-    ];
-
-    // Rebuild the linked list
-    this.head = null;
-    events.forEach((event) => {
-      event.next = null;
-      this.addToQueue(event);
-    });
-
-    // Recalculate start times starting from the preserved time
-    this.recalculateStartTimesFromPosition(
-      newIndex,
-      preservedStartTimeMinutes,
-    );
+    this.moveLessonInQueue(lessonId, "up");
   }
 
-  // Move lesson in queue (down)
   moveLessonDown(lessonId: string): void {
-    const events = this.getAllEvents();
-    const currentIndex = events.findIndex(
-      (event) => event.lessonId === lessonId,
-    );
-
-    if (currentIndex < 0 || currentIndex >= events.length - 1) return; // Can't move down if last or not found
-
-    const newIndex = currentIndex + 1;
-    
-    // Store the start time of the earlier position (the one that will keep its time)
-    const earlierIndex = Math.min(currentIndex, newIndex);
-    const earlierEvent = events[earlierIndex];
-    const preservedStartTimeMinutes = this.getStartTimeMinutes(earlierEvent);
-
-    // Swap events
-    [events[currentIndex], events[newIndex]] = [
-      events[newIndex],
-      events[currentIndex],
-    ];
-
-    // Rebuild the linked list
-    this.head = null;
-    events.forEach((event) => {
-      event.next = null;
-      this.addToQueue(event);
-    });
-
-    // Recalculate start times starting from the preserved time
-    this.recalculateStartTimesFromPosition(
-      earlierIndex,
-      preservedStartTimeMinutes,
-    );
+    this.moveLessonInQueue(lessonId, "down");
   }
 
   // Check if lesson can move earlier without overlap
@@ -490,31 +418,6 @@ export class TeacherQueue {
     return nodes;
   }
 
-  // Apply global time offset to all events
-  applyGlobalTimeOffset(offsetMinutes: number): EventNode[] {
-    const updatedEvents: EventNode[] = [];
-    let current = this.head;
-
-    while (current) {
-      const originalDate = new Date(current.eventData.date);
-      const newDate = new Date(
-        originalDate.getTime() + offsetMinutes * 60 * 1000,
-      );
-
-      const updatedEvent: EventNode = {
-        ...current,
-        eventData: {
-          ...current.eventData,
-          date: newDate.toISOString(),
-        },
-      };
-
-      updatedEvents.push(updatedEvent);
-      current = current.next;
-    }
-
-    return updatedEvents;
-  }
 
   // Adjust lesson duration
   adjustLessonDuration(lessonId: string, increment: boolean): void {
@@ -548,21 +451,8 @@ export class TeacherQueue {
       if (current.lessonId === lessonId) {
         const change = increment ? 30 : -30;
 
-        // Work with local datetime string directly to avoid timezone conversion
-        const currentDateTime = current.eventData.date;
-        if (currentDateTime.includes("T")) {
-          // Parse as local datetime: "2024-01-15T14:00:00"
-          const [datePart, timePart] = currentDateTime.split("T");
-          const [hours, minutes] = timePart.split(":").map(Number);
-
-          const totalMinutes = hours * 60 + minutes + change;
-          const newHours = Math.floor(totalMinutes / 60);
-          const newMinutes = totalMinutes % 60;
-
-          // Create new local datetime string
-          const newTime = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
-          current.eventData.date = `${datePart}T${newTime}:00`;
-        }
+        // Adjust the lesson's start time
+        this.updateEventDateTime(current, change);
 
         // Always cascade the time change to ALL subsequent events
         if (current.next) {
