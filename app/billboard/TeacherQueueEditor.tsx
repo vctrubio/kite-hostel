@@ -13,9 +13,6 @@ interface TeacherQueueEditorProps {
   teacherQueue: TeacherQueue;
   selectedDate: string;
   onRemove: (lessonId: string) => Promise<void>;
-  onAdjustDuration: (lessonId: string, increment: boolean) => void;
-  onAdjustTime: (lessonId: string, increment: boolean) => void;
-  onMove: (lessonId: string, direction: "up" | "down") => void;
   onRefresh: () => void;
 }
 
@@ -26,16 +23,11 @@ export default function TeacherQueueEditor({
   teacherQueue,
   selectedDate,
   onRemove,
-  onAdjustDuration,
-  onAdjustTime,
-  onMove,
   onRefresh,
 }: TeacherQueueEditorProps) {
-  // Simple gap detection for TeacherQueue - check if there's time between events
-  const detectGapBefore = (currentNode: any, index: number): { hasGap: boolean; gapDuration: number } => {
-    if (index === 0) {
-      return { hasGap: false, gapDuration: 0 };
-    }
+  // Detect gaps between consecutive events
+  const detectGapBefore = (currentNode: any, index: number) => {
+    if (index === 0) return { hasGap: false, gapDuration: 0 };
 
     const previousNode = scheduleNodes[index - 1];
     if (!previousNode || previousNode.type !== "event") {
@@ -48,15 +40,13 @@ export default function TeacherQueueEditor({
 
     return {
       hasGap: gapMinutes > 0,
-      gapDuration: gapMinutes > 0 ? gapMinutes : 0,
+      gapDuration: Math.max(0, gapMinutes),
     };
   };
 
-  // Handle gap removal for TeacherQueue
-  const handleRemoveGapForScheduleNode = (lessonId: string) => {
-    // Use TeacherQueue's gap removal method instead of manual adjustments
+  // Remove gaps by shifting events earlier
+  const handleRemoveGap = (lessonId: string) => {
     teacherQueue.removeGap(lessonId);
-    // Trigger refresh to update the UI
     onRefresh();
   };
 
@@ -70,11 +60,11 @@ export default function TeacherQueueEditor({
         );
         if (!eventData) return null;
 
-        // Get student names from TeacherQueue events
+        // Get lesson data from TeacherQueue
         const queueEvent = teacherQueue.getAllEvents().find(
           (e) => e.lessonId === node.eventData?.lessonId,
         );
-        const studentList = queueEvent ? queueEvent.billboardClass.getStudentNames() : [];
+        const studentList = queueEvent?.billboardClass.getStudentNames() || [];
 
         const originalNode = originalScheduleNodes.find(
           (n) => n.eventData?.lessonId === node.eventData?.lessonId,
@@ -83,24 +73,19 @@ export default function TeacherQueueEditor({
           ? timeToMinutes(node.startTime) - timeToMinutes(originalNode.startTime)
           : 0;
 
-        // Calculate position info
+        // Calculate position and timing info
         const eventNodes = scheduleNodes.filter((n) => n.type === "event");
         const eventNodeIndex = eventNodes.findIndex((en) => en.id === node.id);
         const isFirst = eventNodeIndex === 0;
-
-        // Gap detection using our simplified logic
+        const isLast = eventNodeIndex === eventNodes.length - 1;
+        
         const { hasGap, gapDuration } = detectGapBefore(node, index);
-
-        // Create local datetime without timezone conversion
+        
         if (!node.startTime) {
           throw new Error(`Missing startTime for lesson ${node.eventData?.lessonId}`);
         }
         
-        // Get time in minutes for bounds checking
-        const currentTimeMinutes = timeToMinutes(node.startTime);
-
-        // Get remaining minutes from the BillboardClass instance
-        const remainingMinutes = queueEvent ? queueEvent.billboardClass.getRemainingMinutes() : 0;
+        const remainingMinutes = queueEvent?.billboardClass.getRemainingMinutes() || 0;
 
         const queuedLesson = {
           lessonId: node.eventData?.lessonId || "",
@@ -113,11 +98,10 @@ export default function TeacherQueueEditor({
           gapDuration: gapDuration,
         };
 
-        const isLast = eventNodeIndex === eventNodes.length - 1;
-
-        // Use TeacherQueue methods for move validation
-        const canMoveEarlier = teacherQueue.canMoveEarlier(node.eventData?.lessonId || "");
-        const canMoveLater = teacherQueue.canMoveLater(node.eventData?.lessonId || "");
+        // Check movement capabilities
+        const lessonId = node.eventData?.lessonId || "";
+        const canMoveEarlier = teacherQueue.canMoveEarlier(lessonId);
+        const canMoveLater = teacherQueue.canMoveLater(lessonId);
 
         return (
           <div key={`queue-${node.id}`}>
@@ -148,7 +132,7 @@ export default function TeacherQueueEditor({
                 teacherQueue.moveLessonDown(lessonId);
                 onRefresh();
               }}
-              onRemoveGap={handleRemoveGapForScheduleNode}
+              onRemoveGap={handleRemoveGap}
             />
           </div>
         );

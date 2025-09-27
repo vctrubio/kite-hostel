@@ -181,24 +181,6 @@ const TeacherColumnRow = forwardRef<
     onCompleteOrOptOut?.(teacherId);
   }, [onCompleteOrOptOut, teacherId]);
 
-  const handleAdjustDuration = useCallback(
-    (lessonId: string, increment: boolean) => {
-      teacherQueue.adjustLessonDuration(lessonId, increment);
-      const newNodes = teacherQueue.getNodes();
-      setEditableScheduleNodes(newNodes);
-    },
-    [teacherQueue],
-  );
-
-  const handleAdjustTime = useCallback(
-    (lessonId: string, increment: boolean) => {
-      teacherQueue.adjustLessonTime(lessonId, increment);
-      const newNodes = teacherQueue.getNodes();
-      setEditableScheduleNodes(newNodes);
-    },
-    [teacherQueue],
-  );
-
   const handleRemoveFromQueue = useCallback(
     async (lessonId: string) => {
       try {
@@ -225,14 +207,6 @@ const TeacherColumnRow = forwardRef<
         console.error("Error removing event:", error);
         toast.error("Failed to remove event");
       }
-    },
-    [teacherQueue],
-  );
-
-  const handleMoveInQueue = useCallback(
-    (lessonId: string, direction: "up" | "down") => {
-      teacherQueue.moveLessonInQueue(lessonId, direction);
-      setEditableScheduleNodes(teacherQueue.getNodes());
     },
     [teacherQueue],
   );
@@ -445,8 +419,7 @@ const TeacherColumnRow = forwardRef<
       teacherQueue={teacherQueue}
       selectedDate={selectedDate}
       draggedBooking={draggedBooking}
-      parentTimeAdjustmentMode={parentTimeAdjustmentMode}
-      parentGlobalTime={parentGlobalTime}
+      parentTime={parentTime}
       isPendingParentUpdate={isPendingParentUpdate}
       onCompleteOrOptOut={onCompleteOrOptOut}
       onOptInToParentUpdate={onOptInToParentUpdate}
@@ -485,9 +458,6 @@ const TeacherColumnRow = forwardRef<
           teacherQueue={teacherQueue}
           selectedDate={selectedDate}
           onRemove={handleRemoveFromQueue}
-          onAdjustDuration={handleAdjustDuration}
-          onAdjustTime={handleAdjustTime}
-          onMove={handleMoveInQueue}
           onRefresh={() => {
             const newNodes = teacherQueue.getNodes();
             setEditableScheduleNodes(newNodes);
