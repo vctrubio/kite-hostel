@@ -115,28 +115,9 @@ export default function TeacherQueueEditor({
 
         const isLast = eventNodeIndex === eventNodes.length - 1;
 
-        // Check if can move earlier (conflict check)
-        let canMoveEarlier = true;
-        if (!isFirst) {
-          const previousEventNode = eventNodes[eventNodeIndex - 1];
-          if (previousEventNode) {
-            const previousEventEndTime =
-              timeToMinutes(previousEventNode.startTime) +
-              previousEventNode.duration;
-            const newCurrentEventStartTime = timeToMinutes(node.startTime) - 30;
-            if (newCurrentEventStartTime < previousEventEndTime) {
-              canMoveEarlier = false;
-            }
-          }
-        }
-
-        // Also check time bounds for moving earlier
-        if (currentTimeMinutes <= 360) {
-          canMoveEarlier = false;
-        }
-
-        // Check if can move later (time bounds check)
-        const canMoveLater = currentTimeMinutes < 1380;
+        // Use TeacherQueue methods for move validation
+        const canMoveEarlier = teacherQueue.canMoveEarlier(node.eventData?.lessonId || "");
+        const canMoveLater = teacherQueue.canMoveLater(node.eventData?.lessonId || "");
 
         return (
           <div key={`queue-${node.id}`}>
@@ -147,11 +128,26 @@ export default function TeacherQueueEditor({
               isLast={isLast}
               canMoveEarlier={canMoveEarlier}
               canMoveLater={canMoveLater}
-              onRemove={onRemove}
-              onAdjustDuration={onAdjustDuration}
-              onAdjustTime={onAdjustTime}
-              onMoveUp={(lessonId) => onMove(lessonId, "up")}
-              onMoveDown={(lessonId) => onMove(lessonId, "down")}
+              onRemove={async (lessonId) => {
+                await onRemove(lessonId);
+                onRefresh();
+              }}
+              onAdjustDuration={(lessonId, increment) => {
+                teacherQueue.adjustLessonDuration(lessonId, increment);
+                onRefresh();
+              }}
+              onAdjustTime={(lessonId, increment) => {
+                teacherQueue.adjustLessonTime(lessonId, increment);
+                onRefresh();
+              }}
+              onMoveUp={(lessonId) => {
+                teacherQueue.moveLessonUp(lessonId);
+                onRefresh();
+              }}
+              onMoveDown={(lessonId) => {
+                teacherQueue.moveLessonDown(lessonId);
+                onRefresh();
+              }}
               onRemoveGap={handleRemoveGapForScheduleNode}
             />
           </div>

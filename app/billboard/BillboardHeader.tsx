@@ -5,7 +5,7 @@ import ControllerSettings from "@/components/whiteboard-usage/ControllerSettings
 import { type EventController } from "@/backend/types";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
-import BillboardActions from "@/components/whiteboard-usage/BillboardActions";
+import BillboardActions from "@/app/billboard/BillboardActions";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -236,17 +236,65 @@ function StatsSection({
 function EventSettingsSection({
   controller,
   onControllerChange,
-}: Pick<BillboardHeaderProps, "controller" | "onControllerChange">) {
+  onActionClick,
+  eventStatus
+}: Pick<BillboardHeaderProps, "controller" | "onControllerChange" | "onActionClick" | "eventStatus">) {
+  const [showNoWindConfirm, setShowNoWindConfirm] = useState(false);
+  
+  const handleNoWindConfirm = () => {
+    onActionClick("nowind");
+    setShowNoWindConfirm(false);
+  };
+  
   return (
     <div>
       <div className="border border-border rounded-lg bg-card min-h-[100px] h-full">
         <div className="space-y-2">
-          <h3 className="font-medium text-foreground p-4 pb-0">Event Settings</h3>
+          <div className="flex items-center justify-between p-4 pb-0">
+            <h3 className="font-medium text-foreground">Event Settings</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">No Wind</span>
+              <button
+                onClick={() => setShowNoWindConfirm(!showNoWindConfirm)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                  showNoWindConfirm
+                    ? 'bg-red-600'
+                    : 'bg-gray-200 dark:bg-gray-700'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                    showNoWindConfirm ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
           <div className="border-t border-border p-3">
             <ControllerSettings
               controller={controller}
               onControllerChange={onControllerChange}
             />
+            {showNoWindConfirm && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <div className="space-y-2">
+                  <button
+                    onClick={handleNoWindConfirm}
+                    disabled={eventStatus.allIds.length === 0}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-100 text-red-800 rounded hover:bg-red-200 border border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title={eventStatus.allIds.length === 0 ? "No events to cancel" : "Cancel all events due to unsafe wind conditions"}
+                  >
+                    <span>NO WIND - Cancel All Events</span>
+                  </button>
+                  
+                  {eventStatus.allIds.length > 0 && (
+                    <div className="text-xs text-red-600 dark:text-red-400">
+                      This will cancel all {eventStatus.allIds.length} events for today. This action cannot be undone.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -257,8 +305,9 @@ function EventSettingsSection({
 function ActionSettingsSection({ 
   onActionClick, 
   exportDebugMode, 
-  onExportDebugModeChange 
-}: Pick<BillboardHeaderProps, "onActionClick" | "exportDebugMode" | "onExportDebugModeChange">) {
+  onExportDebugModeChange,
+  eventStatus
+}: Pick<BillboardHeaderProps, "onActionClick" | "exportDebugMode" | "onExportDebugModeChange" | "eventStatus">) {
   return (
     <div>
       <div className="border border-border rounded-lg bg-card min-h-[100px] h-full">
@@ -284,7 +333,10 @@ function ActionSettingsSection({
             </div>
           </div>
           <div className="border-t border-border p-3">
-            <BillboardActions onActionClick={onActionClick} />
+            <BillboardActions 
+              onActionClick={onActionClick} 
+              events={eventStatus.allIds.map(id => ({ id }))} 
+            />
           </div>
         </div>
       </div>

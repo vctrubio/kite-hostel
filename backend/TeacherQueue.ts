@@ -258,7 +258,7 @@ export class TeacherQueue {
     return eventDate.getHours() * 60 + eventDate.getMinutes();
   }
 
-  // Cascade time adjustment through the linked list
+  // Cascade time adjustment through the linked list - affects ALL subsequent nodes
   private cascadeTimeAdjustment(
     startNode: EventNode | null,
     changeMinutes: number,
@@ -280,18 +280,7 @@ export class TeacherQueue {
         current.eventData.date = `${datePart}T${newTime}:00`;
       }
 
-      // Check if we need to continue cascading
-      if (current.next) {
-        const currentEndTime =
-          this.getStartTimeMinutes(current) + current.eventData.duration;
-        const nextStartTime = this.getStartTimeMinutes(current.next);
-
-        // If there's a gap, stop cascading
-        if (currentEndTime !== nextStartTime) {
-          break;
-        }
-      }
-
+      // Always continue to next node - cascade through entire chain
       current = current.next;
     }
   }
@@ -376,6 +365,110 @@ export class TeacherQueue {
     }
   }
 
+  // Move lesson in queue (up/down)
+  moveLessonUp(lessonId: string): void {
+    const events = this.getAllEvents();
+    const currentIndex = events.findIndex(
+      (event) => event.lessonId === lessonId,
+    );
+
+    if (currentIndex <= 0) return; // Can't move up if first or not found
+
+    const newIndex = currentIndex - 1;
+    
+    // Store the start time of the earlier position (the one that will keep its time)
+    const earlierEvent = events[newIndex];
+    const preservedStartTimeMinutes = this.getStartTimeMinutes(earlierEvent);
+
+    // Swap events
+    [events[currentIndex], events[newIndex]] = [
+      events[newIndex],
+      events[currentIndex],
+    ];
+
+    // Rebuild the linked list
+    this.head = null;
+    events.forEach((event) => {
+      event.next = null;
+      this.addToQueue(event);
+    });
+
+    // Recalculate start times starting from the preserved time
+    this.recalculateStartTimesFromPosition(
+      newIndex,
+      preservedStartTimeMinutes,
+    );
+  }
+
+  // Move lesson in queue (down)
+  moveLessonDown(lessonId: string): void {
+    const events = this.getAllEvents();
+    const currentIndex = events.findIndex(
+      (event) => event.lessonId === lessonId,
+    );
+
+    if (currentIndex < 0 || currentIndex >= events.length - 1) return; // Can't move down if last or not found
+
+    const newIndex = currentIndex + 1;
+    
+    // Store the start time of the earlier position (the one that will keep its time)
+    const earlierIndex = Math.min(currentIndex, newIndex);
+    const earlierEvent = events[earlierIndex];
+    const preservedStartTimeMinutes = this.getStartTimeMinutes(earlierEvent);
+
+    // Swap events
+    [events[currentIndex], events[newIndex]] = [
+      events[newIndex],
+      events[currentIndex],
+    ];
+
+    // Rebuild the linked list
+    this.head = null;
+    events.forEach((event) => {
+      event.next = null;
+      this.addToQueue(event);
+    });
+
+    // Recalculate start times starting from the preserved time
+    this.recalculateStartTimesFromPosition(
+      earlierIndex,
+      preservedStartTimeMinutes,
+    );
+  }
+
+  // Check if lesson can move earlier without overlap
+  canMoveEarlier(lessonId: string): boolean {
+    const events = this.getAllEvents();
+    const currentIndex = events.findIndex(
+      (event) => event.lessonId === lessonId,
+    );
+
+    if (currentIndex < 0) return false; // Not found
+    if (currentIndex === 0) return true; // First lesson can always move earlier
+
+    const currentEvent = events[currentIndex];
+    const previousEvent = events[currentIndex - 1];
+
+    // Calculate if moving 30 minutes earlier would overlap with previous lesson
+    const currentStartMinutes = this.getStartTimeMinutes(currentEvent);
+    const proposedStartMinutes = currentStartMinutes - 30;
+    const previousEndMinutes = this.getStartTimeMinutes(previousEvent) + previousEvent.eventData.duration;
+
+    // Check if moving 30 minutes earlier would overlap with previous lesson
+    return proposedStartMinutes >= previousEndMinutes;
+  }
+
+  // Check if lesson can move later (time bounds check)
+  canMoveLater(lessonId: string): boolean {
+    const events = this.getAllEvents();
+    const currentEvent = events.find(event => event.lessonId === lessonId);
+    
+    if (!currentEvent) return false;
+    
+    const currentTimeMinutes = this.getStartTimeMinutes(currentEvent);
+    return currentTimeMinutes < 1380; // Before 23:00
+  }
+
   // Get nodes for schedule manipulation (similar to TeacherSchedule.getNodes())
   getNodes(): any[] {
     const nodes: any[] = [];
@@ -431,14 +524,6 @@ export class TeacherQueue {
         const change = increment ? 30 : -30;
         const oldDuration = current.eventData.duration;
 
-        // Check if there was a connection BEFORE the change
-        let wasConnected = false;
-        if (current.next) {
-          const oldEndTime = this.getStartTimeMinutes(current) + oldDuration;
-          const nextStartTime = this.getStartTimeMinutes(current.next);
-          wasConnected = oldEndTime === nextStartTime;
-        }
-
         // Make the duration change
         current.eventData.duration = Math.max(
           30,
@@ -446,8 +531,8 @@ export class TeacherQueue {
         );
         const actualChange = current.eventData.duration - oldDuration;
 
-        // If there was a connection and duration actually changed, cascade the change
-        if (actualChange !== 0 && wasConnected && current.next) {
+        // If duration actually changed, cascade to ALL subsequent events
+        if (actualChange !== 0 && current.next) {
           this.cascadeTimeAdjustment(current.next, actualChange);
         }
         break;
@@ -462,15 +547,6 @@ export class TeacherQueue {
     while (current) {
       if (current.lessonId === lessonId) {
         const change = increment ? 30 : -30;
-
-        // Check if there was a connection BEFORE the change
-        let wasConnected = false;
-        if (current.next) {
-          const oldEndTime =
-            this.getStartTimeMinutes(current) + current.eventData.duration;
-          const nextStartTime = this.getStartTimeMinutes(current.next);
-          wasConnected = oldEndTime === nextStartTime;
-        }
 
         // Work with local datetime string directly to avoid timezone conversion
         const currentDateTime = current.eventData.date;
@@ -488,8 +564,8 @@ export class TeacherQueue {
           current.eventData.date = `${datePart}T${newTime}:00`;
         }
 
-        // If there was a connection, cascade the time change to maintain it
-        if (wasConnected && current.next) {
+        // Always cascade the time change to ALL subsequent events
+        if (current.next) {
           this.cascadeTimeAdjustment(current.next, change);
         }
         break;

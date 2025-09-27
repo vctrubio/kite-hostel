@@ -7,12 +7,13 @@ type BillboardAction = "share" | "medical" | "csv" | "xlsm" | "print";
 
 interface BillboardActionsProps {
   onActionClick: (action: BillboardAction) => void;
+  events: any[];
 }
 
 export default function BillboardActions({ onActionClick }: BillboardActionsProps) {
   return (
     <div>
-      <div className="flex justify-around">
+      <div className="flex justify-around items-center">
         <button onClick={() => onActionClick("share")} className="flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 hover:bg-muted/50">
           <Share2Icon className="w-5 h-5 text-blue-500" />
           <span className="text-xs font-medium text-foreground">Share</span>

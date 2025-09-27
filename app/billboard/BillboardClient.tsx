@@ -361,6 +361,24 @@ export default function BillboardClient({ data }: BillboardClientProps) {
 
   const handleActionClick = async (actionId: string) => {
     try {
+      // Handle nowind action separately since it doesn't need share data
+      if (actionId === "nowind") {
+        if (eventStatus.allIds.length === 0) {
+          console.warn("No events to delete");
+          return;
+        }
+        try {
+          const { deleteEvent } = await import("@/actions/event-actions");
+          for (const eventId of eventStatus.allIds) {
+            await deleteEvent(eventId);
+          }
+          console.log(`✅ Deleted ${eventStatus.allIds.length} events due to NO WIND`);
+        } catch (error) {
+          console.error("❌ Error deleting events:", error);
+        }
+        return;
+      }
+
       // Extract share data using the utility function
       const shareData = extractShareDataFromTeacherQueues(
         selectedDate,
