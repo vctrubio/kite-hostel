@@ -24,15 +24,14 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: "Kite Hostel",
-  description: "Professional kite school management application for wind-dependent scheduling operations",
+  description:
+    "Professional kite school management application for wind-dependent scheduling operations",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Kite Hostel",
-    startupImage: [
-      "/icons/icon-192x192.png",
-    ],
+    startupImage: ["/icons/icon-192x192.png"],
   },
   icons: {
     icon: [

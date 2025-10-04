@@ -9,39 +9,22 @@ export default async function StudentsPage() {
     return <div>Error loading students: {error}</div>;
   }
 
-  // Calculate stats based on all students
-  const totalStudents = students.length;
-  const localStudents = students.filter((s) => s.country === "Spain").length;
-  const foreignStudents = totalStudents - localStudents;
-
-  // Calculate students with active bookings
-  const studentsWithActiveBookings = students.filter((s) =>
-    s.bookings?.some((b: any) => b.status === "active"),
-  ).length;
-
-  const studentsWithCompletedBookings = students.filter((s) =>
-    s.bookings?.some((b: any) => b.status === "completed"),
-  ).length;
-
-  const studentsWithUncompleteBookings = students.filter((s) =>
-    s.bookings?.some((b: any) => b.status === "uncomplete"),
-  ).length;
-
+  // Basic stats template - actual calculations will be done in Dashboard component
   const stats = [
     {
       description: "Total Students",
-      value: totalStudents,
+      value: 0, // Will be calculated dynamically
       subStats: [
-        { label: "Local (Spain)", value: localStudents },
-        { label: "Foreign", value: foreignStudents },
+        { label: "Local (Spain)", value: 0 },
+        { label: "Foreign", value: 0 },
       ],
     },
     {
-      description: "Students with Active Bookings",
-      value: studentsWithActiveBookings,
+      description: "Active Bookings", 
+      value: 0, // Will be calculated dynamically
       subStats: [
-        { label: "Completed Bookings", value: studentsWithCompletedBookings },
-        { label: "Uncomplete Bookings", value: studentsWithUncompleteBookings },
+        { label: "Completed Bookings", value: 0 },
+        { label: "Students with No Bookings", value: 0 },
       ],
     },
   ];

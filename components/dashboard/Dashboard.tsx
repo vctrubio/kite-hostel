@@ -346,23 +346,127 @@ export function Dashboard({
     isDropdownFormOpen,
   );
 
+  const calculateEntityStats = (entityType: string, data: any[]) => {
+    switch (entityType.toLowerCase()) {
+      case "student":
+        const totalStudents = data.length;
+        const localStudents = data.filter((s) => s.country === "Spain").length;
+        const foreignStudents = totalStudents - localStudents;
+        const studentsWithActiveBookings = data.filter((s) =>
+          s.bookings?.some((b: any) => b.status === "active"),
+        ).length;
+        const studentsWithCompletedBookings = data.filter((s) =>
+          s.bookings?.some((b: any) => b.status === "completed"),
+        ).length;
+        const studentsWithNoBookings = data.filter((s) =>
+          !s.bookings || s.bookings.length === 0,
+        ).length;
+
+        return [
+          {
+            description: "Total Students",
+            value: totalStudents,
+            subStats: [
+              { label: "Local (Spain)", value: localStudents },
+              { label: "Foreign", value: foreignStudents },
+            ],
+          },
+          {
+            description: "Active Bookings",
+            value: studentsWithActiveBookings,
+            subStats: [
+              { label: "Completed Bookings", value: studentsWithCompletedBookings },
+              { label: "Students with No Bookings", value: studentsWithNoBookings },
+            ],
+          },
+        ];
+
+      case "booking":
+        const totalBookings = data.length;
+        const activeBookings = data.filter((b) => b.status === "active").length;
+        const completedBookings = data.filter((b) => b.status === "completed").length;
+        const uncompletedBookings = data.filter((b) => b.status === "uncomplete").length;
+
+        // Calculate total hours and revenue
+        const totalHours = data.reduce((sum, booking) => {
+          return sum + (booking.package?.duration || 0);
+        }, 0);
+
+        const totalRevenue = data.reduce((sum, booking) => {
+          const studentsCount = booking.students?.length || 0;
+          const pricePerStudent = booking.package?.price_per_student || 0;
+          return sum + studentsCount * pricePerStudent;
+        }, 0);
+
+        // Calculate teacher earnings from all lessons
+        const teacherEarnings = data.reduce((sum, booking) => {
+          if (!booking.lessons || booking.lessons.length === 0) return sum;
+
+          return (
+            sum +
+            booking.lessons.reduce((lessonSum, lesson) => {
+              if (lesson.events && lesson.commission) {
+                // Calculate total event duration for this lesson
+                const totalEventDuration = lesson.events.reduce((eventSum, event) => {
+                  return eventSum + (event.duration || 0);
+                }, 0);
+
+                // Convert minutes to hours and multiply by commission rate
+                const hoursWorked = totalEventDuration / 60;
+                const commissionRate = lesson.commission.price_per_hour || 0;
+                return lessonSum + hoursWorked * commissionRate;
+              }
+              return lessonSum;
+            }, 0)
+          );
+        }, 0);
+
+        // School earnings = total revenue - teacher earnings
+        const schoolEarnings = totalRevenue - teacherEarnings;
+
+        return [
+          {
+            description: "Total Bookings",
+            value: totalBookings,
+            subStats: [
+              { label: "Active", value: activeBookings },
+              { label: "Completed", value: completedBookings },
+              { label: "Uncompleted", value: uncompletedBookings },
+            ],
+          },
+          {
+            description: "Total Hours",
+            value: `${Math.round(totalHours / 60)}h`,
+            subStats: [
+              { label: "School Revenue", value: `€${totalRevenue}` },
+              { label: "Teacher Earnings", value: `€${Math.round(teacherEarnings)}` },
+              { label: "School Earnings", value: `€${Math.round(schoolEarnings)}` },
+            ],
+          },
+        ];
+      
+      default:
+        // For other entities, use the original stats template but update values based on filtered data
+        const newStats = stats.map((stat) => {
+          const newStat = { ...stat };
+          if (stat.subStats) {
+            newStat.subStats = stat.subStats.map((sub) => ({ ...sub }));
+          }
+          return newStat;
+        });
+
+        if (newStats.length > 0) {
+          newStats[0].value = data.length;
+        }
+
+        return newStats;
+    }
+  };
+
   const dynamicStats = useMemo(() => {
     if (!stats) return [];
-
-    const newStats = stats.map((stat) => {
-      const newStat = { ...stat };
-      if (stat.subStats) {
-        newStat.subStats = stat.subStats.map((sub) => ({ ...sub }));
-      }
-      return newStat;
-    });
-
-    if (newStats.length > 0) {
-      newStats[0].value = filteredData.length;
-    }
-
-    return newStats;
-  }, [stats, filteredData]);
+    return calculateEntityStats(entityName, filteredData);
+  }, [stats, filteredData, entityName]);
 
   const handleToggleFilter = () => {
     const newFilterEnabled = !filterEnabled;
