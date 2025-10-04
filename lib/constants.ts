@@ -4,7 +4,6 @@ import {
   languagesEnum,
   EventStatusEnum,
   locationEnum,
-  
 } from "@/drizzle/migrations/schema";
 import {
   HelmetIcon,
@@ -102,7 +101,8 @@ export const BOOKING_STATUS_FILTERS = [
     classes: {
       base: "bg-blue-100 text-blue-700 dark:bg-blue-500/50 dark:text-blue-900",
       hover: "hover:bg-blue-200 dark:hover:bg-blue-500/70",
-      active: "bg-blue-200 text-blue-800 dark:bg-blue-500/80 dark:text-blue-900 border-blue-400 font-bold",
+      active:
+        "bg-blue-200 text-blue-800 dark:bg-blue-500/80 dark:text-blue-900 border-blue-400 font-bold",
     },
   },
   {
@@ -113,7 +113,8 @@ export const BOOKING_STATUS_FILTERS = [
     classes: {
       base: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-200",
       hover: "hover:bg-yellow-200 dark:hover:bg-yellow-900",
-      active: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 border-yellow-500/50",
+      active:
+        "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 border-yellow-500/50",
     },
   },
   {
@@ -124,7 +125,8 @@ export const BOOKING_STATUS_FILTERS = [
     classes: {
       base: "bg-green-100 text-green-800 dark:bg-green-600/50 dark:text-green-900",
       hover: "hover:bg-green-200 dark:hover:bg-green-600/70",
-      active: "bg-green-200 dark:bg-green-600/80 dark:text-green-900 border-green-600 font-bold",
+      active:
+        "bg-green-200 dark:bg-green-600/80 dark:text-green-900 border-green-600 font-bold",
     },
   },
   {
@@ -135,7 +137,8 @@ export const BOOKING_STATUS_FILTERS = [
     classes: {
       base: "bg-red-100 text-red-800 dark:bg-red-600/50 dark:text-red-900",
       hover: "hover:bg-red-200 dark:hover:bg-red-600/70",
-      active: "bg-red-200 dark:bg-red-600/80 dark:text-red-900 border-red-500 font-bold",
+      active:
+        "bg-red-200 dark:bg-red-600/80 dark:text-red-900 border-red-500 font-bold",
     },
   },
 ] as const;
@@ -388,11 +391,17 @@ export const ENTITY_DATA = [
 // User role colors for components
 export const getRoleColor = (role: string): string => {
   switch (role) {
-    case "admin": return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
-    case "teacher": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-    case "teacherAdmin": return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-    case "guest": return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-    case "reference": return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
-    default: return "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200";
+    case "admin":
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
+    case "teacher":
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+    case "teacherAdmin":
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+    case "guest":
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+    case "reference":
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+    default:
+      return "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200";
   }
 };

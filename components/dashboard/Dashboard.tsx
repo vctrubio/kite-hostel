@@ -282,7 +282,7 @@ export function Dashboard({
   }, [entityName, isFilterRangeSelected]);
   const [filterEnabled, setFilterEnabled] = useState(isFilterRangeSelected);
   const [customFilter, setCustomFilter] = useState<CustomFilterValue>(
-    customFilters.defaultFilter,
+    entityConfig.customFilters.defaultFilter,
   );
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
