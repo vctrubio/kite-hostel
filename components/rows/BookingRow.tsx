@@ -71,14 +71,7 @@ export function BookingRow({
           />
         </td>
         <td className="py-2 px-4 text-left">
-          <div className="flex flex-col">
-            <span>{getUserWalletName(booking.reference)}</span>
-            {booking.reference?.note && (
-              <span className="text-xs text-muted-foreground">
-                {booking.reference.note}
-              </span>
-            )}
-          </div>
+          {getUserWalletName(booking.reference)}
         </td>
         <td className="py-2 px-4 text-left">
           {booking.students && booking.students.length > 0 ? (
@@ -103,10 +96,19 @@ export function BookingRow({
           {booking.lessons && booking.lessons.length > 0 ? (
             <div className="flex items-center gap-2">
               {booking.lessons.map((lesson: any) => (
-                <span key={lesson.id} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700 border border-gray-200">
+                <button
+                  key={lesson.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (lesson.teacher?.id) {
+                      router.push(`/teachers/${lesson.teacher.id}`);
+                    }
+                  }}
+                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700 border border-gray-200 hover:bg-gray-200 transition-colors cursor-pointer"
+                >
                   <HeadsetIcon className="w-3 h-3" />
                   <span>{lesson.teacher?.name || "N/A"}</span>
-                </span>
+                </button>
               ))}
             </div>
           ) : (

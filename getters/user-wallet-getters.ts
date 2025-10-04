@@ -23,6 +23,7 @@ export interface UserWalletWithView {
  * Get the display name for a user wallet reference
  * - If role is "reference", show the note
  * - If there's a teacher, show the teacher name
+ * - If role is "admin" and has note, show the note (e.g., "admin-hostel")
  * - Otherwise, show the role
  */
 export function getUserWalletName(reference: UserWalletReference | null): string {
@@ -36,6 +37,10 @@ export function getUserWalletName(reference: UserWalletReference | null): string
 
   if (reference.teacher?.name) {
     return reference.teacher.name;
+  }
+
+  if (reference.role === 'admin' && reference.note) {
+    return reference.note;
   }
 
   return reference.role || 'N/A';

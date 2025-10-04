@@ -8,6 +8,7 @@ import { Clock } from "lucide-react";
 import { calcBookingRevenue } from "@/backend/CalcBookingRevenue";
 import { calcLessonStats } from "@/backend/CalcLessonStats";
 import { LessonCountWithEvent } from "@/getters/lesson-formatters";
+import { getUserWalletName } from "@/getters/user-wallet-getters";
 import { KiteIcon } from "@/svgs";
 
 interface Stat {
@@ -213,44 +214,14 @@ export function getDashboardStats(entityType: string, data: any[]): Stat[] {
       return [];
 
     case "kite":
-      const totalKites = data.length;
-      const kitesWithTeachers = data.filter(
-        (k) => k.assignedTeachers?.length > 0,
-      ).length;
-      const kitesUsedInEvents = data.filter((k) => k.events?.length > 0).length;
-      const totalKiteEvents = data.reduce(
-        (sum, k) => sum + (k.events?.length || 0),
-        0,
-      );
-      const totalTeacherAssignments = data.reduce(
-        (sum, k) => sum + (k.assignedTeachers?.length || 0),
-        0,
-      );
-
-      return [
-        buildStat(
-          "Total Kites",
-          totalKites,
-          createSubStats(
-            ["With Teachers", "Available"],
-            [kitesWithTeachers, totalKites - kitesWithTeachers],
-          ),
-        ),
-        buildStat(
-          "Usage & Events",
-          `${kitesUsedInEvents} used`,
-          createSubStats(
-            ["Total Events", "Teacher Assignments"],
-            [totalKiteEvents, totalTeacherAssignments],
-          ),
-        ),
-      ];
+      // No stats for kites
+      return [];
 
     case "payment":
       const totalPayments = data.length;
       const totalAmount = data.reduce((sum, p) => sum + p.amount, 0);
 
-      // Calculate top 3 teachers by payment amounts
+      // Calculate all teachers by payment amounts (no limit)
       const teacherPaymentCounts = data.reduce(
         (acc, payment) => {
           const teacherName = payment.teacher?.name || "Unknown";
@@ -260,79 +231,57 @@ export function getDashboardStats(entityType: string, data: any[]): Stat[] {
         {} as Record<string, number>,
       );
 
-      const top3TeacherPayments = Object.entries(teacherPaymentCounts)
+      const allTeacherPayments = Object.entries(teacherPaymentCounts)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 3)
         .map(([name, amount], index) => ({
           label: `${index + 1}. ${name}`,
           value: `€${amount}`,
         }));
 
-      const avgPayment =
-        totalPayments > 0 ? Math.round(totalAmount / totalPayments) : 0;
-
       return [
         buildStat(
           "Total Payments Made",
           `€${totalAmount}`,
-          createSubStats(
-            ["Number of Payments", "Average Payment"],
-            [totalPayments, `€${avgPayment}`],
-          ),
-        ),
-        buildStat(
-          "Top Teachers",
-          top3TeacherPayments.length > 0
-            ? top3TeacherPayments[0].label.split(". ")[1]
-            : "None",
-          top3TeacherPayments,
+          allTeacherPayments,
         ),
       ];
 
     case "reference":
-      const totalReferenceBookings = data.length;
-      const teacherBookings = data.filter((b) => b.role === "teacher").length;
-      const referenceBookings = data.filter(
-        (b) => b.role === "reference",
-      ).length;
-      const otherBookings = data.filter(
-        (b) => b.role !== "teacher" && b.role !== "reference",
-      ).length;
-
       // Calculate total revenue
       const totalReferenceRevenue = data.reduce(
         (sum, b) => sum + (b.packagePrice || 0),
         0,
       );
-      const avgCapacity =
-        totalReferenceBookings > 0
-          ? Math.round(
-              data.reduce((sum, b) => sum + (b.packageCapacity || 0), 0) /
-                totalReferenceBookings,
-            )
-          : 0;
+
+      // Calculate ranking by reference name using getUserWalletName
+      const referenceRevenueCounts = data.reduce(
+        (acc, booking) => {
+          // Create a reference object for getUserWalletName (same as ReferenceBookingRow)
+          const reference = {
+            role: booking.role,
+            note: booking.note,
+            teacher: booking.teacherName ? { name: booking.teacherName } : null
+          };
+          
+          const referenceName = getUserWalletName(reference);
+          acc[referenceName] = (acc[referenceName] || 0) + (booking.packagePrice || 0);
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      const allReferenceRankings = Object.entries(referenceRevenueCounts)
+        .sort(([, a], [, b]) => b - a)
+        .map(([name, revenue], index) => ({
+          label: `${index + 1}. ${name}`,
+          value: `€${revenue}`,
+        }));
 
       return [
         buildStat(
-          "Total Referenced Bookings",
-          totalReferenceBookings,
-          createSubStats(
-            ["Teacher", "Reference", "Others"],
-            [teacherBookings, referenceBookings, otherBookings],
-          ),
-        ),
-        buildStat(
-          "Revenue & Capacity",
+          "Total Revenue",
           `€${totalReferenceRevenue}`,
-          createSubStats(
-            ["Avg Capacity", "Avg Revenue"],
-            [
-              `${avgCapacity} students`,
-              totalReferenceBookings > 0
-                ? `€${Math.round(totalReferenceRevenue / totalReferenceBookings)}`
-                : "€0",
-            ],
-          ),
+          allReferenceRankings,
         ),
       ];
 
