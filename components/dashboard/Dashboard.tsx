@@ -19,6 +19,7 @@ import { getEntitySorter, type SortConfig } from "./DashboardSorting";
 import { getEntityModal } from "./DashboardGetEntityModal";
 import { getEntityDropdownForm } from "./DashboardGetEntityDropdownForm";
 import { DashboardHeader } from "./DashboardHeader";
+import { calcLessonRevenue } from "@/backend/CalcLessonRevenue";
 
 interface Stat {
   description: string;
@@ -387,42 +388,8 @@ export function Dashboard({
         const completedBookings = data.filter((b) => b.status === "completed").length;
         const uncompletedBookings = data.filter((b) => b.status === "uncomplete").length;
 
-        // Calculate total hours and revenue
-        const totalHours = data.reduce((sum, booking) => {
-          return sum + (booking.package?.duration || 0);
-        }, 0);
-
-        const totalRevenue = data.reduce((sum, booking) => {
-          const studentsCount = booking.students?.length || 0;
-          const pricePerStudent = booking.package?.price_per_student || 0;
-          return sum + studentsCount * pricePerStudent;
-        }, 0);
-
-        // Calculate teacher earnings from all lessons
-        const teacherEarnings = data.reduce((sum, booking) => {
-          if (!booking.lessons || booking.lessons.length === 0) return sum;
-
-          return (
-            sum +
-            booking.lessons.reduce((lessonSum, lesson) => {
-              if (lesson.events && lesson.commission) {
-                // Calculate total event duration for this lesson
-                const totalEventDuration = lesson.events.reduce((eventSum, event) => {
-                  return eventSum + (event.duration || 0);
-                }, 0);
-
-                // Convert minutes to hours and multiply by commission rate
-                const hoursWorked = totalEventDuration / 60;
-                const commissionRate = lesson.commission.price_per_hour || 0;
-                return lessonSum + hoursWorked * commissionRate;
-              }
-              return lessonSum;
-            }, 0)
-          );
-        }, 0);
-
-        // School earnings = total revenue - teacher earnings
-        const schoolEarnings = totalRevenue - teacherEarnings;
+        // Use centralized revenue calculation
+        const revenueBreakdown = calcLessonRevenue(data);
 
         return [
           {
@@ -435,12 +402,12 @@ export function Dashboard({
             ],
           },
           {
-            description: "Total Hours",
-            value: `${Math.round(totalHours / 60)}h`,
+            description: "Money Made",
+            value: `€${Math.round(revenueBreakdown.moneyMade)}`,
             subStats: [
-              { label: "School Revenue", value: `€${totalRevenue}` },
-              { label: "Teacher Earnings", value: `€${Math.round(teacherEarnings)}` },
-              { label: "School Earnings", value: `€${Math.round(schoolEarnings)}` },
+              { label: "Expected School Revenue", value: `€${revenueBreakdown.revenue}` },
+              { label: "Teacher Earnings", value: `€${Math.round(revenueBreakdown.teacher)}` },
+              { label: "School Earnings", value: `€${Math.round(revenueBreakdown.school)}` },
             ],
           },
         ];

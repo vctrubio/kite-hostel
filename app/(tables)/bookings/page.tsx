@@ -22,10 +22,10 @@ export default async function BookingPage() {
       ],
     },
     {
-      description: "Total Hours",
-      value: "0h", // Will be calculated dynamically
+      description: "Money Made",
+      value: "€0", // Will be calculated dynamically
       subStats: [
-        { label: "School Revenue", value: "€0" },
+        { label: "Expected School Revenue", value: "€0" },
         { label: "Teacher Earnings", value: "€0" },
         { label: "School Earnings", value: "€0" },
       ],
