@@ -14,7 +14,6 @@ export default async function PackagesPage() {
       entityName="Package"
       rowComponent={PackageRow}
       data={packages}
-      stats={[]}
       isFilterRangeSelected={false}
       isDropdown={true}
     />

@@ -47,7 +47,25 @@ export async function getPackageById(id: string): Promise<{ data: PackageWithRel
       where: eq(PackageStudent.id, id),
       with: {
         bookings: {
-          columns: { id: true },
+          with: {
+            students: {
+              with: {
+                student: true,
+              },
+            },
+            lessons: {
+              with: {
+                events: true,
+                teacher: true,
+                commission: true,
+              },
+            },
+            reference: {
+              with: {
+                teacher: true,
+              },
+            },
+          },
         },
       },
     });
