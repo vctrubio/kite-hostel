@@ -1,9 +1,12 @@
 /**
- * Revenue calculation utilities for lessons and bookings
+ * Revenue calculation utilities for bookings
  * Centralizes revenue, teacher earnings, and school earnings calculations
  */
 
-interface LessonRevenue {
+// Helper function for consistent rounding
+const roundCurrency = (amount: number): number => Math.round(amount);
+
+interface BookingRevenue {
   revenue: number;      // Total revenue from all bookings (expected/potential)
   teacher: number;      // Teacher earnings from lessons that happened (have events)
   school: number;       // School earnings from lessons that happened (revenue from events - teacher)
@@ -15,7 +18,7 @@ interface LessonRevenue {
  * @param bookings Array of booking objects with lessons, students, packages, and commissions
  * @returns Object with revenue, teacher earnings, and school earnings
  */
-export function calcLessonRevenue(bookings: any[]): LessonRevenue {
+export function calcBookingRevenue(bookings: any[]): BookingRevenue {
   // Calculate total revenue from all bookings
   const revenue = bookings.reduce((sum, booking) => {
     const studentsCount = booking.students?.length || 0;
@@ -81,10 +84,10 @@ export function calcLessonRevenue(bookings: any[]): LessonRevenue {
   }, 0);
 
   return {
-    revenue,
-    teacher,
-    school,
-    moneyMade: teacher + school,
+    revenue: roundCurrency(revenue),
+    teacher: roundCurrency(teacher),
+    school: roundCurrency(school),
+    moneyMade: roundCurrency(teacher + school),
   };
 }
 
