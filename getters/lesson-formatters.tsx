@@ -1,5 +1,58 @@
-import { HeadsetIcon, FlagIcon } from "@/svgs";
+import { HeadsetIcon, FlagIcon, KiteIcon } from "@/svgs";
 import { Duration } from "@/components/formatters/Duration";
+import { Clock } from "lucide-react";
+
+interface LessonCountWithEventProps {
+  lesson?: any;
+  lessons?: any[];
+  lessonCount?: number;
+  eventCount?: number;
+  totalEventMinutes?: number;
+  showLesson?: boolean;
+}
+
+export function LessonCountWithEvent({ 
+  lesson, 
+  lessons, 
+  lessonCount: directLessonCount,
+  eventCount: directEventCount,
+  totalEventMinutes: directTotalEventMinutes,
+  showLesson = true 
+}: LessonCountWithEventProps) {
+  // Calculate stats based on what's passed
+  let lessonCount = directLessonCount || 0;
+  let eventCount = directEventCount || 0;
+  let totalEventMinutes = directTotalEventMinutes || 0;
+
+  if (lesson) {
+    // Single lesson mode (for LessonRow)
+    lessonCount = 1;
+    eventCount = lesson.events?.length || 0;
+    totalEventMinutes = lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0;
+  } else if (lessons) {
+    // Multiple lessons mode (for dashboard stats)
+    lessonCount = lessons.length;
+    eventCount = lessons.reduce((sum, l) => sum + (l.events?.length || 0), 0);
+    totalEventMinutes = lessons.reduce((sum, l) => 
+      sum + (l.events?.reduce((eventSum: number, event: any) => eventSum + (event.duration || 0), 0) || 0), 0
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {showLesson && (
+        <>
+          <FlagIcon className="w-4 h-4" />
+          <span>{lessonCount}</span>
+        </>
+      )}
+      <KiteIcon className="w-4 h-4" />
+      <span>{eventCount}</span>
+      <Clock className="w-4 h-4" />
+      <span>{Math.round(totalEventMinutes / 60)}h</span>
+    </div>
+  );
+}
 
 interface LessonFormatterProps {
   lessons: any[];

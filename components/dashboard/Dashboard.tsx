@@ -19,46 +19,8 @@ import { getEntitySorter, type SortConfig } from "./DashboardSorting";
 import { getEntityModal } from "./DashboardGetEntityModal";
 import { getEntityDropdownForm } from "./DashboardGetEntityDropdownForm";
 import { DashboardHeader } from "./DashboardHeader";
-import { calcBookingRevenue } from "@/backend/CalcBookingRevenue";
-import { calcLessonStats } from "@/backend/CalcLessonStats";
+import { getDashboardStats } from "./DashboardGetStats";
 
-// Helper function for common status filtering
-const getStatusCounts = (data: any[], statuses: string[]) => {
-  return statuses.map(status => data.filter(item => item.status === status).length);
-};
-
-// Helper function to build stats objects
-const buildStat = (description: string, value: number | string, subStats: Array<{label: string, value: number | string}>) => ({
-  description,
-  value,
-  subStats
-});
-
-// Helper function to create subStat objects
-const createSubStats = (labels: string[], values: (number | string)[]) => {
-  return labels.map((label, index) => ({ label, value: values[index] }));
-};
-
-// Specialized helpers for student filtering
-const getStudentBookingCounts = (students: any[]) => {
-  const withActiveBookings = students.filter((s) =>
-    s.bookings?.some((b: any) => b.status === "active")
-  ).length;
-  const withCompletedBookings = students.filter((s) =>
-    s.bookings?.some((b: any) => b.status === "completed")
-  ).length;
-  const withNoBookings = students.filter((s) =>
-    !s.bookings || s.bookings.length === 0
-  ).length;
-  
-  return { withActiveBookings, withCompletedBookings, withNoBookings };
-};
-
-const getLocalityBreakdown = (students: any[]) => {
-  const local = students.filter((s) => s.country === "Spain").length;
-  const foreign = students.length - local;
-  return { local, foreign };
-};
 
 interface Stat {
   description: string;
@@ -71,7 +33,6 @@ interface Stat {
 
 interface DashboardProps {
   entityName: string;
-  stats: Stat[];
   rowComponent: React.ComponentType<any>;
   data: any[];
   actionsPlaceholder?: React.ReactNode;
@@ -84,21 +45,22 @@ type CustomFilterValue = string;
 
 // Sub-component: Stats Grid
 function StatsGrid({ stats }: { stats: Stat[] }) {
-  const gridClass = `grid grid-cols-1 gap-4 ${stats.length === 2
-    ? "md:grid-cols-2"
-    : stats.length === 3
-      ? "md:grid-cols-3"
-      : stats.length >= 4
-        ? "md:grid-cols-2 lg:grid-cols-4"
-        : "md:grid-cols-1"
-    }`;
+  const gridClass = `grid grid-cols-1 gap-4 ${
+    stats.length === 2
+      ? "md:grid-cols-2"
+      : stats.length === 3
+        ? "md:grid-cols-3"
+        : stats.length >= 4
+          ? "md:grid-cols-2 lg:grid-cols-4"
+          : "md:grid-cols-1"
+  }`;
 
   return (
     <div className={gridClass}>
       {stats.map((stat, index) => (
         <Card key={index}>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-foreground">
+            <div className={`${typeof stat.value === 'object' ? '' : 'text-2xl'} font-bold text-foreground`}>
               {stat.value}
             </div>
             <p className="text-sm font-medium text-muted-foreground mb-3">
@@ -110,12 +72,12 @@ function StatsGrid({ stats }: { stats: Stat[] }) {
                 {stat.subStats.map((subStat, subIndex) => (
                   <div
                     key={subIndex}
-                    className="flex justify-between items-center"
+                    className="grid grid-cols-[1fr_auto] gap-4 items-center"
                   >
                     <span className="text-xs text-muted-foreground/80">
                       {subStat.label}
                     </span>
-                    <span className="text-sm font-semibold text-foreground">
+                    <span className={`${typeof subStat.value === 'object' ? '' : 'text-sm'} font-semibold text-foreground`}>
                       {subStat.value}
                     </span>
                   </div>
@@ -224,7 +186,6 @@ function DataTable({
 
 export function Dashboard({
   entityName,
-  stats,
   rowComponent: RowComponent,
   data,
   actionsPlaceholder,
@@ -233,15 +194,18 @@ export function Dashboard({
   formProps,
 }: DashboardProps) {
   // Memoized entity configs and utilities
-  const entityConfig = useMemo(() => ({
-    entity: getEntityConfig(entityName),
-    tableHeaders: getEntityColumnHeaders(entityName),
-    customFilters: getEntityFilterConfig(entityName),
-    searchFunction: getEntitySearchFunction(entityName),
-    sorter: getEntitySorter(entityName),
-    EntityModal: getEntityModal(entityName),
-    EntityDropdownForm: getEntityDropdownForm(entityName),
-  }), [entityName]);
+  const entityConfig = useMemo(
+    () => ({
+      entity: getEntityConfig(entityName),
+      tableHeaders: getEntityColumnHeaders(entityName),
+      customFilters: getEntityFilterConfig(entityName),
+      searchFunction: getEntitySearchFunction(entityName),
+      sorter: getEntitySorter(entityName),
+      EntityModal: getEntityModal(entityName),
+      EntityDropdownForm: getEntityDropdownForm(entityName),
+    }),
+    [entityName],
+  );
 
   // Date utilities
   const currentDate = new Date();
@@ -253,7 +217,7 @@ export function Dashboard({
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState({
     month: currentMonth,
-    filterEnabled: isFilterRangeSelected
+    filterEnabled: isFilterRangeSelected,
   });
 
   const handleMonthChange = (newMonth: string) => {
@@ -267,16 +231,22 @@ export function Dashboard({
     if (savedMonth) {
       try {
         const parsed = JSON.parse(savedMonth);
-        if (parsed && typeof parsed === 'object' && parsed.month) {
+        if (parsed && typeof parsed === "object" && parsed.month) {
           setSelectedMonth(parsed);
           setFilterEnabled(parsed.filterEnabled ?? isFilterRangeSelected);
         } else {
           // Handle old string format
-          setSelectedMonth({ month: savedMonth, filterEnabled: isFilterRangeSelected });
+          setSelectedMonth({
+            month: savedMonth,
+            filterEnabled: isFilterRangeSelected,
+          });
         }
       } catch {
         // Handle old string format
-        setSelectedMonth({ month: savedMonth, filterEnabled: isFilterRangeSelected });
+        setSelectedMonth({
+          month: savedMonth,
+          filterEnabled: isFilterRangeSelected,
+        });
       }
     }
   }, [entityName, isFilterRangeSelected]);
@@ -351,7 +321,9 @@ export function Dashboard({
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter((item) => entityConfig.searchFunction(item, searchTerm));
+      filtered = filtered.filter((item) =>
+        entityConfig.searchFunction(item, searchTerm),
+      );
     }
 
     return filtered;
@@ -382,78 +354,10 @@ export function Dashboard({
     isDropdownFormOpen,
   );
 
-  const calculateEntityStats = (entityType: string, data: any[]) => {
-    switch (entityType.toLowerCase()) {
-      case "student":
-        const totalStudents = data.length;
-        const { local, foreign } = getLocalityBreakdown(data);
-        const { withActiveBookings, withCompletedBookings, withNoBookings } = getStudentBookingCounts(data);
-
-        return [
-          buildStat("Total Students", totalStudents, 
-            createSubStats(["Local (Spain)", "Foreign"], [local, foreign])
-          ),
-          buildStat("Active Bookings", withActiveBookings,
-            createSubStats(["Completed Bookings", "Students with No Bookings"], [withCompletedBookings, withNoBookings])
-          ),
-        ];
-
-      case "booking":
-        const totalBookings = data.length;
-        const [activeBookings, completedBookings, uncompletedBookings] = getStatusCounts(data, ["active", "completed", "uncomplete"]);
-        const revenueBreakdown = calcBookingRevenue(data);
-
-        return [
-          buildStat("Total Bookings", totalBookings,
-            createSubStats(["Active", "Completed", "Uncompleted"], [activeBookings, completedBookings, uncompletedBookings])
-          ),
-          buildStat("Money Made", `€${revenueBreakdown.moneyMade}`,
-            createSubStats(
-              ["Expected School Revenue", "Teacher Earnings", "School Earnings"], 
-              [`€${revenueBreakdown.revenue}`, `€${revenueBreakdown.teacher}`, `€${revenueBreakdown.school}`]
-            )
-          ),
-        ];
-
-      case "lesson":
-        const totalLessons = data.length;
-        const [plannedLessons, completedLessons, restLessons, delegatedLessons] = getStatusCounts(data, ["planned", "completed", "rest", "delegated"]);
-        const lessonStats = calcLessonStats(data);
-
-        return [
-          buildStat("Total Lessons", totalLessons,
-            createSubStats(["Planned", "Completed", "Rest", "Delegated"], [plannedLessons, completedLessons, restLessons, delegatedLessons])
-          ),
-          buildStat("Hours", `${lessonStats.totalHours}h`,
-            createSubStats(
-              ["Private", "Semi-private", "Group"], 
-              [`${lessonStats.privateHours}h`, `${lessonStats.semiPrivate}h`, `${lessonStats.group}h`]
-            )
-          ),
-        ];
-      
-      default:
-        // For other entities, use the original stats template but update values based on filtered data
-        const newStats = stats.map((stat) => {
-          const newStat = { ...stat };
-          if (stat.subStats) {
-            newStat.subStats = stat.subStats.map((sub) => ({ ...sub }));
-          }
-          return newStat;
-        });
-
-        if (newStats.length > 0) {
-          newStats[0].value = data.length;
-        }
-
-        return newStats;
-    }
-  };
 
   const dynamicStats = useMemo(() => {
-    if (!stats) return [];
-    return calculateEntityStats(entityName, filteredData);
-  }, [stats, filteredData, entityName]);
+    return getDashboardStats(entityName, filteredData);
+  }, [entityName, filteredData]);
 
   const handleToggleFilter = () => {
     const newFilterEnabled = !filterEnabled;
@@ -499,14 +403,16 @@ export function Dashboard({
           <div className="space-y-4">{actionsPlaceholder}</div>
         )}
 
-        {isDropdown && isDropdownFormOpen && entityConfig.EntityDropdownForm && (
-          <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-muted">
-            <entityConfig.EntityDropdownForm
-              onSubmit={() => setIsDropdownFormOpen(false)}
-              {...formProps}
-            />
-          </div>
-        )}
+        {isDropdown &&
+          isDropdownFormOpen &&
+          entityConfig.EntityDropdownForm && (
+            <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-muted">
+              <entityConfig.EntityDropdownForm
+                onSubmit={() => setIsDropdownFormOpen(false)}
+                {...formProps}
+              />
+            </div>
+          )}
 
         <DataTable
           tableHeaders={entityConfig.tableHeaders}

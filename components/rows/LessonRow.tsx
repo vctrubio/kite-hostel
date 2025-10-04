@@ -9,10 +9,10 @@ import {
   Commission,
 } from "@/drizzle/migrations/schema";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Send } from "lucide-react";
+import { ChevronDown, ChevronUp, Send, Clock } from "lucide-react";
 import { Duration } from "@/components/formatters/Duration";
 import { getStatusColors, ENTITY_DATA } from "@/lib/constants";
-import { EventCountWithDuration } from "@/getters/event-getters";
+import { LessonCountWithEvent } from "@/getters/lesson-formatters";
 import { DropdownExpandableRow } from "./DropdownExpandableRow";
 import { PackageDetails } from "@/getters/package-details";
 import { KiteIcon } from "@/svgs";
@@ -64,15 +64,14 @@ export function LessonRow({
     }
   };
 
-  // Calculate total event duration
-  const totalEventMinutes = lesson.events.reduce(
-    (sum, event) => sum + event.duration,
-    0,
-  );
-  const eventCount = lesson.events.length;
 
   // Get students from booking
-  const students = lesson.booking?.students?.map((bs) => bs.student.name) || [];
+  const students = lesson.booking?.students?.map((bs) => {
+    const fullName = bs.student.last_name 
+      ? `${bs.student.name} ${bs.student.last_name}`
+      : bs.student.name;
+    return fullName;
+  }) || [];
 
   // Get entities for colors
   const bookingEntity = ENTITY_DATA.find(entity => entity.name === "Booking");
@@ -93,9 +92,9 @@ export function LessonRow({
           {students.length > 0 ? students.join(", ") : "No students"}
         </td>
         <td className="py-2 px-4 text-left">
-          <EventCountWithDuration 
-            eventCount={eventCount}
-            totalHours={totalEventMinutes / 60}
+          <LessonCountWithEvent 
+            lesson={lesson}
+            showLesson={false}
           />
         </td>
         <td className="py-2 px-4 text-left">
@@ -192,6 +191,8 @@ export function LessonRow({
                   ))}
                 </div>
                 <span>Events</span>
+                <Clock className="w-4 h-4" />
+                <span>{Math.round(lesson.events.reduce((sum, event) => sum + (event.duration || 0), 0) / 60)}h</span>
               </div>
             ),
             color: eventEntity?.color || "text-teal-500",
