@@ -22,29 +22,35 @@ export function BookingReferenceTable({
   selectedReferenceId,
 }: ReferenceBookingTableProps) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-muted/50">
           <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
               Role
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
               Name
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-border bg-card">
           {userWallets.map((wallet) => (
             <tr
               key={wallet.id}
-              className={`cursor-pointer hover:bg-gray-100 ${selectedReferenceId === wallet.id ? 'bg-blue-100' : ''}`}
+              className={`cursor-pointer transition-all duration-200 ${
+                selectedReferenceId === wallet.id 
+                  ? 'bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary' 
+                  : 'hover:bg-muted/30'
+              }`}
               onClick={() => onSelectReference(selectedReferenceId === wallet.id ? null : wallet.id)}
             >
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {wallet.role}
+              <td className="px-6 py-4 text-sm font-semibold text-foreground">
+                <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                  {wallet.role}
+                </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-4 text-sm text-foreground">
                 {(wallet.role === "teacher" || wallet.role === "teacherAdmin") 
                   ? (wallet.teacher_name || "N/A")
                   : (wallet.note || "N/A")

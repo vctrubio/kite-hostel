@@ -7,57 +7,81 @@
 @layer base {
   :root {
   font-family: "Noto Sans JP", "Noto Sans", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
-    --background: 30 15% 96%;
-    --foreground: 25 20% 20%;
-    --card: 30 20% 98%;
-    --card-foreground: 25 20% 20%;
+    /* Ultra-clean background with hint of ocean */
+    --background: 205 25% 97%;
+    /* Rich navy text for premium feel */
+    --foreground: 215 35% 12%;
+    /* Cards: Pure white with subtle teal hint */
+    --card: 180 15% 99%;
+    --card-foreground: 215 35% 12%;
+    /* Popovers: Elevated white */
     --popover: 0 0% 100%;
-    --popover-foreground: 25 20% 20%;
-    --primary: 15 80% 85%;
-    --primary-foreground: 15 50% 20%;
-    --secondary: 35 30% 92%;
-    --secondary-foreground: 25 20% 20%;
-    --muted: 35 25% 88%;
-    --muted-foreground: 30 8% 55%;
-    --accent: 35 30% 92%;
-    --accent-foreground: 25 20% 20%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 35 20% 85%;
-    --input: 35 20% 85%;
-    --ring: 30 50% 60%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --popover-foreground: 215 35% 12%;
+    /* Primary: North's signature teal - punchy & confident */
+    --primary: 168 92% 38%;
+    --primary-foreground: 0 0% 100%;
+    /* Secondary: Sophisticated blue-gray */
+    --secondary: 210 18% 90%;
+    --secondary-foreground: 215 30% 18%;
+    /* Muted: Refined cool gray with depth */
+    --muted: 210 15% 88%;
+    --muted-foreground: 215 12% 42%;
+    /* Accent: Soft teal glow */
+    --accent: 168 85% 92%;
+    --accent-foreground: 168 95% 28%;
+    /* Destructive: Coral red (less harsh) */
+    --destructive: 0 78% 48%;
+    --destructive-foreground: 0 0% 100%;
+    /* Borders: Delicate with teal undertone */
+    --border: 205 18% 86%;
+    --input: 205 18% 86%;
+    /* Ring: Electric teal focus */
+    --ring: 168 92% 38%;
+    /* Charts: Premium ocean gradient */
+    --chart-1: 168 92% 38%;
+    --chart-2: 195 85% 45%;
+    --chart-3: 215 78% 40%;
+    --chart-4: 180 82% 48%;
+    --chart-5: 155 75% 45%;
     --radius: 0.5rem;
   }
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 35 25% 88%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 35 25% 88%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 35 25% 88%;
-    --primary: 15 70% 70%;
-    --primary-foreground: 15 30% 15%;
-    --secondary: 35 15% 25%;
-    --secondary-foreground: 35 25% 88%;
-    --muted: 35 20% 22%;
-    --muted-foreground: 30 10% 70%;
-    --accent: 35 15% 25%;
-    --accent-foreground: 35 25% 88%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 35 15% 30%;
-    --input: 35 15% 30%;
-    --ring: 30 40% 70%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Deep oceanic abyss - rich & immersive */
+    --background: 218 35% 8%;
+    /* Bright, crisp text for clarity */
+    --foreground: 205 25% 92%;
+    /* Cards: Elevated surface with depth */
+    --card: 218 30% 12%;
+    --card-foreground: 205 25% 92%;
+    /* Popovers: Premium elevated surface */
+    --popover: 218 28% 14%;
+    --popover-foreground: 205 25% 92%;
+    /* Primary: Glowing teal that dominates */
+    --primary: 168 88% 48%;
+    --primary-foreground: 218 35% 8%;
+    /* Secondary: Deep water blue-gray */
+    --secondary: 215 25% 18%;
+    --secondary-foreground: 205 25% 92%;
+    /* Muted: Mid-tone depth */
+    --muted: 215 20% 22%;
+    --muted-foreground: 210 15% 62%;
+    /* Accent: Electric teal glow */
+    --accent: 168 75% 22%;
+    --accent-foreground: 168 90% 75%;
+    /* Destructive: Warm coral for dark mode */
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 205 25% 92%;
+    /* Borders: Subtle underwater tones */
+    --border: 215 22% 20%;
+    --input: 215 22% 20%;
+    /* Ring: Bright electric teal glow */
+    --ring: 168 92% 52%;
+    /* Charts: Luminous ocean palette */
+    --chart-1: 168 88% 52%;
+    --chart-2: 195 82% 58%;
+    --chart-3: 215 75% 55%;
+    --chart-4: 180 78% 62%;
+    --chart-5: 155 72% 58%;
   }
 }
 
@@ -66,29 +90,166 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
+  
+  /* Premium selection with teal glow */
   ::selection {
-    background-color: hsl(30 50% 85%);
-    color: hsl(25 20% 20%);
+    background-color: hsl(168 82% 82%);
+    color: hsl(215 35% 12%);
   }
   .dark ::selection {
-    background-color: hsl(30 40% 40%);
-    color: hsl(35 25% 88%);
+    background-color: hsl(168 88% 38%);
+    color: hsl(218 35% 8%);
   }
-  /* Warm shadows for light mode */
-  .shadow,
-  .shadow-sm,
-  .shadow-md,
+  
+  /* Enhanced shadow system with depth */
+  .shadow-sm {
+    box-shadow: 0 1px 2px 0 hsl(215 30% 50% / 0.08);
+  }
+  .shadow {
+    box-shadow: 0 1px 3px 0 hsl(215 30% 50% / 0.1), 0 1px 2px -1px hsl(215 30% 50% / 0.1);
+  }
+  .shadow-md {
+    box-shadow: 0 4px 6px -1px hsl(215 30% 50% / 0.12), 0 2px 4px -2px hsl(215 30% 50% / 0.1);
+  }
   .shadow-lg {
-    --tw-shadow-color: hsl(30 20% 70% / 0.15);
-    --tw-shadow: var(--tw-shadow-colored);
+    box-shadow: 0 10px 15px -3px hsl(215 30% 50% / 0.15), 0 4px 6px -4px hsl(215 30% 50% / 0.1);
   }
-  .dark .shadow,
-  .dark .shadow-sm,
-  .dark .shadow-md,
+  .shadow-xl {
+    box-shadow: 0 20px 25px -5px hsl(215 30% 50% / 0.18), 0 8px 10px -6px hsl(215 30% 50% / 0.1);
+  }
+  
+  .dark .shadow-sm {
+    box-shadow: 0 1px 2px 0 hsl(218 45% 0% / 0.3);
+  }
+  .dark .shadow {
+    box-shadow: 0 1px 3px 0 hsl(218 45% 0% / 0.4), 0 1px 2px -1px hsl(218 45% 0% / 0.35);
+  }
+  .dark .shadow-md {
+    box-shadow: 0 4px 6px -1px hsl(218 45% 0% / 0.45), 0 2px 4px -2px hsl(218 45% 0% / 0.4);
+  }
   .dark .shadow-lg {
-    --tw-shadow-color: hsl(0 0% 0% / 0.3);
-    --tw-shadow: var(--tw-shadow-colored);
+    box-shadow: 0 10px 15px -3px hsl(218 45% 0% / 0.5), 0 4px 6px -4px hsl(218 45% 0% / 0.45);
+  }
+  .dark .shadow-xl {
+    box-shadow: 0 20px 25px -5px hsl(218 45% 0% / 0.55), 0 8px 10px -6px hsl(218 45% 0% / 0.5);
+  }
+  
+  /* Teal accent glow for special elements */
+  .glow-teal {
+    box-shadow: 0 0 20px hsl(168 92% 38% / 0.3);
+  }
+  .dark .glow-teal {
+    box-shadow: 0 0 30px hsl(168 88% 48% / 0.4);
+  }
+  
+  /* Smooth focus states with teal ring */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    transition: outline-offset 0.2s ease;
+  }
+  
+  /* Premium scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 5px;
+    transition: background 0.2s ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.6);
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.8);
+  }
+}
+
+@layer utilities {
+  /* Premium gradient backgrounds */
+  .bg-gradient-ocean {
+    background: linear-gradient(135deg, hsl(168 92% 38%) 0%, hsl(195 85% 45%) 100%);
+  }
+  .dark .bg-gradient-ocean {
+    background: linear-gradient(135deg, hsl(168 88% 48%) 0%, hsl(195 82% 58%) 100%);
+  }
+  
+  .bg-gradient-depth {
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+  }
+  
+  /* Teal accent utilities */
+  .text-teal {
+    color: hsl(168 92% 38%);
+  }
+  .dark .text-teal {
+    color: hsl(168 88% 52%);
+  }
+  
+  .bg-teal {
+    background-color: hsl(168 92% 38%);
+  }
+  .dark .bg-teal {
+    background-color: hsl(168 88% 48%);
+  }
+  
+  .border-teal {
+    border-color: hsl(168 92% 38%);
+  }
+  .dark .border-teal {
+    border-color: hsl(168 88% 52%);
+  }
+  
+  /* Enhanced status badges with better contrast */
+  .badge-status {
+    @apply px-3 py-1 rounded-full text-sm font-medium transition-all duration-200;
+  }
+  
+  /* Premium card styles */
+  .card-premium {
+    @apply bg-card border border-border rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
+  }
+  .dark .card-premium {
+    @apply border-border/50;
+  }
+  
+  /* Subtle hover lift effect */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Glass morphism effect */
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .dark .glass {
+    background: hsl(var(--card) / 0.5);
+  }
+  
+  /* Teal accent border on hover */
+  .hover-teal-border {
+    @apply transition-all duration-300;
+  }
+  .hover-teal-border:hover {
+    border-color: hsl(168 92% 38%);
+  }
+  .dark .hover-teal-border:hover {
+    border-color: hsl(168 88% 52%);
   }
 }

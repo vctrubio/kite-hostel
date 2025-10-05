@@ -115,74 +115,6 @@ function EntityManagement() {
   );
 }
 
-function SecondaryRoutes() {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-      <Link
-        href="/references/form"
-        className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
-      >
-        <h4 className="font-semibold text-slate-700 dark:text-slate-300">
-          Connect Wallet
-        </h4>
-        <p className="text-xs text-muted-foreground">
-          User wallet management
-        </p>
-      </Link>
-
-      <Link
-        href="/forms"
-        className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
-      >
-        <h4 className="font-semibold text-slate-700 dark:text-slate-300">
-          Forms
-        </h4>
-        <p className="text-xs text-muted-foreground">Student forms</p>
-      </Link>
-
-      <Link
-        href="/invitation"
-        className="block p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-all"
-      >
-        <h4 className="font-semibold text-slate-700 dark:text-slate-300">
-          Invitation
-        </h4>
-        <p className="text-xs text-muted-foreground">Guest page</p>
-      </Link>
-    </div>
-  );
-}
-
-function DevelopmentRoutes() {
-  const devRoutes = [
-    { href: "/dev", label: "/dev" },
-    { href: "/teachers", label: "/teachers" },
-    { href: "/whiteboard", label: "/whiteboard" },
-    { href: "/user", label: "/user" },
-    { href: "/auth/login", label: "/auth" },
-    { href: "/page2", label: "/page2" },
-    { href: "/api", label: "/api" },
-  ];
-
-  return (
-    <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-      <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-        Development & Prototype Routes
-      </h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-        {devRoutes.map((route) => (
-          <Link
-            key={route.href}
-            href={route.href}
-            className="block p-2 text-xs border border-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-          >
-            <span className="font-mono">{route.label}</span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function UserStatus({ role, name }: { role: string; name: string }) {
   return (
@@ -268,8 +200,6 @@ export default async function WelcomePage() {
         <div className="grid gap-4 max-w-4xl">
           <PrimaryRoutes role={role} />
           <EntityManagement />
-          <SecondaryRoutes />
-          <DevelopmentRoutes />
           <UserStatus role={role} name={name} />
         </div>
 

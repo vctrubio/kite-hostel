@@ -72,72 +72,76 @@ export function BookingPackageTable({ packages, onSelectPackage, selectedPackage
     return sortOrder === 'asc' ? '↑' : '↓';
   };
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-muted/50">
           <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
               Description
             </th>
             <th 
               scope="col" 
-              className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              className="px-4 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
               onClick={() => handleSort('capacity')}
             >
               Capacity {getSortIcon('capacity')}
             </th>
             <th 
               scope="col" 
-              className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              className="px-4 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
               onClick={() => handleSort('kites')}
             >
               Kites {getSortIcon('kites')}
             </th>
             <th 
               scope="col" 
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
               onClick={() => handleSort('duration')}
             >
-              Duration (hours) {getSortIcon('duration')}
+              Duration {getSortIcon('duration')}
             </th>
             <th 
               scope="col" 
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
               onClick={() => handleSort('price')}
             >
-              Price (€) {getSortIcon('price')}
+              Price {getSortIcon('price')}
             </th>
             <th 
               scope="col" 
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide"
             >
-              Price/hour (€)
+              Per Hour
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-border bg-card">
           {sortedPackages.map((pkg) => (
             <tr
               key={pkg.id}
-              className={`cursor-pointer hover:bg-gray-100 ${selectedPackageId === pkg.id ? 'bg-blue-100' : ''}`}
+              className={`cursor-pointer transition-all duration-200 ${
+                selectedPackageId === pkg.id 
+                  ? 'bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary' 
+                  : 'hover:bg-muted/30'
+              }`}
               onClick={() => onSelectPackage(selectedPackageId === pkg.id ? "" : pkg.id)}
             >
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              <td className="px-6 py-4 text-sm font-semibold text-foreground">
                 {pkg.description}
               </td>
-              <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-4 py-4 text-sm font-medium text-foreground">
                 {pkg.capacity_students}
               </td>
-              <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-4 py-4 text-sm font-medium text-foreground">
                 {pkg.capacity_kites}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-4 text-sm text-muted-foreground">
                 <Duration minutes={pkg.duration} />
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-4 text-sm font-semibold text-primary">
                 €{pkg.price_per_student}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-4 text-sm text-muted-foreground">
                 €{(pkg.price_per_student / (pkg.duration / 60)).toFixed(2)}/h
               </td>
             </tr>

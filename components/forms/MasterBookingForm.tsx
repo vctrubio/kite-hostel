@@ -54,18 +54,18 @@ const Section = ({
 }) => (
   <div id={id} className="scroll-mt-4">
     <div
-      className="flex items-center justify-between cursor-pointer p-3 rounded-lg hover:bg-muted"
+      className="flex items-center justify-between cursor-pointer p-4 rounded-lg bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all duration-200"
       onClick={() => onToggle(id)}
     >
-      <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-        {Icon && <Icon className={`h-5 w-5 ${iconColor}`} />}
+      <h2 className="text-lg font-semibold text-foreground flex items-center gap-3">
+        {Icon && <Icon className={`h-6 w-6 ${iconColor}`} />}
         {title}
       </h2>
-      <span className="text-sm text-muted-foreground">
+      <span className="text-lg font-bold text-primary">
         {isExpanded ? "−" : "+"}
       </span>
     </div>
-    {isExpanded && <div className="mt-3">{children}</div>}
+    {isExpanded && <div className="mt-4 p-4 bg-card rounded-lg border border-border shadow-sm">{children}</div>}
   </div>
 );
 
@@ -531,8 +531,8 @@ export default function MasterBookingForm({
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="lg:grid lg:grid-cols-5 lg:gap-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background p-4 lg:p-6">
+      <div className="lg:grid lg:grid-cols-5 lg:gap-8 max-w-7xl mx-auto">
         {/* Summary Sidebar */}
         <div className="lg:col-span-2 order-2 lg:order-1">
           <div className="lg:sticky lg:top-4 p-4">
@@ -559,8 +559,8 @@ export default function MasterBookingForm({
 
         {/* Form Content */}
         <div className="lg:col-span-3 order-1 lg:order-2">
-          <div className="bg-card">
-            <div className="p-4">
+          <div className="bg-card rounded-lg border border-border shadow-lg">
+            <div className="p-6">
               {/* Render the appropriate form based on activeForm */}
               {activeForm === "booking" && (
                 <div className="space-y-6">

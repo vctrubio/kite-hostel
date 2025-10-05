@@ -38,94 +38,101 @@ export function BookingStudentTable({
     ? sortedStudents.filter(student => availableStudents.has(student.id))
     : sortedStudents;
   return (
-    <div className="overflow-x-auto">
-      <div className="mb-4 flex gap-4">
+    <div className="space-y-4">
+      <div className="flex gap-3">
         <button
           onClick={() => setFilter('available')}
-          className={`px-4 py-2 rounded border ${
+          className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
             filter === 'available'
-              ? 'bg-indigo-600 text-white border-indigo-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border'
           }`}
         >
           Available ({availableStudents.size})
         </button>
         <button
           onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded border ${
+          className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
             filter === 'all'
-              ? 'bg-indigo-600 text-white border-indigo-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border'
           }`}
         >
           All ({students.length})
         </button>
       </div>
-      
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              First Name
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Last Name
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Languages
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Desc
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {filteredStudents.map((student) => (
-            <tr
-              key={student.id}
-              className={`cursor-pointer hover:bg-gray-100 ${
-                selectedStudentIds.includes(student.id) 
-                  ? 'bg-green-100' 
-                  : !availableStudents.has(student.id) 
-                    ? 'bg-red-50 opacity-60' 
-                    : ''
-              }`}
-              onClick={() => {
-                if (!availableStudents.has(student.id)) {
-                  alert('This student is not available for booking.');
-                  return;
-                }
-                
-                const isSelected = selectedStudentIds.includes(student.id);
-                if (!isSelected && selectedStudentIds.length >= packageCapacity) {
-                  alert(`You can only select up to ${packageCapacity} students for this package.`);
-                  return;
-                }
-                onSelectStudent(student.id);
-              }}
-            >
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {student.name}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {student.last_name || 'N/A'}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {student.languages.join(", ")}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {student.desc}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {availableStudents.has(student.id) ? 'Available' : 'Unavailable'}
-              </td>
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted/50">
+            <tr>
+              <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
+                First Name
+              </th>
+              <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
+                Last Name
+              </th>
+              <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
+                Languages
+              </th>
+              <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
+                Description
+              </th>
+              <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
+                Status
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-border bg-card">
+            {filteredStudents.map((student) => (
+              <tr
+                key={student.id}
+                className={`cursor-pointer transition-all duration-200 ${
+                  selectedStudentIds.includes(student.id) 
+                    ? 'bg-green-100 dark:bg-green-900/20 hover:bg-green-200 dark:hover:bg-green-900/30 border-l-4 border-l-green-600' 
+                    : !availableStudents.has(student.id) 
+                      ? 'bg-red-50 dark:bg-red-900/10 opacity-60 cursor-not-allowed' 
+                      : 'hover:bg-muted/30'
+                }`}
+                onClick={() => {
+                  if (!availableStudents.has(student.id)) {
+                    alert('This student is not available for booking.');
+                    return;
+                  }
+                  
+                  const isSelected = selectedStudentIds.includes(student.id);
+                  if (!isSelected && selectedStudentIds.length >= packageCapacity) {
+                    alert(`You can only select up to ${packageCapacity} students for this package.`);
+                    return;
+                  }
+                  onSelectStudent(student.id);
+                }}
+              >
+                <td className="px-6 py-4 text-sm font-semibold text-foreground">
+                  {student.name}
+                </td>
+                <td className="px-6 py-4 text-sm font-semibold text-foreground">
+                  {student.last_name || 'N/A'}
+                </td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">
+                  {student.languages.join(", ")}
+                </td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">
+                  {student.desc}
+                </td>
+                <td className="px-6 py-4 text-sm">
+                  <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                    availableStudents.has(student.id) 
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                  }`}>
+                    {availableStudents.has(student.id) ? 'Available' : 'Unavailable'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

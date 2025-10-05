@@ -34,26 +34,26 @@ export function BookingLessonTeacherTable({
   const selectedTeacher = teachers.find((t) => t.id === selectedTeacherId);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Teacher Selection */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted/50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
                 Teacher Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
                 Languages
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border bg-card">
             {teachers.length === 0 ? (
               <tr>
                 <td
                   colSpan={2}
-                  className="px-6 py-4 text-center text-sm text-gray-500"
+                  className="px-6 py-8 text-center text-sm text-muted-foreground"
                 >
                   No available teachers
                 </td>
@@ -62,7 +62,11 @@ export function BookingLessonTeacherTable({
               teachers.map((teacher) => (
                 <tr
                   key={teacher.id}
-                  className={`cursor-pointer hover:bg-gray-100 ${selectedTeacherId === teacher.id ? "bg-blue-100" : ""}`}
+                  className={`cursor-pointer transition-all duration-200 ${
+                    selectedTeacherId === teacher.id 
+                      ? 'bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary' 
+                      : 'hover:bg-muted/30'
+                  }`}
                   onClick={() => {
                     onSelectTeacher(
                       selectedTeacherId === teacher.id ? null : teacher.id,
@@ -70,10 +74,10 @@ export function BookingLessonTeacherTable({
                     onSelectCommission(null);
                   }}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 text-sm font-semibold text-foreground">
                     {teacher.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-muted-foreground">
                     {teacher.languages?.join(", ") || "N/A"}
                   </td>
                 </tr>
@@ -85,26 +89,27 @@ export function BookingLessonTeacherTable({
 
       {/* Commission Selection */}
       {selectedTeacher && (
-        <div className="space-y-3">
-          <h3 className="text-md font-semibold mb-2">
-            Select Commission for {selectedTeacher.name}
+        <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            Select Commission for <span className="text-primary">{selectedTeacher.name}</span>
           </h3>
           {selectedTeacher.commissions.length > 0 ? (
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-1 gap-3">
               {selectedTeacher.commissions.map((commission) => (
                 <button
                   key={commission.id}
                   onClick={() => onSelectCommission(commission.id)}
-                  className={`justify-start text-left p-3 border rounded-md hover:bg-gray-50 transition-colors ${selectedCommissionId === commission.id
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200"
-                    }`}
+                  className={`justify-start text-left p-4 border rounded-lg transition-all duration-200 ${
+                    selectedCommissionId === commission.id
+                      ? "border-green-600 bg-green-100 dark:bg-green-900/20 shadow-md border-l-4"
+                      : "border-border bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-md"
+                  }`}
                 >
-                  <div className="font-medium">
+                  <div className="font-bold text-lg text-primary">
                     €{commission.price_per_hour}/h
                   </div>
                   {commission.desc && (
-                    <div className="text-sm text-gray-500 mt-1">
+                    <div className="text-sm text-muted-foreground mt-1">
                       {commission.desc}
                     </div>
                   )}
@@ -112,7 +117,7 @@ export function BookingLessonTeacherTable({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground bg-card p-4 rounded-lg border border-border">
               No commissions available for this teacher.
             </p>
           )}
@@ -121,16 +126,18 @@ export function BookingLessonTeacherTable({
 
       {/* Commission Creation Form */}
       {selectedTeacher && (
-        <div className="border-t pt-4">
-          <CommissionForm
-            teacherId={selectedTeacher.id}
-            onCommissionCreated={(commissionId) => {
-              onSelectCommission(commissionId);
-              if (onCommissionCreated) {
-                onCommissionCreated();
-              }
-            }}
-          />
+        <div className="border-t border-border pt-6">
+          <div className="bg-card p-4 rounded-lg border border-border">
+            <CommissionForm
+              teacherId={selectedTeacher.id}
+              onCommissionCreated={(commissionId) => {
+                onSelectCommission(commissionId);
+                if (onCommissionCreated) {
+                  onCommissionCreated();
+                }
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
