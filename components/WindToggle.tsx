@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 import { Waves, Tornado } from "lucide-react";
 
 interface WindToggleProps {
@@ -8,8 +9,14 @@ interface WindToggleProps {
 }
 
 export function WindToggle({ onThemeChange }: WindToggleProps = {}) {
-  const { theme, setTheme } = useTheme();
-  const isDarkMode = theme === "dark";
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const isDarkMode = mounted ? (theme === "dark" || resolvedTheme === "dark") : false;
   
   const handleThemeChange = (newTheme: 'light' | 'dark') => {
     setTheme(newTheme);

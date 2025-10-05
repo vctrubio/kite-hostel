@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Book, Shield, TrendingUp, Database } from "lucide-react";
 import { HeadsetIcon, HelmetIcon, EquipmentIcon, FlagIcon, BookingIcon, PaymentIcon } from "@/svgs";
 import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
-import { DevAboutMeFooter } from "@/components/Footer";
+import { DevAboutMeFooter } from "@/components/DevAboutMeFooter";
 
 // Role configurations with consistent color scheme
 const ROLE_CONFIGS = {
@@ -72,10 +72,7 @@ function CompassSVG({ className = "", isLoading = false }: { className?: string;
 }
 
 // Loading spinners component
-function LoadingSpinners() {
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
-  
+function LoadingSpinners({ isDarkMode }: { isDarkMode: boolean }) {
   return (
     <div className="relative flex flex-col items-center gap-12 mb-8 py-8">
       <div className="flex gap-16 relative z-10">
@@ -115,12 +112,10 @@ interface RoleSelectionProps {
   hoveredIcon: number | null;
   setHoveredIcon: (index: number | null) => void;
   handleIconClick: () => void;
+  isDarkMode: boolean;
 }
 
-function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
-  
+function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick, isDarkMode }: RoleSelectionProps) {
   return (
     <div className="hidden md:block relative">
       {/* Title with Interactive Entities */}
@@ -253,10 +248,7 @@ function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: 
 }
 
 // Mobile role selection component
-function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
-  
+function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick, isDarkMode }: RoleSelectionProps) {
   return (
     <div className="md:hidden flex flex-col gap-4 mb-8 py-4">
       {ROLE_ICONS.map(({ Icon, label, color }, index) => (
@@ -283,7 +275,7 @@ function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: R
 }
 
 // Role selection component
-function RoleSelectionComponent() {
+function RoleSelectionComponent({ isDarkMode }: { isDarkMode: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState<number | null>(null);
   const supabase = createClient();
@@ -321,7 +313,7 @@ function RoleSelectionComponent() {
   }, []);
 
   if (isLoading) {
-    return <LoadingSpinners />;
+    return <LoadingSpinners isDarkMode={isDarkMode} />;
   }
 
   return (
@@ -330,20 +322,20 @@ function RoleSelectionComponent() {
         hoveredIcon={hoveredIcon} 
         setHoveredIcon={setHoveredIcon} 
         handleIconClick={handleIconClick}
+        isDarkMode={isDarkMode}
       />
       <MobileRoleSelection 
         hoveredIcon={hoveredIcon} 
         setHoveredIcon={setHoveredIcon} 
         handleIconClick={handleIconClick}
+        isDarkMode={isDarkMode}
       />
     </>
   );
 }
 
 // North Administration Diagram Component
-function NorthAdminDiagram() {
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
+function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
   const [currentMonthIndex, setCurrentMonthIndex] = useState(3); // Start at July (index 3)
 
   // Entity tokens representing school management data
@@ -856,7 +848,7 @@ function NorthAdminDiagram() {
 }
 
 export function GuestLogin() {
-  const { theme } = useTheme();
+  const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   // useEffect only runs on the client
@@ -864,16 +856,21 @@ export function GuestLogin() {
     setMounted(true);
   }, []);
 
+  const isDarkMode = mounted ? (theme === "dark" || resolvedTheme === "dark") : false;
+
+  // Render with default light theme until mounted to prevent hydration issues
   if (!mounted) {
-    return null;
+    return (
+      <main className="min-h-screen flex flex-col transition-colors duration-300 bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="animate-pulse text-gray-400">Loading...</div>
+        </div>
+      </main>
+    );
   }
 
-  const isDarkMode = theme === "dark";
-
   // Sub-component: Hero Header
-  const HeroHeader = () => {
-    const { theme } = useTheme();
-    const isDarkMode = theme === "dark";
+  const HeroHeader = ({ isDarkMode }: { isDarkMode: boolean }) => {
     const features = [
       { 
         icon: EquipmentIcon, 
@@ -943,9 +940,7 @@ export function GuestLogin() {
   };
 
   // Sub-component: Background Effects
-  const BackgroundEffects = () => {
-    const { theme } = useTheme();
-    const isDarkMode = theme === "dark";
+  const BackgroundEffects = ({ isDarkMode }: { isDarkMode: boolean }) => {
     return (
       <div className="absolute inset-0 pointer-events-none">
       {/* Radial glow effect */}
@@ -974,10 +969,10 @@ export function GuestLogin() {
     }`}>
       {/* Hero Section with Depth */}
       <div className="flex-1 flex items-center justify-center p-6 py-12 relative overflow-hidden">
-        <BackgroundEffects />
+        <BackgroundEffects isDarkMode={isDarkMode} />
 
         <div className="w-full max-w-6xl space-y-12 relative z-10">
-          <HeroHeader />
+          <HeroHeader isDarkMode={isDarkMode} />
 
           {/* Role Selection & Login - Unified Card with Blur Effect */}
           <div className={`rounded-3xl backdrop-blur-sm p-8 md:p-12 ${
@@ -989,7 +984,7 @@ export function GuestLogin() {
               
               {/* Left Side - Role Selection */}
               <div className="flex justify-center">
-                <RoleSelectionComponent />
+                <RoleSelectionComponent isDarkMode={isDarkMode} />
               </div>
 
               {/* Right Side - Login Form */}
@@ -1020,7 +1015,7 @@ export function GuestLogin() {
         </div>
       </div>
 
-      <NorthAdminDiagram />
+      <NorthAdminDiagram isDarkMode={isDarkMode} />
       <DevAboutMeFooter />
     </main>
   );

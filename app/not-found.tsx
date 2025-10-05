@@ -8,13 +8,10 @@ import { HelmetIcon } from "@/svgs/HelmetIcon";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 import { BookingIcon } from "@/svgs/BookingIcon";
 import { CalendarIcon } from "@/svgs/CalendarIcon";
-import { DevAboutMeFooter } from "@/components/Footer";
+import { DevAboutMeFooter } from "@/components/DevAboutMeFooter";
 
 // Role Navigation Cards
-function RoleNavigationCards() {
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
-
+function RoleNavigationCards({ isDarkMode }: { isDarkMode: boolean }) {
   const roleRoutes = [
     {
       Icon: HelmetIcon,
@@ -92,10 +89,7 @@ function RoleNavigationCards() {
 }
 
 // Quick Links Section
-function QuickLinks() {
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
-
+function QuickLinks({ isDarkMode }: { isDarkMode: boolean }) {
   const links = [
     {
       icon: Book,
@@ -152,7 +146,7 @@ function QuickLinks() {
 }
 
 export default function NotFound() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
 
@@ -166,11 +160,17 @@ export default function NotFound() {
     setTimeout(() => setIsSpinning(false), 600);
   };
 
-  if (!mounted) {
-    return null;
-  }
+  const isDarkMode = mounted ? (theme === "dark" || resolvedTheme === "dark") : false;
 
-  const isDarkMode = theme === "dark";
+  if (!mounted) {
+    return (
+      <main className="min-h-screen flex flex-col transition-colors duration-300 bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="animate-pulse text-gray-400">Loading...</div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={`min-h-screen flex flex-col transition-colors duration-300 ${
@@ -246,7 +246,7 @@ export default function NotFound() {
             }`}>
               Where do you want to go?
             </h3>
-            <RoleNavigationCards />
+            <RoleNavigationCards isDarkMode={isDarkMode} />
           </div>
 
           {/* Quick Links */}
@@ -256,7 +256,7 @@ export default function NotFound() {
             }`}>
               Or explore these
             </h3>
-            <QuickLinks />
+            <QuickLinks isDarkMode={isDarkMode} />
           </div>
 
           {/* Home Link */}

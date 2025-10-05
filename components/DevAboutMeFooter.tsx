@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 import { Mail, Linkedin } from "lucide-react";
 import { WindToggle } from "@/components/WindToggle";
 
@@ -9,8 +10,14 @@ interface DevAboutMeFooterProps {
 }
 
 export function DevAboutMeFooter({ onThemeChange }: DevAboutMeFooterProps = {}) {
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const isDarkMode = mounted ? (theme === "dark" || resolvedTheme === "dark") : false;
   
   return (
     <footer className={`border-t backdrop-blur-sm ${
