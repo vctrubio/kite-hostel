@@ -33,33 +33,35 @@ export default function ReferenceUserWalletPage({
   const [selectedUserWallet, setSelectedUserWallet] = useState<UserWalletInfo | null>(null);
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">User Reference Management</h1>
-        <p className="text-muted-foreground">Select an existing user to update or create a new user wallet reference</p>
-      </div>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Community Member Management</h1>
+          <p className="text-muted-foreground">Manage your North Action Sports community members and user references</p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <UserSelectionPanel 
-          users={initialUsers} 
-          availableSks={initialSks}
-          userWallets={initialUserWallets}
-          onUserSelect={setSelectedUserId}
-          onUserWalletSelect={setSelectedUserWallet}
-        />
-
-        <div className="space-y-6">
-          <CreateUserWalletForm
-            availablePks={initialPks}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <UserSelectionPanel 
+            users={initialUsers} 
             availableSks={initialSks}
-            initialSk={selectedUserId}
+            userWallets={initialUserWallets}
+            onUserSelect={setSelectedUserId}
+            onUserWalletSelect={setSelectedUserWallet}
           />
 
-          <UpdateUserWalletForm
-            availablePks={initialPks}
-            availableSks={initialSks}
-            userWallet={selectedUserWallet}
-          />
+          <div className="space-y-6">
+            <CreateUserWalletForm
+              availablePks={initialPks}
+              availableSks={initialSks}
+              initialSk={selectedUserId}
+            />
+
+            <UpdateUserWalletForm
+              availablePks={initialPks}
+              availableSks={initialSks}
+              userWallet={selectedUserWallet}
+            />
+          </div>
         </div>
       </div>
     </div>

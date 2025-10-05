@@ -79,24 +79,33 @@ export function UserSelectionPanel({
   };
 
   return (
-    <Card className="h-fit">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Select Existing User
+    <Card className="bg-card border-border shadow-md">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <Users className="h-5 w-5 text-primary" />
+          Community Members
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Choose a user to link to a new user wallet reference
+          View existing members or select a user to create a new reference
         </p>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="space-y-3">
           {users.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
               No users found
             </div>
           ) : (
-            users.map((user) => {
+            users
+              .sort((a, b) => {
+                // Sort: Community members (with wallets) first, then available users
+                const aWallet = getUserWalletInfo(a.id);
+                const bWallet = getUserWalletInfo(b.id);
+                if (aWallet && !bWallet) return -1;
+                if (!aWallet && bWallet) return 1;
+                return 0;
+              })
+              .map((user) => {
               const available = isUserAvailable(user.id);
               const isSelected = selectedUserId === user.id;
               const displayName = getUserDisplayName(user);
@@ -106,12 +115,14 @@ export function UserSelectionPanel({
                 <div
                   key={user.id}
                   onClick={() => handleUserClick(user.id)}
-                  className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover-lift ${
                     available 
                       ? isSelected
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      : "border-orange-200 bg-orange-50 dark:bg-orange-900/20 hover:border-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+                        ? "border-primary bg-primary/10 shadow-md"
+                        : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
+                      : walletInfo
+                      ? "border-primary/60 bg-primary/5 hover:border-primary hover:bg-primary/10"
+                      : "border-destructive/50 bg-destructive/5 hover:border-destructive hover:bg-destructive/10"
                   }`}
                 >
                   {/* Avatar */}
@@ -122,15 +133,15 @@ export function UserSelectionPanel({
                         alt={`${displayName}'s avatar`}
                         width={48}
                         height={48}
-                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                        className="w-12 h-12 rounded-full object-cover border-2 border-border"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg border border-gray-200">
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg border-2 border-primary/30">
                         {displayName[0]?.toUpperCase() || "U"}
                       </div>
                     )}
                     {isSelected && available && (
-                      <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-1">
+                      <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
                         <Check className="h-3 w-3" />
                       </div>
                     )}
@@ -139,7 +150,7 @@ export function UserSelectionPanel({
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-sm truncate">
+                      <p className="font-semibold text-sm truncate text-foreground">
                         {displayName}
                       </p>
                       {walletInfo && (
@@ -159,15 +170,15 @@ export function UserSelectionPanel({
                   {/* Availability Status */}
                   <div className="flex flex-col items-end gap-1">
                     {available ? (
-                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                      <Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">
                         Available
                       </Badge>
                     ) : walletInfo ? (
-                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                      <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                         {walletInfo.role}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                      <Badge variant="outline" className="text-xs bg-destructive/10 text-destructive border-destructive/30">
                         In Use
                       </Badge>
                     )}
@@ -180,12 +191,12 @@ export function UserSelectionPanel({
         
         {/* Selected User Info */}
         {selectedUserId && (
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 rounded-lg">
-            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-              Selected User: <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-xs">{selectedUserId}</code>
+          <div className="mt-4 p-4 bg-primary/10 border border-primary/30 rounded-lg">
+            <p className="text-sm font-medium text-primary">
+              Selected User: <code className="bg-card px-2 py-1 rounded text-xs border border-border">{selectedUserId}</code>
             </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-              This user will be pre-selected in the form
+            <p className="text-xs text-muted-foreground mt-1">
+              This user will be pre-selected in the form below
             </p>
           </div>
         )}

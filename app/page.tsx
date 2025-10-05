@@ -12,7 +12,7 @@ function LoginSection() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
+        {/* <div className="text-center">
           <Image
             src="/logo-tkh.png"
             alt="Tarifa Kite Hostel Logo"
@@ -22,7 +22,8 @@ function LoginSection() {
           />
           <h1 className="text-2xl font-bold mb-2">Tarifa Kite Hostel</h1>
           <p className="text-muted-foreground mb-6">Sign in to access the system</p>
-        </div>
+        </div> */}
+        <h2 className="text-2xl font-bold mb-2 mx-auto w-full">Sign Up Page</h2>
         
         <GoogleOnlyLoginForm />
         

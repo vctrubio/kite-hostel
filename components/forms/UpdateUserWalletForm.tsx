@@ -86,7 +86,7 @@ export function UpdateUserWalletForm({
     setLoading(true);
 
     const result = await updateUserWallet(userWallet.id, {
-      role: formData.role,
+      role: formData.role as "reference" | "admin" | "teacher" | "teacherAdmin" | "locked",
       pk: formData.pk === "" ? null : formData.pk,
       note: formData.note,
       sk: userWallet.sk, // Keep the original SK - don't allow changing it
@@ -112,10 +112,10 @@ export function UpdateUserWalletForm({
 
   if (!userWallet) {
     return (
-      <div className="p-4 border rounded-md shadow-sm bg-gray-50 dark:bg-gray-900">
-        <h2 className="text-xl font-bold mb-4">Update User Wallet</h2>
+      <div className="p-6 border border-border rounded-lg shadow-md bg-card">
+        <h2 className="text-xl font-bold mb-4 text-foreground">Update Member</h2>
         <p className="text-muted-foreground text-center py-8">
-          Select a user with an existing role to update their wallet
+          Select a community member to update their information
         </p>
       </div>
     );
@@ -126,9 +126,9 @@ export function UpdateUserWalletForm({
   };
 
   return (
-    <div className="p-4 border rounded-md shadow-sm">
+    <div className="p-6 border border-border rounded-lg shadow-md bg-card">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Update User Wallet</h2>
+        <h2 className="text-xl font-bold text-foreground">Update Member</h2>
         <Button 
           type="button" 
           variant="outline" 
@@ -140,12 +140,12 @@ export function UpdateUserWalletForm({
       </div>
       
       {/* User Info */}
-      <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 rounded-lg">
-        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+      <div className="mb-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+        <p className="text-sm font-medium text-primary">
           Updating: <span className="font-semibold">{getUserDisplayName()}</span>
         </p>
-        <p className="text-xs text-blue-600 dark:text-blue-400">
-          ID: <code className="bg-white dark:bg-gray-800 px-1 rounded text-xs">{userWallet.id}</code>
+        <p className="text-xs text-muted-foreground">
+          ID: <code className="bg-card px-1 rounded text-xs border border-border">{userWallet.id}</code>
         </p>
       </div>
 
@@ -154,7 +154,7 @@ export function UpdateUserWalletForm({
         <div>
           <label
             htmlFor="role"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Role:
           </label>
@@ -163,7 +163,7 @@ export function UpdateUserWalletForm({
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="mt-1 block w-full rounded-md border-border bg-background text-foreground shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 px-3 py-2"
           >
             {userRole.enumValues.map((roleOption) => (
               <option key={roleOption} value={roleOption}>
@@ -178,7 +178,7 @@ export function UpdateUserWalletForm({
           <div>
             <label
               htmlFor="pk"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-foreground mb-1"
             >
               PK (Teacher):
             </label>
@@ -187,7 +187,7 @@ export function UpdateUserWalletForm({
               name="pk"
               value={formData.pk}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              className="mt-1 block w-full rounded-md border-border bg-background text-foreground shadow-sm focus:border-primary focus:ring focus:ring-primary/20 focus:ring-opacity-50 px-3 py-2"
             >
               <option value="">Select Teacher</option>
               {availablePks.map((teacher: any) => (
@@ -203,13 +203,13 @@ export function UpdateUserWalletForm({
         <div>
           <label
             htmlFor="sk"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             SK (User):
           </label>
-          <div className="mt-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+          <div className="mt-1 px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground">
             {userWallet.sk_full_name || userWallet.sk_email || userWallet.sk}
-            <span className="text-xs text-gray-500 ml-2">
+            <span className="text-xs ml-2">
               (Fixed to selected user)
             </span>
           </div>
@@ -219,7 +219,7 @@ export function UpdateUserWalletForm({
         <div>
           <label
             htmlFor="note"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Note:
           </label>
@@ -233,7 +233,7 @@ export function UpdateUserWalletForm({
           />
         </div>
 
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Updating..." : "Update User Wallet"}
         </Button>
       </form>
