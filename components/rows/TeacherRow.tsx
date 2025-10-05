@@ -62,12 +62,7 @@ export function TeacherRow({
           />
         </td>
         <td className="py-2 px-4 text-left">
-          <span
-            className={`font-medium ${(teacher.balance || 0) >= 0
-              ? "text-green-600"
-              : "text-red-600"
-              }`}
-          >
+          <span className="font-medium">
             €{((teacher.balance || 0) % 1 === 0 
               ? (teacher.balance || 0).toString() 
               : (teacher.balance || 0).toFixed(2))}

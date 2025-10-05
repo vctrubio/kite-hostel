@@ -236,7 +236,9 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
             kite: true,
           },
         },
-        payments: true,
+        payments: {
+          orderBy: (payments, { desc }) => desc(payments.created_at),
+        },
         lessons: {
           with: {
             teacher: true,

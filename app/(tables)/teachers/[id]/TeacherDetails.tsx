@@ -7,14 +7,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { updateTeacher } from "@/actions/teacher-actions";
-import { getTeacherById, deleteTeacher, softDeleteTeacher, restoreTeacher } from "@/actions/teacher-actions";
-import { createCommission, deleteCommission } from "@/actions/commission-actions";
+import {
+  getTeacherById,
+  deleteTeacher,
+  softDeleteTeacher,
+  restoreTeacher,
+} from "@/actions/teacher-actions";
+import {
+  createCommission,
+  deleteCommission,
+} from "@/actions/commission-actions";
 import { DateSince } from "@/components/formatters/DateSince";
 import { ENTITY_DATA, LANGUAGES_ENUM_VALUES } from "@/lib/constants";
-import { BookIcon, KiteIcon } from "@/svgs";
-import { UserCheck, Trash2, ChevronDown, Ghost, Search, ArrowUpDown, Eye, EyeOff } from "lucide-react";
+import { BookIcon, KiteIcon, BookingIcon, PaymentIcon } from "@/svgs";
+import {
+  UserCheck,
+  Trash2,
+  ChevronDown,
+  Ghost,
+  Search,
+  ArrowUpDown,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { BookingLessonEventCard } from "@/components/cards/BookingLessonEventCard";
-import { 
+import { TeacherPayments } from "@/components/teacher/TeacherPayments";
+import { AddPaymentToTeacher } from "@/components/teacher/AddPaymentToTeacher";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,11 +45,16 @@ interface TeacherDetailsProps {
 }
 
 // Commission Form Sub-component
-function CommissionForm({ formData, onFormChange }: {
+function CommissionForm({
+  formData,
+  onFormChange,
+}: {
   formData: { price_per_hour: string; desc: string };
   onFormChange: (data: { price_per_hour: string; desc: string }) => void;
 }) {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     onFormChange({ ...formData, [name]: value });
   };
@@ -67,14 +91,22 @@ function CommissionForm({ formData, onFormChange }: {
   );
 }
 
-export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps) {
+export function TeacherDetails({
+  teacher: initialTeacher,
+}: TeacherDetailsProps) {
   const [teacher, setTeacher] = useState(initialTeacher);
   const [editMode, setEditMode] = useState(false);
   const [showCommissionForm, setShowCommissionForm] = useState(false);
   const [isSubmittingCommission, setIsSubmittingCommission] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // newest first by default
-  const [studentSearch, setStudentSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc"); // newest first by default
+  const [studentSearch, setStudentSearch] = useState("");
   const [compactView, setCompactView] = useState(false);
+  const [activeTab, setActiveTab] = useState<"bookings" | "payments">(
+    "bookings",
+  );
+  const [paymentSortOrder, setPaymentSortOrder] = useState<"desc" | "asc">(
+    "desc",
+  );
   const [formData, setFormData] = useState({
     name: initialTeacher.name,
     languages: initialTeacher.languages || [],
@@ -83,8 +115,8 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     phone: initialTeacher.phone || "",
   });
   const [commissionFormData, setCommissionFormData] = useState({
-    price_per_hour: '',
-    desc: ''
+    price_per_hour: "",
+    desc: "",
   });
   const router = useRouter();
 
@@ -106,11 +138,16 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
 
   const handleLanguageChange = (language: string, isChecked: boolean) => {
     setFormData((prev) => {
-      const currentLanguages = Array.isArray(prev.languages) ? prev.languages : [];
+      const currentLanguages = Array.isArray(prev.languages)
+        ? prev.languages
+        : [];
       if (isChecked) {
         return { ...prev, languages: [...currentLanguages, language] };
       } else {
-        return { ...prev, languages: currentLanguages.filter((lang) => lang !== language) };
+        return {
+          ...prev,
+          languages: currentLanguages.filter((lang) => lang !== language),
+        };
       }
     });
   };
@@ -151,7 +188,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     if (updatedTeacher) {
       setTeacher(updatedTeacher);
       setShowCommissionForm(false);
-      setCommissionFormData({ price_per_hour: '', desc: '' });
+      setCommissionFormData({ price_per_hour: "", desc: "" });
     } else if (error) {
       toast.error(`Failed to refresh teacher data: ${error}`);
     }
@@ -168,7 +205,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
       const result = await createCommission({
         teacher_id: teacher.id,
         price_per_hour: parseInt(commissionFormData.price_per_hour),
-        desc: commissionFormData.desc || null
+        desc: commissionFormData.desc || null,
       });
 
       if (result.success) {
@@ -185,7 +222,11 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
   };
 
   const handleDeleteCommission = async (commissionId: string) => {
-    if (!confirm('Are you sure you want to delete this commission? This action cannot be undone.')) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this commission? This action cannot be undone.",
+      )
+    ) {
       return;
     }
 
@@ -207,7 +248,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     if (result.success) {
       toast.success("Teacher deleted successfully!");
       // Redirect to teachers list
-      router.push('/teachers');
+      router.push("/teachers");
     } else {
       toast.error(result.error || "Failed to delete teacher");
     }
@@ -241,17 +282,61 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
     }
   };
 
+  // Calculate totals for tab display
+  const totals = useMemo(() => {
+    const totalPayments =
+      teacher.payments?.reduce(
+        (sum: number, payment: any) => sum + (payment.amount || 0),
+        0,
+      ) || 0;
+
+    // Calculate total commission earned from lessons
+    const totalCommissionEarned =
+      teacher.lessons?.reduce((total: number, lesson: any) => {
+        const lessonHours =
+          lesson.events?.reduce((eventTotal: number, event: any) => {
+            return eventTotal + (event.duration || 0) / 60;
+          }, 0) || 0;
+        const commissionRate = lesson.commission?.price_per_hour || 0;
+        return total + lessonHours * commissionRate;
+      }, 0) || 0;
+
+    return {
+      totalPayments,
+      totalCommissionEarned,
+      balance: totalCommissionEarned - totalPayments,
+    };
+  }, [teacher.lessons, teacher.payments]);
+
+  // Sorted payments for payments tab
+  const sortedPayments = useMemo(() => {
+    if (!teacher.payments || teacher.payments.length === 0) return [];
+
+    const payments = [...teacher.payments];
+    payments.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return paymentSortOrder === "desc" ? dateB - dateA : dateA - dateB;
+    });
+
+    return payments;
+  }, [teacher.payments, paymentSortOrder]);
+
   // Filtered and sorted bookings for teachers
   const filteredAndSortedBookings = useMemo(() => {
     if (!teacher.lessons || teacher.lessons.length === 0) return [];
-    
+
     // Get unique bookings from lessons
-    const bookings = Array.from(new Set(teacher.lessons.map((lesson: any) => lesson.booking_id)))
-      .map(bookingId => {
+    const bookings = Array.from(
+      new Set(teacher.lessons.map((lesson: any) => lesson.booking_id)),
+    )
+      .map((bookingId) => {
         // Find the first lesson with this booking_id to get booking data
-        const lesson = teacher.lessons.find((l: any) => l.booking_id === bookingId);
+        const lesson = teacher.lessons.find(
+          (l: any) => l.booking_id === bookingId,
+        );
         if (!lesson?.booking) return null;
-        
+
         // The `lesson.booking` object, fetched from the updated `getTeacherById` action,
         // now contains a complete list of all lessons associated with the booking.
         const booking = lesson.booking;
@@ -260,8 +345,10 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
         // are displayed first in the BookingLessonEventCard.
         if (booking.lessons && Array.isArray(booking.lessons)) {
           booking.lessons.sort((a: any, b: any) => {
-            if (a.teacher_id === teacher.id && b.teacher_id !== teacher.id) return -1;
-            if (a.teacher_id !== teacher.id && b.teacher_id === teacher.id) return 1;
+            if (a.teacher_id === teacher.id && b.teacher_id !== teacher.id)
+              return -1;
+            if (a.teacher_id !== teacher.id && b.teacher_id === teacher.id)
+              return 1;
             return 0;
           });
         }
@@ -271,30 +358,38 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
         return booking;
       })
       .filter(Boolean);
-    
+
     // Filter by student name
     const filtered = bookings.filter((booking: any) => {
       if (!studentSearch.trim()) return true;
-      
+
       // Search by student name in booking students
-      return booking.students?.some((bookingStudent: any) => 
-        bookingStudent.student?.name?.toLowerCase().includes(studentSearch.toLowerCase()) ||
-        bookingStudent.student?.last_name?.toLowerCase().includes(studentSearch.toLowerCase())
+      return booking.students?.some(
+        (bookingStudent: any) =>
+          bookingStudent.student?.name
+            ?.toLowerCase()
+            .includes(studentSearch.toLowerCase()) ||
+          bookingStudent.student?.last_name
+            ?.toLowerCase()
+            .includes(studentSearch.toLowerCase()),
       );
     });
-    
+
     // Sort by start date
     filtered.sort((a: any, b: any) => {
       const dateA = new Date(a.date_start).getTime();
       const dateB = new Date(b.date_start).getTime();
-      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+      return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
     });
-    
+
     return filtered;
   }, [teacher.lessons, teacher.id, studentSearch, sortOrder]);
 
-  const teacherEntity = ENTITY_DATA.find(entity => entity.name === "Teacher");
+  const teacherEntity = ENTITY_DATA.find((entity) => entity.name === "Teacher");
   const TeacherIcon = teacherEntity?.icon;
+  const sortButtonText = sortOrder === "desc" ? "Newest First" : "Oldest First";
+  const dropdownButtonClasses =
+    "border-2 border-gray-300 dark:border-gray-600 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900/20 px-2";
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -322,20 +417,28 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
             <div className="flex gap-2">
               {editMode ? (
                 <>
-                  <Button onClick={handleSave} size="sm" className={`${teacherEntity?.bgColor} hover:opacity-90`}>Save</Button>
-                  <Button variant="outline" onClick={handleCancel} size="sm">Cancel</Button>
+                  <Button
+                    onClick={handleSave}
+                    size="sm"
+                    className={`${teacherEntity?.bgColor} hover:opacity-90`}
+                  >
+                    Save
+                  </Button>
+                  <Button variant="outline" onClick={handleCancel} size="sm">
+                    Cancel
+                  </Button>
                 </>
               ) : (
                 <>
-                  <Button 
-                    onClick={() => setEditMode(true)} 
-                    variant="outline" 
+                  <Button
+                    onClick={() => setEditMode(true)}
+                    variant="outline"
                     size="sm"
-                    className={`border-2 ${teacherEntity?.color?.replace('text-', 'border-')} hover:${teacherEntity?.hoverColor ? `bg-[${teacherEntity.hoverColor}]` : 'bg-gray-50'}`}
+                    className={`border-2 ${teacherEntity?.color?.replace("text-", "border-")} hover:${teacherEntity?.hoverColor ? `bg-[${teacherEntity.hoverColor}]` : "bg-gray-50"}`}
                   >
                     Edit
                   </Button>
-                  
+
                   {/* Delete/Restore Teacher Dropdown */}
                   {teacher.deleted_at ? (
                     // If soft deleted, show red ghost icon (no dropdown - just visual indicator)
@@ -354,9 +457,9 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-2 border-gray-300 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900/20 px-2"
+                          className={dropdownButtonClasses}
                         >
-                          {(!teacher.lessons || teacher.lessons.length === 0) ? (
+                          {!teacher.lessons || teacher.lessons.length === 0 ? (
                             <Trash2 className="h-4 w-4" />
                           ) : (
                             <Ghost className="h-4 w-4" />
@@ -365,7 +468,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-80">
-                        {(!teacher.lessons || teacher.lessons.length === 0) ? (
+                        {!teacher.lessons || teacher.lessons.length === 0 ? (
                           <DropdownMenuItem
                             onClick={handleDeleteTeacher}
                             className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 p-3"
@@ -373,10 +476,14 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
                                 <Trash2 className="h-4 w-4" />
-                                <span className="font-medium">Delete Teacher</span>
+                                <span className="font-medium">
+                                  Delete Teacher
+                                </span>
                               </div>
                               <div className="text-sm text-gray-600 dark:text-gray-400">
-                                Are you sure you want to delete <strong>{teacher.name}</strong>? This action is irreversible.
+                                Are you sure you want to delete{" "}
+                                <strong>{teacher.name}</strong>? This action is
+                                irreversible.
                               </div>
                             </div>
                           </DropdownMenuItem>
@@ -388,10 +495,15 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
                                 <Ghost className="h-4 w-4" />
-                                <span className="font-medium">Soft Delete Teacher</span>
+                                <span className="font-medium">
+                                  Soft Delete Teacher
+                                </span>
                               </div>
                               <div className="text-sm text-gray-600 dark:text-gray-400">
-                                You are about to soft delete <strong>{teacher.name}</strong>. Their data will be present but you won't be able to access it through the app.
+                                You are about to soft delete{" "}
+                                <strong>{teacher.name}</strong>. Their data will
+                                be present but you won't be able to access it
+                                through the app.
                               </div>
                             </div>
                           </DropdownMenuItem>
@@ -431,7 +543,9 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                         type="checkbox"
                         id={`lang-${lang}`}
                         checked={formData.languages.includes(lang)}
-                        onChange={(e) => handleLanguageChange(lang, e.target.checked)}
+                        onChange={(e) =>
+                          handleLanguageChange(lang, e.target.checked)
+                        }
                         className="h-4 w-4 border-gray-300 rounded"
                       />
                       <Label htmlFor={`lang-${lang}`} className="text-sm">
@@ -457,7 +571,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                 />
               ) : (
                 <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
-                  {teacher.passport_number || 'N/A'}
+                  {teacher.passport_number || "N/A"}
                 </div>
               )}
             </div>
@@ -473,7 +587,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                   />
                 ) : (
                   <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
-                    {teacher.country || 'N/A'}
+                    {teacher.country || "N/A"}
                   </div>
                 )}
               </div>
@@ -488,7 +602,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                   />
                 ) : (
                   <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
-                    {teacher.phone || 'N/A'}
+                    {teacher.phone || "N/A"}
                   </div>
                 )}
               </div>
@@ -496,28 +610,28 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
 
             {/* Commissions Section */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between pt-3 pb-3 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">
                   <BookIcon className="w-5 h-5 text-cyan-500" />
                   <h3 className="text-xl font-semibold">Commissions</h3>
                 </div>
                 {showCommissionForm ? (
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       onClick={handleSubmitCommission}
                       disabled={isSubmittingCommission}
                       size="sm"
                       variant="outline"
                       className="border-2 border-cyan-500 text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
                     >
-                      {isSubmittingCommission ? 'Creating...' : 'Save'}
+                      {isSubmittingCommission ? "Creating..." : "Save"}
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => {
                         setShowCommissionForm(false);
-                        setCommissionFormData({ price_per_hour: '', desc: '' });
+                        setCommissionFormData({ price_per_hour: "", desc: "" });
                       }}
-                      variant="outline" 
+                      variant="outline"
                       size="sm"
                       disabled={isSubmittingCommission}
                     >
@@ -525,9 +639,9 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                     </Button>
                   </div>
                 ) : (
-                  <Button 
+                  <Button
                     onClick={() => setShowCommissionForm(true)}
-                    variant="outline" 
+                    variant="outline"
                     size="sm"
                     className="border-2 border-cyan-500 text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
                   >
@@ -535,14 +649,14 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                   </Button>
                 )}
               </div>
-              
+
               {/* Add Commission Form - Conditionally Rendered */}
               {showCommissionForm && (
                 <div className="overflow-hidden animate-in slide-in-from-top-2 duration-300 ease-in-out">
                   <div className="space-y-3 pt-2 pb-4 border-b border-gray-200 dark:border-gray-700">
                     <Label className="text-sm font-medium">Add New Rate</Label>
                     <div className="transform transition-transform duration-300 ease-in-out">
-                      <CommissionForm 
+                      <CommissionForm
                         formData={commissionFormData}
                         onFormChange={setCommissionFormData}
                       />
@@ -558,28 +672,40 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                   <div className="space-y-2">
                     {teacher.commissions.map((commission: any) => {
                       // Count lessons using this commission
-                      const lessonsUsingCommission = teacher.lessons?.filter((lesson: any) => 
-                        lesson.commission_id === commission.id
-                      ).length || 0;
-                      
+                      const lessonsUsingCommission =
+                        teacher.lessons?.filter(
+                          (lesson: any) =>
+                            lesson.commission_id === commission.id,
+                        ).length || 0;
+
                       return (
-                        <div key={commission.id} className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
+                        <div
+                          key={commission.id}
+                          className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border"
+                        >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <p className="font-medium">€{commission.price_per_hour.toFixed(0)}/h</p>
+                              <p className="font-medium">
+                                €{commission.price_per_hour.toFixed(0)}/h
+                              </p>
                               {commission.desc && (
-                                <p className="text-gray-600 dark:text-gray-400 mt-1">{commission.desc}</p>
+                                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                                  {commission.desc}
+                                </p>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
-                                {lessonsUsingCommission} lesson{lessonsUsingCommission !== 1 ? 's' : ''}
+                                {lessonsUsingCommission} lesson
+                                {lessonsUsingCommission !== 1 ? "s" : ""}
                               </span>
                               {lessonsUsingCommission === 0 && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDeleteCommission(commission.id)}
+                                  onClick={() =>
+                                    handleDeleteCommission(commission.id)
+                                  }
                                   className="p-1 h-6 w-6 border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -599,19 +725,40 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
               </div>
             </div>
 
-            {/* User Wallet Section */}
+            {/* User Auth Section */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3 pt-3 pb-3 border-t border-gray-200 dark:border-gray-700">
                 <UserCheck className="w-5 h-5 text-gray-500" />
-                <h3 className="text-xl font-semibold">User Wallet</h3>
+                <h3 className="text-xl font-semibold">
+                  User Auth{" "}
+                  <span className="text-sm text-muted-foreground">(Login)</span>
+                </h3>
               </div>
               {teacher.user_wallet ? (
                 <Link href={`/users/${teacher.user_wallet.id}`}>
                   <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <p><span className="font-semibold">Role:</span> {teacher.user_wallet.role}</p>
-                    {teacher.user_wallet.sk_email && <p className="mt-1"><span className="font-semibold">Email:</span> {teacher.user_wallet.sk_email}</p>}
-                    {teacher.user_wallet.sk_full_name && <p className="mt-1"><span className="font-semibold">Full Name:</span> {teacher.user_wallet.sk_full_name}</p>}
-                    {teacher.user_wallet.note && <p className="mt-1"><span className="font-semibold">Note:</span> {teacher.user_wallet.note}</p>}
+                    <p>
+                      <span className="font-semibold">Role:</span>{" "}
+                      {teacher.user_wallet.role}
+                    </p>
+                    {teacher.user_wallet.sk_email && (
+                      <p className="mt-1">
+                        <span className="font-semibold">Email:</span>{" "}
+                        {teacher.user_wallet.sk_email}
+                      </p>
+                    )}
+                    {teacher.user_wallet.sk_full_name && (
+                      <p className="mt-1">
+                        <span className="font-semibold">Full Name:</span>{" "}
+                        {teacher.user_wallet.sk_full_name}
+                      </p>
+                    )}
+                    {teacher.user_wallet.note && (
+                      <p className="mt-1">
+                        <span className="font-semibold">Note:</span>{" "}
+                        {teacher.user_wallet.note}
+                      </p>
+                    )}
                   </div>
                 </Link>
               ) : (
@@ -623,15 +770,21 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
 
             {/* Kites Section */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3 pt-3 pb-3 border-t border-gray-200 dark:border-gray-700">
                 <KiteIcon className="w-5 h-5 text-purple-500" />
                 <h3 className="text-xl font-semibold">Associated Kites</h3>
               </div>
               {teacher.kites && teacher.kites.length > 0 ? (
                 <div className="space-y-2">
                   {teacher.kites.map((teacherKite: any) => (
-                    <div key={teacherKite.id} className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border">
-                      <p>Model: {teacherKite.kite.model}, Size: {teacherKite.kite.size}</p>
+                    <div
+                      key={teacherKite.id}
+                      className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-md border"
+                    >
+                      <p>
+                        Model: {teacherKite.kite.model}, Size:{" "}
+                        {teacherKite.kite.size}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -644,62 +797,156 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
           </div>
         </div>
 
-        {/* Right Column - Booking Information */}
+        {/* Right Column - Tabbed Interface */}
         <div className="space-y-6">
-          {/* Booking Controls */}
-          {teacher.lessons && teacher.lessons.length > 0 && (
-            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search by student name..."
-                  value={studentSearch}
-                  onChange={(e) => setStudentSearch(e.target.value)}
-                  className="pl-10"
-                />
+          {/* Tab Navigation */}
+          <div className="flex items-stretch gap-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <button
+              onClick={() => setActiveTab("bookings")}
+              className={`flex flex-col items-center gap-2 px-6 py-4 rounded-md font-medium transition-colors flex-1 ${
+                activeTab === "bookings"
+                  ? "bg-white dark:bg-gray-700 text-blue-600 shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <BookingIcon className="w-5 h-5" />
+                <span className="text-base">Bookings</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                className="flex items-center gap-2 whitespace-nowrap"
-              >
-                <ArrowUpDown className="w-4 h-4" />
-                {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCompactView(!compactView)}
-                className="flex items-center gap-2 whitespace-nowrap"
-              >
-                {compactView ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                {compactView ? 'Expand' : 'Compact'}
-              </Button>
-            </div>
-          )}
+              <div className="text-xl font-bold">
+                €
+                {totals.totalCommissionEarned % 1 === 0
+                  ? totals.totalCommissionEarned.toString()
+                  : totals.totalCommissionEarned.toFixed(2)}
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("payments")}
+              className={`flex flex-col items-center gap-2 px-6 py-4 rounded-md font-medium transition-colors flex-1 ${
+                activeTab === "payments"
+                  ? "bg-white dark:bg-gray-700 text-amber-600 shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <PaymentIcon className="w-5 h-5" />
+                <span className="text-base">Payments</span>
+              </div>
+              <div className="text-xl font-bold">
+                €
+                {totals.totalPayments % 1 === 0
+                  ? totals.totalPayments.toString()
+                  : totals.totalPayments.toFixed(2)}
+              </div>
+            </button>
+          </div>
 
-          {/* Teacher Bookings */}
-          {filteredAndSortedBookings.length > 0 ? (
-            filteredAndSortedBookings.map((booking: any) => (
-              <BookingLessonEventCard 
-                key={booking.id} 
-                booking={booking}
-                showStudents={true}
-                compact={compactView}
-                currentTeacherName={teacher.name}
-              />
-            ))
-          ) : teacher.lessons && teacher.lessons.length > 0 ? (
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
-              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">No Results</h2>
-              <p className="text-gray-600 dark:text-gray-400">No bookings found matching your search criteria.</p>
-            </div>
+          {/* Tab Content */}
+          {activeTab === "bookings" ? (
+            <>
+              {/* Booking Controls */}
+              {teacher.lessons && teacher.lessons.length > 0 && (
+                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      placeholder="Search by student name..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCompactView(!compactView)}
+                    className="flex items-center gap-2 whitespace-nowrap"
+                  >
+                    {compactView ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
+                    {compactView ? "Expand" : "Compact"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+                    }
+                    className="flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <ArrowUpDown className="w-4 h-4" />
+                    {sortButtonText}
+                  </Button>
+                </div>
+              )}
+
+              {/* Teacher Bookings */}
+              {filteredAndSortedBookings.length > 0 ? (
+                filteredAndSortedBookings.map((booking: any) => (
+                  <BookingLessonEventCard
+                    key={booking.id}
+                    booking={booking}
+                    showStudents={true}
+                    compact={compactView}
+                    currentTeacherName={teacher.name}
+                  />
+                ))
+              ) : teacher.lessons && teacher.lessons.length > 0 ? (
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                    No Results
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No bookings found matching your search criteria.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                    Booking Information
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No bookings found for this teacher.
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
-              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Booking Information</h2>
-              <p className="text-gray-600 dark:text-gray-400">No bookings found for this teacher.</p>
-            </div>
+            <>
+              {/* Payment Controls */}
+              <AddPaymentToTeacher
+                teacherId={teacher.id}
+                teacherName={teacher.name}
+                sortOrder={paymentSortOrder}
+                onSortChange={setPaymentSortOrder}
+                onPaymentCreated={async () => {
+                  // Refresh teacher data after payment creation
+                  const { data: updatedTeacher } = await getTeacherById(
+                    teacher.id,
+                  );
+                  if (updatedTeacher) {
+                    setTeacher(updatedTeacher);
+                  }
+                }}
+              />
+
+              <TeacherPayments
+                payments={sortedPayments}
+                compact={true}
+                onPaymentDeleted={async () => {
+                  // Refresh teacher data after payment deletion
+                  const { data: updatedTeacher } = await getTeacherById(
+                    teacher.id,
+                  );
+                  if (updatedTeacher) {
+                    setTeacher(updatedTeacher);
+                  }
+                }}
+              />
+            </>
           )}
         </div>
       </div>
