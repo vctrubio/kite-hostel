@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, LayoutGrid, Home, Tv, Sun, Moon } from "lucide-react";
+import { Plus, LayoutGrid, Home, Tv } from "lucide-react";
 import { ENTITY_DATA } from "@/lib/constants";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogoutButtonUserWallet } from "@/components/users/LogoutButtonUserWallet";
+import { ThemeSwitcher } from "@/components/supabase-init/theme-switcher";
 import { useState, useRef, useEffect } from "react";
 
 // Reusable CSS classes
@@ -14,46 +15,7 @@ const DROPDOWN_ITEM_CLASSES = "w-full flex items-center space-x-3 px-3 py-2 text
 const ACTIVE_BUTTON_CLASSES = "bg-gray-200 text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-200";
 const INACTIVE_BUTTON_CLASSES = "text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800";
 
-function CustomThemeSwitcher() {
-  const [currentTheme, setCurrentTheme] = useState<string>("light");
 
-  useEffect(() => {
-    const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    setCurrentTheme(theme);
-  }, []);
-
-  const setTheme = (theme: string) => {
-    const isDark = theme === 'dark';
-    document.documentElement.classList.toggle('dark', isDark);
-    localStorage.setItem('theme', theme);
-    setCurrentTheme(theme);
-  };
-
-  const buttonClasses = (isActive: boolean) =>
-    `p-1 rounded-md transition-all duration-200 ${isActive
-      ? 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'
-      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700'
-    }`;
-
-  return (
-    <div className="flex items-center space-x-2">
-      <button
-        onClick={() => setTheme('light')}
-        className={buttonClasses(currentTheme === 'light')}
-        title="Light mode"
-      >
-        <Sun className="h-4 w-4" />
-      </button>
-      <button
-        onClick={() => setTheme('dark')}
-        className={buttonClasses(currentTheme === 'dark')}
-        title="Dark mode"
-      >
-        <Moon className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
 
 function UserProfile({
   displayName,
@@ -183,7 +145,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
               >
                 <span>Theme</span>
                 <div className="ml-auto">
-                  <CustomThemeSwitcher />
+                  <ThemeSwitcher />
                 </div>
               </div>
               <Link
