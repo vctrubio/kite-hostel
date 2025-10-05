@@ -5,9 +5,10 @@ import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import Image from "next/image";
-import { Book, Mail, Linkedin, Shield, Waves, Tornado, TrendingUp, Database } from "lucide-react";
+import { Book, Shield, TrendingUp, Database } from "lucide-react";
 import { HeadsetIcon, HelmetIcon, EquipmentIcon, FlagIcon, BookingIcon, PaymentIcon } from "@/svgs";
 import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
+import { DevAboutMeFooter } from "@/components/Footer";
 
 // Role configurations with consistent color scheme
 const ROLE_CONFIGS = {
@@ -71,7 +72,10 @@ function CompassSVG({ className = "", isLoading = false }: { className?: string;
 }
 
 // Loading spinners component
-function LoadingSpinners({ isDarkMode }: { isDarkMode: boolean }) {
+function LoadingSpinners() {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+  
   return (
     <div className="relative flex flex-col items-center gap-12 mb-8 py-8">
       <div className="flex gap-16 relative z-10">
@@ -111,10 +115,12 @@ interface RoleSelectionProps {
   hoveredIcon: number | null;
   setHoveredIcon: (index: number | null) => void;
   handleIconClick: () => void;
-  isDarkMode: boolean;
 }
 
-function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick, isDarkMode }: RoleSelectionProps) {
+function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+  
   return (
     <div className="hidden md:block relative">
       {/* Title with Interactive Entities */}
@@ -247,7 +253,10 @@ function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick, is
 }
 
 // Mobile role selection component
-function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick, isDarkMode }: RoleSelectionProps) {
+function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+  
   return (
     <div className="md:hidden flex flex-col gap-4 mb-8 py-4">
       {ROLE_ICONS.map(({ Icon, label, color }, index) => (
@@ -274,7 +283,7 @@ function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick, isD
 }
 
 // Role selection component
-function RoleSelectionComponent({ isDarkMode }: { isDarkMode: boolean }) {
+function RoleSelectionComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState<number | null>(null);
   const supabase = createClient();
@@ -312,7 +321,7 @@ function RoleSelectionComponent({ isDarkMode }: { isDarkMode: boolean }) {
   }, []);
 
   if (isLoading) {
-    return <LoadingSpinners isDarkMode={isDarkMode} />;
+    return <LoadingSpinners />;
   }
 
   return (
@@ -321,59 +330,20 @@ function RoleSelectionComponent({ isDarkMode }: { isDarkMode: boolean }) {
         hoveredIcon={hoveredIcon} 
         setHoveredIcon={setHoveredIcon} 
         handleIconClick={handleIconClick}
-        isDarkMode={isDarkMode}
       />
       <MobileRoleSelection 
         hoveredIcon={hoveredIcon} 
         setHoveredIcon={setHoveredIcon} 
         handleIconClick={handleIconClick}
-        isDarkMode={isDarkMode}
       />
     </>
   );
 }
 
-// Wind Toggle Component
-function WindToggle({ theme, setTheme }: { theme: string | undefined; setTheme: (theme: string) => void }) {
-  const isDarkMode = theme === "dark";
-  
-  return (
-    <div className={`inline-flex items-center gap-2 p-1.5 rounded-full border-2 shadow-lg ${
-      isDarkMode 
-        ? 'bg-gray-800 border-gray-600' 
-        : 'bg-white border-gray-200'
-    }`}>
-      <button
-        onClick={() => setTheme('light')}
-        className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${
-          !isDarkMode
-            ? 'bg-blue-500 text-white shadow-md scale-105'
-            : 'text-gray-400 hover:text-gray-300'
-        }`}
-        title="Switch to Poniente (Light mode)"
-      >
-        <Waves className="w-5 h-5" />
-        Poniente
-      </button>
-      
-      <button
-        onClick={() => setTheme('dark')}
-        className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${
-          isDarkMode
-            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md scale-105'
-            : 'text-gray-400 hover:text-gray-600'
-        }`}
-        title="Switch to Levante (Dark mode)"
-      >
-        <Tornado className="w-5 h-5" />
-        Levante
-      </button>
-    </div>
-  );
-}
-
 // North Administration Diagram Component
-function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
+function NorthAdminDiagram() {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
   const [currentMonthIndex, setCurrentMonthIndex] = useState(3); // Start at July (index 3)
 
   // Entity tokens representing school management data
@@ -886,7 +856,7 @@ function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
 }
 
 export function GuestLogin() {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   // useEffect only runs on the client
@@ -902,6 +872,8 @@ export function GuestLogin() {
 
   // Sub-component: Hero Header
   const HeroHeader = () => {
+    const { theme } = useTheme();
+    const isDarkMode = theme === "dark";
     const features = [
       { 
         icon: EquipmentIcon, 
@@ -971,8 +943,11 @@ export function GuestLogin() {
   };
 
   // Sub-component: Background Effects
-  const BackgroundEffects = () => (
-    <div className="absolute inset-0 pointer-events-none">
+  const BackgroundEffects = () => {
+    const { theme } = useTheme();
+    const isDarkMode = theme === "dark";
+    return (
+      <div className="absolute inset-0 pointer-events-none">
       {/* Radial glow effect */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-3xl opacity-20 ${
         isDarkMode
@@ -987,69 +962,9 @@ export function GuestLogin() {
       <div className={`absolute bottom-20 right-10 w-40 h-40 rounded-full blur-2xl opacity-20 animate-pulse ${
         isDarkMode ? 'bg-green-500' : 'bg-cyan-400'
       }`} style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
-    </div>
-  );
-
-  // Sub-component: Footer
-  const Footer = () => (
-    <footer className={`border-t backdrop-blur-sm ${
-      isDarkMode 
-        ? 'border-gray-700 bg-gray-900/50' 
-        : 'border-gray-200 bg-white/50'
-    }`}>
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          
-          {/* Wind Toggle */}
-          <div className="order-2 md:order-1">
-            <WindToggle theme={theme} setTheme={setTheme} />
-          </div>
-
-          {/* Developer Info */}
-          <div className="flex items-center gap-6 order-1 md:order-2">
-            <div className={`text-sm font-medium ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              Developed by{" "}
-              <span className={isDarkMode ? 'font-bold text-blue-400' : 'font-bold text-blue-600'}>vctrubio</span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <a
-                href="mailto:vctrubio@gmail.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors ${
-                  isDarkMode 
-                    ? 'text-gray-300 border-gray-600 hover:text-blue-400 hover:border-blue-500 hover:shadow-sm' 
-                    : 'text-gray-700 border-gray-300 hover:text-blue-600 hover:border-blue-400 hover:shadow-sm'
-                }`}
-                title="Email vctrubio"
-              >
-                <Mail className="w-4 h-4" />
-                <span className="hidden sm:inline">Email</span>
-              </a>
-              
-              <a
-                href="https://www.linkedin.com/in/vctrubio/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors ${
-                  isDarkMode 
-                    ? 'text-gray-300 border-gray-600 hover:text-blue-400 hover:border-blue-500 hover:shadow-sm' 
-                    : 'text-gray-700 border-gray-300 hover:text-blue-600 hover:border-blue-400 hover:shadow-sm'
-                }`}
-                title="LinkedIn Profile"
-              >
-                <Linkedin className="w-4 h-4" />
-                <span className="hidden sm:inline">LinkedIn</span>
-              </a>
-            </div>
-          </div>
-        </div>
       </div>
-    </footer>
-  );
+    );
+  };
 
   return (
     <main className={`min-h-screen flex flex-col transition-colors duration-300 ${
@@ -1074,7 +989,7 @@ export function GuestLogin() {
               
               {/* Left Side - Role Selection */}
               <div className="flex justify-center">
-                <RoleSelectionComponent isDarkMode={isDarkMode} />
+                <RoleSelectionComponent />
               </div>
 
               {/* Right Side - Login Form */}
@@ -1105,8 +1020,8 @@ export function GuestLogin() {
         </div>
       </div>
 
-      <NorthAdminDiagram isDarkMode={isDarkMode} />
-      <Footer />
+      <NorthAdminDiagram />
+      <DevAboutMeFooter />
     </main>
   );
 }
