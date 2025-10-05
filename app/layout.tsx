@@ -23,9 +23,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Kite Hostel",
+  title: "Tarifa Kite Hostel",
   description:
-    "Professional kite school management application for wind-dependent scheduling operations",
+    "A full comprehensive kite school manangement app, synchronized and automated so you don't have to waste time on administrative tasks.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
