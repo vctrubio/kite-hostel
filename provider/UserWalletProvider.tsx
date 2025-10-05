@@ -89,14 +89,20 @@ export function UserWalletProvider({
 
   useEffect(() => {
     const resolveUser = async () => {
-      if (!initialUser) {
+      try {
+        if (!initialUser) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        await refreshUserData(initialUser.id);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error resolving user in provider:", error);
         setUser(null);
         setLoading(false);
-        return;
       }
-
-      await refreshUserData(initialUser.id);
-      setLoading(false);
     };
 
     resolveUser();

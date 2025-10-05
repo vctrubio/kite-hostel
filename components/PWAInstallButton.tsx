@@ -19,7 +19,7 @@ interface PWAInstallButtonProps {
   showInstructions?: boolean
 }
 
-export function PWAInstallButton({ className, showInstructions: _showInstructions = true }: PWAInstallButtonProps) {
+export function PWAInstallButton({ className, showInstructions = true }: PWAInstallButtonProps) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallButton, setShowInstallButton] = useState(false)
   const [showIOSInstructions, setShowIOSInstructions] = useState(false)
@@ -66,10 +66,31 @@ export function PWAInstallButton({ className, showInstructions: _showInstruction
     }
   }, [isIOS, isSafari, isStandalone])
 
+  // Handle ESC key to close modal when it's open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showIOSInstructions) {
+        setShowIOSInstructions(false)
+      }
+    }
+
+    if (showIOSInstructions) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showIOSInstructions])
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
-      // Show iOS instructions for Safari
+      // Show iOS instructions for Safari or generic instructions when showInstructions is true
       if (isIOS && isSafari) {
+        setShowIOSInstructions(true)
+        return
+      }
+      if (showInstructions) {
         setShowIOSInstructions(true)
         return
       }
@@ -94,8 +115,8 @@ export function PWAInstallButton({ className, showInstructions: _showInstruction
     return null
   }
 
-  // Don't show if not supported and not iOS Safari
-  if (!showInstallButton) {
+  // Don't show if not supported and not iOS Safari, unless showInstructions is explicitly true
+  if (!showInstallButton && !showInstructions) {
     return null
   }
 
@@ -104,7 +125,7 @@ export function PWAInstallButton({ className, showInstructions: _showInstruction
       <Button
         onClick={handleInstallClick}
         className={cn(
-          "relative overflow-hidden bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-lg",
+          "relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover-lift glow-teal",
           className
         )}
         size="sm"
@@ -115,40 +136,41 @@ export function PWAInstallButton({ className, showInstructions: _showInstruction
         {isAndroid && <Monitor className="w-4 h-4 ml-2" />}
       </Button>
 
-      {/* iOS Installation Instructions Modal */}
+      {/* Installation Instructions Modal */}
       {showIOSInstructions && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full space-y-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 max-w-sm w-full space-y-4 shadow-xl">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Install Kite Hostel</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Install Kite Hostel</h3>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowIOSInstructions(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
             
-            <div className="space-y-3 text-sm">
-              <p>To install this app on your iPhone:</p>
-              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                <Share className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <span>1. Tap the Share button at the bottom of Safari</span>
+            <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+              <p className="text-center mb-4">To install this app on your mobile device:</p>
+              <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-left">
+                <Share className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+                <span className="text-left">1. Tap the Share button at the bottom of Safari</span>
               </div>
-              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                <Smartphone className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <span>2. Scroll down and tap "Add to Home Screen"</span>
+              <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-left">
+                <Smartphone className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+                <span className="text-left">2. Scroll down and tap "Add to Home Screen"</span>
               </div>
-              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                <Download className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <span>3. Tap "Add" to install the app</span>
+              <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-left">
+                <Download className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+                <span className="text-left">3. Tap "Add" to install the app</span>
               </div>
             </div>
             
             <Button
               onClick={() => setShowIOSInstructions(false)}
-              className="w-full"
+              className="w-full bg-gray-700 hover:bg-gray-800 text-white dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white"
             >
               Got it
             </Button>

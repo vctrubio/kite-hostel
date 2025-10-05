@@ -15,7 +15,7 @@ export function PWAInstallBanner() {
   }
 
   return (
-    <div className="bg-gradient-to-r from-sky-50 to-blue-50 border-b border-sky-200 dark:from-sky-900/20 dark:to-blue-900/20 dark:border-sky-800">
+    <div className="bg-accent/50 border-b border-border">
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -29,10 +29,10 @@ export function PWAInstallBanner() {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <h3 className="text-sm font-semibold text-foreground">
                 Install Kite Hostel App
               </h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Get the full experience with offline access and home screen installation
               </p>
             </div>
@@ -41,10 +41,10 @@ export function PWAInstallBanner() {
             <PWAInstallButton showInstructions={true} />
             <button
               onClick={() => setDismissed(true)}
-              className="p-1 hover:bg-white/50 rounded-md transition-colors dark:hover:bg-gray-800/50"
+              className="p-1 hover:bg-accent rounded-md transition-colors hover-teal-border"
               aria-label="Dismiss install banner"
             >
-              <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              <X className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
         </div>

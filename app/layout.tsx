@@ -93,8 +93,6 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // console.log("dev:User in RootLayout:", user);
-  console.log("dev:User in RootLayout: check.env");
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={"antialiased"}>
@@ -106,7 +104,6 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Analytics />
-            {/* <UserNav /> */}
             <RouteNav />
             {children}
             <Toaster position="top-left" />

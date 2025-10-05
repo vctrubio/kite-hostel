@@ -1,29 +1,31 @@
+"use client";
+
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import { getCurrentUserWallet } from "@/actions/user-actions";
 import { GuestLogin } from "@/app/GuestLogin";
 import { Shield } from "lucide-react";
 import { HeadsetIcon } from "@/svgs";
 import { ENTITY_DATA } from "@/lib/constants";
 import Image from "next/image";
+import { NorthAdminDiagram } from "@/components/Banners/NorthAdminDiagram";
+import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 
 function PrimaryRoutes({ role }: { role: string }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Link
         href="/billboard"
-        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
-          role === "admin" || role === "teacherAdmin"
-            ? "border-2 border-purple-500 hover:ring-2 hover:ring-purple-500/50 bg-purple-50 dark:bg-purple-900/20"
-            : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
-        }`}
+        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${role === "admin" || role === "teacherAdmin"
+          ? "border-2 border-primary hover:ring-2 hover:ring-primary/50 bg-accent/30 glow-teal"
+          : "border border-border hover:shadow-md bg-card hover-teal-border"
+          }`}
       >
         <div className="flex items-center gap-4">
-          <Shield className="h-8 w-8 text-slate-700 dark:text-slate-200" />
+          <Shield className="h-8 w-8 text-foreground" />
           <div>
-            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
-              Billboard
-            </h3>
+            <h3 className="text-xl font-bold text-foreground">Billboard</h3>
             <p className="text-sm text-muted-foreground">
               Main admin dashboard
             </p>
@@ -33,18 +35,15 @@ function PrimaryRoutes({ role }: { role: string }) {
 
       <Link
         href="/teacher"
-        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
-          role === "teacher" || role === "teacherAdmin"
-            ? "border-2 border-green-500 hover:ring-2 hover:ring-green-500/50 bg-green-50 dark:bg-green-900/20"
-            : "border border-slate-300 hover:shadow-md bg-slate-50 dark:bg-slate-800/50"
-        }`}
+        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${role === "teacher" || role === "teacherAdmin"
+          ? "border-2 border-primary hover:ring-2 hover:ring-primary/50 bg-accent/30 glow-teal"
+          : "border border-border hover:shadow-md bg-card hover-teal-border"
+          }`}
       >
         <div className="flex items-center gap-4">
-          <HeadsetIcon className="h-8 w-8 text-slate-700 dark:text-slate-200" />
+          <HeadsetIcon className="h-8 w-8 text-foreground" />
           <div>
-            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
-              Teacher
-            </h3>
+            <h3 className="text-xl font-bold text-foreground">Teacher</h3>
             <p className="text-sm text-muted-foreground">
               Teacher portal & hours
             </p>
@@ -57,21 +56,28 @@ function PrimaryRoutes({ role }: { role: string }) {
 
 function EntityManagement() {
   return (
-    <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+    <div className="mt-6 pt-4 border-t border-border">
       <h3 className="text-sm font-semibold text-muted-foreground mb-3">
         Entity Management
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {ENTITY_DATA.map((entity) => {
           const EntityIcon = entity.icon;
+          // Extract the color from entity.color (e.g., "text-yellow-500" -> "yellow-500")
+          const colorName = entity.color.replace("text-", "");
+          const borderColor = `border-${colorName}`;
+          // Get the base color for entity shadow (e.g., "yellow-500" -> "yellow")
+          const baseColor = colorName.split("-")[0];
+          const entityShadowClass = `entity-${baseColor}`;
+
           return (
             <Link
               key={entity.name}
               href={entity.link}
-              className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg hover:shadow-sm transition-all duration-200"
+              className={`flex items-center gap-2 p-3 bg-card rounded-lg shadow-sm border ${borderColor} entity-card ${entityShadowClass}`}
             >
               <EntityIcon className={`h-4 w-4 ${entity.color}`} />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-foreground">
                 {entity.name}s
               </span>
             </Link>
@@ -83,26 +89,13 @@ function EntityManagement() {
 }
 
 
-function UserStatus({ role, name }: { role: string; name: string }) {
-  return (
-    <div className="mt-4 text-center">
-      <p className="text-xs text-muted-foreground">
-        Role: <span className="font-mono font-semibold">{role}</span> |
-        User: <span className="font-mono font-semibold">{name}</span>
-      </p>
-    </div>
-  );
-}
-
 function GuestBanner({ role }: { role: string }) {
   if (role !== "guest") return null;
-  
+
   return (
-    <div className="mb-8 p-4 border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-      <p className="text-blue-700 dark:text-blue-300 font-semibold mb-2">
-        👋 Guest Access
-      </p>
-      <p className="text-sm text-blue-600 dark:text-blue-400">
+    <div className="mb-8 p-4 border-2 border-primary bg-accent/30 rounded-xl shadow-md glow-teal">
+      <p className="text-primary font-semibold mb-2">👋 Guest Access</p>
+      <p className="text-sm text-accent-foreground">
         You have guest privileges. Check out the invitation page!
       </p>
     </div>
@@ -128,24 +121,65 @@ function Footer() {
   );
 }
 
-export default async function WelcomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+export default function WelcomePage() {
+  const [authUser, setAuthUser] = useState<any>(null);
+  const [role, setRole] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // useEffect only runs on the client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDarkMode = mounted && (theme === "dark" || resolvedTheme === "dark");
+
+  useEffect(() => {
+    async function getUser() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        setAuthUser(user);
+
+        // Get user wallet data
+        const { role: userRole } = await getCurrentUserWallet();
+        setRole(userRole);
+
+        const userName =
+          user.user_metadata?.full_name || user.user_metadata?.name || user.email;
+        setName(userName);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading user:', error);
+        setLoading(false);
+      }
+    }
+
+    getUser();
+  }, []);
+
+  if (loading || !mounted) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-8">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </main>
+    );
+  }
 
   // No authenticated user - show login with docs link
   if (!authUser) {
     return <GuestLogin />;
   }
-
-  // Get user wallet data
-  const { role } = await getCurrentUserWallet();
-
-  const name =
-    authUser.user_metadata?.full_name ||
-    authUser.user_metadata?.name ||
-    authUser.email;
 
   // Authenticated user with role - show menu
   return (
@@ -167,11 +201,12 @@ export default async function WelcomePage() {
         <div className="grid gap-4 max-w-4xl">
           <PrimaryRoutes role={role} />
           <EntityManagement />
-          <UserStatus role={role} name={name} />
         </div>
-
-        <Footer />
       </div>
+
+      <NorthAdminDiagram isDarkMode={isDarkMode} />
+      {/* <UserStatus role={role} name={name} /> */}
+      <Footer />
     </main>
   );
 }

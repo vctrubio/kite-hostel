@@ -44,7 +44,7 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/user`,
+          emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/user`,
         },
       });
       if (error) throw error;
@@ -64,7 +64,7 @@ export function SignUpForm({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/confirm`,
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/confirm`,
         },
       });
       if (error) throw error;

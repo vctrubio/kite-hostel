@@ -9,7 +9,7 @@ import { Smartphone, Monitor, Book } from "lucide-react";
 
 export default function UserPage() {
   const { user, loading } = useUserWallet();
-  const { isInstalled, canInstall } = usePWAInstallation();
+  const { isInstalled } = usePWAInstallation();
 
   if (loading) {
     return (
@@ -73,9 +73,9 @@ export default function UserPage() {
               Tarifa Kite Hostel is now installed on your device. You can access it from your home screen.
             </p>
           </div>
-        ) : canInstall ? (
-          // Can be installed
-          <div className="bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-200 rounded-lg p-6 text-center dark:from-sky-900/20 dark:to-blue-900/20 dark:border-sky-800">
+        ) : (
+          // Show installation option
+          <div className="bg-accent/30 border border-border rounded-lg p-6 text-center card-premium">
             <div className="flex items-center justify-center mb-4">
               <Image
                 src="/logo-tkh.png"
@@ -85,39 +85,26 @@ export default function UserPage() {
                 className="rounded-2xl shadow-lg"
               />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="text-xl font-bold text-foreground mb-2">
               Download the Mobile Web App
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              <span className="text-lg font-bold text-sky-600 dark:text-sky-400 font-mono">Download</span> Tarifa Kite Hostel on your mobile device with offline access and home screen installation
+            <p className="text-sm text-muted-foreground mb-4">
+              <span className="text-lg font-bold text-primary font-mono">Download</span> Tarifa Kite Hostel on your mobile device
             </p>
 
             <div className="space-y-3">
               <PWAInstallButton
-                className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-3 px-6 rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
+                className="w-full py-3 px-3 rounded-lg font-semibold transform hover:scale-105 transition-all duration-200"
                 showInstructions={true}
               />
 
-              <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-gray-400">
-                <div className="flex items-center justify-center space-x-1">
-                  <Smartphone className="w-4 h-4" />
-                  <span>Works on Mobile</span>
-                </div>
-                <div className="flex items-center justify-center space-x-1">
-                  <Monitor className="w-4 h-4" />
-                  <span>Works on Desktop</span>
-                </div>
+              <div className="flex items-center justify-center space-x-1 text-xs text-muted-foreground">
+                <Smartphone className="w-4 h-4" />
+                <span>Works on Mobile</span>
               </div>
             </div>
 
-            <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-              <p>✓ Offline access</p>
-              <p>✓ Push notifications</p>
-              <p>✓ Native app experience</p>
-            </div>
           </div>
-        ) : (
-          <></>
         )}
       </div>
     </div>

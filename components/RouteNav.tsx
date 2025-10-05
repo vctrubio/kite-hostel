@@ -7,15 +7,13 @@ import { ENTITY_DATA } from "@/lib/constants";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogoutButtonUserWallet } from "@/components/users/LogoutButtonUserWallet";
-import { ThemeSwitcher } from "@/components/supabase-init/theme-switcher";
+import { Waves, Tornado } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useState, useRef, useEffect } from "react";
 
 // Reusable CSS classes
-const DROPDOWN_ITEM_CLASSES = "w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 dark:text-gray-300 dark:hover:bg-gray-700";
 const ACTIVE_BUTTON_CLASSES = "bg-gray-200 text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-200";
 const INACTIVE_BUTTON_CLASSES = "text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800";
-
-
 
 function UserProfile({
   displayName,
@@ -64,15 +62,28 @@ function UserProfile({
 
 function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  
   const displayName = user?.teacher?.name || user?.userAuth.name || "";
   const email = user?.userAuth.email || "";
   const role = user?.role || "";
   const avatar_url = user?.userAuth.avatar_url;
 
+  // Prevent hydration mismatch
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Use resolvedTheme for more reliable theme detection
+  const isDarkMode = mounted && (theme === "dark" || resolvedTheme === "dark");
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && event.target && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -84,7 +95,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, mounted]);
 
   const handleHome = () => {
     setIsOpen(false);
@@ -134,36 +145,75 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
             <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 dark:border-gray-600">
               <Link
                 href="/whiteboard"
-                className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                onClick={() => setIsOpen(false)}
+                className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg ${
+                  isDarkMode
+                    ? 'hover:bg-gray-700/50 text-gray-300'
+                    : 'hover:bg-gray-50 text-gray-700'
+                }`}
               >
-                <span>Whiteboard</span>
-                <Tv className="h-4 w-4 ml-auto" />
+                <Tv className={`w-5 h-5 ${
+                  isDarkMode ? 'text-cyan-400' : 'text-blue-600'
+                }`} />
+                <span className="font-medium">Whiteboard</span>
               </Link>
-              <div
-                className={DROPDOWN_ITEM_CLASSES}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span>Theme</span>
-                <div className="ml-auto">
-                  <ThemeSwitcher />
-                </div>
-              </div>
+              
               <Link
                 href="/"
                 onClick={handleHome}
-                className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg ${
+                  isDarkMode
+                    ? 'hover:bg-gray-700/50 text-gray-300'
+                    : 'hover:bg-gray-50 text-gray-700'
+                }`}
               >
-                <span>Home</span>
-                <Home className="h-4 w-4 ml-auto" />
+                <Home className={`w-5 h-5 ${
+                  isDarkMode ? 'text-green-400' : 'text-green-600'
+                }`} />
+                <span className="font-medium">Home</span>
               </Link>
+              
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div className="px-3 py-2">
+                  <div className="flex w-full border-2 shadow-lg bg-white dark:bg-gray-800 dark:border-gray-600 border-gray-200">
+                    <button
+                      onClick={() => setTheme('light')}
+                      className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-bold transition-all duration-300 ${
+                        !isDarkMode
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'text-gray-400 hover:text-gray-300'
+                      }`}
+                    >
+                      <Waves className="w-3 h-3" />
+                      Poniente
+                    </button>
+                    <button
+                      onClick={() => setTheme('dark')}
+                      className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-bold transition-all duration-300 ${
+                        isDarkMode
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                          : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      <Tornado className="w-3 h-3" />
+                      Levante
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div
-                className={DROPDOWN_ITEM_CLASSES}
+                className={`group flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg ${
+                  isDarkMode
+                    ? 'bg-gray-700/30 hover:bg-gray-800/50'
+                    : 'bg-gray-100 hover:bg-gray-200'
+                }`}
                 onClick={(e) => e.stopPropagation()}
               >
-                <span>Logout</span>
-                <div className="ml-auto">
-                  <LogoutButtonUserWallet />
-                </div>
+                <span className={`font-medium ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>Logout</span>
+                <LogoutButtonUserWallet />
               </div>
             </div>
           </div>
@@ -192,8 +242,7 @@ function TableButton({
     <div className="flex items-center">
       <Link
         href={entity.link}
-        className={`flex items-center space-x-2 px-3 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${isActive ? ACTIVE_BUTTON_CLASSES : `${entity.color} hover:bg-gray-100 dark:hover:bg-gray-800`
-          }`}
+        className={`flex items-center space-x-2 px-3 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${isActive ? ACTIVE_BUTTON_CLASSES : `${entity.color} hover:bg-gray-100 dark:hover:bg-gray-800`}`}
       >
         <EntityIcon className="h-4 w-4" />
         <span className="hidden lg:block">{entity.name}s</span>
@@ -218,8 +267,7 @@ function BillboardView({ pathname }: { pathname: string }) {
     <div className="flex items-center space-x-3">
       <Link
         href="/billboard"
-        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname === "/billboard" ? ACTIVE_BUTTON_CLASSES : INACTIVE_BUTTON_CLASSES
-          }`}
+        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname === "/billboard" ? ACTIVE_BUTTON_CLASSES : INACTIVE_BUTTON_CLASSES}`}
       >
         <LayoutGrid className="h-4 w-4" />
         <span className="hidden lg:block">Billboard</span>
@@ -240,7 +288,6 @@ function BillboardView({ pathname }: { pathname: string }) {
     </div>
   );
 }
-
 
 export function RouteNav() {
   const pathname = usePathname();
