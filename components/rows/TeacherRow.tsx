@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Send, CreditCard } from "lucide-react";
 import { DateSince } from "@/components/formatters/DateSince";
 import { getStatusColors, type LessonStatus, ENTITY_DATA } from "@/lib/constants";
-import { EventCountWithDuration } from "@/getters/event-getters";
+import { LessonCountWithEvent } from "@/getters/lesson-formatters";
 import { DropdownExpandableRow } from "./DropdownExpandableRow";
 
 
@@ -12,9 +12,10 @@ interface TeacherRowProps {
   data: any & {
     lessonCount?: number;
     eventCount?: number;
-    totalEventHours?: number;
+    totalEventMinutes?: number;
     activeLessonCount?: number;
     isActive?: boolean;
+    balance?: number;
     lessonsByStatus?: {
       planned: number;
       rest: number;
@@ -53,12 +54,24 @@ export function TeacherRow({
           <DateSince dateString={teacher.created_at} />
         </td>
         <td className="py-2 px-4 text-left">{teacher.name}</td>
-        <td className="py-2 px-4 text-left">{teacher.lessonCount || 0}</td>
         <td className="py-2 px-4 text-left">
-          <EventCountWithDuration 
+          <LessonCountWithEvent 
+            lessonCount={teacher.lessonCount || 0}
             eventCount={teacher.eventCount || 0}
-            totalHours={teacher.totalEventHours || 0}
+            totalEventMinutes={teacher.totalEventMinutes || 0}
           />
+        </td>
+        <td className="py-2 px-4 text-left">
+          <span
+            className={`font-medium ${(teacher.balance || 0) >= 0
+              ? "text-green-600"
+              : "text-red-600"
+              }`}
+          >
+            €{((teacher.balance || 0) % 1 === 0 
+              ? (teacher.balance || 0).toString() 
+              : (teacher.balance || 0).toFixed(2))}
+          </span>
         </td>
         <td className="py-2 px-4 text-left">
           <span

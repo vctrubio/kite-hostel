@@ -18,6 +18,7 @@ interface BookingLessonEventCardProps {
   booking: any;
   showStudents?: boolean; // for student view, if students length > 1, (not itself = show more studfents)
   compact?: boolean;      // For compact view mode
+  currentTeacherName?: string; // Current teacher name for highlighting
 }
 
 interface ShowEventsInLessonsProps {
@@ -81,6 +82,7 @@ interface ViewProps {
   pricePerHourPerStudent: number;
   priceToPay: number;
   showStudents?: boolean;
+  currentTeacherName?: string;
 }
 
 // Compact View Sub-component
@@ -154,7 +156,7 @@ function CompactView({ booking, bookingClass }: ViewProps) {
 }
 
 // Full View Sub-component
-function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, priceToPay, showStudents }: ViewProps) {
+function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, priceToPay, showStudents, currentTeacherName }: ViewProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border p-6 space-y-6">
       {/* Booking Header */}
@@ -248,8 +250,13 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
 
         {booking.lessons && booking.lessons.length > 0 ? (
           <div className="space-y-4">
-            {booking.lessons.map((lesson: any) => (
-              <div key={lesson.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg border p-4 space-y-3">
+            {booking.lessons.map((lesson: any) => {
+              // Check if this lesson's teacher matches the current teacher
+              const isCurrentTeacher = currentTeacherName && lesson.teacher?.name === currentTeacherName;
+              const borderClass = isCurrentTeacher ? "border-2 border-green-500" : "border";
+              
+              return (
+                <div key={lesson.id} className={`bg-gray-50 dark:bg-gray-700 rounded-lg ${borderClass} p-4 space-y-3`}>
                 {/* Lesson Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -284,8 +291,9 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
 
                 {/* Events list */}
                 <ShowEventsInLessons events={lesson.events || []} lessonId={lesson.id} />
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <p className="text-gray-500">No lessons associated with this booking.</p>
@@ -298,7 +306,8 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
 export function BookingLessonEventCard({
   booking,
   showStudents = false,
-  compact = false
+  compact = false,
+  currentTeacherName
 }: BookingLessonEventCardProps) {
   // Initialize BillboardClass for calculations
   const bookingClass = new BillboardClass(booking);
@@ -323,7 +332,8 @@ export function BookingLessonEventCard({
     eventHours,
     pricePerHourPerStudent,
     priceToPay,
-    showStudents
+    showStudents,
+    currentTeacherName
   };
 
   // Render appropriate view based on compact prop

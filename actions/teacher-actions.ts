@@ -6,6 +6,7 @@ import { Teacher, Commission, Lesson, TeacherKite, Payment, Kite, user_wallet, E
 import { eq} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getTeacherBalance } from "@/getters/teacher-getters";
 
 export async function createTeacher(
   teacherData: typeof Teacher.$inferInsert,
@@ -124,11 +125,13 @@ export async function getTeachers() {
 
 export type TeacherWithMetrics = InferSelectModel<typeof Teacher> & {
   commissions: InferSelectModel<typeof Commission>[];
+  payments: InferSelectModel<typeof Payment>[];
   lessonCount: number;
   eventCount: number;
-  totalEventHours: number;
+  totalEventMinutes: number;
   activeLessonCount: number;
   isActive: boolean;
+  balance: number;
   lessonsByStatus: {
     planned: number;
     rest: number;
@@ -146,9 +149,11 @@ export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetri
     const teachers = await db.query.Teacher.findMany({
       with: {
         commissions: true,
+        payments: true,
         lessons: {
           with: {
             events: true,
+            commission: true,
             booking: true,
           },
         },
@@ -158,9 +163,9 @@ export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetri
     const teachersWithMetrics: TeacherWithMetrics[] = teachers.map(teacher => {
       const lessonCount = teacher.lessons.length;
       const eventCount = teacher.lessons.reduce((count, lesson) => count + lesson.events.length, 0);
-      const totalEventHours = teacher.lessons.reduce((total, lesson) => {
+      const totalEventMinutes = teacher.lessons.reduce((total, lesson) => {
         return total + lesson.events.reduce((eventTotal, event) => {
-          return eventTotal + ((event.duration || 0) / 60); // Convert minutes to hours
+          return eventTotal + (event.duration || 0); // Keep as minutes
         }, 0);
       }, 0);
 
@@ -180,13 +185,17 @@ export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetri
       const activeLessonCount = lessonsByStatus.planned;
       const isActive = activeLessonCount > 0;
 
+      // Calculate balance using getter function
+      const balance = getTeacherBalance(teacher);
+
       return {
         ...teacher,
         lessonCount,
         eventCount,
-        totalEventHours,
+        totalEventMinutes,
         activeLessonCount,
         isActive,
+        balance,
         lessonsByStatus,
       };
     });

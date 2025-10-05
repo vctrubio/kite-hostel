@@ -687,6 +687,7 @@ export function TeacherDetails({ teacher: initialTeacher }: TeacherDetailsProps)
                 booking={booking}
                 showStudents={true}
                 compact={compactView}
+                currentTeacherName={teacher.name}
               />
             ))
           ) : teacher.lessons && teacher.lessons.length > 0 ? (

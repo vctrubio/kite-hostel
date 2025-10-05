@@ -29,21 +29,8 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
       return [
         { title: "Date", key: "created_at", sortable: true },
         { title: "Name", key: "name", sortable: true },
-        {
-          title: React.createElement(
-            "div",
-            { className: "flex items-center gap-2" },
-            React.createElement(FlagIcon, { className: "w-5 h-5" }),
-            "Lessons",
-          ),
-          key: "lessonCount",
-          sortable: true,
-        },
-        {
-          title: React.createElement(EventHeading, { className: "w-5 h-5" }),
-          key: "eventsAndHours",
-          sortable: true,
-        },
+        { title: "Lessons", key: "lessons", sortable: true },
+        { title: "Balance", key: "balance", sortable: true },
         { title: "Status", key: "status", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
       ];
