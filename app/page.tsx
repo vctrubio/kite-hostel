@@ -1,45 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserWallet } from "@/actions/user-actions";
-import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
-import { Shield, Book } from "lucide-react";
+import { GuestLogin } from "@/app/GuestLogin";
+import { Shield } from "lucide-react";
 import { HeadsetIcon } from "@/svgs";
 import { ENTITY_DATA } from "@/lib/constants";
 import Image from "next/image";
-
-// Sub-components
-function LoginSection() {
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* <div className="text-center">
-          <Image
-            src="/logo-tkh.png"
-            alt="Tarifa Kite Hostel Logo"
-            width={80}
-            height={80}
-            className="mx-auto mb-4"
-          />
-          <h1 className="text-2xl font-bold mb-2">Tarifa Kite Hostel</h1>
-          <p className="text-muted-foreground mb-6">Sign in to access the system</p>
-        </div> */}
-        <h2 className="text-2xl font-bold mb-2 mx-auto w-full">Sign Up Page</h2>
-        
-        <GoogleOnlyLoginForm />
-        
-        <div className="text-center">
-          <Link
-            href="/docs"
-            className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors underline font-medium"
-          >
-            <Book className="h-4 w-4" />
-            Read our documentation
-          </Link>
-        </div>
-      </div>
-    </main>
-  );
-}
 
 function PrimaryRoutes({ role }: { role: string }) {
   return (
@@ -170,7 +136,7 @@ export default async function WelcomePage() {
 
   // No authenticated user - show login with docs link
   if (!authUser) {
-    return <LoginSection />;
+    return <GuestLogin />;
   }
 
   // Get user wallet data

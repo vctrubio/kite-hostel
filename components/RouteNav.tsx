@@ -139,7 +139,7 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
           />
           <AvatarFallback />
         </Avatar>
-        <span>Logo</span>
+        <span>Tarifa Kite Hostel</span>
       </div>
     );
   }

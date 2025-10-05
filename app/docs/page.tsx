@@ -252,7 +252,7 @@ function UserAuthenticationSection() {
             <UsersIcon className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-purple-800 dark:text-purple-200">User Wallet</h3>
+            <h3 className="text-xl font-bold text-purple-800 dark:text-purple-200">User Authentication</h3>
             <p className="text-sm text-purple-600 dark:text-purple-300">References</p>
           </div>
         </div>

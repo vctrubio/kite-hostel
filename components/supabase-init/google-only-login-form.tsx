@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useState } from "react";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 
 export function GoogleOnlyLoginForm({
   className,
@@ -14,6 +15,8 @@ export function GoogleOnlyLoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -36,7 +39,11 @@ export function GoogleOnlyLoginForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden border-0 shadow-lg">
-        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2"></div>
+        <div className={`h-2 ${
+          isDarkMode 
+            ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+            : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+        }`}></div>
         <CardHeader className="flex flex-col items-center justify-center py-6">
           <div className="w-40 h-40 relative mb-3">
             <Image
@@ -47,7 +54,23 @@ export function GoogleOnlyLoginForm({
               priority
             />
           </div>
-          <h2 className="text-xl mt-2 text-center font-['Dancing_Script'] font-cursive italic">Welcome to Tarifa Kite Hostel</h2>
+          <h2 className="text-2xl mt-2 text-center font-['Dancing_Script'] font-cursive italic">
+            Welcome to{" "}
+            <span className={`not-italic ${
+              isDarkMode
+                ? 'text-green-400'
+                : 'text-cyan-600'
+            }`}>
+              tarifa
+            </span>
+            .
+            <span className={`font-bold not-italic ${
+              isDarkMode ? 'text-white' : 'text-black'
+            }`}>
+              north-club
+            </span>
+            <span className="not-italic">.com</span>
+          </h2>
         </CardHeader>
         <CardContent className="pt-0 pb-8 px-8">
           <div className="flex flex-col items-center gap-5">
