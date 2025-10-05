@@ -27,6 +27,32 @@ export const metadata: Metadata = {
   description:
     "A full comprehensive kite school manangement app, synchronized and automated so you don't have to waste time on administrative tasks.",
   manifest: "/manifest.json",
+  // Open Graph metadata for WhatsApp, Facebook, LinkedIn
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: defaultUrl,
+    title: "Tarifa Kite Hostel",
+    description:
+      "A full comprehensive kite school manangement app, synchronized and automated so you don't have to waste time on administrative tasks.",
+    siteName: "Tarifa Kite Hostel",
+    images: [
+      {
+        url: "/logo-tkh.png",
+        width: 1200,
+        height: 630,
+        alt: "Tarifa Kite Hostel Logo",
+      },
+    ],
+  },
+  // Twitter Card metadata
+  twitter: {
+    card: "summary_large_image",
+    title: "Tarifa Kite Hostel",
+    description:
+      "A full comprehensive kite school manangement app, synchronized and automated so you don't have to waste time on administrative tasks.",
+    images: ["/logo-tkh.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
