@@ -14,60 +14,59 @@ interface PackageRowProps {
     description: string;
     capacity_kites: number;
     bookingCount: number;
-    created_at?: string;
+    totalRevenue?: number;
   };
-  expandedRow: string | null;
-  setExpandedRow: (id: string | null) => void;
 }
 
 export function PackageRow({
   data: pkg,
-  expandedRow,
-  setExpandedRow,
 }: PackageRowProps) {
-  const isExpanded = expandedRow === pkg.id;
   const router = useRouter();
-
-  const toggleExpand = async () => {
-    if (isExpanded) {
-      setExpandedRow(null);
-    } else {
-      setExpandedRow(pkg.id);
-    }
-  };
 
   return (
     <>
-      <tr className="cursor-pointer">
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">
+      <tr>
+        <td className="py-2 px-4 text-left">
           {pkg.description}
         </td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">
+        <td className="py-2 px-4 text-left">
           {pkg.capacity_kites}
         </td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">
+        <td className="py-2 px-4 text-left">
           {pkg.capacity_students}
         </td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">
+        <td className="py-2 px-4 text-left">
           <Duration minutes={pkg.duration} />
         </td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">
-          €{pkg.price_per_student}
+        <td className="py-2 px-4 text-left">
+          <div className="flex items-center gap-2">
+            <span>€{pkg.price_per_student}</span>
+            {pkg.capacity_students > 1 && (
+              <span className="text-sm text-muted-foreground">(€{pkg.price_per_student * pkg.capacity_students})</span>
+            )}
+          </div>
         </td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">
-          €{(pkg.price_per_student / (pkg.duration / 60)).toFixed(2)}/h
+        <td className="py-2 px-4 text-left">
+          €{(() => {
+            const hourlyRate = pkg.price_per_student / (pkg.duration / 60);
+            return hourlyRate % 1 === 0 ? hourlyRate.toString() : hourlyRate.toFixed(2);
+          })()}
         </td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">
-          €{pkg.price_per_student * pkg.capacity_students}
-        </td>
-        <td onClick={toggleExpand} className="py-2 px-4 text-left">
-          {pkg.bookingCount}
+        <td className="py-2 px-4 text-left">
+          {pkg.bookingCount === 0 ? (
+            <span className="font-bold text-muted-foreground">0</span>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{pkg.bookingCount}</span>
+              <span className="text-sm text-green-600">(€{pkg.totalRevenue ? Math.round(pkg.totalRevenue) : 0})</span>
+            </div>
+          )}
         </td>
         <td className="py-2 px-4 text-right">
           <Button
             variant="ghost"
             onClick={(e) => {
-              e.stopPropagation(); // Prevent row from expanding/collapsing
+              e.stopPropagation();
               router.push(`/packages/${pkg.id}`);
             }}
           >

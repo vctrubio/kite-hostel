@@ -1,15 +1,17 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Duration } from "@/components/formatters/Duration";
 import { ElegantDate } from "@/components/formatters/DateTime";
-import { DateSince } from "@/components/formatters/DateSince";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { getUserWalletName } from "@/getters/user-wallet-getters";
+import { LessonCountWithEvent } from "@/getters/lesson-formatters";
+import { deletePackage } from "@/actions/package-actions";
+import { toast } from "sonner";
 import {
-  BookmarkIcon,
   BookingIcon,
   HelmetIcon,
   HeadsetIcon,
@@ -21,60 +23,109 @@ import {
   ArrowUpDown,
   Eye,
   EyeOff,
-  TrendingUp,
-  Users,
   Euro,
+  Trash2,
 } from "lucide-react";
 
 interface PackageDetailsProps {
   pkg: any;
 }
 
+// Utility functions for calculations and formatting
+const formatHours = (hours: number) => {
+  return hours % 1 === 0 ? hours.toString() : hours.toFixed(1);
+};
+
+const formatCurrency = (amount: number) => {
+  return amount % 1 === 0 ? amount.toString() : amount.toFixed(2);
+};
+
+// Calculate total minutes from lessons (similar to lesson-formatters logic)
+const calculateTotalMinutes = (lessons: any[]) => {
+  return lessons.reduce((sum, lesson) => 
+    sum + (lesson.events?.reduce((eventSum: number, event: any) => eventSum + (event.duration || 0), 0) || 0), 0
+  );
+};
+
+const calculateBookingHours = (booking: any) => {
+  return calculateTotalMinutes(booking.lessons || []) / 60;
+};
+
+const calculateTeacherCommissions = (bookings: any[]) => {
+  return bookings.reduce((total: number, booking: any) => {
+    return total + (booking.lessons?.reduce((lessonTotal: number, lesson: any) => {
+      const eventMinutes = lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0;
+      return lessonTotal + (eventMinutes / 60) * (lesson.commission?.price_per_hour || 0);
+    }, 0) || 0);
+  }, 0);
+};
+
+const calculateTotalUsedHours = (bookings: any[]) => {
+  const allLessons = bookings.flatMap(booking => booking.lessons || []);
+  return calculateTotalMinutes(allLessons) / 60;
+};
+
+const calculateTotalRevenue = (pkg: any) => {
+  const pricePerHourPerStudent = pkg.price_per_student / (pkg.duration / 60);
+  return pkg.bookings?.reduce((total: number, booking: any) => {
+    const bookingHours = calculateBookingHours(booking);
+    return total + (bookingHours * pricePerHourPerStudent * (booking.students?.length || 0));
+  }, 0) || 0;
+};
+
+const calculateBookingRevenue = (booking: any, pkg: any) => {
+  const bookingHours = calculateBookingHours(booking);
+  const pricePerHourPerStudent = pkg.price_per_student / (pkg.duration / 60);
+  return bookingHours * pricePerHourPerStudent * (booking.students?.length || 0);
+};
+
+// Component for delete package button
+function DeletePackageButton({ packageId }: { packageId: string }) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this package? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const result = await deletePackage(packageId);
+      
+      if (result.success) {
+        toast.success("Package deleted successfully!");
+        router.push('/packages');
+      } else {
+        toast.error(result.error || "Failed to delete package");
+      }
+    } catch {
+      toast.error("An error occurred while deleting the package");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleDelete}
+      disabled={isDeleting}
+      className="border-2 border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+    >
+      <Trash2 className="w-4 h-4 mr-2" />
+      {isDeleting ? 'Deleting...' : 'Delete Package'}
+    </Button>
+  );
+}
+
 // Component for displaying package specifications
 function PackageSpecifications({ pkg }: { pkg: any }) {
-  // Helper function to format hours without unnecessary decimals
-  const formatHours = (hours: number) => {
-    return hours % 1 === 0 ? hours.toString() : hours.toFixed(1);
-  };
-  // Calculate total revenue from all bookings
-  const totalRevenue =
-    pkg.bookings?.reduce((total: number, booking: any) => {
-      return total + (pkg.price_per_student * booking.students?.length || 0);
-    }, 0) || 0;
-
-  // Calculate used hours across all bookings
-  const usedHours =
-    pkg.bookings?.reduce((total: number, booking: any) => {
-      return (
-        total +
-        (booking.lessons?.reduce((lessonTotal: number, lesson: any) => {
-          return (
-            lessonTotal +
-            (lesson.events?.reduce((eventTotal: number, event: any) => {
-              return eventTotal + (event.duration || 0);
-            }, 0) || 0)
-          );
-        }, 0) || 0)
-      );
-    }, 0) / 60 || 0;
-
-  // Calculate total teacher commissions across all bookings
-  const totalTeacherCommissions =
-    pkg.bookings?.reduce((total: number, booking: any) => {
-      return (
-        total +
-        (booking.lessons?.reduce((lessonTotal: number, lesson: any) => {
-          const eventHours =
-            lesson.events?.reduce(
-              (sum: number, event: any) => sum + (event.duration || 0),
-              0,
-            ) / 60 || 0;
-          return (
-            lessonTotal + eventHours * (lesson.commission?.price_per_hour || 0)
-          );
-        }, 0) || 0)
-      );
-    }, 0) || 0;
+  // Use utility functions for calculations
+  const totalRevenue = calculateTotalRevenue(pkg);
+  const usedHours = calculateTotalUsedHours(pkg.bookings || []);
+  const totalTeacherCommissions = calculateTeacherCommissions(pkg.bookings || []);
 
   // Calculate top references
   const referenceStats = useMemo(() => {
@@ -101,9 +152,14 @@ function PackageSpecifications({ pkg }: { pkg: any }) {
     <div className="space-y-6">
       {/* Package Header */}
       <div className="bg-card rounded-lg border border-border p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <PackageIcon className="w-8 h-8 text-orange-500" />
-          <h1 className="text-3xl font-bold">{pkg.description}</h1>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <PackageIcon className="w-8 h-8 text-orange-500" />
+            <h1 className="text-3xl font-bold">{pkg.description}</h1>
+          </div>
+          {pkg.bookingCount === 0 && (
+            <DeletePackageButton packageId={pkg.id} />
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -115,12 +171,6 @@ function PackageSpecifications({ pkg }: { pkg: any }) {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Kite Capacity:</span>
-              <span className="font-medium">
-                {pkg.capacity_kites} kites / {pkg.capacity_students} students
-              </span>
-            </div>
-            <div className="flex justify-between">
               <span className="text-muted-foreground">
                 Price per Hour/Student:
               </span>
@@ -129,9 +179,23 @@ function PackageSpecifications({ pkg }: { pkg: any }) {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Package Price:</span>
+              <span className="text-muted-foreground">Package Price/Student:</span>
               <span className="font-medium">
-                €{pkg.price_per_student * pkg.capacity_students}
+                €{pkg.price_per_student}
+              </span>
+            </div>
+            {pkg.capacity_students > 1 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Package Price:</span>
+                <span className="font-medium">
+                  €{pkg.price_per_student * pkg.capacity_students}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Capacity:</span>
+              <span className="font-medium">
+                {pkg.capacity_kites} kites / {pkg.capacity_students} students
               </span>
             </div>
           </div>
@@ -143,7 +207,7 @@ function PackageSpecifications({ pkg }: { pkg: any }) {
             </div>
             <div className="flex justify-between pt-1 border-t border-border">
               <span className="text-muted-foreground">Total Revenue:</span>
-              <span className="font-bold text-green-600">€{totalRevenue}</span>
+              <span className="font-bold text-green-600">€{formatCurrency(totalRevenue)}</span>
             </div>
           </div>
         </div>
@@ -169,7 +233,7 @@ function PackageSpecifications({ pkg }: { pkg: any }) {
             </span>
           </div>
           <p className="text-2xl font-bold mt-1 text-orange-600">
-            €{(totalRevenue - totalTeacherCommissions).toFixed(0)}
+            €{formatCurrency(totalRevenue - totalTeacherCommissions)}
           </p>
         </div>
 
@@ -179,7 +243,7 @@ function PackageSpecifications({ pkg }: { pkg: any }) {
             <span className="text-sm text-muted-foreground">Commissions</span>
           </div>
           <p className="text-2xl font-bold mt-1 text-green-600">
-            €{totalTeacherCommissions.toFixed(0)}
+            €{formatCurrency(totalTeacherCommissions)}
           </p>
         </div>
       </div>
@@ -228,32 +292,8 @@ function BookingCard({
   pkg: any;
   compact: boolean;
 }) {
-  // Calculate expected revenue
-  const expectedRevenue =
-    pkg.price_per_student * (booking.students?.length || 0);
-
-  // Calculate total teacher costs, event count, and total hours
-  let totalTeacherCosts = 0;
-  let totalEvents = 0;
-  let totalHours = 0;
-
-  // Sum all events from all lessons to get accurate totals
-  booking.lessons?.forEach((lesson: any) => {
-    if (lesson.events && lesson.events.length > 0) {
-      lesson.events.forEach((event: any) => {
-        totalEvents++;
-        const eventHours = (event.duration || 0) / 60;
-        totalHours += eventHours;
-        totalTeacherCosts +=
-          eventHours * (lesson.commission?.price_per_hour || 0);
-      });
-    }
-  });
-
-  // Helper function to format hours without unnecessary decimals
-  const formatHours = (hours: number) => {
-    return hours % 1 === 0 ? hours.toString() : hours.toFixed(1);
-  };
+  // Use utility functions for calculations
+  const expectedRevenue = calculateBookingRevenue(booking, pkg);
 
   const students = booking.students?.map((bs: any) => bs.student) || [];
 
@@ -278,8 +318,8 @@ function BookingCard({
             </span>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Expected Revenue</p>
-            <p className="font-semibold text-green-600">€{expectedRevenue}</p>
+            <p className="text-xs text-muted-foreground">Revenue</p>
+            <p className="font-semibold text-green-600">€{formatCurrency(expectedRevenue)}</p>
           </div>
         </div>
       </div>
@@ -305,8 +345,8 @@ function BookingCard({
           </span>
         </div>
         <div className="text-right">
-          <p className="text-xs text-muted-foreground">Expected Revenue</p>
-          <p className="font-semibold text-green-600">€{expectedRevenue}</p>
+          <p className="text-xs text-muted-foreground">Revenue</p>
+          <p className="font-semibold text-green-600">€{formatCurrency(expectedRevenue)}</p>
         </div>
       </div>
 
@@ -314,17 +354,8 @@ function BookingCard({
       {booking.lessons && booking.lessons.length > 0 && (
         <div className="space-y-2 mb-3">
           {booking.lessons.map((lesson: any) => {
-            // Calculate total hours for this lesson across all its events
-            let lessonHours = 0;
-            if (lesson.events && lesson.events.length > 0) {
-              lessonHours =
-                lesson.events.reduce(
-                  (sum: number, event: any) => sum + (event.duration || 0),
-                  0,
-                ) / 60;
-            }
-            const lessonCost =
-              lessonHours * (lesson.commission?.price_per_hour || 0);
+            const eventMinutes = lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0;
+            const lessonCost = (eventMinutes / 60) * (lesson.commission?.price_per_hour || 0);
 
             return (
               <div
@@ -334,16 +365,17 @@ function BookingCard({
                 <div className="flex items-center gap-2">
                   <HeadsetIcon className="w-4 h-4 text-green-600" />
                   <span>{lesson.teacher?.name || "Unknown Teacher"}</span>
-                  <span className="text-muted-foreground">
-                    ({formatHours(lessonHours)}h)
-                  </span>
+                  <LessonCountWithEvent 
+                    lesson={lesson}
+                    showLesson={false}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
                     €{lesson.commission?.price_per_hour || 0}/h
                   </span>
                   <span className="font-semibold">
-                    €{lessonCost.toFixed(2)}
+                    €{formatCurrency(lessonCost)}
                   </span>
                 </div>
               </div>

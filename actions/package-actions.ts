@@ -16,6 +16,7 @@ interface CreatePackageParams {
 
 type PackageWithRelations = InferSelectModel<typeof PackageStudent> & {
   bookingCount: number;
+  totalRevenue?: number;
 };
 
 export async function getPackages(): Promise<{ data: PackageWithRelations[]; error: string | null }> {
@@ -28,10 +29,16 @@ export async function getPackages(): Promise<{ data: PackageWithRelations[]; err
       },
     });
 
-    const packagesWithRelations = packages.map((pkg) => ({
-      ...pkg,
-      bookingCount: pkg.bookings?.length ?? 0,
-    }));
+    const packagesWithRelations = packages.map((pkg) => {
+      // Calculate total revenue: package price × capacity × number of bookings
+      const totalRevenue = pkg.price_per_student * pkg.capacity_students * (pkg.bookings?.length ?? 0);
+      
+      return {
+        ...pkg,
+        bookingCount: pkg.bookings?.length ?? 0,
+        totalRevenue,
+      };
+    });
 
     return { data: packagesWithRelations, error: null };
   } catch (error: any) {
@@ -122,6 +129,39 @@ export async function createPackage({
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error creating package:", error);
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function deletePackage(id: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    // First check if package has any bookings
+    const bookingsCount = await db
+      .select({ count: count() })
+      .from(Booking)
+      .where(eq(Booking.package_id, id));
+
+    if (bookingsCount[0]?.count > 0) {
+      return { success: false, error: "Cannot delete package with existing bookings." };
+    }
+
+    // Delete the package
+    const deletedPackage = await db
+      .delete(PackageStudent)
+      .where(eq(PackageStudent.id, id))
+      .returning();
+
+    if (deletedPackage.length === 0) {
+      return { success: false, error: "Package not found or could not be deleted." };
+    }
+
+    revalidatePath("/packages");
+    revalidatePath("/bookings/form");
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Error deleting package:", error);
     return { success: false, error: errorMessage };
   }
 }
