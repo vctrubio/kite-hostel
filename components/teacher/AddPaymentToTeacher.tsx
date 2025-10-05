@@ -51,7 +51,7 @@ export function AddPaymentToTeacher({
       } else {
         toast.error(result.error || "Failed to create payment");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred while creating the payment");
     } finally {
       setIsSubmitting(false);

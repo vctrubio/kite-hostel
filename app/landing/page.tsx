@@ -7,12 +7,7 @@ import {
   BookingIcon,
   KiteIcon,
   PaymentIcon,
-  BookIcon,
-  CalendarIcon,
-  FlagIcon,
   EquipmentIcon,
-  BookmarkIcon,
-  AdminIcon,
 } from "@/svgs";
 import { CheckCircle, Users, Wind, Calendar, BarChart3, Zap, ArrowRight } from "lucide-react";
 

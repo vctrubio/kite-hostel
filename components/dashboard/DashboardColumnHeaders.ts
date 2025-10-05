@@ -1,5 +1,4 @@
 import React from "react";
-import { FlagIcon } from "@/svgs/FlagIcon";
 import { EventHeading } from "@/getters/event-getters";
 
 export interface TableHeader {

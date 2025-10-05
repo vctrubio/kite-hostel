@@ -4,12 +4,10 @@
  */
 
 import React from "react";
-import { Clock } from "lucide-react";
 import { calcBookingRevenue } from "@/backend/CalcBookingRevenue";
 import { calcLessonStats } from "@/backend/CalcLessonStats";
 import { LessonCountWithEvent } from "@/getters/lesson-formatters";
 import { getUserWalletName } from "@/getters/user-wallet-getters";
-import { KiteIcon } from "@/svgs";
 
 interface Stat {
   description: string;
@@ -86,7 +84,7 @@ const getTopTeachersByLessons = (lessons: any[]) => {
   );
 
   return Object.entries(teacherStats)
-    .sort(([, a], [, b]) => b.lessonCount - a.lessonCount)
+    .sort(([, a], [, b]) => (b as any).lessonCount - (a as any).lessonCount)
     .map(([name, stats], index) => ({
       label: `${index + 1}. ${name}`,
       value: <LessonCountWithEvent 
@@ -158,7 +156,6 @@ export function getDashboardStats(entityType: string, data: any[]): Stat[] {
       ];
 
     case "lesson":
-      const totalLessons = data.length;
       const topTeachers = getTopTeachersByLessons(data);
       const lessonStats = calcLessonStats(data);
 
@@ -194,7 +191,7 @@ export function getDashboardStats(entityType: string, data: any[]): Stat[] {
             });
             
             const mostPopular = Object.entries(timeSlots)
-              .sort(([,a], [,b]) => b - a)[0];
+              .sort(([,a], [,b]) => (b as number) - (a as number))[0];
             
             return mostPopular ? mostPopular[0] : "N/A";
           })(),
@@ -218,7 +215,6 @@ export function getDashboardStats(entityType: string, data: any[]): Stat[] {
       return [];
 
     case "payment":
-      const totalPayments = data.length;
       const totalAmount = data.reduce((sum, p) => sum + p.amount, 0);
 
       // Calculate all teachers by payment amounts (no limit)
@@ -232,7 +228,7 @@ export function getDashboardStats(entityType: string, data: any[]): Stat[] {
       );
 
       const allTeacherPayments = Object.entries(teacherPaymentCounts)
-        .sort(([, a], [, b]) => b - a)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .map(([name, amount], index) => ({
           label: `${index + 1}. ${name}`,
           value: `€${amount}`,
@@ -271,7 +267,7 @@ export function getDashboardStats(entityType: string, data: any[]): Stat[] {
       );
 
       const allReferenceRankings = Object.entries(referenceRevenueCounts)
-        .sort(([, a], [, b]) => b - a)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .map(([name, revenue], index) => ({
           label: `${index + 1}. ${name}`,
           value: `€${revenue}`,
