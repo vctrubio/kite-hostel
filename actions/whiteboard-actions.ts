@@ -2,7 +2,7 @@
 
 import { getBookings } from "./booking-actions";
 import { getTeachers } from "./teacher-actions";
-import { WhiteboardClass, createBookingClasses } from "@/backend/WhiteboardClass";
+import { createBookingClasses } from "@/backend/WhiteboardClass";
 import { type BookingData } from "@/backend/types";
 
 export interface WhiteboardData {
@@ -11,7 +11,7 @@ export interface WhiteboardData {
   lessons: any[];
   events: any[];
   kites: any[];
-  teachers: any[]; // Added for BookingToLessonModal
+  teachers: any[]; // Added for BookingToTeacherModal
   status: {
     totalBookings: number;
     totalLessons: number;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, LayoutGrid } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { ENTITY_DATA } from "@/lib/constants";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import { UserSettingsDropdown } from "./UserSettingsDropdown";

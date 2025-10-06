@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp, Send } from "lucide-react";
 import { HelmetIcon, HeadsetIcon } from "@/svgs";
 import { FormatDateRange } from "@/components/formatters/DateRange";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
-import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
+import { BookingToTeacherModal } from "@/components/modals/BookingToTeacherModal";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { WhiteboardClass } from "@/backend/WhiteboardClass";
 import { BookingWithRelations } from "@/backend/types";
@@ -125,9 +125,11 @@ export function BookingRow({
                 Add Lesson Plan
               </Button>
               {isModalOpen && (
-                <BookingToLessonModal
+                <BookingToTeacherModal
                   bookingId={booking.id}
                   onClose={() => setIsModalOpen(false)}
+                  teachers={[]}
+                  onCommissionCreated={() => {}}
                 />
               )}
             </>

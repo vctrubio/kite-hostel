@@ -5,7 +5,7 @@ import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { BookingWithRelations } from "@/backend/types";
 import { UsersIcon } from "@/svgs/UsersIcon";
 import { Duration } from "@/components/formatters/Duration";
-import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
+import { BookingToTeacherModal } from "@/components/modals/BookingToTeacherModal";
 import { useState } from "react";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 
@@ -80,9 +80,11 @@ export function BookingView({ booking }: BookingViewProps) {
         )}
       </span>
       {isModalOpen && (
-        <BookingToLessonModal
+        <BookingToTeacherModal
           bookingId={booking.id}
           onClose={() => setIsModalOpen(false)}
+          teachers={[]}
+          onCommissionCreated={() => {}}
         />
       )}
     </div>

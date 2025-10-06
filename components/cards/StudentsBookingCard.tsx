@@ -4,7 +4,7 @@ import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BillboardClass } from "@/backend/BillboardClass";
 import { HelmetIcon, BookingIcon } from "@/svgs";
 import { FormatedDateExp } from "@/components/label/FormatedDateExp";
-import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
+import { BookingToTeacherModal } from "@/components/modals/BookingToTeacherModal";
 import { LessonFormatter } from "@/getters/lesson-formatters";
 import { PackageDetails } from "@/getters/package-details";
 import { Plus, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
@@ -105,7 +105,7 @@ function StudentCardFooter({
               }
               priceToPay={priceToPay}
               referenceId={booking.reference?.note}
-              variant="compact"
+              variant="simple"
             />
           </div>
 
@@ -276,7 +276,7 @@ export default function StudentsBookingCard({
 
       {/* Lesson Modal for Teacher Assignment */}
       {showLessonModal && (
-        <BookingToLessonModal
+        <BookingToTeacherModal
           bookingId={booking.id}
           bookingReference={booking.reference}
           onClose={() => setShowLessonModal(false)}

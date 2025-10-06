@@ -9,7 +9,6 @@ import { BookingIcon } from "@/svgs/BookingIcon";
 import BillboardActions from "./BillboardActions";
 import { ChevronDown, TrendingUp } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { bulkUpdateEvents, bulkDeleteEvents } from "@/actions/event-actions";
 
 // Props Interface

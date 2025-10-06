@@ -71,7 +71,7 @@ export default function StudentBookingColumn({
 
   return (
     <div className="col-span-1">
-      <div className="flex items-center justify-between mb-4 py-3 px-4 border rounded-lg">
+      <div className="flex items-center justify-between mb-2 py-1 px-4 border rounded-lg">
         <div className="flex mr-3">
           <BookingIcon className="w-8 h-8 text-blue-500" />
         </div>

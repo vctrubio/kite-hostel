@@ -7,7 +7,7 @@ import { BookmarkIcon, HelmetIcon, HeadsetIcon } from "@/svgs";
 import { FormatDateRange } from "@/components/formatters/DateRange";
 import { Duration } from "@/components/formatters/Duration";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
-import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
+import { BookingToTeacherModal } from "@/components/modals/BookingToTeacherModal";
 import { ViewTeacherLessonEvents } from "@/components/views/ViewTeacherLessonEvents";
 import { BookingWithRelations } from "@/backend/types";
 import { getUserWalletName } from "@/getters/user-wallet-getters";
@@ -337,7 +337,7 @@ export function Booking4LessonTable({
 
       {/* Modal for Creating Lessons */}
       {isModalOpen && selectedBookingId && (
-        <BookingToLessonModal
+        <BookingToTeacherModal
           bookingId={selectedBookingId}
           onClose={() => {
             setIsModalOpen(false);

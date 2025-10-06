@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import { FormatedDateExp } from "@/components/label/FormatedDateExp";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
-import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
+import { BookingToTeacherModal } from "@/components/modals/BookingToTeacherModal";
 import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
 import type { BookingData } from "@/backend/types";
 import { useRouter } from "next/navigation";
@@ -374,7 +374,7 @@ export default function BookingCard({
       )}
 
       {showLessonModal && teachers && (
-        <BookingToLessonModal
+        <BookingToTeacherModal
           bookingId={booking.id}
           bookingReference={booking.reference}
           onClose={() => setShowLessonModal(false)}

@@ -1,6 +1,5 @@
 import { ENTITY_DATA } from "@/lib/constants";
-import { Plus, LucideIcon, PlusCircle, Package, UserPlus } from "lucide-react";
-import { seedCreateStudent, seedCreateTeacher } from "@/actions/seed-actions";
+import { Plus, LucideIcon, Package } from "lucide-react";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import {
   exportEventsToCsv,

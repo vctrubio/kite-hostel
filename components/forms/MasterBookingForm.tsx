@@ -361,7 +361,7 @@ export default function MasterBookingForm({
 
   useEffect(() => {
     updateAvailableStudents();
-  }, [students]);
+  }, [students, updateAvailableStudents]);
 
   useEffect(() => {
     if (selectedPackageId) {
