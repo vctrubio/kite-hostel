@@ -98,7 +98,9 @@ export function BookingFormSummary({
   };
 
   return (
-    <div className={`bg-card border border-border rounded-lg shadow-sm ${isMobile ? "" : "sticky top-4"} z-10`}>
+    <div
+      className={`bg-card border border-border rounded-lg shadow-sm ${isMobile ? "" : "sticky top-4"} z-10`}
+    >
       <div className="px-4 py-3 border-b border-border">
         {/* Navigation Tabs */}
         <div className="flex space-x-1 bg-muted p-1 rounded-lg mb-3">
@@ -108,20 +110,22 @@ export function BookingFormSummary({
               <button
                 key={form}
                 onClick={() => setActiveForm(form)}
-                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all ${activeForm === form
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                  activeForm === form
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 <Icon
-                  className={`h-4 w-4 ${form === "booking"
-                    ? "text-blue-500"
-                    : form === "student"
-                      ? "text-yellow-500"
-                      : form === "package"
-                        ? "text-orange-500"
-                        : ""
-                    }`}
+                  className={`h-4 w-4 ${
+                    form === "booking"
+                      ? "text-blue-500"
+                      : form === "student"
+                        ? "text-yellow-500"
+                        : form === "package"
+                          ? "text-orange-500"
+                          : ""
+                  }`}
                 />
                 <span className="hidden sm:inline">{getFormLabel(form)}</span>
               </button>
@@ -142,12 +146,14 @@ export function BookingFormSummary({
               </span>
               <button
                 onClick={() => setStayOnFormAfterSubmit(!stayOnFormAfterSubmit)}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${stayOnFormAfterSubmit ? "bg-blue-500" : "bg-gray-300"
-                  }`}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  stayOnFormAfterSubmit ? "bg-blue-500" : "bg-gray-300"
+                }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${stayOnFormAfterSubmit ? "translate-x-5" : "translate-x-0.5"
-                    }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    stayOnFormAfterSubmit ? "translate-x-5" : "translate-x-0.5"
+                  }`}
                 />
               </button>
             </div>
@@ -338,7 +344,7 @@ export function BookingFormSummary({
         )}
       </div>
 
-      {activeForm === "booking" && !isMobile && (
+      {activeForm === "booking" && (
         <div className="p-4 border-t border-border space-y-3">
           <button
             type="button"
@@ -361,19 +367,6 @@ export function BookingFormSummary({
             type="button"
             onClick={onReset}
             className="w-full py-2 px-4 border border-border text-sm font-medium rounded-md text-muted-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-          >
-            Reset Form
-          </button>
-        </div>
-      )}
-
-      {/* Mobile-only Reset Button */}
-      {activeForm === "booking" && isMobile && (
-        <div className="p-4 border-t border-border">
-          <button
-            type="button"
-            onClick={onReset}
-            className="w-full py-2 px-4 border border-border text-sm font-medium rounded-md text-muted-foreground bg-card hover:bg-muted transition-colors"
           >
             Reset Form
           </button>

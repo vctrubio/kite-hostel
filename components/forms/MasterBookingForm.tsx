@@ -20,19 +20,79 @@ import { UserCheck } from "lucide-react";
 
 type FormType = "booking" | "student" | "package";
 
+type SectionId =
+  | "dates-section"
+  | "package-section"
+  | "students-section"
+  | "reference-section"
+  | "lesson-section";
+
+interface MasterBookingFormProps {
+  packages: any[];
+  students: any[];
+  userWallets: any[];
+  teachers: any[];
+}
+
+interface SectionProps {
+  id: string;
+  title: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
+  isExpanded: boolean;
+  onToggle: (sectionId: string) => void;
+  children: React.ReactNode;
+}
+
 // Extract icons from ENTITY_DATA
-const BookingIcon = ENTITY_DATA.find(
-  (entity) => entity.name === "Booking",
-)?.icon;
-const PackageIcon = ENTITY_DATA.find(
-  (entity) => entity.name === "Package",
-)?.icon;
-const StudentIcon = ENTITY_DATA.find(
-  (entity) => entity.name === "Student",
-)?.icon;
-const TeacherIcon = ENTITY_DATA.find(
-  (entity) => entity.name === "Teacher",
-)?.icon;
+const ICONS = {
+  booking: ENTITY_DATA.find((entity) => entity.name === "Booking")?.icon,
+  package: ENTITY_DATA.find((entity) => entity.name === "Package")?.icon,
+  student: ENTITY_DATA.find((entity) => entity.name === "Student")?.icon,
+  teacher: ENTITY_DATA.find((entity) => entity.name === "Teacher")?.icon,
+} as const;
+
+// Section configuration
+const SECTION_CONFIG = {
+  "dates-section": {
+    title: "Booking Dates",
+    icon: ICONS.booking,
+    iconColor: "text-blue-500",
+  },
+  "package-section": {
+    title: "Select Package",
+    icon: ICONS.package,
+    iconColor: "text-orange-500",
+  },
+  "students-section": {
+    icon: ICONS.student,
+    iconColor: "text-yellow-500",
+  },
+  "reference-section": {
+    title: "Select Reference (Optional)",
+    icon: UserCheck,
+    iconColor: "text-gray-500",
+  },
+  "lesson-section": {
+    title: "Lesson Details (Optional)",
+    icon: ICONS.teacher,
+    iconColor: "text-green-500",
+  },
+} as const;
+
+const ALL_SECTIONS: SectionId[] = [
+  "dates-section",
+  "package-section",
+  "students-section",
+  "reference-section",
+  "lesson-section",
+];
+
+const DEFAULT_EXPANDED_SECTIONS: SectionId[] = [
+  "dates-section",
+  "reference-section",
+  "lesson-section",
+];
 
 // Reusable Section Component
 const Section = ({
@@ -43,15 +103,7 @@ const Section = ({
   isExpanded,
   onToggle,
   children,
-}: {
-  id: string;
-  title: React.ReactNode;
-  icon?: React.ComponentType<{ className?: string }>;
-  iconColor?: string;
-  isExpanded: boolean;
-  onToggle: (sectionId: string) => void;
-  children: React.ReactNode;
-}) => (
+}: SectionProps) => (
   <div id={id} className="scroll-mt-4">
     <div
       className="flex items-center justify-between cursor-pointer p-4 lg:p-4 py-5 lg:py-4 rounded-lg bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all duration-200 active:bg-muted touch-manipulation"
@@ -65,33 +117,40 @@ const Section = ({
         {isExpanded ? "−" : "+"}
       </span>
     </div>
-    {isExpanded && <div className="mt-4 p-4 bg-card rounded-lg border border-border shadow-sm">{children}</div>}
+    {isExpanded && (
+      <div className="mt-4 p-4 bg-card rounded-lg border border-border shadow-sm">
+        {children}
+      </div>
+    )}
   </div>
 );
 
 // Individual Section Components
-const DatesSection = ({ 
-  dateRange, 
-  onDatesChange, 
-  isExpanded, 
-  onToggle 
+const DatesSection = ({
+  dateRange,
+  onDatesChange,
+  isExpanded,
+  onToggle,
 }: {
   dateRange: DateRange;
   onDatesChange: (dateRange: DateRange) => void;
   isExpanded: boolean;
   onToggle: (sectionId: string) => void;
-}) => (
-  <Section
-    id="dates-section"
-    title="Booking Dates"
-    icon={BookingIcon}
-    iconColor="text-blue-500"
-    isExpanded={isExpanded}
-    onToggle={onToggle}
-  >
-    <DatePicker dateRange={dateRange} setDateRange={onDatesChange} />
-  </Section>
-);
+}) => {
+  const config = SECTION_CONFIG["dates-section"];
+  return (
+    <Section
+      id="dates-section"
+      title={config.title}
+      icon={config.icon}
+      iconColor={config.iconColor}
+      isExpanded={isExpanded}
+      onToggle={onToggle}
+    >
+      <DatePicker dateRange={dateRange} setDateRange={onDatesChange} />
+    </Section>
+  );
+};
 
 const PackageSection = ({
   packages,
@@ -109,24 +168,27 @@ const PackageSection = ({
   onPackageChange: (packageId: string) => void;
   isExpanded: boolean;
   onToggle: (sectionId: string) => void;
-}) => (
-  <Section
-    id="package-section"
-    title="Select Package"
-    icon={PackageIcon}
-    iconColor="text-orange-500"
-    isExpanded={isExpanded}
-    onToggle={onToggle}
-  >
-    <BookingPackageTable
-      packages={packages}
-      onSelectPackage={onPackageChange}
-      selectedPackageId={selectedPackageId}
-      viaStudentParams={viaStudentParams}
-      selectedStudentIds={selectedStudentIds}
-    />
-  </Section>
-);
+}) => {
+  const config = SECTION_CONFIG["package-section"];
+  return (
+    <Section
+      id="package-section"
+      title={config.title}
+      icon={config.icon}
+      iconColor={config.iconColor}
+      isExpanded={isExpanded}
+      onToggle={onToggle}
+    >
+      <BookingPackageTable
+        packages={packages}
+        onSelectPackage={onPackageChange}
+        selectedPackageId={selectedPackageId}
+        viaStudentParams={viaStudentParams}
+        selectedStudentIds={selectedStudentIds}
+      />
+    </Section>
+  );
+};
 
 const StudentsSection = ({
   students,
@@ -144,31 +206,36 @@ const StudentsSection = ({
   onStudentChange: (studentId: string) => void;
   isExpanded: boolean;
   onToggle: (sectionId: string) => void;
-}) => (
-  <Section
-    id="students-section"
-    title={
-      <>
-        Select Students{" "}
-        <span className="text-sm font-normal text-muted-foreground">
-          (Max: {selectedPackageCapacity})
-        </span>
-      </>
-    }
-    icon={StudentIcon}
-    iconColor="text-yellow-500"
-    isExpanded={isExpanded}
-    onToggle={onToggle}
-  >
-    <BookingStudentTable
-      students={students}
-      selectedStudentIds={selectedStudentIds}
-      onSelectStudent={onStudentChange}
-      packageCapacity={selectedPackageCapacity}
-      availableStudents={availableStudents}
-    />
-  </Section>
-);
+}) => {
+  const config = SECTION_CONFIG["students-section"];
+  const title = (
+    <>
+      Select Students{" "}
+      <span className="text-sm font-normal text-muted-foreground">
+        (Max: {selectedPackageCapacity})
+      </span>
+    </>
+  );
+
+  return (
+    <Section
+      id="students-section"
+      title={title}
+      icon={config.icon}
+      iconColor={config.iconColor}
+      isExpanded={isExpanded}
+      onToggle={onToggle}
+    >
+      <BookingStudentTable
+        students={students}
+        selectedStudentIds={selectedStudentIds}
+        onSelectStudent={onStudentChange}
+        packageCapacity={selectedPackageCapacity}
+        availableStudents={availableStudents}
+      />
+    </Section>
+  );
+};
 
 const ReferenceSection = ({
   userWallets,
@@ -182,22 +249,25 @@ const ReferenceSection = ({
   onReferenceChange: (referenceId: string | null) => void;
   isExpanded: boolean;
   onToggle: (sectionId: string) => void;
-}) => (
-  <Section
-    id="reference-section"
-    title="Select Reference (Optional)"
-    icon={UserCheck}
-    iconColor="text-gray-500"
-    isExpanded={isExpanded}
-    onToggle={onToggle}
-  >
-    <BookingReferenceTable
-      userWallets={userWallets}
-      onSelectReference={onReferenceChange}
-      selectedReferenceId={selectedReferenceId}
-    />
-  </Section>
-);
+}) => {
+  const config = SECTION_CONFIG["reference-section"];
+  return (
+    <Section
+      id="reference-section"
+      title={config.title}
+      icon={config.icon}
+      iconColor={config.iconColor}
+      isExpanded={isExpanded}
+      onToggle={onToggle}
+    >
+      <BookingReferenceTable
+        userWallets={userWallets}
+        onSelectReference={onReferenceChange}
+        selectedReferenceId={selectedReferenceId}
+      />
+    </Section>
+  );
+};
 
 const LessonSection = ({
   teachers,
@@ -215,31 +285,35 @@ const LessonSection = ({
   onSelectCommission: (commissionId: string | null) => void;
   isExpanded: boolean;
   onToggle: (sectionId: string) => void;
-}) => (
-  <Section
-    id="lesson-section"
-    title="Lesson Details (Optional)"
-    icon={TeacherIcon}
-    iconColor="text-green-500"
-    isExpanded={isExpanded}
-    onToggle={onToggle}
-  >
-    <BookingLessonTeacherTable
-      teachers={teachers}
-      selectedTeacherId={selectedLessonTeacherId}
-      selectedCommissionId={selectedLessonCommissionId}
-      onSelectTeacher={onSelectTeacher}
-      onSelectCommission={onSelectCommission}
-    />
-  </Section>
-);
+}) => {
+  const config = SECTION_CONFIG["lesson-section"];
+  return (
+    <Section
+      id="lesson-section"
+      title={config.title}
+      icon={config.icon}
+      iconColor={config.iconColor}
+      isExpanded={isExpanded}
+      onToggle={onToggle}
+    >
+      <BookingLessonTeacherTable
+        teachers={teachers}
+        selectedTeacherId={selectedLessonTeacherId}
+        selectedCommissionId={selectedLessonCommissionId}
+        onSelectTeacher={onSelectTeacher}
+        onSelectCommission={onSelectCommission}
+      />
+    </Section>
+  );
+};
 
 export default function MasterBookingForm({
   packages,
   students,
   userWallets,
   teachers,
-}) {
+}: MasterBookingFormProps) {
+  // URL params parsing
   const searchParams = useSearchParams();
   const router = useRouter();
   const studentIdsParam = searchParams.get("studentIds");
@@ -271,19 +345,14 @@ export default function MasterBookingForm({
   const [availableStudents, setAvailableStudents] = useState<Set<string>>(
     new Set(),
   );
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
-    if (studentIds.length > 0 || packageIdParam) {
-      return new Set(["dates-section", "reference-section", "lesson-section"]);
-    } else {
-      return new Set([
-        "dates-section",
-        "package-section",
-        "students-section",
-        "reference-section",
-        "lesson-section",
-      ]);
-    }
-  });
+  const [expandedSections, setExpandedSections] = useState<Set<SectionId>>(
+    () => {
+      const hasPreselectedData = studentIds.length > 0 || packageIdParam;
+      return new Set(
+        hasPreselectedData ? DEFAULT_EXPANDED_SECTIONS : ALL_SECTIONS,
+      );
+    },
+  );
   const [viaStudentParams, setViaStudentParams] = useState(
     studentIds.length > 0,
   );
@@ -291,11 +360,6 @@ export default function MasterBookingForm({
   const [stayOnFormAfterSubmit, setStayOnFormAfterSubmit] = useState(false);
 
   useEffect(() => {
-    const updateAvailableStudents = () => {
-      setAvailableStudents(
-        new Set(students.filter((s) => s.isAvailable).map((s) => s.id)),
-      );
-    };
     updateAvailableStudents();
   }, [students]);
 
@@ -337,11 +401,7 @@ export default function MasterBookingForm({
       }
 
       if (newSelectedIds.length >= selectedPackageCapacity) {
-        setExpandedSections((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete("students-section");
-          return newSet;
-        });
+        closeSection("students-section");
       }
 
       return newSelectedIds;
@@ -349,25 +409,13 @@ export default function MasterBookingForm({
   };
 
   const handleEditSection = (sectionId: string) => {
-    setExpandedSections((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
-      } else {
-        newSet.add(sectionId);
-      }
-      return newSet;
-    });
+    toggleSection(sectionId as SectionId);
   };
 
   const handlePackageChange = (packageId: string) => {
     setSelectedPackageId(packageId);
     if (packageId) {
-      setExpandedSections((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete("package-section");
-        return newSet;
-      });
+      closeSection("package-section");
     }
   };
 
@@ -375,30 +423,36 @@ export default function MasterBookingForm({
     setDateRange(newDateRange);
   };
 
+  const handleTeacherChange = (teacherId: string | null) => {
+    setSelectedLessonTeacherId(teacherId);
+    if (teacherId && selectedLessonCommissionId) {
+      closeSection("lesson-section");
+    }
+  };
+
+  const handleCommissionChange = (commissionId: string | null) => {
+    setSelectedLessonCommissionId(commissionId);
+    if (commissionId && selectedLessonTeacherId) {
+      closeSection("lesson-section");
+    }
+  };
+
   const handleReferenceChange = (referenceId: string | null) => {
     setSelectedReferenceId(referenceId);
+
     if (referenceId) {
-      setExpandedSections((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete("reference-section");
-        return newSet;
-      });
+      closeSection("reference-section");
+
       const selectedWallet = userWallets.find(
         (wallet) => wallet.id === referenceId,
       );
-      if (selectedWallet && selectedWallet.pk) {
-        const teacher = teachers.find((t) => t.id === selectedWallet.pk);
-        if (teacher) {
-          setSelectedLessonTeacherId(teacher.id);
-          setExpandedSections((prev) => {
-            const newSet = new Set(prev);
-            newSet.add("lesson-section");
-            return newSet;
-          });
-        } else {
-          setSelectedLessonTeacherId(null);
-          setSelectedLessonCommissionId(null);
-        }
+      const linkedTeacher = selectedWallet?.pk
+        ? teachers.find((t) => t.id === selectedWallet.pk)
+        : null;
+
+      if (linkedTeacher) {
+        setSelectedLessonTeacherId(linkedTeacher.id);
+        toggleSection("lesson-section"); // Open lesson section
       } else {
         setSelectedLessonTeacherId(null);
         setSelectedLessonCommissionId(null);
@@ -406,11 +460,7 @@ export default function MasterBookingForm({
     } else {
       setSelectedLessonTeacherId(null);
       setSelectedLessonCommissionId(null);
-      setExpandedSections((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete("reference-section");
-        return newSet;
-      });
+      closeSection("reference-section");
     }
   };
 
@@ -463,15 +513,7 @@ export default function MasterBookingForm({
         setSelectedReferenceId(null);
         setSelectedLessonTeacherId(null);
         setSelectedLessonCommissionId(null);
-        setExpandedSections(
-          new Set([
-            "dates-section",
-            "package-section",
-            "students-section",
-            "reference-section",
-            "lesson-section",
-          ]),
-        );
+        setExpandedSections(new Set(ALL_SECTIONS));
         // Re-fetch students to update availability
         const { data: updatedStudents, error: studentsError } =
           await getStudents();
@@ -506,20 +548,13 @@ export default function MasterBookingForm({
     setSelectedReferenceId(null);
     setSelectedLessonTeacherId(null);
     setSelectedLessonCommissionId(null);
-    setExpandedSections(
-      new Set([
-        "dates-section",
-        "package-section",
-        "students-section",
-        "reference-section",
-        "lesson-section",
-      ]),
-    );
+    setExpandedSections(new Set(ALL_SECTIONS));
     setViaStudentParams(false);
     // Clear URL parameters
     window.history.replaceState({}, document.title, window.location.pathname);
   };
 
+  // Computed values
   const selectedPackage = packages.find(
     (pkg: any) => pkg.id === selectedPackageId,
   );
@@ -530,11 +565,41 @@ export default function MasterBookingForm({
     (wallet: any) => wallet.id === selectedReferenceId,
   );
 
-  const isFormValid = 
-    selectedPackageId && 
-    dateRange.startDate && 
-    dateRange.endDate && 
-    selectedStudentIds.length > 0;
+  const canCreateBooking =
+    selectedPackage &&
+    selectedStudentIds.length === selectedPackage.capacity_students &&
+    dateRange.startDate &&
+    dateRange.endDate;
+
+  // Utility functions
+  const scrollToSummary = () => {
+    const summaryElement = document.getElementById("booking-summary");
+    if (summaryElement) {
+      summaryElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const toggleSection = (
+    sectionId: SectionId,
+    shouldClose: boolean = false,
+  ) => {
+    setExpandedSections((prev) => {
+      const newSet = new Set(prev);
+      if (shouldClose || newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const closeSection = (sectionId: SectionId) => toggleSection(sectionId, true);
+  const updateAvailableStudents = () => {
+    setAvailableStudents(
+      new Set(students.filter((s) => s.isAvailable).map((s) => s.id)),
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -542,7 +607,10 @@ export default function MasterBookingForm({
       <div className="lg:hidden">
         <div className="p-4 space-y-4">
           {/* Mobile Form Header with Form Selector */}
-          <div className="bg-card rounded-lg border border-border p-4">
+          <div
+            id="booking-summary"
+            className="bg-card rounded-lg border border-border p-4"
+          >
             <BookingFormSummary
               selectedPackage={selectedPackage}
               selectedStudents={selectedStudentsList}
@@ -608,8 +676,8 @@ export default function MasterBookingForm({
                     teachers={teachers}
                     selectedLessonTeacherId={selectedLessonTeacherId}
                     selectedLessonCommissionId={selectedLessonCommissionId}
-                    onSelectTeacher={setSelectedLessonTeacherId}
-                    onSelectCommission={setSelectedLessonCommissionId}
+                    onSelectTeacher={handleTeacherChange}
+                    onSelectCommission={handleCommissionChange}
                     isExpanded={expandedSections.has("lesson-section")}
                     onToggle={handleEditSection}
                   />
@@ -642,25 +710,20 @@ export default function MasterBookingForm({
             </div>
           </div>
 
-          {/* Mobile Fixed Bottom Confirm Button */}
-          {activeForm === "booking" && (
-            <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 shadow-lg">
+          {/* Mobile Fixed Bottom Navigation Button - Only show when booking can be created */}
+          {activeForm === "booking" && canCreateBooking && (
+            <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-3 shadow-lg">
               <button
-                onClick={handleSubmit}
-                disabled={!isFormValid || loading}
-                className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 ${
-                  isFormValid && !loading
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
-                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                }`}
+                onClick={scrollToSummary}
+                className="w-full py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 bg-card border border-primary/30 text-primary hover:bg-primary/5 shadow-sm"
               >
-                {loading ? "Creating Booking..." : "CONFIRM BOOKING"}
+                Go to Confirm Booking ↑
               </button>
             </div>
           )}
 
-          {/* Mobile Bottom Padding for Fixed Button */}
-          {activeForm === "booking" && <div className="h-20" />}
+          {/* Mobile Bottom Padding - More space between content and button */}
+          <div className="h-24" />
         </div>
       </div>
 
@@ -737,8 +800,8 @@ export default function MasterBookingForm({
                       teachers={teachers}
                       selectedLessonTeacherId={selectedLessonTeacherId}
                       selectedLessonCommissionId={selectedLessonCommissionId}
-                      onSelectTeacher={setSelectedLessonTeacherId}
-                      onSelectCommission={setSelectedLessonCommissionId}
+                      onSelectTeacher={handleTeacherChange}
+                      onSelectCommission={handleCommissionChange}
                       isExpanded={expandedSections.has("lesson-section")}
                       onToggle={handleEditSection}
                     />
