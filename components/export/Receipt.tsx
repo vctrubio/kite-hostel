@@ -10,6 +10,7 @@ interface ReceiptProps {
   pricePerHour: number;
   totalKitedHours: number;
   totalPriceToPay: number;
+  capacity?: number;
   events: Array<{
     teacherName: string;
     date: string;
@@ -25,18 +26,30 @@ export function Receipt({
   pricePerHour,
   totalKitedHours,
   totalPriceToPay,
+  capacity = 1,
   events
 }: ReceiptProps) {
   const [copied, setCopied] = useState(false);
 
   // Format the receipt text
   const getReceiptText = () => {
+    const pricePerStudent = totalPriceToPay;
+    const totalPriceAllStudents = totalPriceToPay * capacity;
+    const today = new Date().toLocaleDateString('en-GB', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+    
     const headerText = `
 Students: ${studentNames}
 Package Hours: ${packageHours % 1 === 0 ? Math.floor(packageHours) : packageHours.toFixed(1)}h
-Price per Hour: €${pricePerHour.toFixed(2)}
 Total Kited Hours: ${totalKitedHours % 1 === 0 ? Math.floor(totalKitedHours) : totalKitedHours.toFixed(1)}h
-Total Price to Pay: €${totalPriceToPay.toFixed(2)}
+Price per Hour per Student: €${pricePerHour.toFixed(2)}${capacity > 1 ? `
+Total Price to Pay per Student: €${pricePerStudent.toFixed(2)}
+Total Price to Pay (${capacity} students): €${totalPriceAllStudents.toFixed(2)}` : `
+Total Price to Pay: €${pricePerStudent.toFixed(2)}`}
+As of Date: ${today}
 
 *** RECEIPT ***`;
 

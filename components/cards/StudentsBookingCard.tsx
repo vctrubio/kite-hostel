@@ -8,23 +8,8 @@ import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { LessonFormatter } from "@/getters/lesson-formatters";
 import { PackageDetails } from "@/getters/package-details";
 import { Plus, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-  BOOKING_STATUSES,
-  type BookingStatus,
-  getBookingStatusColor,
-} from "@/lib/constants";
-import { updateBookingStatus } from "@/actions/booking-actions";
-import { cn } from "@/lib/utils";
 import { BookmarkIcon } from "@/svgs";
 interface StudentsBookingCardProps {
   billboardClass: BillboardClass;
@@ -39,39 +24,15 @@ interface StudentCardFooterProps {
   billboardClass: BillboardClass;
   availableTeachers: any[];
   onAssignTeacherClick: () => void;
-  onBookingComplete?: (bookingId: string) => void;
 }
 
 function StudentCardFooter({
   billboardClass,
   availableTeachers,
   onAssignTeacherClick,
-  onBookingComplete,
 }: StudentCardFooterProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
   const booking = billboardClass.booking;
-
-  const handleDropdownToggle = () => setIsOpen(!isOpen);
-
-  const handleStatusChange = (newStatus: BookingStatus) => {
-    if (newStatus === booking.status) return;
-    startTransition(async () => {
-      const { success, error } = await updateBookingStatus(
-        booking.id,
-        newStatus,
-      );
-      if (success) {
-        if (newStatus === "completed" && onBookingComplete) {
-          onBookingComplete(booking.id);
-        }
-        router.refresh();
-      } else {
-        console.error("Failed to update status:", error);
-      }
-    });
-  };
 
   // Use BillboardClass methods for calculations
   const packageMinutes = billboardClass.getPackageMinutes();
@@ -82,12 +43,14 @@ function StudentCardFooter({
   const pricePerHourPerStudent = packageMinutes.expected.pricePerHourPerStudent;
   const priceToPay = eventHours * pricePerHourPerStudent;
 
+  const hasAvailableTeachers = availableTeachers.length > 0;
+
   return (
     <div className="border-t border-border/50 -mx-4 -mb-4">
       {/* Footer Icons Bar */}
       <div className="flex flex-wrap items-center justify-between p-3 bg-muted/10 gap-y-3">
         <button
-          onClick={handleDropdownToggle}
+          onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           {isOpen ? (
@@ -101,22 +64,21 @@ function StudentCardFooter({
         <div className="flex flex-wrap items-center gap-3 px-2">
           <button
             onClick={onAssignTeacherClick}
-            disabled={availableTeachers.length === 0}
-            className={`flex items-center gap-2 transition-colors ${availableTeachers.length === 0
-              ? "text-muted-foreground cursor-not-allowed opacity-50"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
+            disabled={!hasAvailableTeachers}
+            className={`flex items-center gap-2 transition-colors ${
+              !hasAvailableTeachers
+                ? "text-muted-foreground cursor-not-allowed opacity-50"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
             title={
-              availableTeachers.length === 0
+              !hasAvailableTeachers
                 ? "No available teachers (all already assigned)"
                 : "Assign Teacher"
             }
           >
             <Plus className="w-4 h-4" />
             <span className="text-xs">
-              {availableTeachers.length === 0
-                ? "All Teachers Assigned"
-                : "Assign Teacher"}
+              {!hasAvailableTeachers ? "All Teachers Assigned" : "Assign Teacher"}
             </span>
           </button>
         </div>
@@ -150,14 +112,14 @@ function StudentCardFooter({
           {/* Booking Dates */}
           <div className="space-y-3">
             <div className="grid grid-cols-1 gap-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Created:</span>
-                <span className="font-medium">
-                  {booking.created_at
-                    ? new Date(booking.created_at).toLocaleDateString()
-                    : "N/A"}
-                </span>
-              </div>
+              {booking.created_at && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Created:</span>
+                  <span className="font-medium">
+                    {new Date(booking.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Start Date:</span>
                 <span className="font-medium">
@@ -177,6 +139,8 @@ function StudentCardFooter({
           <div className="mt-4 pt-3 border-t border-border/30">
             <Link
               href={`/bookings/${booking.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-center gap-1.5 w-full py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm transition-colors"
             >
               <span>Go to Booking Details</span>
@@ -311,7 +275,7 @@ export default function StudentsBookingCard({
       />
 
       {/* Lesson Modal for Teacher Assignment */}
-      {showLessonModal && availableTeachers.length > 0 && (
+      {showLessonModal && (
         <BookingToLessonModal
           bookingId={booking.id}
           bookingReference={booking.reference}
