@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import StudentsBookingCard from "@/components/cards/StudentsBookingCard";
 import { BillboardClass } from "@/backend/BillboardClass";
+import { BookingIcon } from "@/svgs/BookingIcon";
 
 interface StudentBookingColumnProps {
   billboardClasses: BillboardClass[];
@@ -12,7 +13,7 @@ interface StudentBookingColumnProps {
   onBookingDragEnd?: (bookingId: string, wasDropped: boolean) => void;
 }
 
-type BookingFilter = "all" | "available" | "completed";
+type BookingFilter = "onboard" | "available" | "completed";
 
 export default function StudentBookingColumn({
   billboardClasses,
@@ -25,9 +26,13 @@ export default function StudentBookingColumn({
 
   const { filteredBillboardClasses, counts } = useMemo(() => {
     // Calculate all counts first
-    const allBookings = billboardClasses.filter(bc => bc.booking.status !== "completed");
-    const completedBookings = billboardClasses.filter(bc => bc.booking.status === "completed");
-    
+    const allBookings = billboardClasses.filter(
+      (bc) => bc.booking.status !== "completed",
+    );
+    const completedBookings = billboardClasses.filter(
+      (bc) => bc.booking.status === "completed",
+    );
+
     // Available = non-completed bookings that DO NOT have an event today
     const availableBookings = allBookings.filter((billboardClass) => {
       const lessons = billboardClass.lessons || [];
@@ -46,7 +51,7 @@ export default function StudentBookingColumn({
     });
 
     const counts = {
-      all: allBookings.length,
+      onboard: allBookings.length,
       available: availableBookings.length,
       completed: completedBookings.length,
     };
@@ -66,8 +71,11 @@ export default function StudentBookingColumn({
 
   return (
     <div className="col-span-1">
-      <div className="flex items-center justify-between mb-4 p-3 border rounded-lg">
-        <h2 className="text-xl font-semibold">Bookings</h2>
+      <div className="flex items-center justify-between mb-4 py-3 px-4 border rounded-lg">
+        <div className="flex items-center gap-3">
+          <BookingIcon className="w-8 h-8 text-blue-500" />
+          <h2 className="text-xl font-semibold">Bookings</h2>
+        </div>
 
         {/* Filter Toggle with Counts */}
         <div className="flex items-center gap-1 bg-muted rounded-md p-1">
@@ -81,13 +89,13 @@ export default function StudentBookingColumn({
             Available ({counts.available})
           </button>
           <button
-            onClick={() => setFilter("all")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "all"
+            onClick={() => setFilter("onboard")}
+            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "onboard"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
-            All ({counts.all})
+            Onboard ({counts.onboard})
           </button>
           <button
             onClick={() => setFilter("completed")}

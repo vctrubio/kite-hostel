@@ -2,20 +2,12 @@
 
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BillboardClass } from "@/backend/BillboardClass";
-import {
-  HelmetIcon,
-  BookingIcon,
-} from "@/svgs";
+import { HelmetIcon, BookingIcon } from "@/svgs";
 import { FormatedDateExp } from "@/components/label/FormatedDateExp";
 import { BookingToLessonModal } from "@/components/modals/BookingToLessonModal";
 import { LessonFormatter } from "@/getters/lesson-formatters";
 import { PackageDetails } from "@/getters/package-details";
-import {
-  Plus,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-} from "lucide-react";
+import { Plus, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -26,7 +18,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { BOOKING_STATUSES, type BookingStatus, getBookingStatusColor } from "@/lib/constants";
+import {
+  BOOKING_STATUSES,
+  type BookingStatus,
+  getBookingStatusColor,
+} from "@/lib/constants";
 import { updateBookingStatus } from "@/actions/booking-actions";
 import { cn } from "@/lib/utils";
 import { BookmarkIcon } from "@/svgs";
@@ -38,7 +34,6 @@ interface StudentsBookingCardProps {
   onDragStart?: (bookingId: string) => void;
   onDragEnd?: (bookingId: string, wasDropped: boolean) => void;
 }
-
 
 interface StudentCardFooterProps {
   billboardClass: BillboardClass;
@@ -81,7 +76,7 @@ function StudentCardFooter({
   // Use BillboardClass methods for calculations
   const packageMinutes = billboardClass.getPackageMinutes();
   const eventMinutes = billboardClass.getEventMinutes();
-  
+
   // Calculate event hours for PackageDetails component
   const eventHours = eventMinutes.completed / 60;
   const pricePerHourPerStudent = packageMinutes.expected.pricePerHourPerStudent;
@@ -102,16 +97,15 @@ function StudentCardFooter({
           )}
           <span className="text-sm">Details</span>
         </button>
-        
+
         <div className="flex flex-wrap items-center gap-3 px-2">
           <button
             onClick={onAssignTeacherClick}
             disabled={availableTeachers.length === 0}
-            className={`flex items-center gap-2 transition-colors ${
-              availableTeachers.length === 0
-                ? "text-muted-foreground cursor-not-allowed opacity-50"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`flex items-center gap-2 transition-colors ${availableTeachers.length === 0
+              ? "text-muted-foreground cursor-not-allowed opacity-50"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
             title={
               availableTeachers.length === 0
                 ? "No available teachers (all already assigned)"
@@ -125,46 +119,6 @@ function StudentCardFooter({
                 : "Assign Teacher"}
             </span>
           </button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "flex items-center transition-colors",
-                  isPending && "opacity-50 cursor-not-allowed",
-                )}
-                title="Booking status"
-                disabled={isPending}
-              >
-                <div className={cn(
-                  "px-2 py-0.5 rounded-full text-xs font-medium",
-                  getBookingStatusColor(booking.status)
-                )}>
-                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                </div>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48" align="end">
-              <div className="p-2 text-xs text-muted-foreground">
-                Change Status
-              </div>
-              <DropdownMenuSeparator />
-              {BOOKING_STATUSES.map((status) => (
-                <DropdownMenuItem
-                  key={status}
-                  onClick={() => handleStatusChange(status)}
-                  disabled={isPending}
-                  className={cn(
-                    "cursor-pointer",
-                    status === booking.status &&
-                      "bg-accent text-accent-foreground",
-                  )}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
       {/* Dropdown Content */}
@@ -177,39 +131,21 @@ function StudentCardFooter({
               <span>Package Details</span>
             </div>
 
-            <PackageDetails 
+            <PackageDetails
               packageData={booking.package}
               eventHours={eventHours}
               pricePerHourPerStudent={pricePerHourPerStudent}
-              totalPrice={booking.package ? booking.package.price_per_student * booking.package.capacity_students : 0}
+              totalPrice={
+                booking.package
+                  ? booking.package.price_per_student *
+                  booking.package.capacity_students
+                  : 0
+              }
               priceToPay={priceToPay}
-              referenceId={booking.reference?.id}
+              referenceId={booking.reference?.note}
               variant="compact"
             />
           </div>
-
-          {/* Reference Information */}
-          {/* {booking.reference && (
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-muted-foreground">
-                Reference Information
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Reference:</span>
-                  <p className="font-medium">{booking.reference.id}</p>
-                </div>
-                {booking.reference.teacher && (
-                  <div>
-                    <span className="text-muted-foreground">Teacher:</span>
-                    <p className="font-medium">
-                      {booking.reference.teacher.name}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )} */}
 
           {/* Booking Dates */}
           <div className="space-y-3">
@@ -239,7 +175,7 @@ function StudentCardFooter({
 
           {/* Booking Link */}
           <div className="mt-4 pt-3 border-t border-border/30">
-            <Link 
+            <Link
               href={`/bookings/${booking.id}`}
               className="flex items-center justify-center gap-1.5 w-full py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm transition-colors"
             >
@@ -265,13 +201,16 @@ export default function StudentsBookingCard({
   const booking = billboardClass.booking;
 
   // Extract students using BillboardClass method
-  const students = useMemo(() => 
-    billboardClass.getStudents(), 
-    [billboardClass]
+  const students = useMemo(
+    () => billboardClass.getStudents(),
+    [billboardClass],
   );
-  
-  const existingLessons = useMemo(() => billboardClass.lessons || [], [billboardClass]);
-  
+
+  const existingLessons = useMemo(
+    () => billboardClass.lessons || [],
+    [billboardClass],
+  );
+
   const assignedTeacherIds = useMemo(() => {
     return new Set(
       existingLessons.map((lesson) => lesson.teacher?.id).filter(Boolean),
@@ -290,11 +229,8 @@ export default function StudentsBookingCard({
       lessons: billboardClass.lessons,
       package: billboardClass.package,
     };
-    
-    e.dataTransfer.setData(
-      "application/json",
-      JSON.stringify(dragData),
-    );
+
+    e.dataTransfer.setData("application/json", JSON.stringify(dragData));
     onDragStart?.(booking.id);
   };
 
@@ -308,11 +244,10 @@ export default function StudentsBookingCard({
       draggable={isDraggable}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      className={`p-4 bg-card rounded-lg border border-border transition-shadow ${
-        isDraggable
-          ? "cursor-grab hover:shadow-md active:cursor-grabbing border-green-200 dark:border-green-800"
-          : "opacity-75"
-      }`}
+      className={`p-4 bg-card rounded-lg border border-border transition-shadow ${isDraggable
+        ? "cursor-grab hover:shadow-md active:cursor-grabbing border-green-200 dark:border-green-800"
+        : "opacity-75"
+        }`}
       style={{ position: "relative" }}
     >
       <div className="flex flex-col gap-3 mb-2">
@@ -326,6 +261,7 @@ export default function StudentsBookingCard({
                 endDate={booking.date_end}
                 selectedDate={selectedDate}
                 status={booking.status}
+                bookingId={booking.id}
               />
             </div>
             <div className="flex-grow min-w-[150px]">
