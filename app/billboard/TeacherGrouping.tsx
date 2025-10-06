@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState, useMemo } from "react";
+import { forwardRef, useImperativeHandle, useState, useMemo, useEffect } from "react";
 import { HeadsetIcon } from "@/svgs";
 import { Flag, ChevronLeft, ChevronRight } from "lucide-react";
 import { TeacherQueue } from "@/backend/TeacherQueue";
@@ -349,6 +349,19 @@ export const TeacherGrouping = forwardRef<
   // Drag and drop state
   const [isDropping, setIsDropping] = useState(false);
 
+  // Reset dropping state when modal overlays might interfere
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setIsDropping(false);
+    };
+
+    // Listen for clicks that might open modals
+    document.addEventListener('click', handleGlobalClick);
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, []);
+
   const schedule = teacherQueue.getSchedule();
   const teacherId = schedule.teacherId;
   const teacherStats = teacherQueue.getTeacherStats();
@@ -356,11 +369,16 @@ export const TeacherGrouping = forwardRef<
 
   // Check if the dragged booking has a lesson assigned to this teacher
   const dragCompatibility = useMemo(() => {
-    if (!externalDraggedBooking) return null;
+    if (!externalDraggedBooking || !isDropping) return null;
 
-    const hasTeacherAssigned = externalDraggedBooking.hasTeacher(teacherId);
-    return hasTeacherAssigned ? "compatible" : "incompatible";
-  }, [externalDraggedBooking, teacherId]);
+    try {
+      const hasTeacherAssigned = externalDraggedBooking.hasTeacher(teacherId);
+      return hasTeacherAssigned ? "compatible" : "incompatible";
+    } catch (error) {
+      console.warn("Error checking drag compatibility:", error);
+      return null;
+    }
+  }, [externalDraggedBooking, teacherId, isDropping]);
 
   // Expose submit method via ref
   useImperativeHandle(ref, () => ({
@@ -389,7 +407,9 @@ export const TeacherGrouping = forwardRef<
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+    // Check if the related target is outside the drop zone
+    const relatedTarget = e.relatedTarget as Node;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
       setIsDropping(false);
     }
   };

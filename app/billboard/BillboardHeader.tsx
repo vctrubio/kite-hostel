@@ -39,6 +39,8 @@ interface BillboardHeaderProps {
     total: number;
     allIds: string[];
     incompleteIds: string[];
+    plannedIds: string[];
+    tbcIds: string[];
   };
   bookingStats: {
     totalBookings: number;
@@ -89,41 +91,6 @@ function StatsSection({
             console.error("❌ Failed to set all events to TBC:", tbcResult.error);
           }
           break;
-        case "delete-incomplete":
-          const deleteResult = await bulkDeleteEvents(eventStatus.allIds);
-          if (deleteResult.success) {
-            toast.success(`Deleted ${deleteResult.deletedCount} events`, {
-              description: "All events have been removed"
-            });
-            console.log(`✅ Deleted ${deleteResult.deletedCount} events`);
-          } else {
-            toast.error("Failed to delete events", {
-              description: deleteResult.error
-            });
-            console.error("❌ Failed to delete events:", deleteResult.error);
-          }
-          break;
-        case "delete-safe":
-          if (eventStatus.incompleteIds.length === 0) {
-            toast.info("No incomplete events to delete", {
-              description: "All events are already completed"
-            });
-            console.log("No incomplete events to delete");
-            return;
-          }
-          const safedeleteResult = await bulkDeleteEvents(eventStatus.incompleteIds);
-          if (safedeleteResult.success) {
-            toast.success(`Safely deleted ${safedeleteResult.deletedCount} incomplete events`, {
-              description: "Completed events were preserved"
-            });
-            console.log(`✅ Safely deleted ${safedeleteResult.deletedCount} incomplete events`);
-          } else {
-            toast.error("Failed to safely delete incomplete events", {
-              description: safedeleteResult.error
-            });
-            console.error("❌ Failed to safely delete incomplete events:", safedeleteResult.error);
-          }
-          break;
       }
     } catch (error) {
       console.error("❌ Error performing bulk action:", error);
@@ -172,18 +139,6 @@ function StatsSection({
                       className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 text-purple-600 dark:text-purple-400"
                     >
                       Set All TBC
-                    </button>
-                    <button
-                      onClick={() => handleLessonAction("delete-incomplete")}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
-                    >
-                      No Wind = Delete Lessons
-                    </button>
-                    <button
-                      onClick={() => handleLessonAction("delete-safe")}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 text-orange-600 dark:text-orange-400"
-                    >
-                      Delete Lessons (Safe)
                     </button>
                   </div>
                 </div>
@@ -250,6 +205,47 @@ function EventSettingsSection({
     onActionClick("nowind");
     setShowNoWindConfirm(false);
   };
+
+  const handleLessonAction = async (action: string) => {
+    setShowNoWindConfirm(false);
+    
+    if (eventStatus.allIds.length === 0) {
+      console.warn("No events to update");
+      return;
+    }
+
+    try {
+      switch (action) {
+        case "delete-tbc":
+          const tbcDeleteResult = await bulkDeleteEvents(eventStatus.tbcIds);
+          if (tbcDeleteResult.success) {
+            console.log(`✅ Deleted ${tbcDeleteResult.deletedCount} TBC events`);
+          } else {
+            console.error("❌ Failed to delete TBC events:", tbcDeleteResult.error);
+          }
+          break;
+        case "delete-planned":
+          const plannedDeleteResult = await bulkDeleteEvents(eventStatus.plannedIds);
+          if (plannedDeleteResult.success) {
+            console.log(`✅ Deleted ${plannedDeleteResult.deletedCount} planned events`);
+          } else {
+            console.error("❌ Failed to delete planned events:", plannedDeleteResult.error);
+          }
+          break;
+        case "delete-uncompleted":
+          const uncompletedIds = [...eventStatus.plannedIds, ...eventStatus.tbcIds];
+          const uncompletedDeleteResult = await bulkDeleteEvents(uncompletedIds);
+          if (uncompletedDeleteResult.success) {
+            console.log(`✅ Deleted ${uncompletedDeleteResult.deletedCount} uncompleted events`);
+          } else {
+            console.error("❌ Failed to delete uncompleted events:", uncompletedDeleteResult.error);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error("❌ Error performing bulk action:", error);
+    }
+  };
   
   return (
     <div>
@@ -282,21 +278,47 @@ function EventSettingsSection({
             />
             {showNoWindConfirm && (
               <div className="mt-3 pt-3 border-t border-border">
-                <div className="space-y-2">
-                  <button
-                    onClick={handleNoWindConfirm}
-                    disabled={eventStatus.allIds.length === 0}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-100 text-red-800 rounded hover:bg-red-200 border border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title={eventStatus.allIds.length === 0 ? "No events to cancel" : "Cancel all events due to unsafe wind conditions"}
-                  >
-                    <span>NO WIND - Cancel All Events</span>
-                  </button>
-                  
-                  {eventStatus.allIds.length > 0 && (
-                    <div className="text-xs text-red-600 dark:text-red-400">
-                      This will cancel all {eventStatus.allIds.length} events for today. This action cannot be undone.
-                    </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {eventStatus.total > 0 && (
+                    <button
+                      onClick={handleNoWindConfirm}
+                      className="px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 transition-colors dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/30"
+                    >
+                      Delete All ({eventStatus.total})
+                    </button>
                   )}
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    {(eventStatus.planned > 0 || eventStatus.tbc > 0) && (
+                      <button
+                        onClick={() => handleLessonAction("delete-uncompleted")}
+                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 hover:border-gray-300 transition-colors dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800 dark:hover:bg-gray-900/30 flex flex-col items-center"
+                      >
+                        <span>Uncompleted</span>
+                        <span className="text-xs">({eventStatus.planned + eventStatus.tbc})</span>
+                      </button>
+                    )}
+                    
+                    {eventStatus.tbc > 0 && (
+                      <button
+                        onClick={() => handleLessonAction("delete-tbc")}
+                        className="px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-md hover:bg-purple-100 hover:border-purple-300 transition-colors dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800 dark:hover:bg-purple-900/30 flex flex-col items-center"
+                      >
+                        <span>TBC</span>
+                        <span className="text-xs">({eventStatus.tbc})</span>
+                      </button>
+                    )}
+                    
+                    {eventStatus.planned > 0 && (
+                      <button
+                        onClick={() => handleLessonAction("delete-planned")}
+                        className="px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:border-blue-300 transition-colors dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-900/30 flex flex-col items-center"
+                      >
+                        <span>Planned</span>
+                        <span className="text-xs">({eventStatus.planned})</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

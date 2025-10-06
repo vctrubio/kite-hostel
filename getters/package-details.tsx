@@ -126,11 +126,11 @@ export function PackageDetails({
         </p>
       </div>
       <div>
-        <span className="text-muted-foreground">Expected Total:</span>
+        <span className="text-muted-foreground">Package Price:</span>
         <p className="font-medium text-green-600">€{totalPrice}</p>
       </div>
       <div>
-        <span className="text-muted-foreground">Actual Total:</span>
+        <span className="text-muted-foreground">Expected Total:</span>
         <p className="font-medium text-blue-600">€{(priceToPay * (packageData.capacity_students || 1)).toFixed(2)}</p>
       </div>
     </div>

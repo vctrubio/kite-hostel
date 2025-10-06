@@ -210,6 +210,8 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     let total = 0;
     const allIds: string[] = [];
     const incompleteIds: string[] = [];
+    const plannedIds: string[] = [];
+    const tbcIds: string[] = [];
 
     teacherQueues.forEach((queue) => {
       const events = queue.getAllEvents();
@@ -223,6 +225,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
           case "planned":
             planned++;
             incompleteIds.push(eventId);
+            plannedIds.push(eventId);
             break;
           case "completed":
             completed++;
@@ -230,6 +233,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
           case "tbc":
             tbc++;
             incompleteIds.push(eventId);
+            tbcIds.push(eventId);
             break;
           case "cancelled":
             cancelled++;
@@ -247,6 +251,8 @@ export default function BillboardClient({ data }: BillboardClientProps) {
       total,
       allIds,
       incompleteIds,
+      plannedIds,
+      tbcIds,
     };
   }, [teacherQueues]);
 

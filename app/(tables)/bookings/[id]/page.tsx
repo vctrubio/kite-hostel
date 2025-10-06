@@ -537,7 +537,7 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
               pricePerHourPerStudent={pricePerHourPerStudent}
               totalPrice={totalPrice}
               priceToPay={priceToPay}
-              referenceId={booking.reference?.id}
+              referenceId={booking.reference?.note}
               variant="full"
             />
           </div>
@@ -570,6 +570,7 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
             pricePerHour={pricePerHourPerStudent}
             totalKitedHours={eventHours}
             totalPriceToPay={priceToPay}
+            capacity={booking.package?.capacity_students || 1}
             events={receiptEvents}
           />
 

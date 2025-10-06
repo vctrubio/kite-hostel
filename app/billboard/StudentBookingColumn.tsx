@@ -72,9 +72,8 @@ export default function StudentBookingColumn({
   return (
     <div className="col-span-1">
       <div className="flex items-center justify-between mb-4 py-3 px-4 border rounded-lg">
-        <div className="flex items-center gap-3">
+        <div className="flex mr-3">
           <BookingIcon className="w-8 h-8 text-blue-500" />
-          <h2 className="text-xl font-semibold">Bookings</h2>
         </div>
 
         {/* Filter Toggle with Counts */}
