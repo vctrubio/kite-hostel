@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { createLesson } from "@/actions/lesson-actions";
 import { createCommission } from "@/actions/commission-actions";
 import { useRouter } from "next/navigation";
-import { X, Search, Plus, Check, ChevronRight, DollarSign, User } from "lucide-react";
+import { X, Search, Plus, Check, ChevronRight, UserCheck } from "lucide-react";
+import { HeadsetIcon, PaymentIcon } from "@/svgs";
 
 /* ============================================================================
  * TYPE DEFINITIONS
@@ -58,48 +59,31 @@ function TeacherCard({ teacher, isSelected, onSelect }: TeacherCardProps) {
   return (
     <button
       onClick={onSelect}
-      className={`w-full text-left p-4 rounded-lg border transition-all duration-200 ${
+      className={`w-full text-left p-3 rounded-lg border transition-all ${
         isSelected
           ? "border-primary bg-primary/5"
-          : "border-border bg-card hover:border-muted-foreground/30"
+          : "border-border hover:border-muted-foreground/30"
       }`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${
-              isSelected
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {teacher.name.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground text-base">
-              {teacher.name}
-            </h3>
-            {teacher.languages && teacher.languages.length > 0 && (
-              <div className="flex gap-1.5 mt-1 flex-wrap">
-                {teacher.languages.map((lang, idx) => (
-                  <span
-                    key={idx}
-                    className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border"
-                  >
-                    {lang}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+          isSelected ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
+        }`}>
+          <HeadsetIcon className="w-4 h-4" />
         </div>
-        <div
-          className={`transition-transform duration-300 ${
-            isSelected ? "rotate-90 text-primary" : "text-muted-foreground"
-          }`}
-        >
-          <ChevronRight className="w-5 h-5" />
+        <div className="flex-1">
+          <h3 className="font-medium text-sm">{teacher.name}</h3>
+          {teacher.languages && teacher.languages.length > 0 && (
+            <div className="flex gap-1 mt-0.5 flex-wrap">
+              {teacher.languages.map((lang, idx) => (
+                <span key={idx} className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                  {lang}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
+        {isSelected && <Check className="w-4 h-4 text-primary" />}
       </div>
     </button>
   );
@@ -123,42 +107,25 @@ function CommissionCard({ commission, isSelected, onSelect }: CommissionCardProp
   return (
     <button
       onClick={onSelect}
-      className={`w-full text-left p-4 rounded-lg border transition-all duration-200 ${
+      className={`w-full text-left p-3 rounded-lg border transition-all ${
         isSelected
           ? "border-primary bg-primary/5"
-          : "border-border bg-card hover:border-muted-foreground/30"
+          : "border-border hover:border-muted-foreground/30"
       }`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-              isSelected
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            <DollarSign className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="font-bold text-lg text-foreground">
-              €{commission.price_per_hour}
-              <span className="text-sm font-normal text-muted-foreground ml-1">
-                /hour
-              </span>
-            </div>
-            {commission.desc && (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {commission.desc}
-              </p>
-            )}
-          </div>
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+          isSelected ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
+        }`}>
+          <PaymentIcon className="w-4 h-4" />
         </div>
-        {isSelected && (
-          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-            <Check className="w-4 h-4 text-primary-foreground" />
-          </div>
-        )}
+        <div className="flex-1">
+          <div className="font-semibold text-sm">€{commission.price_per_hour}/h</div>
+          {commission.desc && (
+            <p className="text-xs text-muted-foreground">{commission.desc}</p>
+          )}
+        </div>
+        {isSelected && <Check className="w-4 h-4 text-primary" />}
       </div>
     </button>
   );
@@ -199,7 +166,6 @@ function NewCommissionForm({
       });
 
       if (result.success && result.commission?.id) {
-        toast.success("Commission created successfully!");
         onCommissionCreated(result.commission.id);
       } else {
         toast.error(result.error || "Failed to create commission");
@@ -210,17 +176,14 @@ function NewCommissionForm({
   };
 
   return (
-    <div className="p-5 rounded-lg border border-dashed border-border bg-muted/30 space-y-4">
+    <div className="p-4 rounded-lg border border-dashed border-border bg-muted/20 space-y-3">
       <div className="flex items-center gap-2 text-foreground">
-        <Plus className="w-5 h-5" />
-        <h4 className="font-semibold text-base">Create New Commission</h4>
+        <Plus className="w-4 h-4" />
+        <h4 className="font-medium text-sm">New Commission</h4>
       </div>
-
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-sm font-medium text-foreground mb-1.5 block">
-            Hourly Rate (€)
-          </label>
+          <label className="text-xs font-medium text-foreground mb-1 block">Rate (€)</label>
           <Input
             type="number"
             min="1"
@@ -228,39 +191,26 @@ function NewCommissionForm({
             value={rate}
             onChange={(e) => setRate(e.target.value)}
             placeholder="25"
-            className="h-11 text-base"
+            className="h-8 text-sm"
           />
         </div>
-
         <div>
-          <label className="text-sm font-medium text-foreground mb-1.5 block">
-            Description (Optional)
-          </label>
+          <label className="text-xs font-medium text-foreground mb-1 block">Description</label>
           <Input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Summer Rate, Group Lessons"
-            className="h-11 text-base"
+            placeholder="Summer Rate"
+            className="h-8 text-sm"
           />
         </div>
       </div>
-
-      <div className="flex gap-2 pt-2">
-        <Button
-          variant="outline"
-          onClick={onCancel}
-          disabled={isCreating}
-          className="flex-1"
-        >
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={onCancel} disabled={isCreating} size="sm" className="flex-1">
           Cancel
         </Button>
-        <Button
-          onClick={handleCreate}
-          disabled={isCreating || !rate}
-          className="flex-1"
-        >
-          {isCreating ? "Creating..." : "Create & Use"}
+        <Button onClick={handleCreate} disabled={isCreating || !rate} size="sm" className="flex-1">
+          {isCreating ? "Creating..." : "Create"}
         </Button>
       </div>
     </div>
@@ -276,58 +226,28 @@ interface BookingReferenceCardProps {
 }
 
 function BookingReferenceCard({ reference }: BookingReferenceCardProps) {
+  const fields = [
+    reference.note && { label: "Note", value: reference.note },
+    reference.role && { label: "Role", value: reference.role, capitalize: true },
+    reference.teacher?.name && { label: "Teacher", value: reference.teacher.name },
+    reference.amount && { label: "Amount", value: `€${reference.amount}`, color: "text-green-600" },
+    reference.status && { label: "Status", value: reference.status, capitalize: true },
+  ].filter(Boolean);
+
   return (
-    <div className="p-5 rounded-lg bg-muted/30 border border-border">
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-          <User className="w-5 h-5 text-muted-foreground" />
-        </div>
-        <div className="flex-1 space-y-2">
-          <h3 className="font-semibold text-foreground text-sm">
-            Booking Reference
-          </h3>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div>
-              <span className="text-muted-foreground">ID:</span>
-              <p className="font-mono text-xs text-foreground mt-0.5 bg-background/50 px-2 py-1 rounded">
-                {reference.id}
-              </p>
+    <div className="p-3 rounded-lg bg-muted/20 border border-border">
+      <div className="flex items-center gap-3">
+        <UserCheck className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        <h3 className="font-medium text-foreground text-sm">Booking Reference</h3>
+        <div className="flex-1 flex flex-wrap gap-x-4 gap-y-1 justify-end text-xs">
+          {fields.map((field, idx) => (
+            <div key={idx} className="flex items-center gap-1">
+              <span className="text-muted-foreground">{field.label}:</span>
+              <span className={`font-medium ${field.color || 'text-foreground'} ${field.capitalize ? 'capitalize' : ''}`}>
+                {field.value}
+              </span>
             </div>
-            {(reference.teacher?.name || reference.note) && (
-              <div>
-                <span className="text-muted-foreground">
-                  {reference.teacher?.name ? "Teacher:" : "Note:"}
-                </span>
-                <p className="font-medium text-foreground mt-0.5">
-                  {reference.teacher?.name || reference.note}
-                </p>
-              </div>
-            )}
-            {reference.amount && (
-              <div>
-                <span className="text-muted-foreground">Amount:</span>
-                <p className="font-bold text-green-600 dark:text-green-400 mt-0.5">
-                  €{reference.amount}
-                </p>
-              </div>
-            )}
-            {reference.status && (
-              <div>
-                <span className="text-muted-foreground">Status:</span>
-                <p className="capitalize font-medium text-foreground mt-0.5">
-                  {reference.status}
-                </p>
-              </div>
-            )}
-            {reference.role && (
-              <div className="col-span-2">
-                <span className="text-muted-foreground">Role:</span>
-                <p className="capitalize font-medium text-foreground mt-0.5">
-                  {reference.role}
-                </p>
-              </div>
-            )}
-          </div>
+          ))}
         </div>
       </div>
     </div>
@@ -400,7 +320,7 @@ export function BookingToTeacherModal({
       });
 
       if (result.success) {
-        toast.success("🎉 Lesson created and linked successfully!");
+        toast.success("Lesson created and linked successfully!");
         onCommissionCreated();
         router.refresh();
         onClose();
@@ -420,27 +340,20 @@ export function BookingToTeacherModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-6 border-b border-border">
+        <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground mb-1">
-                Assign Teacher to Booking
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                Select a teacher and commission to create a lesson
-              </p>
+              <h2 className="text-lg font-bold text-foreground">Assign Teacher</h2>
+              <p className="text-muted-foreground text-xs">Select teacher and commission</p>
             </div>
-            <button
-              onClick={onClose}
-              className="w-10 h-10 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
-            >
-              <X className="w-5 h-5 text-muted-foreground" />
+            <button onClick={onClose} className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center">
+              <X className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Booking Reference */}
           {bookingReference && (
             <BookingReferenceCard reference={bookingReference} />
@@ -449,31 +362,27 @@ export function BookingToTeacherModal({
           {/* Search Bar */}
           {teachers.length > 3 && (
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search teachers..."
-                className="pl-10 h-12 text-base"
+                className="pl-8 h-8 text-sm"
               />
             </div>
           )}
 
           {/* Teacher Selection */}
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-foreground text-xs font-bold">
-                1
-              </span>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-foreground text-xs font-bold">1</span>
               Select Teacher
             </h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
               {filteredTeachers.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  {searchQuery
-                    ? "No teachers found matching your search"
-                    : "No teachers available"}
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  {searchQuery ? "No teachers found" : "No teachers available"}
                 </div>
               ) : (
                 filteredTeachers.map((teacher) => (
@@ -490,18 +399,13 @@ export function BookingToTeacherModal({
 
           {/* Commission Selection */}
           {selectedTeacher && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-foreground text-xs font-bold">
-                  2
-                </span>
-                Choose Commission for{" "}
-                <span className="text-foreground font-bold">{selectedTeacher.name}</span>
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-foreground text-xs font-bold">2</span>
+                Commission for <span className="text-foreground font-bold">{selectedTeacher.name}</span>
               </h3>
-
-              {/* Existing Commissions */}
               {selectedTeacher.commissions.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {selectedTeacher.commissions.map((commission) => (
                     <CommissionCard
                       key={commission.id}
@@ -515,23 +419,22 @@ export function BookingToTeacherModal({
                   ))}
                 </div>
               )}
-
-              {/* No Commissions Message */}
               {selectedTeacher.commissions.length === 0 && !showNewCommissionForm && (
-                <div className="p-4 rounded-xl border border-dashed border-border bg-muted/30 text-center text-sm text-muted-foreground">
-                  No existing commissions for this teacher
+                <div className="p-3 rounded-lg border border-dashed border-border bg-muted/20 text-center text-xs text-muted-foreground">
+                  No existing commissions
                 </div>
               )}
-
-              {/* Create New Commission Button/Form */}
               {!showNewCommissionForm ? (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowNewCommissionForm(true)}
-                  className="w-full border-dashed h-12"
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowNewCommissionForm(true);
+                    setSelectedCommissionId(null);
+                  }} 
+                  className="w-full border-dashed h-8" 
+                  size="sm"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Commission
+                  <Plus className="w-3 h-3 mr-1" /> New Commission
                 </Button>
               ) : (
                 <NewCommissionForm
@@ -539,7 +442,6 @@ export function BookingToTeacherModal({
                   onCommissionCreated={(commissionId) => {
                     setSelectedCommissionId(commissionId);
                     setShowNewCommissionForm(false);
-                    toast.success("Commission created! Creating lesson...");
                     handleCreateLesson(commissionId);
                   }}
                   onCancel={() => setShowNewCommissionForm(false)}
@@ -550,40 +452,33 @@ export function BookingToTeacherModal({
         </div>
 
         {/* Footer */}
-        <div className="p-6 bg-muted/30 border-t border-border flex items-center justify-between gap-4">
-          <div className="text-sm text-muted-foreground">
-            {!selectedTeacherId && "Start by selecting a teacher"}
-            {selectedTeacherId && !selectedCommissionId && "Now choose or create a commission"}
+        <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-between gap-3">
+          <div className="text-xs text-muted-foreground">
+            {!selectedTeacherId && "Select teacher"}
+            {selectedTeacherId && !selectedCommissionId && "Choose commission"}
             {selectedTeacherId && selectedCommissionId && (
-              <span className="flex items-center gap-2 text-foreground font-medium">
-                <Check className="w-4 h-4" />
-                Ready to create lesson
+              <span className="flex items-center gap-1 text-foreground font-medium">
+                <Check className="w-3 h-3" /> Ready
               </span>
             )}
           </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={isPending}
-              className="px-6"
-            >
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} disabled={isPending} size="sm">
               Cancel
             </Button>
             <Button
               onClick={() => handleCreateLesson()}
               disabled={isPending || !selectedTeacherId || !selectedCommissionId}
-              className="px-8"
+              size="sm"
             >
               {isPending ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1"></div>
                   Creating...
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Create Lesson
+                  <Check className="w-3 h-3 mr-1" /> Create
                 </>
               )}
             </Button>

@@ -141,7 +141,7 @@ function StudentCardFooter({
               href={`/bookings/${booking.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 w-full py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm transition-colors"
+              className="flex items-center justify-center gap-1.5 w-full py-2 rounded-md bg-muted hover:bg-muted/80 text-foreground font-medium text-sm transition-colors"
             >
               <span>Go to Booking Details</span>
               <ExternalLink className="h-3.5 w-3.5" />
