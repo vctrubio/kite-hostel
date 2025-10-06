@@ -2,20 +2,35 @@
 
 import db from "@/drizzle";
 import { InferSelectModel } from "drizzle-orm";
-import { Teacher, Commission, Lesson, TeacherKite, Payment, Kite, user_wallet, Event, Student, BookingStudent, Booking, PackageStudent, KiteEvent } from "@/drizzle/migrations/schema";
-import { eq} from "drizzle-orm";
+import {
+  Teacher,
+  Commission,
+  Lesson,
+  TeacherKite,
+  Payment,
+  Kite,
+  user_wallet,
+  Event,
+  Student,
+  BookingStudent,
+  Booking,
+  PackageStudent,
+  KiteEvent,
+} from "@/drizzle/migrations/schema";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTeacherBalance } from "@/getters/teacher-getters";
 
 export async function createTeacher(
   teacherData: typeof Teacher.$inferInsert,
-): Promise<{ success: boolean; data?: InferSelectModel<typeof Teacher>; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: InferSelectModel<typeof Teacher>;
+  error?: string;
+}> {
   try {
-    const result = await db
-      .insert(Teacher)
-      .values(teacherData)
-      .returning();
+    const result = await db.insert(Teacher).values(teacherData).returning();
 
     if (result.length === 0) {
       return { success: false, error: "Failed to create teacher." };
@@ -56,17 +71,20 @@ export async function updateTeacher(
   }
 }
 
-
 export type TeacherWithRelations = InferSelectModel<typeof Teacher> & {
   commissions: InferSelectModel<typeof Commission>[];
-  kites: (InferSelectModel<typeof TeacherKite> & { kite: InferSelectModel<typeof Kite> })[];
+  kites: (InferSelectModel<typeof TeacherKite> & {
+    kite: InferSelectModel<typeof Kite>;
+  })[];
   payments: InferSelectModel<typeof Payment>[];
-  lessons: (InferSelectModel<typeof Lesson> & { 
+  lessons: (InferSelectModel<typeof Lesson> & {
     events: InferSelectModel<typeof Event>[];
     commission: InferSelectModel<typeof Commission>;
     booking: InferSelectModel<typeof Booking> & {
       package: InferSelectModel<typeof PackageStudent>;
-      students: (InferSelectModel<typeof BookingStudent> & { student: InferSelectModel<typeof Student> })[];
+      students: (InferSelectModel<typeof BookingStudent> & {
+        student: InferSelectModel<typeof Student>;
+      })[];
     };
   })[];
   user_wallet?: {
@@ -84,15 +102,21 @@ export type TeacherWithRelations = InferSelectModel<typeof Teacher> & {
 
 export type TeacherPortalData = InferSelectModel<typeof Teacher> & {
   commissions: InferSelectModel<typeof Commission>[];
-  kites: (InferSelectModel<typeof TeacherKite> & { kite: InferSelectModel<typeof Kite> })[];
+  kites: (InferSelectModel<typeof TeacherKite> & {
+    kite: InferSelectModel<typeof Kite>;
+  })[];
   payments: InferSelectModel<typeof Payment>[];
-  lessons: (InferSelectModel<typeof Lesson> & { 
+  lessons: (InferSelectModel<typeof Lesson> & {
     events: (InferSelectModel<typeof Event> & {
-      kites: (InferSelectModel<typeof KiteEvent> & { kite: InferSelectModel<typeof Kite> })[];
+      kites: (InferSelectModel<typeof KiteEvent> & {
+        kite: InferSelectModel<typeof Kite>;
+      })[];
     })[];
     booking: InferSelectModel<typeof Booking> & {
       package: InferSelectModel<typeof PackageStudent>;
-      students: (InferSelectModel<typeof BookingStudent> & { student: InferSelectModel<typeof Student> })[];
+      students: (InferSelectModel<typeof BookingStudent> & {
+        student: InferSelectModel<typeof Student>;
+      })[];
     };
   })[];
   user_wallet?: {
@@ -141,7 +165,10 @@ export type TeacherWithMetrics = InferSelectModel<typeof Teacher> & {
   };
 };
 
-export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetrics[]; error: string | null }> {
+export async function getTeachersWithMetrics(): Promise<{
+  data: TeacherWithMetrics[];
+  error: string | null;
+}> {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -160,45 +187,61 @@ export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetri
       },
     });
 
-    const teachersWithMetrics: TeacherWithMetrics[] = teachers.map(teacher => {
-      const lessonCount = teacher.lessons.length;
-      const eventCount = teacher.lessons.reduce((count, lesson) => count + lesson.events.length, 0);
-      const totalEventMinutes = teacher.lessons.reduce((total, lesson) => {
-        return total + lesson.events.reduce((eventTotal, event) => {
-          return eventTotal + (event.duration || 0); // Keep as minutes
+    const teachersWithMetrics: TeacherWithMetrics[] = teachers.map(
+      (teacher) => {
+        const lessonCount = teacher.lessons.length;
+        const eventCount = teacher.lessons.reduce(
+          (count, lesson) => count + lesson.events.length,
+          0,
+        );
+        const totalEventMinutes = teacher.lessons.reduce((total, lesson) => {
+          return (
+            total +
+            lesson.events.reduce((eventTotal, event) => {
+              return eventTotal + (event.duration || 0); // Keep as minutes
+            }, 0)
+          );
         }, 0);
-      }, 0);
 
-      // Group lessons by status
-      const lessonsByStatus = teacher.lessons.reduce((acc, lesson) => {
-        const status = lesson.status as 'planned' | 'rest' | 'delegated' | 'completed' | 'cancelled';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {
-        planned: 0,
-        rest: 0,
-        delegated: 0,
-        completed: 0,
-        cancelled: 0,
-      });
+        // Group lessons by status
+        const lessonsByStatus = teacher.lessons.reduce(
+          (acc, lesson) => {
+            const status = lesson.status as
+              | "planned"
+              | "rest"
+              | "delegated"
+              | "completed"
+              | "cancelled";
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+          },
+          {
+            planned: 0,
+            rest: 0,
+            delegated: 0,
+            completed: 0,
+            cancelled: 0,
+          },
+        );
 
-      const activeLessonCount = lessonsByStatus.planned;
-      const isActive = activeLessonCount > 0;
+        const activeLessonCount = lessonsByStatus.planned;
+        const isActive = activeLessonCount > 0;
 
-      // Calculate balance using getter function
-      const balance = getTeacherBalance(teacher);
+        // Calculate balance using getter function
+        const balance = getTeacherBalance(teacher);
 
-      return {
-        ...teacher,
-        lessonCount,
-        eventCount,
-        totalEventMinutes,
-        activeLessonCount,
-        isActive,
-        balance,
-        lessonsByStatus,
-      };
-    });
+        return {
+          ...teacher,
+          lessonCount,
+          eventCount,
+          totalEventMinutes,
+          activeLessonCount,
+          isActive,
+          balance,
+          lessonsByStatus,
+        };
+      },
+    );
 
     return { data: teachersWithMetrics, error: null };
   } catch (error: any) {
@@ -207,7 +250,9 @@ export async function getTeachersWithMetrics(): Promise<{ data: TeacherWithMetri
   }
 }
 
-export async function fetchUserBySk(sk: string): Promise<{ data: TeacherWithRelations | null; error: string | null }> {
+export async function fetchUserBySk(
+  sk: string,
+): Promise<{ data: TeacherWithRelations | null; error: string | null }> {
   try {
     const userWallet = await db.query.user_wallet.findFirst({
       where: eq(user_wallet.sk, sk),
@@ -219,13 +264,16 @@ export async function fetchUserBySk(sk: string): Promise<{ data: TeacherWithRela
 
     return await getTeacherById(userWallet.pk);
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     console.error(`Error fetching teacher by SK ${sk}:`, error);
     return { data: null, error: errorMessage };
   }
 }
 
-export async function getTeacherById(id: string): Promise<{ data: TeacherWithRelations | null; error: string | null }> {
+export async function getTeacherById(
+  id: string,
+): Promise<{ data: TeacherWithRelations | null; error: string | null }> {
   try {
     const teacher = await db.query.Teacher.findFirst({
       where: eq(Teacher.id, id),
@@ -275,16 +323,24 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
     let enrichedUserWallet = null;
     if (teacher.user_wallet && teacher.user_wallet.sk) {
       const supabaseAdmin = createAdminClient();
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(teacher.user_wallet.sk);
+      const { data: authUser, error: authError } =
+        await supabaseAdmin.auth.admin.getUserById(teacher.user_wallet.sk);
 
       enrichedUserWallet = {
         ...teacher.user_wallet,
-        sk_email: authError || !authUser.user ? null : authUser.user.email || null,
-        sk_full_name: authError || !authUser.user ? null : authUser.user.user_metadata?.full_name || null,
+        sk_email:
+          authError || !authUser.user ? null : authUser.user.email || null,
+        sk_full_name:
+          authError || !authUser.user
+            ? null
+            : authUser.user.user_metadata?.full_name || null,
       };
 
       if (authError) {
-        console.error("Error fetching auth user by ID for teacher wallet:", authError);
+        console.error(
+          "Error fetching auth user by ID for teacher wallet:",
+          authError,
+        );
       }
     }
 
@@ -294,13 +350,21 @@ export async function getTeacherById(id: string): Promise<{ data: TeacherWithRel
     };
     return { data: teacherWithRelations, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error(`Error fetching teacher with ID ${id} with Drizzle:`, error, "Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(
+      `Error fetching teacher with ID ${id} with Drizzle:`,
+      error,
+      "Full error object:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    );
     return { data: null, error: errorMessage };
   }
 }
 
-export async function getTeacherPortalById(id: string): Promise<{ data: TeacherPortalData | null; error: string | null }> {
+export async function getTeacherPortalById(
+  id: string,
+): Promise<{ data: TeacherPortalData | null; error: string | null }> {
   try {
     const teacher = await db.query.Teacher.findFirst({
       where: eq(Teacher.id, id),
@@ -354,10 +418,14 @@ export async function getTeacherPortalById(id: string): Promise<{ data: TeacherP
       userWalletData = associatedUserWallet;
       if (userWalletData.sk) {
         const supabaseAdmin = createAdminClient();
-        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userWalletData.sk);
+        const { data: authUser, error: authError } =
+          await supabaseAdmin.auth.admin.getUserById(userWalletData.sk);
 
         if (authError) {
-          console.error("Error fetching auth user by ID for teacher wallet:", authError);
+          console.error(
+            "Error fetching auth user by ID for teacher wallet:",
+            authError,
+          );
         } else if (authUser.user) {
           sk_email = authUser.user.email || null;
           sk_full_name = authUser.user.user_metadata?.full_name || null;
@@ -367,15 +435,18 @@ export async function getTeacherPortalById(id: string): Promise<{ data: TeacherP
 
     const teacherPortalData: TeacherPortalData = {
       ...teacher,
-      user_wallet: userWalletData ? { 
-        ...userWalletData, 
-        sk_email, 
-        sk_full_name,
-      } : null,
+      user_wallet: userWalletData
+        ? {
+          ...userWalletData,
+          sk_email,
+          sk_full_name,
+        }
+        : null,
     };
     return { data: teacherPortalData, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     console.error(`Error fetching teacher portal data with ID ${id}:`, error);
     return { data: null, error: errorMessage };
   }
@@ -400,7 +471,10 @@ export async function teacherportalupdate({
   selectedKiteIds,
   duration,
   continueTomorrow,
-}: TeacherPortalUpdateParams): Promise<{ success: boolean; error: string | null }> {
+}: TeacherPortalUpdateParams): Promise<{
+  success: boolean;
+  error: string | null;
+}> {
   try {
     // Get event details and lesson info
     const event = await db.query.Event.findFirst({
@@ -422,33 +496,36 @@ export async function teacherportalupdate({
       return { success: false, error: "Event not found" };
     }
 
-    // Verify kite capacity matches package requirements
-    if (selectedKiteIds.length !== event.lesson.booking.package.capacity_kites) {
-      return { 
-        success: false, 
-        error: `Must select exactly ${event.lesson.booking.package.capacity_kites} kites for this package` 
-      };
-    }
+    // Verify kite capacity matches package requirements || NOT IMPLEMENTED YET
+    // if (selectedKiteIds.length !== event.lesson.booking.package.capacity_kites) {
+    //   return {
+    //     success: false,
+    //     error: `Must select exactly ${event.lesson.booking.package.capacity_kites} kites for this package`
+    //   };
+    // }
 
     // Verify teacher owns all selected kites
     const teacherKites = await db.query.TeacherKite.findMany({
       where: eq(TeacherKite.teacher_id, teacherId),
     });
-    
-    const teacherKiteIds = teacherKites.map(tk => tk.kite_id);
-    const invalidKites = selectedKiteIds.filter(kiteId => !teacherKiteIds.includes(kiteId));
-    
+
+    const teacherKiteIds = teacherKites.map((tk) => tk.kite_id);
+    const invalidKites = selectedKiteIds.filter(
+      (kiteId) => !teacherKiteIds.includes(kiteId),
+    );
+
     if (invalidKites.length > 0) {
-      return { 
-        success: false, 
-        error: "Some selected kites are not assigned to this teacher" 
+      return {
+        success: false,
+        error: "Some selected kites are not assigned to this teacher",
       };
     }
 
     // Start transaction-like operations
     // 1. Update event status to completed and duration
-    await db.update(Event)
-      .set({ 
+    await db
+      .update(Event)
+      .set({
         status: "completed",
         duration: duration,
       })
@@ -456,12 +533,12 @@ export async function teacherportalupdate({
 
     // 2. Clear existing kite assignments and add new ones
     await db.delete(KiteEvent).where(eq(KiteEvent.event_id, eventId));
-    
-    const kiteEventInserts = selectedKiteIds.map(kiteId => ({
+
+    const kiteEventInserts = selectedKiteIds.map((kiteId) => ({
       event_id: eventId,
       kite_id: kiteId,
     }));
-    
+
     if (kiteEventInserts.length > 0) {
       await db.insert(KiteEvent).values(kiteEventInserts);
     }
@@ -469,17 +546,21 @@ export async function teacherportalupdate({
     // 3. Update lesson status based on booking end date and continue tomorrow choice
     const bookingEndDate = new Date(event.lesson.booking.date_end);
     const eventDate = new Date(event.date);
-    const daysUntilEnd = Math.ceil((bookingEndDate.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilEnd = Math.ceil(
+      (bookingEndDate.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const isLastDay = daysUntilEnd <= 1;
 
     if (isLastDay) {
       // Final day of booking - complete the lesson
-      await db.update(Lesson)
+      await db
+        .update(Lesson)
         .set({ status: "completed" })
         .where(eq(Lesson.id, event.lesson_id));
     } else if (!continueTomorrow) {
       // Not final day but user chose not to continue - set to rest
-      await db.update(Lesson)
+      await db
+        .update(Lesson)
         .set({ status: "rest" })
         .where(eq(Lesson.id, event.lesson_id));
     }
@@ -488,10 +569,11 @@ export async function teacherportalupdate({
     // Revalidate relevant paths
     revalidatePath(`/teacher/${teacherId}`);
     revalidatePath("/whiteboard");
-    
+
     return { success: true, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error updating teacher portal:", error);
     return { success: false, error: errorMessage };
   }
@@ -515,27 +597,34 @@ export async function cancelTeacherEvent({
     }
 
     if (event.lesson.teacher_id !== teacherId) {
-      return { success: false, error: "Unauthorized: Event doesn't belong to this teacher" };
+      return {
+        success: false,
+        error: "Unauthorized: Event doesn't belong to this teacher",
+      };
     }
 
     // Update event status to cancelled
-    await db.update(Event)
+    await db
+      .update(Event)
       .set({ status: "cancelled" })
       .where(eq(Event.id, eventId));
 
     // Revalidate relevant paths
     revalidatePath(`/teacher/${teacherId}`);
     revalidatePath("/whiteboard");
-    
+
     return { success: true, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error cancelling event:", error);
     return { success: false, error: errorMessage };
   }
 }
 
-export async function deleteTeacher(teacherId: string): Promise<{ success: boolean; error: string | null }> {
+export async function deleteTeacher(
+  teacherId: string,
+): Promise<{ success: boolean; error: string | null }> {
   try {
     // First check if teacher has any lessons
     const teacherWithLessons = await db.query.Teacher.findFirst({
@@ -550,26 +639,29 @@ export async function deleteTeacher(teacherId: string): Promise<{ success: boole
     }
 
     if (teacherWithLessons.lessons && teacherWithLessons.lessons.length > 0) {
-      return { 
-        success: false, 
-        error: `Cannot delete teacher. They have ${teacherWithLessons.lessons.length} lesson(s) associated with them.` 
+      return {
+        success: false,
+        error: `Cannot delete teacher. They have ${teacherWithLessons.lessons.length} lesson(s) associated with them.`,
       };
     }
 
     // Delete related records first (in order due to foreign key constraints)
-    
+
     // 1. Delete teacher-kite relationships
     await db.delete(TeacherKite).where(eq(TeacherKite.teacher_id, teacherId));
-    
+
     // 2. Delete commissions
     await db.delete(Commission).where(eq(Commission.teacher_id, teacherId));
-    
+
     // 3. Delete payments
     await db.delete(Payment).where(eq(Payment.teacher_id, teacherId));
-    
+
     // 4. Update user_wallet to remove teacher reference
-    await db.update(user_wallet).set({ pk: null }).where(eq(user_wallet.pk, teacherId));
-    
+    await db
+      .update(user_wallet)
+      .set({ pk: null })
+      .where(eq(user_wallet.pk, teacherId));
+
     // 5. Finally delete the teacher
     const deletedTeacher = await db
       .delete(Teacher)
@@ -586,13 +678,16 @@ export async function deleteTeacher(teacherId: string): Promise<{ success: boole
 
     return { success: true, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error deleting teacher:", error);
     return { success: false, error: errorMessage };
   }
 }
 
-export async function softDeleteTeacher(teacherId: string): Promise<{ success: boolean; error: string | null }> {
+export async function softDeleteTeacher(
+  teacherId: string,
+): Promise<{ success: boolean; error: string | null }> {
   try {
     const updatedTeacher = await db
       .update(Teacher)
@@ -610,13 +705,16 @@ export async function softDeleteTeacher(teacherId: string): Promise<{ success: b
 
     return { success: true, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error soft deleting teacher:", error);
     return { success: false, error: errorMessage };
   }
 }
 
-export async function restoreTeacher(teacherId: string): Promise<{ success: boolean; error: string | null }> {
+export async function restoreTeacher(
+  teacherId: string,
+): Promise<{ success: boolean; error: string | null }> {
   try {
     const updatedTeacher = await db
       .update(Teacher)
@@ -634,7 +732,8 @@ export async function restoreTeacher(teacherId: string): Promise<{ success: bool
 
     return { success: true, error: null };
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error restoring teacher:", error);
     return { success: false, error: errorMessage };
   }
