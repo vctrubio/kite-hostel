@@ -5,8 +5,9 @@ import ControllerSettings from "@/components/whiteboard-usage/ControllerSettings
 import { type EventController } from "@/backend/types";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 import { HelmetIcon } from "@/svgs/HelmetIcon";
+import { BookingIcon } from "@/svgs/BookingIcon";
 import BillboardActions from "./BillboardActions";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { bulkUpdateEvents, bulkDeleteEvents } from "@/actions/event-actions";
@@ -38,6 +39,10 @@ interface BillboardHeaderProps {
     total: number;
     allIds: string[];
     incompleteIds: string[];
+  };
+  bookingStats: {
+    totalBookings: number;
+    totalRevenue: number;
   };
 }
 
@@ -341,12 +346,32 @@ function ActionSettingsSection({
   );
 }
 
-function DateSection({ selectedDate, onDateChange }: Pick<BillboardHeaderProps, "selectedDate" | "onDateChange">) {
+function DateSection({ selectedDate, onDateChange, bookingStats }: Pick<BillboardHeaderProps, "selectedDate" | "onDateChange" | "bookingStats">) {
   return (
     <div className="col-span-1">
       <div className="border border-border rounded-lg bg-card min-h-[100px] h-full">
         <div className="space-y-2">
-          <h3 className="font-medium text-foreground p-4 pb-0">Date</h3>
+          <div className="flex items-center justify-between p-4 pb-0">
+            <h3 className="font-medium text-foreground">Date</h3>
+            <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-1">
+                <BookingIcon className="w-4 h-4 text-blue-500" />
+                <div className="text-center">
+                  <div className="font-semibold text-blue-600 dark:text-blue-400">
+                    {bookingStats.totalBookings}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                <div className="text-center">
+                  <div className="font-semibold text-green-600 dark:text-green-400">
+                    €{Math.round(bookingStats.totalRevenue)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="border-t border-border p-3">
             <SingleDatePicker
               selectedDate={selectedDate || undefined}

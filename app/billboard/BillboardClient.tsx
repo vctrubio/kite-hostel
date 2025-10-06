@@ -250,6 +250,13 @@ export default function BillboardClient({ data }: BillboardClientProps) {
     };
   }, [teacherQueues]);
 
+  const bookingStats = useMemo(() => {
+    return {
+      totalBookings: filteredBillboardClasses.length,
+      totalRevenue: globalStats.earnings.teacher + globalStats.earnings.school,
+    };
+  }, [filteredBillboardClasses.length, globalStats.earnings.teacher, globalStats.earnings.school]);
+
   // Update debug content when date changes (if debug dropdown is open)
   useEffect(() => {
     if (showDebugDropdown && lastDebugAction && exportDebugMode) {
@@ -545,6 +552,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         exportDebugMode={exportDebugMode}
         onExportDebugModeChange={setExportDebugMode}
         eventStatus={eventStatus}
+        bookingStats={bookingStats}
       />
 
       <div className="grid grid-cols-4 gap-4">
