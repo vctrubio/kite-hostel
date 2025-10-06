@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { DatePicker, DateRange } from "@/components/pickers/date-picker";
@@ -313,13 +313,18 @@ export default function MasterBookingForm({
   userWallets,
   teachers,
 }: MasterBookingFormProps) {
-  // URL params parsing
+  // ============================================================================
+  // URL PARAMS & INITIALIZATION
+  // ============================================================================
   const searchParams = useSearchParams();
   const router = useRouter();
   const studentIdsParam = searchParams.get("studentIds");
   const studentIds = studentIdsParam ? studentIdsParam.split(",") : [];
   const packageIdParam = searchParams.get("packageId");
 
+  // ============================================================================
+  // STATE HOOKS
+  // ============================================================================
   const [selectedPackageId, setSelectedPackageId] = useState(
     packageIdParam || "",
   );
@@ -359,32 +364,60 @@ export default function MasterBookingForm({
   const [activeForm, setActiveForm] = useState<FormType>("booking");
   const [stayOnFormAfterSubmit, setStayOnFormAfterSubmit] = useState(false);
 
-  useEffect(() => {
-    updateAvailableStudents();
-  }, [students, updateAvailableStudents]);
+  // ============================================================================
+  // DERIVED STATE / COMPUTED VALUES
+  // ============================================================================
+  const selectedPackage = packages.find(
+    (pkg: any) => pkg.id === selectedPackageId,
+  );
+  const selectedStudentsList = students.filter((student: any) =>
+    selectedStudentIds.includes(student.id),
+  );
+  const selectedReference = userWallets.find(
+    (wallet: any) => wallet.id === selectedReferenceId,
+  );
+  const canCreateBooking =
+    selectedPackage &&
+    selectedStudentIds.length === selectedPackage.capacity_students &&
+    dateRange.startDate &&
+    dateRange.endDate;
 
-  useEffect(() => {
-    if (selectedPackageId) {
-      const selectedPkg = packages.find(
-        (pkg: any) => pkg.id === selectedPackageId,
-      );
-      if (selectedPkg) {
-        setSelectedPackageCapacity(selectedPkg.capacity_students);
-        if (
-          viaStudentParams &&
-          selectedStudentIds.length > selectedPkg.capacity_students
-        ) {
-          toast.error(
-            `The selected package capacity (${selectedPkg.capacity_students}) is less than the number of pre-selected students (${selectedStudentIds.length}). Please adjust student selection.`,
-          );
-        }
+  // ============================================================================
+  // CALLBACK FUNCTIONS
+  // ============================================================================
+  const updateAvailableStudents = useCallback(() => {
+    setAvailableStudents(
+      new Set(students.filter((s) => s.isAvailable).map((s) => s.id)),
+    );
+  }, [students]);
+
+  const toggleSection = useCallback((
+    sectionId: SectionId,
+    shouldClose: boolean = false,
+  ) => {
+    setExpandedSections((prev) => {
+      const newSet = new Set(prev);
+      if (shouldClose || newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
       }
-    } else if (!viaStudentParams) {
-      setSelectedPackageCapacity(0);
-    }
-  }, [selectedPackageId, packages, viaStudentParams, selectedStudentIds]);
+      return newSet;
+    });
+  }, []);
 
-  const handleStudentChange = (studentId: string) => {
+  const closeSection = useCallback((sectionId: SectionId) => {
+    toggleSection(sectionId, true);
+  }, [toggleSection]);
+
+  const scrollToSummary = useCallback(() => {
+    const summaryElement = document.getElementById("booking-summary");
+    if (summaryElement) {
+      summaryElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
+  const handleStudentChange = useCallback((studentId: string) => {
     setSelectedStudentIds((prevSelected) => {
       let newSelectedIds;
       if (prevSelected.includes(studentId)) {
@@ -406,38 +439,38 @@ export default function MasterBookingForm({
 
       return newSelectedIds;
     });
-  };
+  }, [selectedPackageCapacity, closeSection]);
 
-  const handleEditSection = (sectionId: string) => {
+  const handleEditSection = useCallback((sectionId: string) => {
     toggleSection(sectionId as SectionId);
-  };
+  }, [toggleSection]);
 
-  const handlePackageChange = (packageId: string) => {
+  const handlePackageChange = useCallback((packageId: string) => {
     setSelectedPackageId(packageId);
     if (packageId) {
       closeSection("package-section");
     }
-  };
+  }, [closeSection]);
 
-  const handleDatesChange = (newDateRange: DateRange) => {
+  const handleDatesChange = useCallback((newDateRange: DateRange) => {
     setDateRange(newDateRange);
-  };
+  }, []);
 
-  const handleTeacherChange = (teacherId: string | null) => {
+  const handleTeacherChange = useCallback((teacherId: string | null) => {
     setSelectedLessonTeacherId(teacherId);
     if (teacherId && selectedLessonCommissionId) {
       closeSection("lesson-section");
     }
-  };
+  }, [selectedLessonCommissionId, closeSection]);
 
-  const handleCommissionChange = (commissionId: string | null) => {
+  const handleCommissionChange = useCallback((commissionId: string | null) => {
     setSelectedLessonCommissionId(commissionId);
     if (commissionId && selectedLessonTeacherId) {
       closeSection("lesson-section");
     }
-  };
+  }, [selectedLessonTeacherId, closeSection]);
 
-  const handleReferenceChange = (referenceId: string | null) => {
+  const handleReferenceChange = useCallback((referenceId: string | null) => {
     setSelectedReferenceId(referenceId);
 
     if (referenceId) {
@@ -452,7 +485,7 @@ export default function MasterBookingForm({
 
       if (linkedTeacher) {
         setSelectedLessonTeacherId(linkedTeacher.id);
-        toggleSection("lesson-section"); // Open lesson section
+        toggleSection("lesson-section");
       } else {
         setSelectedLessonTeacherId(null);
         setSelectedLessonCommissionId(null);
@@ -462,9 +495,21 @@ export default function MasterBookingForm({
       setSelectedLessonCommissionId(null);
       closeSection("reference-section");
     }
-  };
+  }, [userWallets, teachers, closeSection, toggleSection]);
 
-  const handleSubmit = async () => {
+  const handleReset = useCallback(() => {
+    setSelectedPackageId("");
+    setDateRange({ startDate: "", endDate: "" });
+    setSelectedStudentIds([]);
+    setSelectedReferenceId(null);
+    setSelectedLessonTeacherId(null);
+    setSelectedLessonCommissionId(null);
+    setExpandedSections(new Set(ALL_SECTIONS));
+    setViaStudentParams(false);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }, []);
+
+  const handleSubmit = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -506,6 +551,7 @@ export default function MasterBookingForm({
           }
         }
         toast.success(toastMessage);
+        
         // Reset form and reopen sections
         setSelectedPackageId("");
         setDateRange({ startDate: "", endDate: "" });
@@ -514,6 +560,7 @@ export default function MasterBookingForm({
         setSelectedLessonTeacherId(null);
         setSelectedLessonCommissionId(null);
         setExpandedSections(new Set(ALL_SECTIONS));
+        
         // Re-fetch students to update availability
         const { data: updatedStudents, error: studentsError } =
           await getStudents();
@@ -526,80 +573,58 @@ export default function MasterBookingForm({
         } else if (studentsError) {
           console.error("Error re-fetching students:", studentsError);
         }
-        setLoading(false); // Reset loading state here
-        router.refresh(); // Refresh the current route to revalidate data and re-render
+        setLoading(false);
+        router.refresh();
       } else {
         toast.error(result.error || "Failed to create booking.");
-        setLoading(false); // Reset loading state on error too
+        setLoading(false);
       }
     } catch (error) {
       console.error("Error during booking submission:", error);
       toast.error("An unexpected error occurred during booking.");
-      setLoading(false); // Reset loading state on unexpected error
-    } finally {
-      // Removed window.history.replaceState from here
+      setLoading(false);
     }
-  };
+  }, [
+    selectedPackageId,
+    dateRange,
+    selectedStudentIds,
+    selectedReferenceId,
+    selectedLessonTeacherId,
+    selectedLessonCommissionId,
+    router,
+  ]);
 
-  const handleReset = () => {
-    setSelectedPackageId("");
-    setDateRange({ startDate: "", endDate: "" });
-    setSelectedStudentIds([]);
-    setSelectedReferenceId(null);
-    setSelectedLessonTeacherId(null);
-    setSelectedLessonCommissionId(null);
-    setExpandedSections(new Set(ALL_SECTIONS));
-    setViaStudentParams(false);
-    // Clear URL parameters
-    window.history.replaceState({}, document.title, window.location.pathname);
-  };
+  // ============================================================================
+  // SIDE EFFECTS
+  // ============================================================================
+  useEffect(() => {
+    updateAvailableStudents();
+  }, [updateAvailableStudents]);
 
-  // Computed values
-  const selectedPackage = packages.find(
-    (pkg: any) => pkg.id === selectedPackageId,
-  );
-  const selectedStudentsList = students.filter((student: any) =>
-    selectedStudentIds.includes(student.id),
-  );
-  const selectedReference = userWallets.find(
-    (wallet: any) => wallet.id === selectedReferenceId,
-  );
-
-  const canCreateBooking =
-    selectedPackage &&
-    selectedStudentIds.length === selectedPackage.capacity_students &&
-    dateRange.startDate &&
-    dateRange.endDate;
-
-  // Utility functions
-  const scrollToSummary = () => {
-    const summaryElement = document.getElementById("booking-summary");
-    if (summaryElement) {
-      summaryElement.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
-  const toggleSection = (
-    sectionId: SectionId,
-    shouldClose: boolean = false,
-  ) => {
-    setExpandedSections((prev) => {
-      const newSet = new Set(prev);
-      if (shouldClose || newSet.has(sectionId)) {
-        newSet.delete(sectionId);
-      } else {
-        newSet.add(sectionId);
+  useEffect(() => {
+    if (selectedPackageId) {
+      const selectedPkg = packages.find(
+        (pkg: any) => pkg.id === selectedPackageId,
+      );
+      if (selectedPkg) {
+        setSelectedPackageCapacity(selectedPkg.capacity_students);
+        if (
+          viaStudentParams &&
+          selectedStudentIds.length > selectedPkg.capacity_students
+        ) {
+          toast.error(
+            `The selected package capacity (${selectedPkg.capacity_students}) is less than the number of pre-selected students (${selectedStudentIds.length}). Please adjust student selection.`,
+          );
+        }
       }
-      return newSet;
-    });
-  };
+    } else if (!viaStudentParams) {
+      setSelectedPackageCapacity(0);
+    }
+  }, [selectedPackageId, packages, viaStudentParams, selectedStudentIds]);
 
-  const closeSection = (sectionId: SectionId) => toggleSection(sectionId, true);
-  const updateAvailableStudents = () => {
-    setAvailableStudents(
-      new Set(students.filter((s) => s.isAvailable).map((s) => s.id)),
-    );
-  };
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   return (
     <div className="min-h-screen bg-background">

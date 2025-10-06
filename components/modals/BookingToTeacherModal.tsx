@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { createLesson } from "@/actions/lesson-actions";
 import { createCommission } from "@/actions/commission-actions";
 import { useRouter } from "next/navigation";
-import { X, Search, Plus, Check, ChevronRight, UserCheck } from "lucide-react";
+import { X, Search, Plus, Check, UserCheck } from "lucide-react";
 import { HeadsetIcon, PaymentIcon } from "@/svgs";
 
 /* ============================================================================
