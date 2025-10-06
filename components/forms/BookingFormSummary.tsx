@@ -23,6 +23,7 @@ interface BookingSummaryProps {
   setActiveForm: (form: FormType) => void;
   stayOnFormAfterSubmit: boolean;
   setStayOnFormAfterSubmit: (stay: boolean) => void;
+  isMobile?: boolean;
 }
 
 export function BookingFormSummary({
@@ -42,6 +43,7 @@ export function BookingFormSummary({
   setActiveForm,
   stayOnFormAfterSubmit,
   setStayOnFormAfterSubmit,
+  isMobile = false,
 }: BookingSummaryProps) {
   const selectedTeacher = teachers.find(
     (t) => t.id === selectedLessonTeacherId,
@@ -96,7 +98,7 @@ export function BookingFormSummary({
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm sticky top-4 z-10">
+    <div className={`bg-card border border-border rounded-lg shadow-sm ${isMobile ? "" : "sticky top-4"} z-10`}>
       <div className="px-4 py-3 border-b border-border">
         {/* Navigation Tabs */}
         <div className="flex space-x-1 bg-muted p-1 rounded-lg mb-3">
@@ -336,7 +338,7 @@ export function BookingFormSummary({
         )}
       </div>
 
-      {activeForm === "booking" && (
+      {activeForm === "booking" && !isMobile && (
         <div className="p-4 border-t border-border space-y-3">
           <button
             type="button"
@@ -359,6 +361,19 @@ export function BookingFormSummary({
             type="button"
             onClick={onReset}
             className="w-full py-2 px-4 border border-border text-sm font-medium rounded-md text-muted-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          >
+            Reset Form
+          </button>
+        </div>
+      )}
+
+      {/* Mobile-only Reset Button */}
+      {activeForm === "booking" && isMobile && (
+        <div className="p-4 border-t border-border">
+          <button
+            type="button"
+            onClick={onReset}
+            className="w-full py-2 px-4 border border-border text-sm font-medium rounded-md text-muted-foreground bg-card hover:bg-muted transition-colors"
           >
             Reset Form
           </button>

@@ -54,14 +54,14 @@ const Section = ({
 }) => (
   <div id={id} className="scroll-mt-4">
     <div
-      className="flex items-center justify-between cursor-pointer p-4 rounded-lg bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all duration-200"
+      className="flex items-center justify-between cursor-pointer p-4 lg:p-4 py-5 lg:py-4 rounded-lg bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all duration-200 active:bg-muted touch-manipulation"
       onClick={() => onToggle(id)}
     >
       <h2 className="text-lg font-semibold text-foreground flex items-center gap-3">
         {Icon && <Icon className={`h-6 w-6 ${iconColor}`} />}
         {title}
       </h2>
-      <span className="text-lg font-bold text-primary">
+      <span className="text-xl lg:text-lg font-bold text-primary min-w-[24px] h-8 flex items-center justify-center">
         {isExpanded ? "−" : "+"}
       </span>
     </div>
@@ -530,12 +530,19 @@ export default function MasterBookingForm({
     (wallet: any) => wallet.id === selectedReferenceId,
   );
 
+  const isFormValid = 
+    selectedPackageId && 
+    dateRange.startDate && 
+    dateRange.endDate && 
+    selectedStudentIds.length > 0;
+
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-6">
-      <div className="lg:grid lg:grid-cols-5 lg:gap-8 max-w-7xl mx-auto">
-        {/* Summary Sidebar */}
-        <div className="lg:col-span-2 order-2 lg:order-1">
-          <div className="lg:sticky lg:top-4 p-4">
+    <div className="min-h-screen bg-background">
+      {/* Mobile Layout */}
+      <div className="lg:hidden">
+        <div className="p-4 space-y-4">
+          {/* Mobile Form Header with Form Selector */}
+          <div className="bg-card rounded-lg border border-border p-4">
             <BookingFormSummary
               selectedPackage={selectedPackage}
               selectedStudents={selectedStudentsList}
@@ -553,17 +560,15 @@ export default function MasterBookingForm({
               setActiveForm={setActiveForm}
               stayOnFormAfterSubmit={stayOnFormAfterSubmit}
               setStayOnFormAfterSubmit={setStayOnFormAfterSubmit}
+              isMobile={true}
             />
           </div>
-        </div>
 
-        {/* Form Content */}
-        <div className="lg:col-span-3 order-1 lg:order-2">
-          <div className="bg-card rounded-lg border border-border shadow-lg">
-            <div className="p-6">
-              {/* Render the appropriate form based on activeForm */}
+          {/* Mobile Form Content */}
+          <div className="bg-card rounded-lg border border-border">
+            <div className="p-4">
               {activeForm === "booking" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <DatesSection
                     dateRange={dateRange}
                     onDatesChange={handleDatesChange}
@@ -615,8 +620,6 @@ export default function MasterBookingForm({
                 <div className="-m-4">
                   <StudentForm
                     onSubmit={() => {
-                      // Handle student creation success
-                      // Switch to booking form only if toggle is off
                       if (!stayOnFormAfterSubmit) {
                         setActiveForm("booking");
                       }
@@ -629,8 +632,6 @@ export default function MasterBookingForm({
                 <div className="-m-4">
                   <PackageForm
                     onSubmit={() => {
-                      // Handle package creation success
-                      // Switch to booking form only if toggle is off
                       if (!stayOnFormAfterSubmit) {
                         setActiveForm("booking");
                       }
@@ -638,6 +639,136 @@ export default function MasterBookingForm({
                   />
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Mobile Fixed Bottom Confirm Button */}
+          {activeForm === "booking" && (
+            <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 shadow-lg">
+              <button
+                onClick={handleSubmit}
+                disabled={!isFormValid || loading}
+                className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 ${
+                  isFormValid && !loading
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
+                }`}
+              >
+                {loading ? "Creating Booking..." : "CONFIRM BOOKING"}
+              </button>
+            </div>
+          )}
+
+          {/* Mobile Bottom Padding for Fixed Button */}
+          {activeForm === "booking" && <div className="h-20" />}
+        </div>
+      </div>
+
+      {/* Desktop Layout (unchanged) */}
+      <div className="hidden lg:block p-6">
+        <div className="lg:grid lg:grid-cols-5 lg:gap-8 max-w-7xl mx-auto">
+          {/* Summary Sidebar */}
+          <div className="lg:col-span-2 order-2 lg:order-1">
+            <div className="lg:sticky lg:top-4 p-4">
+              <BookingFormSummary
+                selectedPackage={selectedPackage}
+                selectedStudents={selectedStudentsList}
+                selectedReference={selectedReference}
+                dateRange={dateRange}
+                onSubmit={handleSubmit}
+                onReset={handleReset}
+                loading={loading}
+                onEditSection={handleEditSection}
+                viaStudentParams={viaStudentParams}
+                selectedLessonTeacherId={selectedLessonTeacherId}
+                selectedLessonCommissionId={selectedLessonCommissionId}
+                teachers={teachers}
+                activeForm={activeForm}
+                setActiveForm={setActiveForm}
+                stayOnFormAfterSubmit={stayOnFormAfterSubmit}
+                setStayOnFormAfterSubmit={setStayOnFormAfterSubmit}
+                isMobile={false}
+              />
+            </div>
+          </div>
+
+          {/* Form Content */}
+          <div className="lg:col-span-3 order-1 lg:order-2">
+            <div className="bg-card rounded-lg border border-border shadow-lg">
+              <div className="p-6">
+                {activeForm === "booking" && (
+                  <div className="space-y-6">
+                    <DatesSection
+                      dateRange={dateRange}
+                      onDatesChange={handleDatesChange}
+                      isExpanded={expandedSections.has("dates-section")}
+                      onToggle={handleEditSection}
+                    />
+
+                    <PackageSection
+                      packages={packages}
+                      selectedPackageId={selectedPackageId}
+                      viaStudentParams={viaStudentParams}
+                      selectedStudentIds={selectedStudentIds}
+                      onPackageChange={handlePackageChange}
+                      isExpanded={expandedSections.has("package-section")}
+                      onToggle={handleEditSection}
+                    />
+
+                    <StudentsSection
+                      students={students}
+                      selectedStudentIds={selectedStudentIds}
+                      selectedPackageCapacity={selectedPackageCapacity}
+                      availableStudents={availableStudents}
+                      onStudentChange={handleStudentChange}
+                      isExpanded={expandedSections.has("students-section")}
+                      onToggle={handleEditSection}
+                    />
+
+                    <ReferenceSection
+                      userWallets={userWallets}
+                      selectedReferenceId={selectedReferenceId}
+                      onReferenceChange={handleReferenceChange}
+                      isExpanded={expandedSections.has("reference-section")}
+                      onToggle={handleEditSection}
+                    />
+
+                    <LessonSection
+                      teachers={teachers}
+                      selectedLessonTeacherId={selectedLessonTeacherId}
+                      selectedLessonCommissionId={selectedLessonCommissionId}
+                      onSelectTeacher={setSelectedLessonTeacherId}
+                      onSelectCommission={setSelectedLessonCommissionId}
+                      isExpanded={expandedSections.has("lesson-section")}
+                      onToggle={handleEditSection}
+                    />
+                  </div>
+                )}
+
+                {activeForm === "student" && (
+                  <div className="-m-4">
+                    <StudentForm
+                      onSubmit={() => {
+                        if (!stayOnFormAfterSubmit) {
+                          setActiveForm("booking");
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {activeForm === "package" && (
+                  <div className="-m-4">
+                    <PackageForm
+                      onSubmit={() => {
+                        if (!stayOnFormAfterSubmit) {
+                          setActiveForm("booking");
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
