@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Send, CreditCard } from "lucide-react";
+import { ChevronDown, ChevronUp, Send, CreditCard, CircleCheck, CircleX } from "lucide-react";
 import { DateSince } from "@/components/formatters/DateSince";
 import { getStatusColors, type LessonStatus, ENTITY_DATA } from "@/lib/constants";
 import { LessonCountWithEvent } from "@/getters/lesson-formatters";
@@ -50,6 +50,13 @@ export function TeacherRow({
   return (
     <>
       <tr className="border-b border-border">
+        <td className="py-2 px-1 text-center w-8">
+          {teacher.deleted_at ? (
+            <CircleX className="h-3 w-3 text-red-500 mx-auto" />
+          ) : (
+            <CircleCheck className="h-3 w-3 text-green-500 mx-auto" />
+          )}
+        </td>
         <td className="py-2 px-4 text-left">
           <DateSince dateString={teacher.created_at} />
         </td>
@@ -110,7 +117,7 @@ export function TeacherRow({
       </tr>
       <DropdownExpandableRow
         isExpanded={isExpanded}
-        colSpan={6}
+        colSpan={7}
         sections={[
           {
             title: "Teacher Details",

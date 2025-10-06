@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PaymentIcon } from "@/svgs";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createPayment } from "@/actions/payment-actions";
 
@@ -59,8 +59,8 @@ export function AddPaymentToTeacher({
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-      <div className="flex-1 relative">
+    <div className="flex items-center gap-2 sm:gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+      <div className="flex-grow relative">
         <PaymentIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-amber-500" />
         <Input
           type="number"
@@ -75,19 +75,26 @@ export function AddPaymentToTeacher({
       <Button
         onClick={handleSubmit}
         disabled={isDisabled}
-        className={`whitespace-nowrap ${buttonStyles}`}
+        className={`${buttonStyles} sm:whitespace-nowrap`}
         size="sm"
       >
-        {isSubmitting ? 'Adding...' : 'Add Payment'}
+        <span className="sm:hidden">
+          <Plus className="w-4 h-4" />
+        </span>
+        <span className="hidden sm:inline">
+          {isSubmitting ? 'Adding...' : 'Add Payment'}
+        </span>
       </Button>
       <Button
         variant="outline"
         size="sm"
         onClick={() => onSortChange(sortOrder === 'desc' ? 'asc' : 'desc')}
-        className="flex items-center gap-2 whitespace-nowrap"
+        className="flex items-center gap-2"
       >
         <ArrowUpDown className="w-4 h-4" />
-        {sortButtonText}
+        <span className="hidden sm:inline">
+          {sortButtonText}
+        </span>
       </Button>
     </div>
   );

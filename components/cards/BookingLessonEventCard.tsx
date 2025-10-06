@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { BookingIcon, HeadsetIcon, FlagIcon, BookmarkIcon, HelmetIcon } from "@/svgs";
+import {
+  BookingIcon,
+  HeadsetIcon,
+  FlagIcon,
+  BookmarkIcon,
+  HelmetIcon,
+} from "@/svgs";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { EventStatusLabel } from "@/components/label/EventStatusLabel";
+import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { Duration } from "@/components/formatters/Duration";
 import { ElegantDate } from "@/components/formatters/DateTime";
 import { PackageDetails } from "@/getters/package-details";
@@ -17,7 +24,7 @@ import { toast } from "sonner";
 interface BookingLessonEventCardProps {
   booking: any;
   showStudents?: boolean; // for student view, if students length > 1, (not itself = show more studfents)
-  compact?: boolean;      // For compact view mode
+  compact?: boolean; // For compact view mode
   currentTeacherName?: string; // Current teacher name for highlighting
 }
 
@@ -27,7 +34,10 @@ interface ShowEventsInLessonsProps {
 }
 
 // Reusable ShowEventsInLessons Component
-export function ShowEventsInLessons({ events, lessonId }: ShowEventsInLessonsProps) {
+export function ShowEventsInLessons({
+  events,
+  lessonId,
+}: ShowEventsInLessonsProps) {
   if (events && events.length > 0) {
     return (
       <div className="space-y-2 bg-white dark:bg-gray-800 rounded-md p-3">
@@ -38,7 +48,10 @@ export function ShowEventsInLessons({ events, lessonId }: ShowEventsInLessonsPro
               <ElegantDate dateString={event.date} />
               <Duration minutes={event.duration || 0} />
               <span className="text-gray-500">{event.location}</span>
-              <EventStatusLabel eventId={event.id} currentStatus={event.status} />
+              <EventStatusLabel
+                eventId={event.id}
+                currentStatus={event.status}
+              />
             </div>
             {index < events.length - 1 && (
               <div className="border-b border-gray-200 dark:border-gray-600 mt-2"></div>
@@ -53,10 +66,14 @@ export function ShowEventsInLessons({ events, lessonId }: ShowEventsInLessonsPro
     <div className="text-sm text-gray-500 text-center py-2 space-y-2">
       <Button
         onClick={async () => {
-          if (!confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
+          if (
+            !confirm(
+              "Are you sure you want to delete this lesson? This action cannot be undone.",
+            )
+          ) {
             return;
           }
-          
+
           const result = await deleteLesson(lessonId);
           if (result.success) {
             toast.success("Lesson deleted successfully!");
@@ -102,10 +119,14 @@ function CompactView({ booking, bookingClass }: ViewProps) {
             </div>
           </Link>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            <ElegantDate dateString={booking.date_start} /> - <ElegantDate dateString={booking.date_end} />
+            <ElegantDate dateString={booking.date_start} /> -{" "}
+            <ElegantDate dateString={booking.date_end} />
           </div>
         </div>
-        <BookingStatusLabel bookingId={booking.id} currentStatus={booking.status} />
+        <BookingStatusLabel
+          bookingId={booking.id}
+          currentStatus={booking.status}
+        />
       </div>
 
       {/* Student Names Only */}
@@ -118,9 +139,14 @@ function CompactView({ booking, bookingClass }: ViewProps) {
           </div>
           <div className="text-sm font-medium">
             {booking.students.map((bookingStudent: any, index: number) => (
-              <Link key={bookingStudent.student.id} href={`/students/${bookingStudent.student.id}`} className="hover:text-blue-600 transition-colors">
-                {bookingStudent.student.name} {bookingStudent.student.last_name || ''}
-                {index < booking.students.length - 1 && ', '}
+              <Link
+                key={bookingStudent.student.id}
+                href={`/students/${bookingStudent.student.id}`}
+                className="hover:text-blue-600 transition-colors"
+              >
+                {bookingStudent.student.name}{" "}
+                {bookingStudent.student.last_name || ""}
+                {index < booking.students.length - 1 && ", "}
               </Link>
             ))}
           </div>
@@ -139,13 +165,16 @@ function CompactView({ booking, bookingClass }: ViewProps) {
             {booking.lessons.map((lesson: any, index: number) => (
               <span key={lesson.id}>
                 {lesson.teacher?.id ? (
-                  <Link href={`/teachers/${lesson.teacher.id}`} className="hover:text-blue-600 transition-colors cursor-pointer">
+                  <Link
+                    href={`/teachers/${lesson.teacher.id}`}
+                    className="hover:text-blue-600 transition-colors cursor-pointer"
+                  >
                     {lesson.teacher.name || "Unknown Teacher"}
                   </Link>
                 ) : (
                   <span>{lesson.teacher?.name || "Unknown Teacher"}</span>
                 )}
-                {index < booking.lessons.length - 1 && ', '}
+                {index < booking.lessons.length - 1 && ", "}
               </span>
             ))}
           </div>
@@ -156,7 +185,15 @@ function CompactView({ booking, bookingClass }: ViewProps) {
 }
 
 // Full View Sub-component
-function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, priceToPay, showStudents, currentTeacherName }: ViewProps) {
+function FullView({
+  booking,
+  bookingClass,
+  eventHours,
+  pricePerHourPerStudent,
+  priceToPay,
+  showStudents,
+  currentTeacherName,
+}: ViewProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border p-6 space-y-6">
       {/* Booking Header */}
@@ -176,7 +213,10 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
               />
             </div>
           </div>
-          <BookingStatusLabel bookingId={booking.id} currentStatus={booking.status} />
+          <BookingStatusLabel
+            bookingId={booking.id}
+            currentStatus={booking.status}
+          />
         </div>
 
         {/* Dates */}
@@ -197,7 +237,12 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
           packageData={booking.package}
           eventHours={eventHours}
           pricePerHourPerStudent={pricePerHourPerStudent}
-          totalPrice={booking.package ? booking.package.price_per_student * booking.package.capacity_students : 0}
+          totalPrice={
+            booking.package
+              ? booking.package.price_per_student *
+              booking.package.capacity_students
+              : 0
+          }
           priceToPay={priceToPay}
           referenceId={booking.reference?.id}
           variant="full"
@@ -205,45 +250,62 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
       </div>
 
       {/* Students Section - show when there are multiple students or when showing students to teachers */}
-      {booking.students && booking.students.length > 0 && (showStudents || booking.students.length > 1) && (
-        <div className="space-y-4">
-          <h4 className="text-lg font-semibold flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              {Array.from({ length: booking.students.length }, (_, index) => (
-                <HelmetIcon key={index} className="w-4 h-4 text-yellow-500" />
+      {booking.students &&
+        booking.students.length > 0 &&
+        (showStudents || booking.students.length > 1) && (
+          <div className="space-y-4">
+            <h4 className="text-lg font-semibold flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {Array.from({ length: booking.students.length }, (_, index) => (
+                  <HelmetIcon key={index} className="w-4 h-4 text-yellow-500" />
+                ))}
+              </div>
+              <span>Students</span>
+            </h4>
+            <div className="space-y-4">
+              {booking.students.map((bookingStudent: any) => (
+                <Link
+                  key={bookingStudent.student.id}
+                  href={`/students/${bookingStudent.student.id}`}
+                >
+                  <div className="border-b border-gray-200 dark:border-gray-600 pb-3 mb-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <HelmetIcon className="w-4 h-4 text-yellow-500" />
+                      <span className="font-medium">
+                        {bookingStudent.student.name}{" "}
+                        {bookingStudent.student.last_name || ""}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <div>
+                        Country: {bookingStudent.student.country || "N/A"}
+                      </div>
+                      <div>Size: {bookingStudent.student.size || "N/A"}</div>
+                      {bookingStudent.student.languages &&
+                        bookingStudent.student.languages.length > 0 && (
+                          <div className="col-span-2">
+                            Languages:{" "}
+                            {bookingStudent.student.languages.join(", ")}
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
-            <span>Students</span>
-          </h4>
-          <div className="space-y-4">
-            {booking.students.map((bookingStudent: any) => (
-              <Link key={bookingStudent.student.id} href={`/students/${bookingStudent.student.id}`}>
-                <div className="border-b border-gray-200 dark:border-gray-600 pb-3 mb-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <div className="flex items-center gap-2 mb-2">
-                    <HelmetIcon className="w-4 h-4 text-yellow-500" />
-                    <span className="font-medium">{bookingStudent.student.name} {bookingStudent.student.last_name || ''}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <div>Country: {bookingStudent.student.country || 'N/A'}</div>
-                    <div>Size: {bookingStudent.student.size || 'N/A'}</div>
-                    {bookingStudent.student.languages && bookingStudent.student.languages.length > 0 && (
-                      <div className="col-span-2">Languages: {bookingStudent.student.languages.join(', ')}</div>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
           </div>
-        </div>
-      )}
+        )}
 
       {/* Lessons Section */}
       <div className="space-y-4">
         <h4 className="text-lg font-semibold flex items-center gap-2">
           <div className="flex items-center gap-1">
-            {Array.from({ length: booking.lessons?.length || 0 }, (_, index) => (
-              <HeadsetIcon key={index} className="w-4 h-4 text-green-600" />
-            ))}
+            {Array.from(
+              { length: booking.lessons?.length || 0 },
+              (_, index) => (
+                <HeadsetIcon key={index} className="w-4 h-4 text-green-600" />
+              ),
+            )}
           </div>
           <span>Lessons</span>
         </h4>
@@ -252,51 +314,99 @@ function FullView({ booking, bookingClass, eventHours, pricePerHourPerStudent, p
           <div className="space-y-4">
             {booking.lessons.map((lesson: any) => {
               // Check if this lesson's teacher matches the current teacher
-              const isCurrentTeacher = currentTeacherName && lesson.teacher?.name === currentTeacherName;
-              const borderClass = isCurrentTeacher ? "border-2 border-green-500" : "border";
-              
+              const isCurrentTeacher =
+                currentTeacherName &&
+                lesson.teacher?.name === currentTeacherName;
+              const borderClass = isCurrentTeacher
+                ? "border-2 border-green-500"
+                : "border";
+
               return (
-                <div key={lesson.id} className={`bg-gray-50 dark:bg-gray-700 rounded-lg ${borderClass} p-4 space-y-3`}>
-                {/* Lesson Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <HeadsetIcon className="w-4 h-4 text-green-600" />
-                    {lesson.teacher?.id ? (
-                      <Link href={`/teachers/${lesson.teacher.id}`} className="font-medium hover:text-blue-600 transition-colors cursor-pointer">
-                        {lesson.teacher.name || "Unknown Teacher"}
-                      </Link>
-                    ) : (
-                      <span className="font-medium">{lesson.teacher?.name || "Unknown Teacher"}</span>
-                    )}
-                    <span className="text-xs text-gray-500 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded-full">
-                      {lesson.status}
-                    </span>
+                <div
+                  key={lesson.id}
+                  className={`bg-gray-50 dark:bg-gray-700 rounded-lg ${borderClass} p-4 space-y-3`}
+                >
+                  {/* Lesson Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <HeadsetIcon className="w-4 h-4 text-green-600" />
+                      {lesson.teacher?.id ? (
+                        <Link
+                          href={`/teachers/${lesson.teacher.id}`}
+                          className="font-medium hover:text-blue-600 transition-colors cursor-pointer"
+                        >
+                          {lesson.teacher.name || "Unknown Teacher"}
+                        </Link>
+                      ) : (
+                        <span className="font-medium">
+                          {lesson.teacher?.name || "Unknown Teacher"}
+                        </span>
+                      )}
+                      <LessonStatusLabel
+                        lessonId={lesson.id}
+                        currentStatus={lesson.status}
+                        lessonEvents={lesson.events || []}
+                        hasEventToday={
+                          lesson.events?.some((event: any) => {
+                            const eventDate = new Date(event.date);
+                            const today = new Date();
+                            return (
+                              eventDate.toDateString() === today.toDateString()
+                            );
+                          }) || false
+                        }
+                      />
+                    </div>
+
+                    {/* Commission calculation - Always show */}
+                    <div className="flex items-center gap-1 text-sm bg-white dark:bg-gray-800 rounded-md px-2.5 py-1 shadow-sm border">
+                      <span className="font-semibold text-green-600">
+                        €{lesson.commission?.price_per_hour || 0}
+                      </span>
+                      <span className="text-gray-500">×</span>
+                      <span className="font-semibold text-orange-500">
+                        {lesson.events
+                          ? (
+                            lesson.events.reduce(
+                              (sum: number, event: any) =>
+                                sum + (event.duration || 0),
+                              0,
+                            ) / 60
+                          ).toFixed(1)
+                          : "0.0"}
+                        h
+                      </span>
+                      <span className="text-gray-500">=</span>
+                      <span className="font-semibold text-gray-600">
+                        €
+                        {lesson.commission
+                          ? (
+                            ((lesson.events?.reduce(
+                              (sum: number, event: any) =>
+                                sum + (event.duration || 0),
+                              0,
+                            ) || 0) /
+                              60) *
+                            lesson.commission.price_per_hour
+                          ).toFixed(2)
+                          : "0.00"}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Commission calculation - Always show */}
-                  <div className="flex items-center gap-1 text-sm bg-white dark:bg-gray-800 rounded-md px-2.5 py-1 shadow-sm border">
-                    <span className="font-semibold text-green-600">€{lesson.commission?.price_per_hour || 0}</span>
-                    <span className="text-gray-500">×</span>
-                    <span className="font-semibold text-orange-500">
-                      {lesson.events ? (lesson.events.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) / 60).toFixed(1) : "0.0"}h
-                    </span>
-                    <span className="text-gray-500">=</span>
-                    <span className="font-semibold text-gray-600">
-                      €{lesson.commission ? (
-                        ((lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0) / 60) * lesson.commission.price_per_hour
-                      ).toFixed(2) : "0.00"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Events list */}
-                <ShowEventsInLessons events={lesson.events || []} lessonId={lesson.id} />
+                  {/* Events list */}
+                  <ShowEventsInLessons
+                    events={lesson.events || []}
+                    lessonId={lesson.id}
+                  />
                 </div>
               );
             })}
           </div>
         ) : (
-          <p className="text-gray-500">No lessons associated with this booking.</p>
+          <p className="text-gray-500">
+            No lessons associated with this booking.
+          </p>
         )}
       </div>
     </div>
@@ -307,22 +417,28 @@ export function BookingLessonEventCard({
   booking,
   showStudents = false,
   compact = false,
-  currentTeacherName
+  currentTeacherName,
 }: BookingLessonEventCardProps) {
   // Initialize BillboardClass for calculations
   const bookingClass = new BillboardClass(booking);
 
   // Calculate event hours (used hours) from booking's lessons and events
-  const eventHours = booking.lessons?.reduce((total: number, lesson: any) => {
-    const lessonEventMinutes = lesson.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0;
-    return total + lessonEventMinutes / 60;
-  }, 0) || 0;
+  const eventHours =
+    booking.lessons?.reduce((total: number, lesson: any) => {
+      const lessonEventMinutes =
+        lesson.events?.reduce(
+          (sum: number, event: any) => sum + (event.duration || 0),
+          0,
+        ) || 0;
+      return total + lessonEventMinutes / 60;
+    }, 0) || 0;
 
   // Calculate package and pricing details
   const packageHours = booking.package ? booking.package.duration / 60 : 0;
-  const pricePerHourPerStudent = packageHours > 0
-    ? (booking.package?.price_per_student || 0) / packageHours
-    : 0;
+  const pricePerHourPerStudent =
+    packageHours > 0
+      ? (booking.package?.price_per_student || 0) / packageHours
+      : 0;
   const priceToPay = pricePerHourPerStudent * eventHours;
 
   // Common props for both views
@@ -333,7 +449,7 @@ export function BookingLessonEventCard({
     pricePerHourPerStudent,
     priceToPay,
     showStudents,
-    currentTeacherName
+    currentTeacherName,
   };
 
   // Render appropriate view based on compact prop

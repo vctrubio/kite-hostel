@@ -20,7 +20,7 @@ interface BookingLessonTeacherTableProps {
   selectedCommissionId: string | null;
   onSelectTeacher: (teacherId: string | null) => void;
   onSelectCommission: (commissionId: string | null) => void;
-  onCommissionCreated?: () => void;
+  onCommissionCreated?: (commissionId: string) => void;
 }
 
 export function BookingLessonTeacherTable({
@@ -133,7 +133,7 @@ export function BookingLessonTeacherTable({
               onCommissionCreated={(commissionId) => {
                 onSelectCommission(commissionId);
                 if (onCommissionCreated) {
-                  onCommissionCreated();
+                  onCommissionCreated(commissionId);
                 }
               }}
             />

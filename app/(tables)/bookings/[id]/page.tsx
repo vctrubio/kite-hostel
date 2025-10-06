@@ -1,5 +1,9 @@
+import Link from "next/link";
 import { getBookingById } from "@/actions/booking-actions";
-import { getBookingExportData, getEventsExportData } from "@/actions/export-actions";
+import {
+  getBookingExportData,
+  getEventsExportData,
+} from "@/actions/export-actions";
 import { WhiteboardClass, extractStudents } from "@/backend/WhiteboardClass";
 import { Receipt } from "@/components/export/Receipt";
 import { ExportButtons } from "@/components/export/ExportButtons";
@@ -8,13 +12,9 @@ import { DateSince } from "@/components/formatters/DateSince";
 import { ElegantDate } from "@/components/formatters/DateTime";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
+import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { PackageDetails } from "@/getters/package-details";
-import {
-  BookmarkIcon,
-  BookingIcon,
-  HeadsetIcon,
-  HelmetIcon
-} from "@/svgs";
+import { BookmarkIcon, BookingIcon, HeadsetIcon, HelmetIcon } from "@/svgs";
 import { EditableDatePicker } from "./EditableDatePicker";
 
 // ===== SUB-COMPONENTS =====
@@ -22,19 +22,22 @@ import { EditableDatePicker } from "./EditableDatePicker";
 // Component for displaying lesson information
 function LessonCard({ lesson }: { lesson: any }) {
   // Check if commission exists on the lesson object
-  const hasCommission = 'commission' in lesson && lesson.commission;
-  
+  const hasCommission = "commission" in lesson && lesson.commission;
+
   // Calculate total hours
   const hasEvents = lesson.events && lesson.events.length > 0;
-  const totalHours = hasEvents 
-    ? (lesson.events.reduce((sum, event) => sum + (event.duration || 0), 0) / 60).toFixed(1)
+  const totalHours = hasEvents
+    ? (
+      lesson.events.reduce((sum, event) => sum + (event.duration || 0), 0) /
+      60
+    ).toFixed(1)
     : "0.0";
-    
+
   // Calculate total earnings
-  const totalEarnings = hasCommission 
+  const totalEarnings = hasCommission
     ? (parseFloat(totalHours) * lesson.commission.price_per_hour).toFixed(2)
     : "0.00";
-  
+
   return (
     <div className="bg-background/50 rounded-lg border border-muted/40 p-3 space-y-3 hover:shadow-sm transition-shadow">
       {/* Lesson header */}
@@ -42,20 +45,46 @@ function LessonCard({ lesson }: { lesson: any }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HeadsetIcon className="w-4 h-4 text-green-600" />
-            <span className="font-medium">{lesson.teacher?.name || "Unknown Teacher"}</span>
-            <span className="text-xs text-muted-foreground px-1.5 py-0.5 bg-muted/30 rounded-full">
-              {lesson.status}
-            </span>
+            {lesson.teacher?.id ? (
+              <Link 
+                href={`/teachers/${lesson.teacher.id}`}
+                className="font-medium hover:text-blue-600 transition-colors cursor-pointer"
+              >
+                {lesson.teacher.name || "Unknown Teacher"}
+              </Link>
+            ) : (
+              <span className="font-medium">
+                {lesson.teacher?.name || "Unknown Teacher"}
+              </span>
+            )}
+            <LessonStatusLabel
+              lessonId={lesson.id}
+              currentStatus={lesson.status}
+              lessonEvents={lesson.events || []}
+              hasEventToday={
+                lesson.events?.some((event: any) => {
+                  const eventDate = new Date(event.date);
+                  const today = new Date();
+                  return eventDate.toDateString() === today.toDateString();
+                }) || false
+              }
+            />
           </div>
-          
+
           {/* Commission calculation - replacing status */}
           {hasCommission ? (
             <div className="flex items-center gap-1 text-sm bg-gray-50 dark:bg-gray-800 rounded-md px-2.5 py-1 shadow-sm">
-              <span className="font-semibold text-green-600">€{lesson.commission.price_per_hour}</span>
+              <span className="font-semibold text-green-600">
+                €{lesson.commission.price_per_hour}
+              </span>
               <span className="text-gray-500">×</span>
-              <span className="font-semibold text-orange-500">{totalHours}h</span>
+              <span className="font-semibold text-orange-500">
+                {totalHours}h
+              </span>
               <span className="text-gray-500">=</span>
-              <span className="font-semibold text-gray-600">€{totalEarnings}</span>
+              <span className="font-semibold text-gray-600">
+                €{totalEarnings}
+              </span>
             </div>
           ) : (
             <div className="text-sm px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 rounded-md">
@@ -65,18 +94,14 @@ function LessonCard({ lesson }: { lesson: any }) {
         </div>
       </div>
 
-            {/* Events list */}
+      {/* Events list */}
       <ShowEventsInLessons events={lesson.events || []} lessonId={lesson.id} />
     </div>
   );
 }
 
-
-
 // Component for displaying lessons
-function Lessons({ lessons }: { 
-  lessons: any[]; 
-}) {
+function Lessons({ lessons }: { lessons: any[] }) {
   return (
     <div className="bg-card rounded-lg border border-border p-4 space-y-4">
       <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -91,14 +116,13 @@ function Lessons({ lessons }: {
       {lessons.length > 0 ? (
         <div className="space-y-4">
           {lessons.map((lesson) => (
-            <LessonCard 
-              key={lesson.id} 
-              lesson={lesson} 
-            />
+            <LessonCard key={lesson.id} lesson={lesson} />
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground">No lessons associated with this booking.</p>
+        <p className="text-muted-foreground">
+          No lessons associated with this booking.
+        </p>
       )}
     </div>
   );
@@ -118,57 +142,63 @@ function Students({ students }: { students: any[] }) {
       </h2>
       <div className="space-y-4">
         {students.map((student) => (
-          <div 
-            key={student.id} 
+          <div
+            key={student.id}
             className="p-3 rounded-md border border-border hover:bg-muted/50 transition-colors"
           >
             <div className="flex items-center justify-between mb-2">
-              <a 
-                href={`/students/${student.id}`} 
+              <a
+                href={`/students/${student.id}`}
                 className="flex items-center gap-2 group"
               >
                 <HelmetIcon className="w-5 h-5 text-yellow-500 group-hover:text-yellow-600" />
-                <span className="font-medium text-lg group-hover:underline">{student.name} {student.last_name || ''}</span>
+                <span className="font-medium text-lg group-hover:underline">
+                  {student.name} {student.last_name || ""}
+                </span>
               </a>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
               <div className="space-y-1">
                 <p className="text-muted-foreground">Passport:</p>
-                <p className="font-medium">{student.passport_number || 'N/A'}</p>
+                <p className="font-medium">
+                  {student.passport_number || "N/A"}
+                </p>
               </div>
-              
+
               <div className="space-y-1">
                 <p className="text-muted-foreground">Phone:</p>
                 <p className="font-medium">
                   {student.phone ? (
-                    <a 
-                      href={`https://wa.me/${student.phone.replace(/[^0-9]/g, '')}`}
+                    <a
+                      href={`https://wa.me/${student.phone.replace(/[^0-9]/g, "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-blue-600 hover:underline"
                     >
                       {student.phone}
                     </a>
-                  ) : 'N/A'}
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
               </div>
-              
+
               <div className="space-y-1">
                 <p className="text-muted-foreground">Country:</p>
-                <p className="font-medium">{student.country || 'N/A'}</p>
+                <p className="font-medium">{student.country || "N/A"}</p>
               </div>
-              
+
               {student.languages && student.languages.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-muted-foreground">Languages:</p>
-                  <p className="font-medium">{student.languages.join(', ')}</p>
+                  <p className="font-medium">{student.languages.join(", ")}</p>
                 </div>
               )}
-              
+
               <div className="space-y-1">
                 <p className="text-muted-foreground">Size:</p>
-                <p className="font-medium">{student.size || 'N/A'}</p>
+                <p className="font-medium">{student.size || "N/A"}</p>
               </div>
 
               <div className="space-y-1">
@@ -176,10 +206,12 @@ function Students({ students }: { students: any[] }) {
                 <p className="font-medium">
                   {student.created_at ? (
                     <DateSince dateString={student.created_at} />
-                  ) : 'N/A'}
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
               </div>
-              
+
               {student.desc && (
                 <div className="space-y-1 md:col-span-3">
                   <p className="text-muted-foreground">Description:</p>
@@ -194,15 +226,14 @@ function Students({ students }: { students: any[] }) {
   );
 }
 
-
 // Component for displaying booking timeline with editable dates
-function BookingTimeline({ 
+function BookingTimeline({
   bookingId,
-  createdAt, 
-  dateStart, 
+  createdAt,
+  dateStart,
   dateEnd,
   daysDifference,
-  totalMinutes
+  totalMinutes,
 }: {
   bookingId: string;
   createdAt?: string;
@@ -236,7 +267,7 @@ function BookingTimeline({
         <div className="flex justify-between items-center pt-1 border-t border-border">
           <span className="text-muted-foreground">Total Days:</span>
           <span className="px-2.5 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 rounded-full text-xs font-medium">
-            {daysDifference} day{daysDifference !== 1 ? 's' : ''}
+            {daysDifference} day{daysDifference !== 1 ? "s" : ""}
           </span>
         </div>
         <div className="flex justify-between items-center pt-1">
@@ -244,9 +275,9 @@ function BookingTimeline({
           <DateSince dateString={dateStart} />
         </div>
       </div>
-      
+
       {/* Editable Date Picker */}
-      <EditableDatePicker 
+      <EditableDatePicker
         bookingId={bookingId}
         initialDateStart={dateStart}
         initialDateEnd={dateEnd}
@@ -257,7 +288,9 @@ function BookingTimeline({
 }
 
 // Component for displaying reference information
-function ReferenceInformation({ reference }: {
+function ReferenceInformation({
+  reference,
+}: {
   reference: {
     id: string;
     teacher?: {
@@ -279,9 +312,7 @@ function ReferenceInformation({ reference }: {
         {reference.teacher && (
           <div>
             <span className="text-muted-foreground">Teacher:</span>
-            <p className="font-medium">
-              {reference.teacher.name}
-            </p>
+            <p className="font-medium">{reference.teacher.name}</p>
           </div>
         )}
         {reference.note && (
@@ -303,7 +334,7 @@ function BookingHeader({
   totalMinutes,
   dateStart,
   dateEnd,
-  hasAnyEvents
+  hasAnyEvents,
 }: {
   bookingId: string;
   status: "active" | "uncomplete" | "completed";
@@ -329,9 +360,9 @@ function BookingHeader({
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <BookingStatusLabel 
-            bookingId={bookingId} 
-            currentStatus={status} 
+          <BookingStatusLabel
+            bookingId={bookingId}
+            currentStatus={status}
             showDeleteOption={!hasAnyEvents}
           />
         </div>
@@ -352,11 +383,11 @@ function BookingHeader({
 }
 
 // Component for displaying export section
-function ExportSection({ 
-  bookingId, 
-  bookingData, 
+function ExportSection({
+  bookingId,
+  bookingData,
   eventsData,
-  receiptText 
+  receiptText,
 }: {
   bookingId: string;
   bookingData: any;
@@ -382,7 +413,9 @@ interface BookingDetailPageProps {
   params: { id: string };
 }
 
-export default async function BookingDetailPage({ params }: BookingDetailPageProps) {
+export default async function BookingDetailPage({
+  params,
+}: BookingDetailPageProps) {
   const { id } = params;
   const { data: booking, error } = await getBookingById(id);
 
@@ -407,64 +440,77 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   const totalPrice = booking.package
     ? booking.package.price_per_student * booking.package.capacity_students
     : 0;
-  const pricePerHourPerStudent = packageHours > 0
-    ? (booking.package?.price_per_student || 0) / packageHours
-    : 0;
+  const pricePerHourPerStudent =
+    packageHours > 0
+      ? (booking.package?.price_per_student || 0) / packageHours
+      : 0;
 
   // Calculate event hours (used hours) from booking's lessons and events
-  const eventHours = booking.lessons?.reduce((total, lesson) => {
-    const lessonEventMinutes = lesson.events?.reduce((sum, event) => sum + (event.duration || 0), 0) || 0;
-    return total + lessonEventMinutes / 60;
-  }, 0) || 0;
+  const eventHours =
+    booking.lessons?.reduce((total, lesson) => {
+      const lessonEventMinutes =
+        lesson.events?.reduce((sum, event) => sum + (event.duration || 0), 0) ||
+        0;
+      return total + lessonEventMinutes / 60;
+    }, 0) || 0;
 
   // Check if there are any events across all lessons
-  const hasAnyEvents = booking.lessons?.some(lesson => 
-    lesson.events && lesson.events.length > 0
-  ) || false;
+  const hasAnyEvents =
+    booking.lessons?.some(
+      (lesson) => lesson.events && lesson.events.length > 0,
+    ) || false;
 
   // Calculate price to pay per student based on used hours
   const priceToPay = pricePerHourPerStudent * eventHours;
 
   // Prepare receipt event data
-  const receiptEvents = booking.lessons?.flatMap(lesson =>
-    (lesson.events || []).map(event => {
-      const eventDate = new Date(event.date);
-      const durationHours = (event.duration || 0) / 60;
-      const formattedDuration = durationHours % 1 === 0 ?
-        `${Math.floor(durationHours)}h` :
-        `${durationHours.toFixed(1)}h`;
+  const receiptEvents =
+    booking.lessons?.flatMap((lesson) =>
+      (lesson.events || []).map((event) => {
+        const eventDate = new Date(event.date);
+        const durationHours = (event.duration || 0) / 60;
+        const formattedDuration =
+          durationHours % 1 === 0
+            ? `${Math.floor(durationHours)}h`
+            : `${durationHours.toFixed(1)}h`;
 
-      return {
-        teacherName: lesson.teacher?.name || 'Unknown',
-        date: `${eventDate.getDate()}/${eventDate.getMonth() + 1}`,
-        time: `${eventDate.getHours()}:${String(eventDate.getMinutes()).padStart(2, '0')}`,
-        duration: formattedDuration,
-        location: event.location
-      };
-    })
-  ) || [];
-  
+        return {
+          teacherName: lesson.teacher?.name || "Unknown",
+          date: `${eventDate.getDate()}/${eventDate.getMonth() + 1}`,
+          time: `${eventDate.getHours()}:${String(eventDate.getMinutes()).padStart(2, "0")}`,
+          duration: formattedDuration,
+          location: event.location,
+        };
+      }),
+    ) || [];
+
   // Calculate days between start and end dates
   const startDate = new Date(booking.date_start);
   const endDate = new Date(booking.date_end);
-  const daysDifference = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+  const daysDifference = Math.ceil(
+    (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24),
+  );
 
   // Generate receipt text for export
   const receiptText = `
-Students: ${students.map(s => `${s.name} ${s.last_name || ''}`).join(', ')}
+Students: ${students.map((s) => `${s.name} ${s.last_name || ""}`).join(", ")}
 Package Hours: ${packageHours % 1 === 0 ? Math.floor(packageHours) : packageHours.toFixed(1)}h
 Price per Hour: €${pricePerHourPerStudent.toFixed(2)}
 Total Kited Hours: ${eventHours % 1 === 0 ? Math.floor(eventHours) : eventHours.toFixed(1)}h
 Total Price to Pay: €${priceToPay.toFixed(2)}
 
-*** RECEIPT ***${receiptEvents.map((event, index) => `
-${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.duration}, ${event.location}`).join('')}`;
+*** RECEIPT ***${receiptEvents
+      .map(
+        (event, index) => `
+${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.duration}, ${event.location}`,
+      )
+      .join("")}`;
 
   return (
     <div className="container mx-auto p-4">
       <div className="grid gap-6 md:grid-cols-2">
         {/* Header Section */}
-        <BookingHeader 
+        <BookingHeader
           bookingId={booking.id}
           status={booking.status}
           eventMinutes={bookingClass.calculateBookingLessonEventMinutes()}
@@ -485,7 +531,7 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
               <BookmarkIcon className="w-5 h-5 text-orange-500" />
               <span>Package Details</span>
             </h2>
-            <PackageDetails 
+            <PackageDetails
               packageData={booking.package}
               eventHours={eventHours}
               pricePerHourPerStudent={pricePerHourPerStudent}
@@ -497,7 +543,7 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
           </div>
 
           {/* Booking Dates */}
-          <BookingTimeline 
+          <BookingTimeline
             bookingId={booking.id}
             createdAt={booking.created_at}
             dateStart={booking.date_start}
@@ -513,13 +559,13 @@ ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.durati
           <ReferenceInformation reference={booking.reference} />
 
           {/* Lessons Section */}
-          <Lessons 
-            lessons={booking.lessons} 
-          />
+          <Lessons lessons={booking.lessons} />
 
           {/* Receipt Section */}
           <Receipt
-            studentNames={students.map(s => `${s.name} ${s.last_name || ''}`).join(', ')}
+            studentNames={students
+              .map((s) => `${s.name} ${s.last_name || ""}`)
+              .join(", ")}
             packageHours={packageHours}
             pricePerHour={pricePerHourPerStudent}
             totalKitedHours={eventHours}

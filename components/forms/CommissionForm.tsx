@@ -35,7 +35,6 @@ export function CommissionForm({ teacherId, onCommissionCreated }: CommissionFor
     });
 
     if (result.success) {
-      toast.success("New commission created successfully!");
       if (onCommissionCreated && result.commission?.id) {
         onCommissionCreated(result.commission.id);
       }

@@ -59,8 +59,10 @@ export function BookingToLessonModal({
     };
   }, [onClose]);
 
-  const handleCreateLesson = () => {
-    if (!selectedTeacherId || !selectedCommissionId) {
+  const handleCreateLesson = async (autoCommissionId?: string) => {
+    const commissionId = autoCommissionId || selectedCommissionId;
+    
+    if (!selectedTeacherId || !commissionId) {
       toast.error("Please select both a teacher and a commission.");
       return;
     }
@@ -69,7 +71,7 @@ export function BookingToLessonModal({
       const result = await createLesson({
         booking_id: bookingId,
         teacher_id: selectedTeacherId,
-        commission_id: selectedCommissionId,
+        commission_id: commissionId,
       });
 
       if (result.success) {
@@ -155,7 +157,10 @@ export function BookingToLessonModal({
             selectedCommissionId={selectedCommissionId}
             onSelectTeacher={setSelectedTeacherId}
             onSelectCommission={setSelectedCommissionId}
-            onCommissionCreated={onCommissionCreated}
+            onCommissionCreated={(commissionId) => {
+              // Auto-create lesson when commission is created
+              handleCreateLesson(commissionId);
+            }}
           />
         </div>
 
