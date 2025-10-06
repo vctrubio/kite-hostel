@@ -1,7 +1,7 @@
-import { RoleSelectionProps } from "./RoleSelectionProps";
+import { RoleSelectionProps } from "./RoleSelectionComponent";
 import { ROLE_ICONS } from "./RoleConfigs";
 
-export function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick, isDarkMode }: RoleSelectionProps) {
+export function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
   return (
     <div className="md:hidden flex flex-col gap-4 mb-8 py-4">
       {ROLE_ICONS.map(({ Icon, label, color }, index) => (
@@ -16,9 +16,9 @@ export function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconCli
           onClick={handleIconClick}
         >
           <div className="p-3 rounded-lg">
-            <Icon className={`h-8 w-8 ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`} />
+            <Icon className="h-8 w-8 text-slate-700 dark:text-slate-200" />
           </div>
-          <span className={`text-xl font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+          <span className="text-xl font-bold text-slate-700 dark:text-slate-300">
             {label}
           </span>
         </div>

@@ -6,7 +6,13 @@ import { LoadingSpinners } from "./LoadingSpinners";
 import { DesktopRoleSelection } from "./DesktopRoleSelection";
 import { MobileRoleSelection } from "./MobileRoleSelection";
 
-export function RoleSelectionComponent({ isDarkMode }: { isDarkMode: boolean }) {
+export interface RoleSelectionProps {
+  hoveredIcon: number | null;
+  setHoveredIcon: (index: number | null) => void;
+  handleIconClick: () => void;
+}
+
+export function RoleSelectionComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState<number | null>(null);
   const supabase = createClient();
@@ -56,7 +62,7 @@ export function RoleSelectionComponent({ isDarkMode }: { isDarkMode: boolean }) 
   }, []);
 
   if (isLoading) {
-    return <LoadingSpinners isDarkMode={isDarkMode} />;
+    return <LoadingSpinners />;
   }
 
   return (
@@ -65,13 +71,11 @@ export function RoleSelectionComponent({ isDarkMode }: { isDarkMode: boolean }) 
         hoveredIcon={hoveredIcon} 
         setHoveredIcon={setHoveredIcon} 
         handleIconClick={handleIconClick}
-        isDarkMode={isDarkMode}
       />
       <MobileRoleSelection 
         hoveredIcon={hoveredIcon} 
         setHoveredIcon={setHoveredIcon} 
         handleIconClick={handleIconClick}
-        isDarkMode={isDarkMode}
       />
     </>
   );

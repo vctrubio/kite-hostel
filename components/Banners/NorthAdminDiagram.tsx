@@ -5,7 +5,7 @@ import Image from "next/image";
 import { TrendingUp, Database } from "lucide-react";
 import { HeadsetIcon, HelmetIcon, EquipmentIcon, FlagIcon, BookingIcon, PaymentIcon } from "@/svgs";
 
-export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
+export function NorthAdminDiagram() {
   const [currentMonthIndex, setCurrentMonthIndex] = useState(3); // Start at July (index 3)
 
   // Entity tokens representing school management data
@@ -83,99 +83,67 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-16">
-      <div className={`relative rounded-3xl border-2 p-10 md:p-12 ${
-        isDarkMode 
-          ? 'bg-gray-800/50 border-cyan-500/30' 
-          : 'bg-white/80 border-cyan-400/40'
-      } backdrop-blur-sm shadow-2xl`}>
+      <div className="relative rounded-3xl border-2 p-10 md:p-12 bg-white/80 border-cyan-400/40 dark:bg-gray-800/50 dark:border-cyan-500/30 backdrop-blur-sm shadow-2xl">
         
         {/* Title */}
         <div className="text-center mb-12">
-          <h3 className={`text-3xl md:text-4xl font-bold mb-6 flex items-center justify-center gap-3 ${
-            isDarkMode ? 'text-gray-100' : 'text-gray-900'
-          }`}>
+          <h3 className="text-3xl md:text-4xl font-bold mb-6 flex items-center justify-center gap-3 text-gray-900 dark:text-gray-100">
             <Database className="w-8 h-8 md:w-10 md:h-10" />
             Infrastructure Proposal
           </h3>
-          <p className={`text-base leading-relaxed max-w-3xl mx-auto ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-          }`}>
-            <span className={`inline-block text-xs mb-2 px-4 py-2 rounded-full ${
-              isDarkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-200/70 text-gray-700'
-            }`}>
+          <p className="text-base leading-relaxed max-w-3xl mx-auto text-gray-700 dark:text-gray-300">
+            <span className="inline-block text-xs mb-2 px-4 py-2 rounded-full bg-gray-200/70 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300">
               Entities ⇒ Table ⇒ Data ⇒ Control ⇒ Actions
             </span>
             <span className="block mt-2">
               Each school manages entities
               {" "}[
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-yellow-400' : 'text-yellow-600'
-              }`}>
+              <span className="font-semibold text-yellow-600 dark:text-yellow-400">
                 students
               </span>
               ,{" "}
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-green-400' : 'text-green-600'
-              }`}>
+              <span className="font-semibold text-green-600 dark:text-green-400">
                 teachers
               </span>
               ,{" "}
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-blue-400' : 'text-blue-600'
-              }`}>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
                 bookings
               </span>
               ,{" "}
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-cyan-400' : 'text-cyan-600'
-              }`}>
+              <span className="font-semibold text-cyan-600 dark:text-cyan-400">
                 lessons
               </span>
               ,{" "}
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-purple-400' : 'text-purple-600'
-              }`}>
+              <span className="font-semibold text-purple-600 dark:text-purple-400">
                 equipment
               </span>
               , and{" "}
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-amber-400' : 'text-amber-600'
-              }`}>
+              <span className="font-semibold text-amber-600 dark:text-amber-400">
                 payments
               </span>
               ],
             </span>
             <span className="block mt-2">
               with{" "}
-              <span className={`font-bold ${
-                isDarkMode ? 'text-blue-400' : 'text-blue-600'
-              }`}>
+              <span className="font-bold text-blue-600 dark:text-blue-400">
                 full operational control
               </span>
               .{" "}
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-cyan-400' : 'text-cyan-600'
-              }`}>
+              <span className="font-semibold text-cyan-600 dark:text-cyan-400">
                 North Administration
               </span>
               {" "}has{" "}
-              <span className={`font-bold ${
-                isDarkMode ? 'text-emerald-400' : 'text-emerald-600'
-              }`}>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">
                 read-only access
               </span>
             </span>
             <span className="block mt-2">
               to view{" "}
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-green-400' : 'text-green-600'
-              }`}>
+              <span className="font-semibold text-green-600 dark:text-green-400">
                 revenue metrics
               </span>
               {" "}and{" "}
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-cyan-400' : 'text-cyan-600'
-              }`}>
+              <span className="font-semibold text-cyan-600 dark:text-cyan-400">
                 compare performances
               </span>
               .
@@ -189,22 +157,12 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
           {/* North Administration Section - Left */}
           <div className="w-full max-w-md mx-auto xl:mx-0 xl:justify-self-end">
             <div className="relative">
-              <div className={`absolute inset-0 rounded-2xl blur-2xl opacity-50 ${
-                isDarkMode 
-                  ? 'bg-gradient-to-r from-cyan-500 to-teal-500' 
-                  : 'bg-gradient-to-r from-cyan-400 to-teal-400'
-              }`}></div>
+              <div className="absolute inset-0 rounded-2xl blur-2xl opacity-50 bg-gradient-to-r from-cyan-400 to-teal-400 dark:from-cyan-500 dark:to-teal-500"></div>
               
-              <div className={`relative p-6 md:p-8 rounded-2xl border-2 ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-cyan-500' 
-                  : 'bg-white border-cyan-500'
-              } shadow-xl`}>
+              <div className="relative p-6 md:p-8 rounded-2xl border-2 bg-white border-cyan-500 dark:bg-gray-900 shadow-xl">
                 
                 {/* North Header */}
-                <div className={`flex flex-col items-center gap-4 mb-6 pb-6 border-b ${
-                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                }`}>
+                <div className="flex flex-col items-center gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg">
                     <Image 
                       src="/northsail.webp" 
@@ -215,14 +173,10 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                     />
                   </div>
                   <div className="text-center">
-                    <p className={`font-bold text-2xl ${
-                      isDarkMode ? 'text-cyan-400' : 'text-cyan-600'
-                    }`}>
+                    <p className="font-bold text-2xl text-cyan-600 dark:text-cyan-400">
                       Administration
                     </p>
-                    <p className={`text-sm font-medium ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Analytics & Insights Hub
                     </p>
                   </div>
@@ -230,9 +184,7 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
 
                 {/* Analytics Capabilities */}
                 <div className="space-y-3">
-                  <p className={`text-xs font-semibold uppercase tracking-wider mb-4 ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-4 text-gray-600 dark:text-gray-400">
                     Master Table View
                   </p>
                   
@@ -241,18 +193,12 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                     return (
                       <div 
                         key={metric.label}
-                        className={`flex items-center gap-3 p-3 rounded-lg border ${
-                          isDarkMode
-                            ? 'bg-gray-800/50 border-gray-700'
-                            : 'bg-gray-50 border-gray-200'
-                        }`}
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50 border-gray-200 dark:bg-gray-800/50 dark:border-gray-700"
                       >
                         <div style={{ color: metric.color }}>
                           <Icon className="w-6 h-6" />
                         </div>
-                        <span className={`text-sm font-medium ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                        }`}>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           {metric.label}
                         </span>
                       </div>
@@ -260,22 +206,14 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                   })}
 
                   {/* Schools Table */}
-                  <div className={`mt-6 rounded-lg border overflow-hidden relative pb-4 ${
-                    isDarkMode 
-                      ? 'bg-gray-800/30 border-gray-700' 
-                      : 'bg-gray-50/50 border-gray-200'
-                  }`}>
+                  <div className="mt-6 rounded-lg border overflow-hidden relative pb-4 bg-gray-50/50 border-gray-200 dark:bg-gray-800/30 dark:border-gray-700">
                     {/* Month Stamp - Overlapping with Navigation */}
                     <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
                       <div className="flex items-center justify-center gap-3">
                         {/* Left Arrow */}
                         <button
                           onClick={handlePreviousMonth}
-                          className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                            isDarkMode
-                              ? 'bg-orange-500/20 hover:bg-orange-500/30 text-orange-400'
-                              : 'bg-orange-100 hover:bg-orange-200 text-orange-600'
-                          }`}
+                          className="p-2 rounded-lg transition-all hover:scale-110 bg-orange-100 hover:bg-orange-200 text-orange-600 dark:bg-orange-500/20 dark:hover:bg-orange-500/30 dark:text-orange-400"
                           aria-label="Previous month"
                         >
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -284,12 +222,8 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                         </button>
 
                         {/* Month Stamp */}
-                        <div className={`relative inline-block transform rotate-[-5deg]`}>
-                          <div className={`w-[220px] px-5 py-2 rounded-lg border-4 font-bold uppercase tracking-wider shadow-2xl backdrop-blur-sm text-center ${
-                            isDarkMode
-                              ? 'bg-orange-500/20 border-orange-500 text-orange-400'
-                              : 'bg-orange-100 border-orange-500 text-orange-600'
-                          }`}>
+                        <div className="relative inline-block transform -rotate-[5deg]">
+                          <div className="w-[220px] px-5 py-2 rounded-lg border-4 font-bold uppercase tracking-wider shadow-2xl backdrop-blur-sm text-center bg-orange-100 border-orange-500 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400">
                             <div className="text-xs">Month of</div>
                             <div className="text-xl leading-tight">{currentMonth.toUpperCase()}</div>
                           </div>
@@ -298,11 +232,7 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                         {/* Right Arrow */}
                         <button
                           onClick={handleNextMonth}
-                          className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                            isDarkMode
-                              ? 'bg-orange-500/20 hover:bg-orange-500/30 text-orange-400'
-                              : 'bg-orange-100 hover:bg-orange-200 text-orange-600'
-                          }`}
+                          className="p-2 rounded-lg transition-all hover:scale-110 bg-orange-100 hover:bg-orange-200 text-orange-600 dark:bg-orange-500/20 dark:hover:bg-orange-500/30 dark:text-orange-400"
                           aria-label="Next month"
                         >
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -314,57 +244,35 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
 
                     <table className="w-full">
                       {/* Column Headers */}
-                      <thead className={`${
-                        isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
-                      }`}>
+                      <thead className="bg-gray-100/50 dark:bg-gray-800/50">
                         <tr>
-                          <th className={`text-left text-xs font-semibold uppercase tracking-wider p-3 ${
-                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
+                          <th className="text-left text-xs font-semibold uppercase tracking-wider p-3 text-gray-600 dark:text-gray-400">
                             School
                           </th>
-                          <th className={`text-center text-xs font-semibold uppercase tracking-wider p-3 ${
-                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
+                          <th className="text-center text-xs font-semibold uppercase tracking-wider p-3 text-gray-600 dark:text-gray-400">
                             Students
                           </th>
-                          <th className={`text-center text-xs font-semibold uppercase tracking-wider p-3 ${
-                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
+                          <th className="text-center text-xs font-semibold uppercase tracking-wider p-3 text-gray-600 dark:text-gray-400">
                             Bookings
                           </th>
-                          <th className={`text-right text-xs font-semibold uppercase tracking-wider p-3 ${
-                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
+                          <th className="text-right text-xs font-semibold uppercase tracking-wider p-3 text-gray-600 dark:text-gray-400">
                             Revenue
                           </th>
                         </tr>
                       </thead>
-                      <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {schoolsData.map((school) => (
-                          <tr key={school.name} className={`${
-                            isDarkMode 
-                              ? 'hover:bg-gray-800/30' 
-                              : 'hover:bg-white/50'
-                          } transition-colors`}>
-                            <td className={`p-3 text-sm font-medium ${
-                              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
+                          <tr key={school.name} className="hover:bg-white/50 dark:hover:bg-gray-800/30 transition-colors">
+                            <td className="p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                               {school.name}
                             </td>
-                            <td className={`p-3 text-sm text-center ${
-                              isDarkMode ? 'text-yellow-400' : 'text-yellow-600'
-                            }`}>
+                            <td className="p-3 text-sm text-center text-yellow-600 dark:text-yellow-400">
                               {school.students}
                             </td>
-                            <td className={`p-3 text-sm text-center ${
-                              isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                            }`}>
+                            <td className="p-3 text-sm text-center text-blue-600 dark:text-blue-400">
                               {school.bookings}
                             </td>
-                            <td className={`p-3 text-sm text-right font-medium ${
-                              isDarkMode ? 'text-green-400' : 'text-green-600'
-                            }`}>
+                            <td className="p-3 text-sm text-right font-medium text-green-600 dark:text-green-400">
                               €{school.revenue}
                             </td>
                           </tr>
@@ -385,16 +293,16 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                 <svg width="180" height="140" viewBox="0 0 180 140" className="overflow-visible">
                   <path
                     d="M 20 70 L 160 70 L 155 65 M 160 70 L 155 75"
-                    stroke={isDarkMode ? "#06b6d4" : "#0891b2"}
                     strokeWidth="4"
                     fill="none"
+                    className="stroke-cyan-600 dark:stroke-cyan-400"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                  <text x="20" y="50" fill={isDarkMode ? "#a5f3fc" : "#0891b2"} fontSize="18" textAnchor="start" className="font-bold">
+                  <text x="20" y="50" fontSize="18" textAnchor="start" className="font-bold fill-cyan-600 dark:fill-cyan-300">
                     ← Data Analytics
                   </text>
-                  <text x="20" y="100" fill={isDarkMode ? "#a5f3fc" : "#0891b2"} fontSize="18" textAnchor="start" className="font-mono">
+                  <text x="20" y="100" fontSize="18" textAnchor="start" className="font-mono fill-cyan-600 dark:fill-cyan-300">
                     App Usage
                   </text>
                 </svg>
@@ -406,27 +314,27 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                   {/* Left side - Data Analytics with down arrow */}
                   <path
                     d="M 70 50 L 70 110 L 65 105 M 70 110 L 75 105"
-                    stroke={isDarkMode ? "#06b6d4" : "#0891b2"}
                     strokeWidth="3"
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    className="stroke-cyan-600 dark:stroke-cyan-400"
                   />
                   
-                  <text x="70" y="40" fill={isDarkMode ? "#a5f3fc" : "#0891b2"} fontSize="14" textAnchor="middle" className="font-bold">
+                  <text x="70" y="40" fontSize="14" textAnchor="middle" className="font-bold fill-cyan-600 dark:fill-cyan-300">
                     App Usage
 
                   </text>
                   {/* Right side - Up arrow with App Usage */}
                   <path
                     d="M 230 110 L 230 50 L 225 55 M 230 50 L 235 55"
-                    stroke={isDarkMode ? "#06b6d4" : "#0891b2"}
                     strokeWidth="3"
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    className="stroke-cyan-600 dark:stroke-cyan-400"
                   />
-                  <text x="230" y="135" fill={isDarkMode ? "#a5f3fc" : "#0891b2"} fontSize="14" textAnchor="middle" className="font-mono">
+                  <text x="230" y="135" fontSize="14" textAnchor="middle" className="font-mono fill-cyan-600 dark:fill-cyan-300">
                     Data Analytics
 
                   </text>
@@ -438,22 +346,12 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
           {/* Kite School Section - Right */}
           <div className="w-full max-w-md mx-auto xl:mx-0 xl:justify-self-start order-3 xl:order-none">
             <div className="relative">
-              <div className={`absolute inset-0 rounded-2xl blur-2xl opacity-40 ${
-                isDarkMode 
-                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500' 
-                  : 'bg-gradient-to-r from-blue-400 to-cyan-400'
-              }`}></div>
+              <div className="absolute inset-0 rounded-2xl blur-2xl opacity-40 bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-500 dark:to-cyan-500"></div>
               
-              <div className={`relative p-6 md:p-8 rounded-2xl border-2 ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-blue-500' 
-                  : 'bg-white border-blue-500'
-              } shadow-xl`}>
+              <div className="relative p-6 md:p-8 rounded-2xl border-2 bg-white border-blue-500 dark:bg-gray-900 shadow-xl">
                 
                 {/* School Header */}
-                <div className={`flex flex-col items-center gap-4 mb-6 pb-6 border-b ${
-                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                }`}>
+                <div className="flex flex-col items-center gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg">
                     <Image 
                       src="/logo-tkh.png" 
@@ -464,14 +362,10 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                     />
                   </div>
                   <div className="text-center">
-                    <p className={`font-bold text-2xl ${
-                      isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                    }`}>
+                    <p className="font-bold text-2xl text-blue-600 dark:text-blue-400">
                       School
                     </p>
-                    <p className={`text-sm font-medium ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Full App Management Control
                     </p>
                   </div>
@@ -479,9 +373,7 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
 
                 {/* Entity Management */}
                 <div className="space-y-3">
-                  <p className={`text-xs font-semibold uppercase tracking-wider mb-4 ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-4 text-gray-600 dark:text-gray-400">
                     Daily Operations
                   </p>
                   {schoolEntities.map((entity) => {
@@ -489,18 +381,12 @@ export function NorthAdminDiagram({ isDarkMode }: { isDarkMode: boolean }) {
                     return (
                       <div 
                         key={entity.label}
-                        className={`flex items-center gap-3 p-3 rounded-lg border ${
-                          isDarkMode
-                            ? 'bg-gray-800/50 border-gray-700'
-                            : 'bg-gray-50 border-gray-200'
-                        }`}
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50 border-gray-200 dark:bg-gray-800/50 dark:border-gray-700"
                       >
                         <div style={{ color: entity.color }}>
                           <Icon className="w-6 h-6" />
                         </div>
-                        <span className={`text-sm font-medium ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                        }`}>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           {entity.label}
                         </span>
                       </div>

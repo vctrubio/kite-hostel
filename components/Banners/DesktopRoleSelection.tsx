@@ -1,11 +1,11 @@
-import { RoleSelectionProps } from "./RoleSelectionProps";
+import { RoleSelectionProps } from "./RoleSelectionComponent";
 import { ROLE_CONFIGS, ROLE_ICONS } from "./RoleConfigs";
 
-export function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick, isDarkMode }: RoleSelectionProps) {
+export function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
   return (
     <div className="hidden md:block relative">
       {/* Title with Interactive Entities */}
-      <div className={`text-center mb-8 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+      <div className="text-center mb-8 text-gray-800 dark:text-gray-200">
         <h2 className="text-2xl font-bold tracking-tight mb-4" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', letterSpacing: '-0.02em' }}>
           Connecting{" "}
           <span 
@@ -96,9 +96,9 @@ export function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconCl
                 }`}
                 style={{ borderColor: color }}
               >
-                <Icon className={`h-10 w-10 ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`} />
+                <Icon className="h-10 w-10 text-slate-700 dark:text-slate-200" />
               </div>
-              <span className={`text-lg font-bold whitespace-nowrap ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+              <span className="text-lg font-bold whitespace-nowrap text-slate-700 dark:text-slate-300">
                 {label}
               </span>
             </div>
@@ -120,9 +120,9 @@ export function DesktopRoleSelection({ hoveredIcon, setHoveredIcon, handleIconCl
                 }`}
                 style={{ borderColor: color }}
               >
-                <Icon className={`h-10 w-10 ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`} />
+                <Icon className="h-10 w-10 text-slate-700 dark:text-slate-200" />
               </div>
-              <span className={`text-lg font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+              <span className="text-lg font-bold text-slate-700 dark:text-slate-300">
                 {label}
               </span>
             </div>
