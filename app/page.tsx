@@ -1,7 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserWallet } from "@/actions/user-actions";
 import { GuestLogin } from "@/app/GuestLogin";
 import { Shield } from "lucide-react";
@@ -9,18 +7,17 @@ import { HeadsetIcon } from "@/svgs";
 import { ENTITY_DATA } from "@/lib/constants";
 import Image from "next/image";
 import { NorthAdminDiagram } from "@/components/Banners/NorthAdminDiagram";
-import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
 
 function PrimaryRoutes({ role }: { role: string }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Link
         href="/billboard"
-        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${role === "admin" || role === "teacherAdmin"
-          ? "border-2 border-primary hover:ring-2 hover:ring-primary/50 bg-accent/30 glow-teal"
-          : "border border-border hover:shadow-md bg-card hover-teal-border"
-          }`}
+        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
+          role === "admin" || role === "teacherAdmin"
+            ? "border-2 border-primary hover:ring-2 hover:ring-primary/50 bg-accent/30 glow-teal"
+            : "border border-border hover:shadow-md bg-card hover-teal-border"
+        }`}
       >
         <div className="flex items-center gap-4">
           <Shield className="h-8 w-8 text-foreground" />
@@ -35,10 +32,11 @@ function PrimaryRoutes({ role }: { role: string }) {
 
       <Link
         href="/teacher"
-        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${role === "teacher" || role === "teacherAdmin"
-          ? "border-2 border-primary hover:ring-2 hover:ring-primary/50 bg-accent/30 glow-teal"
-          : "border border-border hover:shadow-md bg-card hover-teal-border"
-          }`}
+        className={`block p-6 rounded-xl hover:shadow-lg transition-all duration-300 ${
+          role === "teacher" || role === "teacherAdmin"
+            ? "border-2 border-primary hover:ring-2 hover:ring-primary/50 bg-accent/30 glow-teal"
+            : "border border-border hover:shadow-md bg-card hover-teal-border"
+        }`}
       >
         <div className="flex items-center gap-4">
           <HeadsetIcon className="h-8 w-8 text-foreground" />
@@ -88,7 +86,6 @@ function EntityManagement() {
   );
 }
 
-
 function GuestBanner({ role }: { role: string }) {
   if (role !== "guest") return null;
 
@@ -121,65 +118,21 @@ function Footer() {
   );
 }
 
-export default function WelcomePage() {
-  const [authUser, setAuthUser] = useState<any>(null);
-  const [role, setRole] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(true);
-  const { theme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // useEffect only runs on the client
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isDarkMode = mounted && (theme === "dark" || resolvedTheme === "dark");
-
-  useEffect(() => {
-    async function getUser() {
-      try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          setLoading(false);
-          return;
-        }
-
-        setAuthUser(user);
-
-        // Get user wallet data
-        const { role: userRole } = await getCurrentUserWallet();
-        setRole(userRole);
-
-        const userName =
-          user.user_metadata?.full_name || user.user_metadata?.name || user.email;
-        setName(userName);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading user:', error);
-        setLoading(false);
-      }
-    }
-
-    getUser();
-  }, []);
-
-  if (loading || !mounted) {
-    return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-8">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </main>
-    );
-  }
+export default async function WelcomePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // No authenticated user - show login with docs link
-  if (!authUser) {
+  if (!user) {
     return <GuestLogin />;
   }
+
+  // Get user wallet data
+  const { role } = await getCurrentUserWallet();
+  const name =
+    user.user_metadata?.full_name || user.user_metadata?.name || user.email;
 
   // Authenticated user with role - show menu
   return (
@@ -204,7 +157,7 @@ export default function WelcomePage() {
         </div>
       </div>
 
-      <NorthAdminDiagram isDarkMode={isDarkMode} />
+      <NorthAdminDiagram />
       {/* <UserStatus role={role} name={name} /> */}
       <Footer />
     </main>
