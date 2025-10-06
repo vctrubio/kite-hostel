@@ -6,7 +6,7 @@ import { Shield } from "lucide-react";
 import { HeadsetIcon } from "@/svgs";
 import { ENTITY_DATA } from "@/lib/constants";
 import Image from "next/image";
-import { NorthAdminDiagram } from "@/components/Banners/NorthAdminDiagram";
+import { NorthAdminDiagram } from "@/components/banners/NorthAdminDiagram";
 
 function PrimaryRoutes({ role }: { role: string }) {
   return (

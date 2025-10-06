@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Book, TrendingUp, Database } from "lucide-react";
 import { EquipmentIcon, FlagIcon, BookingIcon } from "@/svgs";
 import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
-import { DevAboutMeFooter } from "@/components/Banners/DevAboutMeFooter";
-import { RoleSelectionComponent } from "@/components/Banners/RoleSelectionComponent";
-import { NorthAdminDiagram } from "@/components/Banners/NorthAdminDiagram";
+import { DevAboutMeFooter } from "@/components/banners/DevAboutMeFooter";
+import { RoleSelectionComponent } from "@/components/banners/RoleSelectionComponent";
+import { NorthAdminDiagram } from "@/components/banners/NorthAdminDiagram";
 
 export function GuestLogin() {
   // Sub-component: Hero Header

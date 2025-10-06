@@ -1,19 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Plus, LayoutGrid, Home, Tv } from "lucide-react";
-import { ENTITY_DATA } from "@/lib/constants";
-import { useUserWallet } from "@/provider/UserWalletProvider";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogoutButtonUserWallet } from "@/components/users/LogoutButtonUserWallet";
-import { Waves, Tornado } from "lucide-react";
+import { Waves, Tornado, Home, Tv } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState, useRef, useEffect } from "react";
-
-// Reusable CSS classes
-const ACTIVE_BUTTON_CLASSES = "bg-gray-200 text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-200";
-const INACTIVE_BUTTON_CLASSES = "text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogoutButtonUserWallet } from "@/components/users/LogoutButtonUserWallet";
 
 function UserProfile({
   displayName,
@@ -60,7 +52,7 @@ function UserProfile({
   );
 }
 
-function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
+export function UserSettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -71,12 +63,10 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
   const role = user?.role || "";
   const avatar_url = user?.userAuth.avatar_url;
 
-  // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Use resolvedTheme for more reliable theme detection
   const isDarkMode = mounted && (theme === "dark" || resolvedTheme === "dark");
 
   useEffect(() => {
@@ -219,103 +209,6 @@ function SettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function TableButton({
-  entity,
-  isActive,
-  showPlus = false,
-}: {
-  entity: {
-    name: string;
-    icon: any;
-    color: string;
-    link: string;
-  };
-  isActive: boolean;
-  showPlus?: boolean;
-}) {
-  const EntityIcon = entity.icon;
-  return (
-    <div className="flex items-center">
-      <Link
-        href={entity.link}
-        className={`flex items-center space-x-2 px-3 py-2 rounded-l-lg text-sm font-medium transition-all duration-200 ${isActive ? ACTIVE_BUTTON_CLASSES : `${entity.color} hover:bg-gray-100 dark:hover:bg-gray-800`}`}
-      >
-        <EntityIcon className="h-4 w-4" />
-        <span className="hidden lg:block">{entity.name}s</span>
-      </Link>
-      {showPlus && (
-        <div className="hidden lg:block">
-          <Link
-            href={`${entity.link}/form`}
-            className="flex items-center px-2 py-2 rounded-r-lg text-sm font-medium transition-all duration-200 border-l border-gray-300 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
-            title={`Add new ${entity.name.toLowerCase()}`}
-          >
-            <Plus className="h-3 w-3" />
-          </Link>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BillboardView({ pathname }: { pathname: string }) {
-  return (
-    <div className="flex items-center space-x-3">
-      <Link
-        href="/billboard"
-        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname === "/billboard" ? ACTIVE_BUTTON_CLASSES : INACTIVE_BUTTON_CLASSES}`}
-      >
-        <LayoutGrid className="h-4 w-4" />
-        <span className="hidden lg:block">Billboard</span>
-      </Link>
-      <div className="flex items-center space-x-2 overflow-x-auto">
-        {ENTITY_DATA.map((entity) => {
-          const isActive = pathname.startsWith(entity.link);
-          return (
-            <TableButton
-              key={entity.name}
-              entity={entity}
-              isActive={isActive}
-              showPlus={true}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-export function RouteNav() {
-  const pathname = usePathname();
-  const { user, loading } = useUserWallet();
-
-  return (
-    <div className="border-b bg-white dark:bg-gray-900 dark:border-gray-700">
-      {/* Desktop Layout */}
-      <div className="hidden md:block p-4">
-        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
-          <div>
-            {user && <BillboardView pathname={pathname} />}
-          </div>
-          <SettingsDropdown user={user} loading={loading} />
-        </div>
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden p-3">
-        <div className="max-w-7xl mx-auto px-2 flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              {user && <BillboardView pathname={pathname} />}
-            </div>
-            <SettingsDropdown user={user} loading={loading} />
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

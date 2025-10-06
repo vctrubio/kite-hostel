@@ -8,7 +8,7 @@ import { HelmetIcon } from "@/svgs/HelmetIcon";
 import { HeadsetIcon } from "@/svgs/HeadsetIcon";
 import { BookingIcon } from "@/svgs/BookingIcon";
 import { CalendarIcon } from "@/svgs/CalendarIcon";
-import { DevAboutMeFooter } from "@/components/Banners/DevAboutMeFooter";
+import { DevAboutMeFooter } from "@/components/banners/DevAboutMeFooter";
 
 // Role Navigation Cards
 function RoleNavigationCards({ isDarkMode }: { isDarkMode: boolean }) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   HelmetIcon,
   HeadsetIcon,
@@ -11,7 +11,60 @@ import {
   EquipmentIcon,
 } from "@/svgs";
 import { CheckCircle, Users, Wind, Calendar, BarChart3, Zap, ArrowRight } from "lucide-react";
-import { ToggleLevantePoniente } from "@/components/ToggleLevantePoniente";
+import { Waves, Tornado } from "lucide-react";
+import { useTheme } from "next-themes";
+
+interface ToggleLevantePonienteProps {
+  showLabel?: boolean;
+  customText?: string;
+  className?: string;
+  onThemeChange?: (isDarkMode: boolean) => void;
+}
+
+function ToggleLevantePoniente({
+  showLabel = true,
+  customText,
+  className = "",
+  onThemeChange
+}: ToggleLevantePonienteProps) {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // useEffect only runs on the client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  const isDarkMode = theme === "dark";
+  const themeName = isDarkMode ? 'Levante' : 'Poniente';
+
+  const handleToggle = () => {
+    const newTheme = isDarkMode ? "light" : "dark";
+    setTheme(newTheme);
+    onThemeChange?.(newTheme === "dark");
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isDarkMode
+          ? 'bg-gray-700 hover:bg-gray-600 text-yellow-400'
+          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+        } ${className}`}
+    >
+      {isDarkMode ? <Tornado className="w-4 h-4" /> : <Waves className="w-4 h-4" />}
+      {showLabel && (
+        <span className="text-sm font-medium">
+          {customText || themeName}
+        </span>
+      )}
+    </button>
+  );
+}
 
 export default function LandingPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -47,19 +100,19 @@ export default function LandingPage() {
             <span className="text-[#0058A6]">effortlessly</span>
           </h1>
           <p className={`text-xl mb-12 max-w-2xl mx-auto leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            All-in-one kite school management. Connect students with teachers, automate scheduling, 
+            All-in-one kite school management. Connect students with teachers, automate scheduling,
             and manage lessons with intelligent filtering and real-time updates.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="px-8 py-4 bg-[#0058A6] text-white text-lg font-semibold rounded-xl hover:bg-[#004088] transition-all hover:scale-105 inline-flex items-center gap-2"
             >
               Start free trial
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <Link 
-              href="/docs" 
+            <Link
+              href="/docs"
               className="px-8 py-4 border border-gray-300 text-gray-700 text-lg font-semibold rounded-xl hover:border-[#0058A6] hover:text-[#0058A6] transition-colors"
             >
               See how it works
@@ -132,7 +185,7 @@ export default function LandingPage() {
           <h2 className={`text-3xl font-bold text-center mb-16 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             Everything you need to run your kite school
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Student Management */}
             <div className={`p-8 rounded-2xl border hover:border-[#0058A6]/20 hover:shadow-lg transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
@@ -210,10 +263,10 @@ export default function LandingPage() {
             Two interfaces, one powerful system
           </h2>
           <p className={`text-xl text-center mb-16 max-w-3xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Choose the interface that fits your workflow. Mobile-first whiteboard for daily operations, 
+            Choose the interface that fits your workflow. Mobile-first whiteboard for daily operations,
             or desktop billboard for complex scheduling.
           </p>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Whiteboard */}
             <div className={`p-8 rounded-2xl border ${isDarkMode ? 'bg-gradient-to-br from-blue-900/50 to-cyan-900/50 border-blue-800' : 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-100'}`}>
@@ -224,7 +277,7 @@ export default function LandingPage() {
                 <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Whiteboard</h3>
               </div>
               <p className={`mb-6 leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Mobile-first interface perfect for on-the-go management. Quick lesson creation, 
+                Mobile-first interface perfect for on-the-go management. Quick lesson creation,
                 status updates, and teacher assignments.
               </p>
               <div className="space-y-3">
@@ -241,8 +294,8 @@ export default function LandingPage() {
                   <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Real-time filtering</span>
                 </div>
               </div>
-              <Link 
-                href="/whiteboard" 
+              <Link
+                href="/whiteboard"
                 className="inline-block mt-6 px-6 py-3 bg-[#0058A6] text-white rounded-lg hover:bg-[#004088] transition-colors"
               >
                 Try Whiteboard
@@ -258,7 +311,7 @@ export default function LandingPage() {
                 <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Billboard</h3>
               </div>
               <p className={`mb-6 leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Desktop drag-and-drop interface for complex scheduling. Visual teacher columns 
+                Desktop drag-and-drop interface for complex scheduling. Visual teacher columns
                 with advanced conflict resolution.
               </p>
               <div className="space-y-3">
@@ -275,8 +328,8 @@ export default function LandingPage() {
                   <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Conflict detection</span>
                 </div>
               </div>
-              <Link 
-                href="/billboard" 
+              <Link
+                href="/billboard"
                 className="inline-block mt-6 px-6 py-3 bg-[#0058A6] text-white rounded-lg hover:bg-[#004088] transition-colors"
               >
                 Try Billboard
@@ -298,7 +351,7 @@ export default function LandingPage() {
               <span className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Tarifa Kite Hostel</span>
             </div>
             <p className={`text-lg italic mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              "KiteFlow transformed our operations completely. What used to take hours of manual work 
+              "KiteFlow transformed our operations completely. What used to take hours of manual work
               now happens automatically. Our teachers love the interface and our students never miss a lesson."
             </p>
             <p className={`font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -317,7 +370,7 @@ export default function LandingPage() {
           <p className={`text-xl text-center mb-16 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             Start free, scale as you grow. Perfect for kite schools of any size.
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Free Tier */}
             <div className={`p-8 rounded-2xl border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
@@ -344,8 +397,8 @@ export default function LandingPage() {
                   <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Basic exports</span>
                 </div>
               </div>
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className={`w-full block text-center px-6 py-3 border rounded-lg transition-colors ${isDarkMode ? 'border-gray-500 text-gray-300 hover:border-[#0058A6] hover:text-[#0058A6]' : 'border-gray-300 text-gray-700 hover:border-[#0058A6] hover:text-[#0058A6]'}`}
               >
                 Get Started
@@ -387,8 +440,8 @@ export default function LandingPage() {
                   <span className="text-white">Priority support</span>
                 </div>
               </div>
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="w-full block text-center px-6 py-3 bg-white text-[#0058A6] rounded-lg hover:bg-gray-50 transition-colors font-semibold"
               >
                 Start Free Trial
@@ -421,8 +474,8 @@ export default function LandingPage() {
                   <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Dedicated support</span>
                 </div>
               </div>
-              <Link 
-                href="mailto:contact@kiteflow.com" 
+              <Link
+                href="mailto:contact@kiteflow.com"
                 className={`w-full block text-center px-6 py-3 border rounded-lg transition-colors ${isDarkMode ? 'border-gray-500 text-gray-300 hover:border-[#0058A6] hover:text-[#0058A6]' : 'border-gray-300 text-gray-700 hover:border-[#0058A6] hover:text-[#0058A6]'}`}
               >
                 Contact Sales
@@ -439,11 +492,11 @@ export default function LandingPage() {
             Ready to streamline your kite school?
           </h2>
           <p className={`text-xl mb-8 max-w-2xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Join kite schools worldwide who trust KiteFlow for their lesson management. 
+            Join kite schools worldwide who trust KiteFlow for their lesson management.
             Start your free trial today.
           </p>
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center gap-2 px-8 py-4 bg-[#0058A6] text-white text-lg font-semibold rounded-xl hover:bg-[#004088] transition-all hover:scale-105"
           >
             <Zap className="w-5 h-5" />
