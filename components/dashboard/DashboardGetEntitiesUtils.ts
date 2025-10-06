@@ -2,7 +2,16 @@ import { ENTITY_DATA } from "@/lib/constants";
 import { Plus, LucideIcon, PlusCircle, Package, UserPlus } from "lucide-react";
 import { seedCreateStudent, seedCreateTeacher } from "@/actions/seed-actions";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { exportEventsToCsv, exportStudentsToCsv, exportTeachersToCsv, exportPackagesToCsv, exportBookingsToCsv, exportLessonsToCsv, exportKitesToCsv, exportPaymentsToCsv } from "./DashboardExportUtils";
+import {
+  exportEventsToCsv,
+  exportStudentsToCsv,
+  exportTeachersToCsv,
+  exportPackagesToCsv,
+  exportBookingsToCsv,
+  exportLessonsToCsv,
+  exportKitesToCsv,
+  exportPaymentsToCsv,
+} from "./DashboardExportUtils";
 
 export interface EntityConfig {
   name: string;
@@ -20,7 +29,7 @@ export interface ActionButton {
 }
 
 export interface FilterConfig {
-  options: Array<{label: string, value: string}>;
+  options: Array<{ label: string; value: string }>;
   defaultFilter: string;
   filterFunction: (item: any, filterValue: string) => boolean;
 }
@@ -29,7 +38,7 @@ export interface FilterConfig {
  * Get entity configuration from constants by name
  */
 export function getEntityConfig(entityName: string): EntityConfig {
-  const entity = ENTITY_DATA.find(e => e.name === entityName);
+  const entity = ENTITY_DATA.find((e) => e.name === entityName);
   if (!entity) {
     throw new Error(`Entity "${entityName}" not found in ENTITY_DATA`);
   }
@@ -75,49 +84,59 @@ export function generateEntityActionButtons(
   isDropdownFormOpen?: boolean,
 ): ActionButton[] {
   // For complex forms (lesson, event), always go to route instead of dropdown
-  const useRoute = entityName.toLowerCase() === 'lesson' || entityName.toLowerCase() === 'event';
-  
-  const buttonLabel = entityName.toLowerCase() === 'event' 
-    ? 'Create New Event'
-    : entityName.toLowerCase() === 'lesson'
-    ? 'Create New Lesson'
-    : (openDropdownForm && !useRoute ? (isDropdownFormOpen ? 'Close' : `Add New ${entityName}`) : `Create New ${entityName}`);
-    
+  const useRoute =
+    entityName.toLowerCase() === "lesson" ||
+    entityName.toLowerCase() === "event";
+
+  const buttonLabel =
+    entityName.toLowerCase() === "event"
+      ? "Create New Event"
+      : entityName.toLowerCase() === "lesson"
+        ? "Create New Lesson"
+        : openDropdownForm && !useRoute
+          ? isDropdownFormOpen
+            ? "Close"
+            : `Add ${entityName}`
+          : `Create New ${entityName}`;
+
   const actions: ActionButton[] = [
     {
       icon: Plus,
       label: buttonLabel,
-      action: useRoute ? (() => router.push(`/${entityName.toLowerCase()}s/form`)) : (openDropdownForm || (() => router.push(`/${entityName.toLowerCase()}s/form`)))
-    }
+      action: useRoute
+        ? () => router.push(`/${entityName.toLowerCase()}s/form`)
+        : openDropdownForm ||
+        (() => router.push(`/${entityName.toLowerCase()}s/form`)),
+    },
   ];
 
-  if (entityName.toLowerCase() === 'student') {
-    actions.push({
-      icon: PlusCircle,
-      label: "Seed Student",
-      action: async () => {
-        await seedCreateStudent();
-        router.refresh();
-      }
-    });
+  if (entityName.toLowerCase() === "student") {
+    // actions.push({
+    //   icon: PlusCircle,
+    //   label: "Seed Student",
+    //   action: async () => {
+    //     await seedCreateStudent();
+    //     router.refresh();
+    //   }
+    // });
     actions.push({
       icon: Package,
       label: `Select Package (${selectedIds?.length || 0})`,
-      action: openModal || (() => {}),
-      disabled: !selectedIds || selectedIds.length === 0
+      action: openModal || (() => { }),
+      disabled: !selectedIds || selectedIds.length === 0,
     });
   }
 
-  if (entityName.toLowerCase() === 'teacher') {
-    actions.push({
-      icon: UserPlus,
-      label: "Seed Teacher",
-      action: async () => {
-        await seedCreateTeacher();
-        router.refresh();
-      }
-    });
-  }
+  // if (entityName.toLowerCase() === "teacher") {
+  //   actions.push({
+  //     icon: UserPlus,
+  //     label: "Seed Teacher",
+  //     action: async () => {
+  //       await seedCreateTeacher();
+  //       router.refresh();
+  //     },
+  //   });
+  // }
 
   return actions;
 }
@@ -148,7 +167,7 @@ export function getEntityListRoute(entityName: string): string {
  */
 export function getEntityFilterConfig(entityName: string): FilterConfig {
   switch (entityName.toLowerCase()) {
-    case 'student':
+    case "student":
       return {
         options: [
           { label: "All", value: "all" },
@@ -159,28 +178,34 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
         filterFunction: (student: any, filterValue: string) => {
           if (filterValue === "available") {
             // Available means no active bookings AND last booking is not active
-            const hasActiveBooking = student.bookings?.some((b: any) => b.status === "active");
+            const hasActiveBooking = student.bookings?.some(
+              (b: any) => b.status === "active",
+            );
             if (hasActiveBooking) return false;
-            
+
             // Check if last booking is not active
-            const sortedBookings = student.bookings?.sort((a: any, b: any) => 
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            const sortedBookings = student.bookings?.sort(
+              (a: any, b: any) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime(),
             );
             const lastBooking = sortedBookings?.[0];
             return !lastBooking || lastBooking.status !== "active";
           }
           if (filterValue === "complete") {
             // Complete means latest booking is uncomplete
-            const sortedBookings = student.bookings?.sort((a: any, b: any) => 
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            const sortedBookings = student.bookings?.sort(
+              (a: any, b: any) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime(),
             );
             return sortedBookings?.[0]?.status === "uncomplete";
           }
           return true;
         },
       };
-    
-    case 'booking':
+
+    case "booking":
       return {
         options: [
           { label: "All", value: "all" },
@@ -195,8 +220,8 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
           return true;
         },
       };
-    
-    case 'teacher':
+
+    case "teacher":
       return {
         options: [
           { label: "All", value: "all" },
@@ -214,8 +239,8 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
           return true;
         },
       };
-    
-    case 'package':
+
+    case "package":
       return {
         options: [
           { label: "All", value: "all" },
@@ -237,19 +262,17 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
           return true;
         },
       };
-    
-    case 'payment':
+
+    case "payment":
       return {
-        options: [
-          { label: "All", value: "all" },
-        ],
+        options: [{ label: "All", value: "all" }],
         defaultFilter: "all",
         filterFunction: () => {
           return true;
         },
       };
-    
-    case 'kite':
+
+    case "kite":
       return {
         options: [
           { label: "All", value: "all" },
@@ -271,8 +294,8 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
           return true;
         },
       };
-    
-    case 'event':
+
+    case "event":
       return {
         options: [
           { label: "All", value: "all" },
@@ -282,14 +305,18 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
         ],
         defaultFilter: "all",
         filterFunction: (event: any, filterValue: string) => {
-          if (filterValue === "planned" || filterValue === "tbc" || filterValue === "completed") {
+          if (
+            filterValue === "planned" ||
+            filterValue === "tbc" ||
+            filterValue === "completed"
+          ) {
             return event.status === filterValue;
           }
           return true;
         },
       };
-    
-    case 'lesson':
+
+    case "lesson":
       return {
         options: [
           { label: "All", value: "all" },
@@ -304,8 +331,8 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
           return true;
         },
       };
-    
-    case 'reference':
+
+    case "reference":
       return {
         options: [
           { label: "All", value: "all" },
@@ -322,12 +349,15 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
             return reference.role?.toLowerCase() === "reference";
           }
           if (filterValue === "others") {
-            return reference.role?.toLowerCase() !== "teacher" && reference.role?.toLowerCase() !== "reference";
+            return (
+              reference.role?.toLowerCase() !== "teacher" &&
+              reference.role?.toLowerCase() !== "reference"
+            );
           }
           return true;
         },
       };
-    
+
     default:
       return {
         options: [
@@ -337,7 +367,7 @@ export function getEntityFilterConfig(entityName: string): FilterConfig {
         ],
         defaultFilter: "all",
         filterFunction: (item: any, filterValue: string) => {
-          if (filterValue === 'active' || filterValue === 'completed') {
+          if (filterValue === "active" || filterValue === "completed") {
             return item.status === filterValue;
           }
           return true;

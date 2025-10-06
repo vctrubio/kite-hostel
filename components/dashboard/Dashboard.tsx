@@ -21,7 +21,6 @@ import { getEntityDropdownForm } from "./DashboardGetEntityDropdownForm";
 import { DashboardHeader } from "./DashboardHeader";
 import { getDashboardStats } from "./DashboardGetStats";
 
-
 interface Stat {
   description: string;
   value: number | string;
@@ -45,22 +44,23 @@ type CustomFilterValue = string;
 
 // Sub-component: Stats Grid
 function StatsGrid({ stats }: { stats: Stat[] }) {
-  const gridClass = `grid grid-cols-1 gap-4 ${
-    stats.length === 2
-      ? "md:grid-cols-2"
-      : stats.length === 3
-        ? "md:grid-cols-3"
-        : stats.length >= 4
-          ? "md:grid-cols-2 lg:grid-cols-4"
-          : "md:grid-cols-1"
-  }`;
+  const gridClass = `grid grid-cols-1 gap-4 ${stats.length === 2
+    ? "md:grid-cols-2"
+    : stats.length === 3
+      ? "md:grid-cols-3"
+      : stats.length >= 4
+        ? "md:grid-cols-2 lg:grid-cols-4"
+        : "md:grid-cols-1"
+    }`;
 
   return (
     <div className={gridClass}>
       {stats.map((stat, index) => (
         <Card key={index}>
           <CardContent className="p-4">
-            <div className={`${typeof stat.value === 'object' ? '' : 'text-2xl'} font-bold text-foreground`}>
+            <div
+              className={`${typeof stat.value === "object" ? "" : "text-2xl"} font-bold text-foreground`}
+            >
               {stat.value}
             </div>
             <p className="text-sm font-medium text-muted-foreground mb-3">
@@ -77,7 +77,9 @@ function StatsGrid({ stats }: { stats: Stat[] }) {
                     <span className="text-xs text-muted-foreground/80">
                       {subStat.label}
                     </span>
-                    <span className={`${typeof subStat.value === 'object' ? '' : 'text-sm'} font-semibold text-foreground`}>
+                    <span
+                      className={`${typeof subStat.value === "object" ? "" : "text-sm"} font-semibold text-foreground`}
+                    >
                       {subStat.value}
                     </span>
                   </div>
@@ -354,7 +356,6 @@ export function Dashboard({
     isDropdownFormOpen,
   );
 
-
   const dynamicStats = useMemo(() => {
     return getDashboardStats(entityName, filteredData);
   }, [entityName, filteredData]);
@@ -398,7 +399,6 @@ export function Dashboard({
           customFilter={customFilter}
           setCustomFilter={setCustomFilter}
         />
-
         {actionsPlaceholder && (
           <div className="space-y-4">{actionsPlaceholder}</div>
         )}

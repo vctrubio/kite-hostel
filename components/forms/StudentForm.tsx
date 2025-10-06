@@ -24,74 +24,72 @@ interface StudentFormData {
   desc: string;
 }
 
-// interface FormFieldDescriptor {
-//     key: keyof StudentFormData;
-//     label: string;
-//     type: 'text' | 'tel';
-//     required: boolean;
-//     placeholder?: string;
-// }
+interface FormFieldProps {
+  id: string;
+  label: string;
+  type?: 'text' | 'tel';
+  required?: boolean;
+  placeholder?: string;
+  value: string;
+  disabled: boolean;
+  className?: string;
+  onChange: (value: string) => void;
+}
 
-// const _FORM_FIELDS: FormFieldDescriptor[] = [
-//     { key: 'name', label: 'First Name', type: 'text', required: true, placeholder: 'First name' },
-//     { key: 'last_name', label: 'Last Name', type: 'text', required: false, placeholder: 'Last name' },
-//     { key: 'passport_number', label: 'Passport Number', type: 'text', required: false, placeholder: 'ABC123456' },
-//     { key: 'phone', label: 'Phone', type: 'tel', required: false, placeholder: 'Phone number' },
-//     { key: 'size', label: 'Size', type: 'text', required: false, placeholder: 'M, L, XL' },
-// ] as const;
 
-export function StudentForm({
-    onSubmit
-}: {
-    onSubmit?: (data: any) => void;
-}) {
+const FormField = ({ id, label, type = 'text', required, placeholder, value, disabled, className = 'flex-1 min-w-[150px]', onChange }: FormFieldProps) => (
+    <div className={`${className} flex flex-col gap-2`}>
+        <Label htmlFor={id} className="text-xs font-medium">
+            {label}{required && <span className="text-red-500">*</span>}
+        </Label>
+        <Input
+            id={id}
+            name={id}
+            type={type}
+            required={required}
+            disabled={disabled}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-9 text-sm"
+            placeholder={placeholder || label}
+        />
+    </div>
+);
+
+const initialFormData: StudentFormData = {
+    name: '',
+    last_name: '',
+    passport_number: '',
+    phone: '',
+    country: 'Spain',
+    size: '',
+    desc: '',
+    languages: [],
+};
+
+export function StudentForm({ onSubmit }: { onSubmit?: (data: any) => void }) {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-    const [selectedCountryCode, setSelectedCountryCode] = useState('ES'); // Spain's country code
-    const [formData, setFormData] = useState<StudentFormData>({
-        name: '',
-        last_name: '',
-        passport_number: '',
-        phone: '',
-        country: 'Spain',
-        size: '',
-        desc: '',
-        languages: [],
-    });
-    // const [_email, setEmail] = useState('');
+    const [selectedCountryCode, setSelectedCountryCode] = useState('ES');
+    const [formData, setFormData] = useState<StudentFormData>(initialFormData);
     
     // Get country data
     const countries = getData();
 
     const resetForm = () => {
-        setFormData({
-            name: '',
-            last_name: '',
-            passport_number: '',
-            phone: '',
-            country: 'Spain',
-            size: '',
-            desc: '',
-            languages: [],
-        });
+        setFormData(initialFormData);
         setSelectedLanguages([]);
         setSelectedCountryCode('ES');
-        setEmail('');
         setError(null);
     };
 
-    // Check if form is ready to submit
-    const isFormValid = () => {
-        return formData.name && formData.name.trim() !== "" && selectedLanguages.length > 0;
-    };
+    const isFormValid = formData.name.trim() && selectedLanguages.length > 0;
 
     const handleLanguageChange = (language: string, checked: boolean) => {
-        if (checked) {
-            setSelectedLanguages(prev => [...prev, language]);
-        } else {
-            setSelectedLanguages(prev => prev.filter(lang => lang !== language));
-        }
+        setSelectedLanguages(prev => 
+            checked ? [...prev, language] : prev.filter(lang => lang !== language)
+        );
     };
 
     const handleInputChange = (key: keyof StudentFormData, value: any) => {
@@ -117,14 +115,14 @@ export function StudentForm({
 
         try {
             const data = {
-                name: formData.name,
+                ...formData,
                 last_name: formData.last_name || null,
                 passport_number: formData.passport_number || null,
                 country: formData.country || null,
                 phone: formData.phone || null,
                 size: formData.size || null,
                 desc: formData.desc || null,
-                languages: selectedLanguages as any, // Cast to match schema enum type
+                languages: selectedLanguages as any,
             };
 
             console.log('Student data being submitted:', data);
@@ -139,7 +137,7 @@ export function StudentForm({
                 duration: 4000,
             });
             resetForm();
-            if (onSubmit) onSubmit(result.data);
+            onSubmit?.(result.data);
 
         } catch (err: any) {
             console.error('Error creating student:', err);
@@ -151,26 +149,6 @@ export function StudentForm({
         }
     };
 
-    // const _renderField = (field: FormFieldDescriptor) => {
-    //     return (
-    //         <div key={field.key} className="flex flex-col gap-2 min-w-fit">
-    //             <Label htmlFor={field.key} className="text-xs font-medium whitespace-nowrap">
-    //                 {field.label}{field.required && <span className="text-red-500">*</span>}
-    //             </Label>
-    //             <Input
-    //                 id={field.key}
-    //                 name={field.key}
-    //                 type={field.type}
-    //                 required={field.required}
-    //                 disabled={isLoading}
-    //                 value={formData[field.key] || ''}
-    //                 onChange={(e) => handleInputChange(field.key, e.target.value)}
-    //                 className="h-9 w-32 text-sm"
-    //                 placeholder={field.placeholder || field.label}
-    //             />
-    //         </div>
-    //     );
-    // };
 
     return (
         <div className="w-full p-6">
@@ -193,40 +171,23 @@ export function StudentForm({
 
                         {/* First Row: Name, Last Name, Country, Phone, Passport, Size, Languages */}
                         <div className="flex flex-wrap gap-4">
-                            {/* First Name */}
-                            <div className="flex-1 min-w-[150px] flex flex-col gap-2">
-                                <Label htmlFor="name" className="text-xs font-medium">
-                                    First Name<span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    type="text"
-                                    required
-                                    disabled={isLoading}
-                                    value={formData.name || ''}
-                                    onChange={(e) => handleInputChange('name', e.target.value)}
-                                    className="h-9 text-sm"
-                                    placeholder="First name"
-                                />
-                            </div>
-
-                            {/* Last Name */}
-                            <div className="flex-1 min-w-[150px] flex flex-col gap-2">
-                                <Label htmlFor="last_name" className="text-xs font-medium">
-                                    Last Name
-                                </Label>
-                                <Input
-                                    id="last_name"
-                                    name="last_name"
-                                    type="text"
-                                    disabled={isLoading}
-                                    value={formData.last_name || ''}
-                                    onChange={(e) => handleInputChange('last_name', e.target.value)}
-                                    className="h-9 text-sm"
-                                    placeholder="Last name"
-                                />
-                            </div>
+                            <FormField
+                                id="name"
+                                label="First Name"
+                                required
+                                value={formData.name}
+                                disabled={isLoading}
+                                placeholder="First name"
+                                onChange={(value) => handleInputChange('name', value)}
+                            />
+                            <FormField
+                                id="last_name"
+                                label="Last Name"
+                                value={formData.last_name}
+                                disabled={isLoading}
+                                placeholder="Last name"
+                                onChange={(value) => handleInputChange('last_name', value)}
+                            />
 
                             {/* Country */}
                             <div className="w-32 flex flex-col gap-2">
@@ -264,56 +225,33 @@ export function StudentForm({
                                 </div>
                             </div>
 
-                            {/* Phone */}
-                            <div className="w-32 flex flex-col gap-2">
-                                <Label htmlFor="phone" className="text-xs font-medium">
-                                    Phone
-                                </Label>
-                                <Input
-                                    id="phone"
-                                    name="phone"
-                                    type="tel"
-                                    disabled={isLoading}
-                                    value={formData.phone || ''}
-                                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                                    className="h-9 text-sm"
-                                    placeholder="Phone"
-                                />
-                            </div>
-
-                            {/* Passport Number */}
-                            <div className="w-36 flex flex-col gap-2">
-                                <Label htmlFor="passport_number" className="text-xs font-medium">
-                                    Passport Number
-                                </Label>
-                                <Input
-                                    id="passport_number"
-                                    name="passport_number"
-                                    type="text"
-                                    disabled={isLoading}
-                                    value={formData.passport_number || ''}
-                                    onChange={(e) => handleInputChange('passport_number', e.target.value)}
-                                    className="h-9 text-sm"
-                                    placeholder="ABC123456"
-                                />
-                            </div>
-
-                            {/* Size - smallest since only 3 chars */}
-                            <div className="w-16 flex flex-col gap-2">
-                                <Label htmlFor="size" className="text-xs font-medium">
-                                    Size
-                                </Label>
-                                <Input
-                                    id="size"
-                                    name="size"
-                                    type="text"
-                                    disabled={isLoading}
-                                    value={formData.size || ''}
-                                    onChange={(e) => handleInputChange('size', e.target.value)}
-                                    className="h-9 text-sm"
-                                    placeholder="XL"
-                                />
-                            </div>
+                            <FormField
+                                id="phone"
+                                label="Phone"
+                                type="tel"
+                                value={formData.phone}
+                                disabled={isLoading}
+                                className="w-32"
+                                onChange={(value) => handleInputChange('phone', value)}
+                            />
+                            <FormField
+                                id="passport_number"
+                                label="Passport Number"
+                                value={formData.passport_number}
+                                disabled={isLoading}
+                                placeholder="ABC123456"
+                                className="w-36"
+                                onChange={(value) => handleInputChange('passport_number', value)}
+                            />
+                            <FormField
+                                id="size"
+                                label="Size"
+                                value={formData.size}
+                                disabled={isLoading}
+                                placeholder="XL"
+                                className="w-16"
+                                onChange={(value) => handleInputChange('size', value)}
+                            />
 
                             {/* Languages */}
                             <div className="flex-1 min-w-[300px] flex flex-col gap-2">
@@ -359,7 +297,7 @@ export function StudentForm({
                         <div className="flex justify-end pt-4 border-t border-border/50">
                             <Button
                                 type="submit"
-                                disabled={isLoading || !isFormValid()}
+                                disabled={isLoading || !isFormValid}
                                 className="h-9 px-6 bg-yellow-500 hover:bg-yellow-600 text-white"
                             >
                                 {isLoading ? (
