@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useUserWallet } from "@/provider/UserWalletProvider";
 import { UserSettingsDropdown } from "./UserSettingsDropdown";
 import { TableRouteButton } from "./TableRouteButton";
-import { LayoutGrid, BarChart3, Menu, Table } from "lucide-react";
+import { LayoutGrid, BarChart3, Menu, Table, Plus } from "lucide-react";
 import { ENTITY_DATA } from "@/lib/constants";
 import { useState, useRef, useEffect } from "react";
 
@@ -81,6 +81,15 @@ export function AppNavigation() {
                 <BarChart3 className="h-4 w-4" />
                 <span>Statistics</span>
               </Link>
+
+              {/* Add Check In (Desktop Only) */}
+              <Link
+                href="/bookings/form"
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${INACTIVE_BUTTON_CLASSES}`}
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Check In</span>
+              </Link>
             </div>
             <UserSettingsDropdown user={user} loading={loading} />
           </div>
@@ -129,7 +138,7 @@ export function AppNavigation() {
                     <Link
                       href="/billboard"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 mb-4 ${
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
                         pathname.startsWith("/billboard") ? ACTIVE_BUTTON_CLASSES : INACTIVE_BUTTON_CLASSES
                       }`}
                     >
@@ -137,21 +146,49 @@ export function AppNavigation() {
                       <span>Billboard</span>
                     </Link>
 
+                    {/* Statistics */}
+                    <Link
+                      href="/statistics"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 mb-4 ${
+                        pathname.startsWith("/statistics") ? ACTIVE_BUTTON_CLASSES : INACTIVE_BUTTON_CLASSES
+                      }`}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                      <span>Statistics</span>
+                    </Link>
+
                     {/* Tables Section */}
-                    <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-3">
+                    <div className="pt-4">
+                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 px-3">
                         Tables
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {ENTITY_DATA.map((entity) => {
                           const isActive = pathname.startsWith(entity.link);
+                          const EntityIcon = entity.icon;
                           return (
-                            <div key={entity.name} onClick={() => setIsMobileMenuOpen(false)}>
-                              <TableRouteButton
-                                entity={entity}
-                                isActive={isActive}
-                                showPlus={true}
-                              />
+                            <div key={entity.name} className="rounded-lg border border-gray-200 dark:border-gray-600 p-3">
+                              <div className="flex items-center justify-between">
+                                <Link
+                                  href={entity.link}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                  className={`flex items-center space-x-2 text-sm font-medium transition-all duration-200 ${
+                                    isActive ? `${entity.color} font-semibold` : "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+                                  }`}
+                                >
+                                  <EntityIcon className={`h-4 w-4 ${entity.color}`} />
+                                  <span>{entity.name}s</span>
+                                </Link>
+                                <Link
+                                  href={`${entity.link}/form`}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                  className={`flex items-center p-1 rounded transition-all duration-200 ${entity.color} hover:bg-gray-100 dark:hover:bg-gray-800`}
+                                  title={`Add new ${entity.name.toLowerCase()}`}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Link>
+                              </div>
                             </div>
                           );
                         })}
