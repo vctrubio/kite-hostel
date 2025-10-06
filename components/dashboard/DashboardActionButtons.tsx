@@ -1,14 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { type ActionButton, type FilterConfig } from "./DashboardGetEntitiesUtils";
+import {
+  type ActionButton,
+  type FilterConfig,
+} from "./DashboardGetEntitiesUtils";
 
-export function DashboardActionButtons({ 
-  actionButtons, 
+export function DashboardActionButtons({
+  actionButtons,
   customFilters,
   customFilter,
-  setCustomFilter
-}: { 
+  setCustomFilter,
+}: {
   actionButtons: ActionButton[];
   customFilters: FilterConfig;
   customFilter: string;
@@ -23,7 +26,7 @@ export function DashboardActionButtons({
             key={index}
             onClick={button.action}
             disabled={button.disabled}
-            className="flex items-center space-x-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center space-x-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <button.icon className="h-4 w-4" />
             <span>{button.label}</span>
@@ -37,7 +40,7 @@ export function DashboardActionButtons({
           {customFilters.options.map((option) => (
             <Button
               key={option.value}
-              variant={customFilter === option.value ? 'default' : 'ghost'}
+              variant={customFilter === option.value ? "default" : "ghost"}
               size="sm"
               onClick={() => setCustomFilter(option.value)}
               className="text-sm"
