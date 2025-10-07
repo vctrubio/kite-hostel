@@ -71,7 +71,7 @@ export default function StudentBookingColumn({
 
   return (
     <div className="col-span-1">
-      <div className="flex items-center justify-between mb-2 py-1 px-4 border rounded-lg">
+      <div className="flex items-center justify-between mb-2 py-1 px-4 border rounded-lg h-[66px]">
         <div className="flex mr-3">
           <BookingIcon className="w-8 h-8 text-blue-500" />
         </div>
@@ -80,31 +80,28 @@ export default function StudentBookingColumn({
         <div className="flex items-center gap-1 bg-muted rounded-md p-1">
           <button
             onClick={() => setFilter("available")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
-              filter === "available"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "available"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             Available ({counts.available})
           </button>
           <button
             onClick={() => setFilter("onboard")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
-              filter === "onboard"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "onboard"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             Onboard ({counts.onboard})
           </button>
           <button
             onClick={() => setFilter("completed")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
-              filter === "completed"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "completed"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             Completed ({counts.completed})
           </button>
