@@ -82,20 +82,24 @@ export default function TeacherLessonQueueCard({
   // --- Render ---
   return (
     <div
-      className={`p-4 rounded-lg border max-w-[420px] min-w-[240] ${hasGap && !isFirst
+      className={`w-[269px] p-4 rounded-lg border ${hasGap && !isFirst
         ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
         : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
         }`}
     >
       {/* Header: Helmets, names, controls */}
       <div className="flex items-center justify-between mb-3 w-full">
-        <div className="flex gap-1 flex-shrink-0">
+        <div className={`flex-shrink-0 ${
+          students.length === 4 
+            ? "grid grid-cols-2 gap-1" 
+            : "flex gap-1"
+        }`}>
           {students.map((_, i) => (
-            <HelmetIcon key={i} className="w-4 h-4 text-yellow-500" />
+            <HelmetIcon key={i} className="w-8 h-8 text-yellow-500" />
           ))}
         </div>
         <div className="flex-1 mx-2 flex flex-wrap gap-1 items-center">
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
+          <span className="text-base font-medium text-gray-900 dark:text-white">
             {studentNames}
           </span>
         </div>
@@ -104,7 +108,7 @@ export default function TeacherLessonQueueCard({
             <button
               onClick={() => onMoveUp(lessonId)}
               className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
-              title="Move up in queue"
+              title="Move front in queue"
             >
               <ArrowUp className="w-3 h-3" />
             </button>
@@ -113,7 +117,7 @@ export default function TeacherLessonQueueCard({
             <button
               onClick={() => onMoveDown(lessonId)}
               className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
-              title="Move down in queue"
+              title="Move back in queue"
             >
               <ArrowDown className="w-3 h-3" />
             </button>
@@ -141,26 +145,26 @@ export default function TeacherLessonQueueCard({
                 <button
                   onClick={() => onAdjustTime(lessonId, false)}
                   disabled={!canMoveEarlier}
-                  className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1.5 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title={
                     canMoveEarlier
                       ? "30 minutes earlier"
                       : "Cannot move earlier - would overlap"
                   }
                 >
-                  <ChevronLeft className="w-3 h-3" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => onAdjustTime(lessonId, true)}
                   disabled={!canMoveLater}
-                  className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1.5 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title={
                     canMoveLater
                       ? "30 minutes later"
                       : "Cannot move later - would exceed 23:00"
                   }
                 >
-                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -174,7 +178,7 @@ export default function TeacherLessonQueueCard({
             )}
             <div className="flex flex-col text-center">
               {scheduledDateTime && (
-                <div className="text-sm font-medium text-green-600 dark:text-green-400">
+                <div className="text-base font-semibold text-green-600 dark:text-green-400">
                   {scheduledDateTime}
                 </div>
               )}
@@ -196,28 +200,28 @@ export default function TeacherLessonQueueCard({
           <div className="flex flex-col">
             <button
               onClick={() => handleLocalDurationAdjustment(true)}
-              className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="p-1.5 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               title="30 minutes more"
             >
-              <ChevronUp className="w-3 h-3" />
+              <ChevronUp className="w-4 h-4" />
             </button>
-            <div className="text-sm font-medium text-gray-900 dark:text-white my-1">
+            <div className="text-base font-semibold text-gray-900 dark:text-white my-1">
               +<Duration minutes={currentDuration} />
             </div>
             <button
               onClick={() => handleLocalDurationAdjustment(false)}
               disabled={currentDuration <= 60}
-              className="p-1 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="30 minutes less (minimum 60 minutes)"
             >
-              <ChevronDown className="w-3 h-3" />
+              <ChevronDown className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Location and remaining time info */}
-      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center flex items-center justify-center gap-2">
+      <div className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center flex items-center justify-center gap-2">
         <div className="flex items-center gap-1">
           <MapPin className="w-3 h-3" />
           <span>{location}</span>
