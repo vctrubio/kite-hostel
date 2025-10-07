@@ -1,6 +1,10 @@
 import { ENTITY_DATA } from "@/lib/constants";
 import { Plus, LucideIcon, Package } from "lucide-react";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
+import { PlusCircle } from "lucide-react";
+import { seedCreateStudent } from "@/actions/seed-actions";
+
 import {
   exportEventsToCsv,
   exportStudentsToCsv,
@@ -110,14 +114,14 @@ export function generateEntityActionButtons(
   ];
 
   if (entityName.toLowerCase() === "student") {
-    // actions.push({
-    //   icon: PlusCircle,
-    //   label: "Seed Student",
-    //   action: async () => {
-    //     await seedCreateStudent();
-    //     router.refresh();
-    //   }
-    // });
+    actions.push({
+      icon: PlusCircle,
+      label: "Seed Student",
+      action: async () => {
+        await seedCreateStudent();
+        router.refresh();
+      },
+    });
     actions.push({
       icon: Package,
       label: `Select Package (${selectedIds?.length || 0})`,

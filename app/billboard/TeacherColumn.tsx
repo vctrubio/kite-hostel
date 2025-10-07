@@ -9,7 +9,7 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
-import FlagCard from "@/components/cards/FlagCard";
+import FlagCardV2 from "@/components/cards/FlagCardV2";
 import TeacherQueueEditor from "@/app/billboard/TeacherQueueEditor";
 import {
   TeacherGrouping,
@@ -398,7 +398,7 @@ const TeacherColumnRow = forwardRef<
 
       return (
         <div key={`event-${eventNode.id}-${index}`} className="flex-shrink-0">
-          <FlagCard
+          <FlagCardV2
             startTime={eventNode.eventData.date}
             duration={eventNode.eventData.duration}
             students={eventNode.billboardClass.getStudentNames()}
@@ -407,6 +407,7 @@ const TeacherColumnRow = forwardRef<
             eventId={eventNode.eventData.id}
             hasGap={hasGap}
             onStatusChange={() => { }}
+            onLocationChange={() => { }}
           />
         </div>
       );
