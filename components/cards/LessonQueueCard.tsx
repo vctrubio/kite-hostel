@@ -82,18 +82,17 @@ export default function TeacherLessonQueueCard({
   // --- Render ---
   return (
     <div
-      className={`w-[269px] p-4 rounded-lg border ${hasGap && !isFirst
+      className={`w-[311px] p-4 rounded-lg border ${hasGap && !isFirst
         ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
         : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
         }`}
     >
       {/* Header: Helmets, names, controls */}
       <div className="flex items-center justify-between mb-3 w-full">
-        <div className={`flex-shrink-0 ${
-          students.length === 4 
-            ? "grid grid-cols-2 gap-1" 
-            : "flex gap-1"
-        }`}>
+        <div
+          className={`flex-shrink-0 ${students.length === 4 ? "grid grid-cols-2 gap-1" : "flex gap-1"
+            }`}
+        >
           {students.map((_, i) => (
             <HelmetIcon key={i} className="w-8 h-8 text-yellow-500" />
           ))}

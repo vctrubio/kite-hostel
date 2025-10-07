@@ -90,11 +90,10 @@ function UpdateMode({
               key={statusKey}
               onClick={() => handleStatusChange(statusKey as EventStatus)}
               disabled={isWaiting || statusKey === status}
-              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
-                statusKey === status
-                  ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
-                  : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
-              } disabled:opacity-50`}
+              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${statusKey === status
+                ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+                } disabled:opacity-50`}
             >
               {statusKey}
             </button>
@@ -113,11 +112,10 @@ function UpdateMode({
               key={locationValue}
               onClick={() => handleLocationChange(locationValue)}
               disabled={isWaiting || locationValue === location}
-              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
-                locationValue === location
-                  ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
-                  : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
-              } disabled:opacity-50`}
+              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${locationValue === location
+                ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+                } disabled:opacity-50`}
             >
               {locationValue}
             </button>
@@ -153,11 +151,10 @@ export default function FlagCardV2({
 
   return (
     <div
-      className={`w-[269px] bg-background dark:bg-card border border-border rounded-lg overflow-hidden relative ${
-        hasGap && hasGap > 0
-          ? "border-l-4 border-l-orange-300 dark:border-l-orange-500"
-          : ""
-      }`}
+      className={`w-[311px] bg-background dark:bg-card border border-border rounded-lg overflow-hidden relative ${hasGap && hasGap > 0
+        ? "border-l-4 border-l-orange-300 dark:border-l-orange-500"
+        : ""
+        }`}
     >
       <div className="overflow-hidden">
         {/* First Row: Flag + Time + Duration + Edit Button */}
