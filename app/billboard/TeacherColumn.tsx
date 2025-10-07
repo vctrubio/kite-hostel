@@ -117,7 +117,11 @@ const TeacherColumnRow = forwardRef<
   }));
 
   useEffect(() => {
-    if (parentTime.adjustmentMode && parentTime.globalTime && isPendingParentUpdate) {
+    if (
+      parentTime.adjustmentMode &&
+      parentTime.globalTime &&
+      isPendingParentUpdate
+    ) {
       const offsetMinutes =
         timeToMinutes(parentTime.globalTime) -
         timeToMinutes(scheduleNodes[0]?.startTime || "00:00");
@@ -406,8 +410,8 @@ const TeacherColumnRow = forwardRef<
             location={eventNode.eventData.location}
             eventId={eventNode.eventData.id}
             hasGap={hasGap}
-            onStatusChange={() => { }}
-            onLocationChange={() => { }}
+            onStatusChange={() => {}}
+            onLocationChange={() => {}}
           />
         </div>
       );
@@ -486,7 +490,7 @@ function ParentControlFlag({
   );
 
   return (
-    <div className="border border-border dark:border-gray-700 rounded-lg p-4">
+    <div className="border border-border dark:border-gray-700 rounded-lg px-4 py-[18px]">
       <div className="flex justify-between items-center pl-2 ">
         <div className="flex items-center gap-4">
           <h3 className="text-lg font-medium text-foreground dark:text-white">

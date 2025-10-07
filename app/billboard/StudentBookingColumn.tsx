@@ -80,28 +80,31 @@ export default function StudentBookingColumn({
         <div className="flex items-center gap-1 bg-muted rounded-md p-1">
           <button
             onClick={() => setFilter("available")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "available"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${
+              filter === "available"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             Available ({counts.available})
           </button>
           <button
             onClick={() => setFilter("onboard")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "onboard"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${
+              filter === "onboard"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             Onboard ({counts.onboard})
           </button>
           <button
             onClick={() => setFilter("completed")}
-            className={`px-3 py-1 text-sm rounded transition-colors ${filter === "completed"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${
+              filter === "completed"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             Completed ({counts.completed})
           </button>
