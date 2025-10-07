@@ -23,12 +23,11 @@ interface FlagCardV2Props {
   hasGap?: number;
 }
 
-
 // Update Mode Component - just the controls
-function UpdateMode({ 
-  status, 
-  location, 
-  eventId
+function UpdateMode({
+  status,
+  location,
+  eventId,
 }: {
   status: EventStatus;
   location: Location;
@@ -80,7 +79,12 @@ function UpdateMode({
           STATUS
         </label>
         <div className="flex flex-wrap gap-1">
-          {Object.entries({planned: 1, tbc: 1, completed: 1, cancelled: 1}).map(([statusKey, _]) => (
+          {Object.entries({
+            planned: 1,
+            tbc: 1,
+            completed: 1,
+            cancelled: 1,
+          }).map(([statusKey, _]) => (
             <button
               key={statusKey}
               onClick={() => handleStatusChange(statusKey as EventStatus)}
@@ -147,20 +151,23 @@ export default function FlagCardV2({
   const [viewMode, setViewMode] = useState<"view" | "update">("view");
 
   return (
-    <div className={`w-[269px] bg-card border border-border rounded-lg overflow-hidden relative ${
-      hasGap && hasGap > 0 ? 'border-l-4 border-l-orange-500' : ''
-    }`}>
-
+    <div
+      className={`w-[269px] bg-card border border-border rounded-lg overflow-hidden relative ${
+        hasGap && hasGap > 0
+          ? "border-l-4 border-l-orange-300 dark:border-l-orange-500"
+          : ""
+      }`}
+    >
       <div className="overflow-hidden">
         {/* First Row: Flag + Time + Duration + Edit Button */}
-        <div className="flex items-center gap-4 p-4 border-b border-border">
+        <div className="flex items-center gap-2 p-4 border-b-2 border-dashed border-gray-300 dark:border-gray-600">
           <FlagIcon className="w-10 h-10" status={status} />
-          <div className="flex flex-col">
+          <div className="flex flex-col relative">
             <span className="font-bold text-2xl">
               <DateTime dateString={startTime} formatType="time" />
             </span>
             {hasGap && hasGap > 0 && (
-              <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+              <span className="text-xs text-orange-600 dark:text-orange-400 font-medium absolute top-full left-0 whitespace-nowrap">
                 +<Duration minutes={hasGap} /> delay
               </span>
             )}
@@ -171,9 +178,17 @@ export default function FlagCardV2({
           <button
             onClick={() => setViewMode(viewMode === "view" ? "update" : "view")}
             className="ml-auto p-1.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-            title={viewMode === "view" ? "Switch to update mode" : "Switch to view mode"}
+            title={
+              viewMode === "view"
+                ? "Switch to update mode"
+                : "Switch to view mode"
+            }
           >
-            {viewMode === "view" ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+            {viewMode === "view" ? (
+              <ChevronDown className="w-5 h-5" />
+            ) : (
+              <ChevronUp className="w-5 h-5" />
+            )}
           </button>
         </div>
 
@@ -181,7 +196,7 @@ export default function FlagCardV2({
         {viewMode === "view" ? (
           /* Students Rows */
           students.map((student, index) => (
-            <div key={index} className="flex items-center gap-4 px-4 py-2">
+            <div key={index} className="flex items-center gap-3 px-6 py-2">
               <HelmetIcon className="w-8 h-8 text-yellow-500" />
               <div className="overflow-x-auto flex-1">
                 <span className="text-base font-medium text-foreground whitespace-nowrap">
@@ -191,11 +206,7 @@ export default function FlagCardV2({
             </div>
           ))
         ) : (
-          <UpdateMode
-            status={status}
-            location={location}
-            eventId={eventId}
-          />
+          <UpdateMode status={status} location={location} eventId={eventId} />
         )}
       </div>
     </div>
