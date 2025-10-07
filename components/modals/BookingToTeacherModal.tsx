@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { createLesson } from "@/actions/lesson-actions";
 import { createCommission } from "@/actions/commission-actions";
-import { useRouter } from "next/navigation";
 import { X, Search, Plus, Check, UserCheck } from "lucide-react";
 import { HeadsetIcon, PaymentIcon } from "@/svgs";
 
@@ -270,7 +269,6 @@ export function BookingToTeacherModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewCommissionForm, setShowNewCommissionForm] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
 
   const selectedTeacher = teachers.find((t) => t.id === selectedTeacherId);
 
@@ -322,7 +320,7 @@ export function BookingToTeacherModal({
       if (result.success) {
         toast.success("Lesson created and linked successfully!");
         onCommissionCreated();
-        router.refresh();
+        // Real-time listener will handle the UI update
         onClose();
       } else {
         toast.error(result.error || "Failed to create lesson");

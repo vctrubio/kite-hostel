@@ -23,6 +23,7 @@ import {
   exportBillboardEventsToCsv,
   exportBillboardEventsToXlsm,
   generatePrintHTML,
+  printHTMLDocument,
 } from "@/backend/BillboardExportUtils";
 import { useBillboardEventListener } from "@/lib/useBillboardEventListener";
 

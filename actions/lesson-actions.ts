@@ -105,8 +105,7 @@ export async function createLesson({
       return { success: false, error: "Failed to create lesson." };
     }
 
-    revalidatePath("/bookings");
-    revalidatePath("/lessons");
+    // Real-time listener handles UI updates - no need for revalidatePath
 
     return { success: true, lessonId: newLesson[0].id, error: null };
   } catch (error: any) {

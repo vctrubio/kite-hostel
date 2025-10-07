@@ -109,14 +109,14 @@ export function generateEntityActionButtons(
       action: useRoute
         ? () => router.push(`/${entityName.toLowerCase()}s/form`)
         : openDropdownForm ||
-        (() => router.push(`/${entityName.toLowerCase()}s/form`)),
+          (() => router.push(`/${entityName.toLowerCase()}s/form`)),
     },
   ];
 
   if (entityName.toLowerCase() === "student") {
     actions.push({
       icon: PlusCircle,
-      label: "Seed Student",
+      label: "Fake Student",
       action: async () => {
         await seedCreateStudent();
         router.refresh();
@@ -125,7 +125,7 @@ export function generateEntityActionButtons(
     actions.push({
       icon: Package,
       label: `Select Package (${selectedIds?.length || 0})`,
-      action: openModal || (() => { }),
+      action: openModal || (() => {}),
       disabled: !selectedIds || selectedIds.length === 0,
     });
   }

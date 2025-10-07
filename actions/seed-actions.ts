@@ -1,14 +1,25 @@
 "use server";
 
 import db from "@/drizzle";
-import { Student, Teacher, PackageStudent, Kite } from "@/drizzle/migrations/schema";
+import { Student, Teacher, PackageStudent } from "@/drizzle/migrations/schema";
 import { revalidatePath } from "next/cache";
 import { createKite, assignKiteToTeacher } from "@/actions/kite-actions";
 
 export async function seedCreateStudent() {
   try {
-    const firstNames = ["John", "Jane", "Mike", "Sarah", "David", "Emma", "Alex", "Lisa", "Chris", "Maria"];
-    const lastNames = ["Smith", "Johnson", "Brown", "Davis", "Wilson", "Miller", "Taylor", "Anderson", "Thomas", "Jackson"];
+    const firstNames = [
+      "Liam", "Olivia", "Noah", "Emma", "Oliver", "Ava", "Elijah", "Sophia", 
+      "James", "Isabella", "William", "Charlotte", "Benjamin", "Amelia", "Lucas", "Mia",
+      "Henry", "Harper", "Alexander", "Evelyn", "Sebastian", "Ella", "Jack", "Aria",
+      "Owen", "Scarlett", "Leo", "Luna", "Ethan", "Grace", "Mason", "Chloe",
+      "Aiden", "Lily", "Logan", "Zoe", "Jackson", "Nora", "Carter", "Riley"
+    ];
+    const lastNames = [
+      "Martinez", "Garcia", "Rodriguez", "Lopez", "Hernandez", "Gonzalez", "Perez", "Sanchez",
+      "Ramirez", "Torres", "Flores", "Rivera", "Gomez", "Diaz", "Cruz", "Morales",
+      "Reyes", "Gutierrez", "Ortiz", "Chavez", "Ramos", "Castillo", "Vargas", "Mendoza",
+      "Silva", "Castro", "Rojas", "Medina", "Santos", "Alvarez", "Romero", "Ruiz"
+    ];
     const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];
     const randomLastName = lastNames[Math.floor(Math.random() * lastNames.length)];
     
