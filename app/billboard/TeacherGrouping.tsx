@@ -456,8 +456,6 @@ export const TeacherGrouping = forwardRef<
 
       if (!result.success) {
         toast.error(`Failed to create event: ${result.error}`);
-      } else {
-        toast.success("Event created!");
       }
     } catch (error) {
       console.error("Error handling drop:", error);
