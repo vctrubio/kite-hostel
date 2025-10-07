@@ -594,10 +594,8 @@ export class TeacherQueue {
       });
 
       if (result.success) {
-        console.log("Event created successfully:", result.data);
         return { success: true };
       } else {
-        console.error("Failed to create event:", result.error);
         return { success: false, error: result.error };
       }
     } catch (error) {

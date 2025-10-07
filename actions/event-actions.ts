@@ -338,7 +338,6 @@ export async function updateEvent(
     }
 
     revalidatePath("/whiteboard");
-    revalidatePath("/billboard");
     revalidatePath("/events");
     return { success: true };
   } catch (error: any) {

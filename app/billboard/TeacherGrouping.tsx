@@ -448,15 +448,16 @@ export const TeacherGrouping = forwardRef<
         return;
       }
 
-      // Call the addEventAction method from TeacherQueue
+      // Create event - real-time listener will handle UI update
       const result = await teacherQueue.addEventAction(
         billboardClass,
         controller,
       );
 
       if (!result.success) {
-        console.error("Failed to create event:", result.error);
         toast.error(`Failed to create event: ${result.error}`);
+      } else {
+        toast.success("Event created!");
       }
     } catch (error) {
       console.error("Error handling drop:", error);

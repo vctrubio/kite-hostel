@@ -1,30 +1,30 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { BillboardData } from "@/actions/billboard-actions";
-import {
-  getStoredDate,
-  setStoredDate,
-  getTodayDateString,
-} from "@/components/formatters/DateTime";
+import { useEffect, useMemo, useState } from "react";
+import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 import BillboardHeader from "./BillboardHeader";
 import TeacherColumn from "./TeacherColumn";
 import StudentBookingColumn from "./StudentBookingColumn";
 import { BillboardClass } from "@/backend/BillboardClass";
+import { type BillboardData } from "@/actions/billboard-actions";
 import { type EventController } from "@/backend/types";
 import { createTeacherQueuesFromBillboardClasses } from "@/backend/billboardUtils";
-import { LOCATION_ENUM_VALUES } from "@/lib/constants";
 import {
+  getTodayDateString,
+  getStoredDate,
+  setStoredDate,
+} from "@/components/formatters/DateTime";
+import {
+  extractShareDataFromTeacherQueues,
+  generateWhatsAppMessage,
+  shareToWhatsApp,
+  generateMedicalEmail,
+  sendMedicalEmail,
   exportBillboardEventsToCsv,
   exportBillboardEventsToXlsm,
-  generateWhatsAppMessage,
-  generateMedicalEmail,
-  shareToWhatsApp,
-  sendMedicalEmail,
   generatePrintHTML,
-  printHTMLDocument,
-  extractShareDataFromTeacherQueues,
 } from "@/backend/BillboardExportUtils";
+import { useBillboardEventListener } from "@/lib/useBillboardEventListener";
 
 const STORAGE_KEY = "billboard-selected-date";
 
@@ -81,6 +81,11 @@ interface BillboardClientProps {
 }
 
 export default function BillboardClient({ data }: BillboardClientProps) {
+  // Use real-time listener hook
+  const { billboardData: realtimeBillboardData } = useBillboardEventListener({
+    initialData: data,
+  });
+
   // Core state
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateString());
   const [draggedBooking, setDraggedBooking] = useState<BillboardClass | null>(
@@ -101,8 +106,8 @@ export default function BillboardClient({ data }: BillboardClientProps) {
 
   // Billboard classes for clean data access
   const billboardClasses = useMemo(() => {
-    return data.bookings.map((booking) => new BillboardClass(booking));
-  }, [data.bookings]);
+    return realtimeBillboardData.bookings.map((booking) => new BillboardClass(booking));
+  }, [realtimeBillboardData.bookings]);
 
   // Date filtering logic
   const filteredBillboardClasses = useMemo(() => {
@@ -125,11 +130,11 @@ export default function BillboardClient({ data }: BillboardClientProps) {
   // Teacher queues for the selected date
   const teacherQueues = useMemo(() => {
     return createTeacherQueuesFromBillboardClasses(
-      data.teachers || [],
+      realtimeBillboardData.teachers || [],
       filteredBillboardClasses,
       selectedDate,
     );
-  }, [data.teachers, filteredBillboardClasses, selectedDate]);
+  }, [realtimeBillboardData.teachers, filteredBillboardClasses, selectedDate]);
 
   // Date management
   const handleDateChange = (date: string) => {
@@ -563,7 +568,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
 
       <div className="grid grid-cols-4 gap-4">
         <TeacherColumn
-          teachers={data.teachers || []}
+          teachers={realtimeBillboardData.teachers || []}
           teacherQueues={teacherQueues}
           controller={controller}
           selectedDate={selectedDate}
@@ -573,7 +578,7 @@ export default function BillboardClient({ data }: BillboardClientProps) {
         <StudentBookingColumn
           billboardClasses={filteredBillboardClasses}
           selectedDate={selectedDate}
-          teachers={data.teachers || []}
+          teachers={realtimeBillboardData.teachers || []}
           onBookingDragStart={handleBookingDragStart}
           onBookingDragEnd={handleBookingDragEnd}
         />

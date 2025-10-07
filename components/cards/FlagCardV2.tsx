@@ -34,42 +34,61 @@ function UpdateMode({
   location: Location;
   eventId?: string;
 }) {
-  const [isWaiting, setIsWaiting] = useState(false);
+  // Local state for immediate UI feedback
+  const [localState, setLocalState] = useState({
+    status,
+    location,
+    isUpdating: false,
+  });
 
   const handleStatusChange = async (newStatus: EventStatus) => {
-    if (!eventId || isWaiting) return;
-    setIsWaiting(true);
+    if (!eventId || localState.isUpdating) return;
+    
+    // Optimistically update UI immediately
+    setLocalState({ ...localState, status: newStatus, isUpdating: true });
+    
     try {
       await updateEvent(eventId, { status: newStatus });
+      // Real-time listener will handle the actual update
     } catch (error) {
       console.error("Error updating event status:", error);
+      // Revert on error
+      setLocalState({ status, location, isUpdating: false });
     } finally {
-      setIsWaiting(false);
+      setLocalState((prev) => ({ ...prev, isUpdating: false }));
     }
   };
 
   const handleLocationChange = async (newLocation: Location) => {
-    if (!eventId || isWaiting) return;
-    setIsWaiting(true);
+    if (!eventId || localState.isUpdating) return;
+    
+    // Optimistically update UI immediately
+    setLocalState({ ...localState, location: newLocation, isUpdating: true });
+    
     try {
       await updateEvent(eventId, { location: newLocation });
+      // Real-time listener will handle the actual update
     } catch (error) {
       console.error("Error updating event location:", error);
+      // Revert on error
+      setLocalState({ status, location, isUpdating: false });
     } finally {
-      setIsWaiting(false);
+      setLocalState((prev) => ({ ...prev, isUpdating: false }));
     }
   };
 
   const handleDelete = async () => {
-    if (!eventId || isWaiting) return;
-    setIsWaiting(true);
+    if (!eventId || localState.isUpdating) return;
+    setLocalState({ ...localState, isUpdating: true });
+    
     try {
       await deleteEvent(eventId);
+      // Real-time listener will handle the removal from UI
     } catch (error) {
       console.error("Error deleting event:", error);
-    } finally {
-      setIsWaiting(false);
+      setLocalState((prev) => ({ ...prev, isUpdating: false }));
     }
+    // Note: We don't setIsUpdating(false) on success because the component will unmount
   };
 
   return (
@@ -89,8 +108,8 @@ function UpdateMode({
             <button
               key={statusKey}
               onClick={() => handleStatusChange(statusKey as EventStatus)}
-              disabled={isWaiting || statusKey === status}
-              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${statusKey === status
+              disabled={localState.isUpdating || statusKey === localState.status}
+              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${statusKey === localState.status
                 ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
                 : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
                 } disabled:opacity-50`}
@@ -111,8 +130,8 @@ function UpdateMode({
             <button
               key={locationValue}
               onClick={() => handleLocationChange(locationValue)}
-              disabled={isWaiting || locationValue === location}
-              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${locationValue === location
+              disabled={localState.isUpdating || locationValue === localState.location}
+              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${locationValue === localState.location
                 ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
                 : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
                 } disabled:opacity-50`}
@@ -127,11 +146,11 @@ function UpdateMode({
       {eventId && (
         <button
           onClick={handleDelete}
-          disabled={isWaiting}
+          disabled={localState.isUpdating}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors disabled:opacity-50"
         >
           <Trash2 className="w-4 h-4" />
-          {isWaiting ? "Please wait..." : "Delete Event"}
+          {localState.isUpdating ? "Updating..." : "Delete Event"}
         </button>
       )}
     </div>

@@ -2,31 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getTeacherPortalById, type TeacherPortalData } from "@/actions/teacher-actions";
+import { getBillboardData, type BillboardData } from "@/actions/billboard-actions";
 
-interface UseTeacherEventListenerOptions {
-  teacherId: string;
-  initialData: TeacherPortalData;
+interface UseBillboardEventListenerOptions {
+  initialData: BillboardData;
 }
 
-export function useTeacherEventListener({ teacherId, initialData }: UseTeacherEventListenerOptions) {
-  const [teacherData, setTeacherData] = useState<TeacherPortalData>(initialData);
+export function useBillboardEventListener({ initialData }: UseBillboardEventListenerOptions) {
+  const [billboardData, setBillboardData] = useState<BillboardData>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
 
-    // Function to refetch teacher data
-    const refetchTeacherData = async () => {
+    // Function to refetch billboard data
+    const refetchBillboardData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const { data, error } = await getTeacherPortalById(teacherId);
+        const { data, error } = await getBillboardData();
         if (error) {
           setError(error);
         } else if (data) {
-          setTeacherData(data);
+          setBillboardData(data);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to refetch data");
@@ -37,7 +36,7 @@ export function useTeacherEventListener({ teacherId, initialData }: UseTeacherEv
 
     // Subscribe to Event table changes
     const eventChannel = supabase
-      .channel("teacher_event_changes")
+      .channel("billboard_event_changes")
       .on(
         "postgres_changes",
         {
@@ -46,32 +45,32 @@ export function useTeacherEventListener({ teacherId, initialData }: UseTeacherEv
           table: "event",
         },
         (payload) => {
-          console.log("📡 Teacher: Event change detected", payload.eventType);
-          refetchTeacherData();
+          console.log("📡 Billboard: Event change detected", payload.eventType);
+          refetchBillboardData();
         }
       )
       .subscribe();
 
-    // Also listen to KiteEvent table changes since events depend on kites
-    const kiteEventChannel = supabase
-      .channel("teacher_kite_event_changes")
+    // Listen to Booking table changes since billboard depends on bookings
+    const bookingChannel = supabase
+      .channel("billboard_booking_changes")
       .on(
         "postgres_changes",
         {
           event: "*",
-          schema: "public", 
-          table: "kite_event",
+          schema: "public",
+          table: "booking",
         },
         (payload) => {
-          console.log("📡 Teacher: KiteEvent change detected", payload.eventType);
-          refetchTeacherData();
+          console.log("📡 Billboard: Booking change detected", payload.eventType);
+          refetchBillboardData();
         }
       )
       .subscribe();
 
-    // Also listen to Lesson table changes since events are linked to lessons
+    // Listen to Lesson table changes
     const lessonChannel = supabase
-      .channel("teacher_lesson_changes")
+      .channel("billboard_lesson_changes")
       .on(
         "postgres_changes",
         {
@@ -80,8 +79,8 @@ export function useTeacherEventListener({ teacherId, initialData }: UseTeacherEv
           table: "lesson",
         },
         (payload) => {
-          console.log("📡 Teacher: Lesson change detected", payload.eventType);
-          refetchTeacherData();
+          console.log("📡 Billboard: Lesson change detected", payload.eventType);
+          refetchBillboardData();
         }
       )
       .subscribe();
@@ -89,13 +88,13 @@ export function useTeacherEventListener({ teacherId, initialData }: UseTeacherEv
     // Cleanup subscriptions
     return () => {
       supabase.removeChannel(eventChannel);
-      supabase.removeChannel(kiteEventChannel);
+      supabase.removeChannel(bookingChannel);
       supabase.removeChannel(lessonChannel);
     };
-  }, [teacherId]);
+  }, []);
 
   return {
-    teacherData,
+    billboardData,
     isLoading,
     error,
   };
