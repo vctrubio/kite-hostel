@@ -1,6 +1,12 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState, useMemo, useEffect } from "react";
+import {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+  useMemo,
+  useEffect,
+} from "react";
 import { HeadsetIcon } from "@/svgs";
 import { Flag, ChevronLeft, ChevronRight } from "lucide-react";
 import { TeacherQueue } from "@/backend/TeacherQueue";
@@ -108,10 +114,11 @@ function TeacherLeftColumn({
             <button
               onClick={() => hasEvents && onTimeAdjustment(-30)}
               disabled={!hasEvents}
-              className={`p-1 rounded transition-colors ${hasEvents
-                ? "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                : "cursor-not-allowed opacity-50"
-                }`}
+              className={`p-1 rounded transition-colors ${
+                hasEvents
+                  ? "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                  : "cursor-not-allowed opacity-50"
+              }`}
               title={hasEvents ? "Move back 30 minutes" : "No events to adjust"}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -130,10 +137,11 @@ function TeacherLeftColumn({
             <button
               onClick={() => hasEvents && onTimeAdjustment(30)}
               disabled={!hasEvents}
-              className={`p-1 rounded transition-colors ${hasEvents
-                ? "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                : "cursor-not-allowed opacity-50"
-                }`}
+              className={`p-1 rounded transition-colors ${
+                hasEvents
+                  ? "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                  : "cursor-not-allowed opacity-50"
+              }`}
               title={
                 hasEvents ? "Move forward 30 minutes" : "No events to adjust"
               }
@@ -149,10 +157,11 @@ function TeacherLeftColumn({
                 onSetViewMode("queue");
               }
             }}
-            className={`flex items-center gap-1 rounded px-2 py-1 transition-colors ${hasEvents
-              ? "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-              : "cursor-not-allowed opacity-50"
-              }`}
+            className={`flex items-center gap-1 rounded px-2 py-1 transition-colors ${
+              hasEvents
+                ? "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                : "cursor-not-allowed opacity-50"
+            }`}
             title={
               hasEvents
                 ? "Click to adjust start time and switch to queue view"
@@ -213,10 +222,11 @@ function TeacherLeftColumn({
               }
             }}
             disabled={!hasEvents}
-            className={`w-full px-3 py-2 text-sm rounded border transition-colors ${hasEvents
-              ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300 cursor-pointer"
-              : "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
-              }`}
+            className={`w-full px-3 py-2 text-sm rounded border transition-colors ${
+              hasEvents
+                ? "bg-blue-100 dark:bg-blue-600 text-blue-800 dark:text-foreground hover:bg-blue-200 dark:hover:bg-blue-500 border-blue-300 dark:border-blue-500 cursor-pointer"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-not-allowed"
+            }`}
             title={
               hasEvents ? "Edit schedule in queue view" : "No events to edit"
             }
@@ -240,10 +250,12 @@ function TeacherLeftColumn({
             </button>
             <button
               onClick={
-                timeAdjustmentMode ? () => {
-                  // Reset time adjustments but stay in edit mode
-                  onTimeAdjustment(-globalTimeOffset);
-                } : onResetQueue
+                timeAdjustmentMode
+                  ? () => {
+                      // Reset time adjustments but stay in edit mode
+                      onTimeAdjustment(-globalTimeOffset);
+                    }
+                  : onResetQueue
               }
               className="w-full px-3 py-2 text-sm bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 border border-yellow-300"
               title={
@@ -356,9 +368,9 @@ export const TeacherGrouping = forwardRef<
     };
 
     // Listen for clicks that might open modals
-    document.addEventListener('click', handleGlobalClick);
+    document.addEventListener("click", handleGlobalClick);
     return () => {
-      document.removeEventListener('click', handleGlobalClick);
+      document.removeEventListener("click", handleGlobalClick);
     };
   }, []);
 

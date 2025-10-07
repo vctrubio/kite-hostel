@@ -517,7 +517,7 @@ const TeacherEventsGroup = forwardRef<
                     setViewMode("queue");
                   }
                 }}
-                className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 border border-blue-300"
+                className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-900 border border-blue-300"
                 title="Edit schedule in queue view"
               >
                 Edit Schedule
@@ -801,7 +801,9 @@ function ParentControlFlag({
               ) : (
                 <Flag className="w-5 h-5 text-muted-foreground" />
               )}
-              {parentTimeAdjustmentMode && <span className="text-sm">Exit</span>}
+              {parentTimeAdjustmentMode && (
+                <span className="text-sm">Exit</span>
+              )}
             </button>
 
             {parentTimeAdjustmentMode ? (
@@ -854,7 +856,10 @@ function ParentControlFlag({
             events={events}
             onAllEventsUpdated={onAllEventsUpdated}
           />
-          <NoWindButton events={events} onAllEventsDeleted={onAllEventsDeleted} />
+          <NoWindButton
+            events={events}
+            onAllEventsDeleted={onAllEventsDeleted}
+          />
         </div>
       </div>
     </div>

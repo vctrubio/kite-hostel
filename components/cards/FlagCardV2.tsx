@@ -152,7 +152,7 @@ export default function FlagCardV2({
 
   return (
     <div
-      className={`w-[269px] bg-card border border-border rounded-lg overflow-hidden relative ${
+      className={`w-[269px] bg-background dark:bg-card border border-border rounded-lg overflow-hidden relative ${
         hasGap && hasGap > 0
           ? "border-l-4 border-l-orange-300 dark:border-l-orange-500"
           : ""
