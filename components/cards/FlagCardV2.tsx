@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Duration } from "@/components/formatters/Duration";
 import { DateTime } from "@/components/formatters/DateTime";
 import { FlagIcon } from "@/svgs";
@@ -16,7 +17,7 @@ import {
 interface FlagCardV2Props {
   startTime: string;
   duration: number;
-  students: string[];
+  students: Array<{ id: string; name: string }>;
   status: EventStatus;
   location: Location;
   eventId?: string;
@@ -199,9 +200,14 @@ export default function FlagCardV2({
             <div key={index} className="flex items-center gap-3 px-6 py-2">
               <HelmetIcon className="w-8 h-8 text-yellow-500" />
               <div className="overflow-x-auto flex-1">
-                <span className="text-base font-medium text-foreground whitespace-nowrap">
-                  {student}
-                </span>
+                <Link
+                  href={`/students/${student.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-base font-medium text-foreground whitespace-nowrap hover:underline"
+                >
+                  {student.name}
+                </Link>
               </div>
             </div>
           ))

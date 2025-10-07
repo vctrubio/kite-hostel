@@ -405,7 +405,7 @@ const TeacherColumnRow = forwardRef<
           <FlagCardV2
             startTime={eventNode.eventData.date}
             duration={eventNode.eventData.duration}
-            students={eventNode.billboardClass.getStudentNames()}
+            students={eventNode.billboardClass.getStudents()}
             status={eventNode.eventData.status}
             location={eventNode.eventData.location}
             eventId={eventNode.eventData.id}
