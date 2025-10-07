@@ -10,6 +10,7 @@ import { PaymentIcon } from "@/svgs/PaymentIcon";
 import { SeparatorIcon } from "@/svgs";
 import { TeacherPortal as TeacherPortalClass } from "@/backend/TeacherPortal";
 import { type TeacherPortalData } from "@/actions/teacher-actions";
+import { useTeacherEventListener } from "@/lib/useTeacherEventListener";
 import TeacherEventCard from "@/components/cards/TeacherEventCard";
 import TeacherLessonCard from "@/components/cards/TeacherLessonCard";
 import { SingleDatePicker } from "@/components/pickers/single-date-picker";
@@ -239,9 +240,15 @@ const StatsView = ({
 export default function TeacherPortal({ teacherData }: TeacherPortalProps) {
   const [activeView, setActiveView] = useState<"daily" | "stats">("daily");
 
+  // Use real-time listener hook
+  const { teacherData: realtimeTeacherData, isLoading, error } = useTeacherEventListener({
+    teacherId: teacherData.id,
+    initialData: teacherData,
+  });
+
   const teacherPortal = useMemo(
-    () => new TeacherPortalClass(teacherData),
-    [teacherData],
+    () => new TeacherPortalClass(realtimeTeacherData),
+    [realtimeTeacherData],
   );
   const stats = teacherPortal.getStats();
   const tbcCount = teacherPortal.getTBCEventsCount();
