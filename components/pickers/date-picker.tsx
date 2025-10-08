@@ -116,7 +116,7 @@ export function DatePicker({
     1,
     Math.ceil(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    ),
+    ) + 1,
   );
 
   const updateParent = (newStartDate: Date, newEndDate: Date) => {
@@ -210,10 +210,10 @@ export function DatePicker({
 
   return (
     <div
-      className={`rounded-lg border border-border bg-card p-4 space-y-4 ${disabled ? "opacity-50 pointer-events-none" : ""}`}
+      className={` bg-card p-3 space-y-4 ${disabled ? "opacity-50 pointer-events-none" : ""}`}
     >
       {/* Start and End Date Side by Side */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-8">
         {/* Start Date */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
