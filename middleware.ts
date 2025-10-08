@@ -83,8 +83,8 @@ export async function middleware(request: NextRequest) {
         !currentPath.startsWith("/auth") &&
         !currentPath.startsWith("/login");
 
-      // If user is not admin and trying to access protected route, redirect to /user
-      if (isProtectedRoute && userRole !== 'admin') {
+      // If user is not admin or teacherAdmin and trying to access protected route, redirect to /user
+      if (isProtectedRoute && userRole !== 'admin' && userRole !== 'teacherAdmin') {
         const url = request.nextUrl.clone();
         url.pathname = "/user";
         return NextResponse.redirect(url);
