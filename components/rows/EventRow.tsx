@@ -10,6 +10,7 @@ import { getEventStatusColor, ENTITY_DATA } from "@/lib/constants";
 import { deleteEvent } from "@/actions/event-actions";
 import { HelmetIcon } from "@/svgs";
 import { DropdownExpandableRow } from "./DropdownExpandableRow";
+import { formatFriendlyDate } from "@/getters/event-getters";
 
 interface EventRowProps {
   data: {
@@ -96,7 +97,14 @@ export function EventRow({ data: event, expandedRow, setExpandedRow }: EventRowP
     <>
       <tr className="border-b border-border">
         <td className="py-2 px-4 text-left">
-          {format(new Date(event.date), "dd-MM-yy | HH:mm")}
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <span className="font-medium">
+              {formatFriendlyDate(event.date, false)}
+            </span>
+            <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-md text-gray-600">
+              {format(new Date(event.date), "HH:mm")}
+            </span>
+          </div>
         </td>
         <td className="py-2 px-4 text-left">{event.teacher?.name || "N/A"}</td>
         <td className="py-2 px-4 text-left">
