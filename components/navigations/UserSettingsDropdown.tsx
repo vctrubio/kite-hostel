@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Waves, Tornado, Home, Tv } from "lucide-react";
+import { Waves, Tornado, Home, Tv, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -52,7 +52,7 @@ function UserProfile({
   );
 }
 
-export function UserSettingsDropdown({ user, loading }: { user: any; loading: boolean }) {
+export function UserSettingsDropdown({ user, loading, userPath }: { user: any; loading: boolean; userPath?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -147,6 +147,23 @@ export function UserSettingsDropdown({ user, loading }: { user: any; loading: bo
                 }`} />
                 <span className="font-medium">Whiteboard</span>
               </Link>
+              
+              {userPath && (
+                <Link
+                  href={userPath}
+                  onClick={() => setIsOpen(false)}
+                  className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg ${
+                    isDarkMode
+                      ? 'hover:bg-gray-700/50 text-gray-300'
+                      : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  <User className={`w-5 h-5 ${
+                    isDarkMode ? 'text-purple-400' : 'text-purple-600'
+                  }`} />
+                  <span className="font-medium">Profile</span>
+                </Link>
+              )}
               
               <Link
                 href="/"
