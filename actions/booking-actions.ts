@@ -100,6 +100,7 @@ export async function getBookings(): Promise<{
 }> {
   try {
     const bookings = await db.query.Booking.findMany({
+      orderBy: [desc(Booking.date_start)],
       with: {
         package: true,
         reference: {
