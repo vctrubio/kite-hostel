@@ -13,7 +13,7 @@ import {
   PackageStudent,
   Commission,
 } from "@/drizzle/migrations/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { format } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { type Location } from "@/lib/constants";
@@ -381,7 +381,8 @@ export async function getEvents() {
       .leftJoin(Booking, eq(Lesson.booking_id, Booking.id))
       .leftJoin(PackageStudent, eq(Booking.package_id, PackageStudent.id))
       .leftJoin(KiteEvent, eq(Event.id, KiteEvent.event_id))
-      .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id));
+      .leftJoin(Kite, eq(KiteEvent.kite_id, Kite.id))
+      .orderBy(desc(Event.date));
 
     // Now fetch students for each event using Drizzle subqueries
     const eventsWithStudents = await Promise.all(
