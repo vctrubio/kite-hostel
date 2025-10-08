@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Send } from "lucide-react";
+import { ChevronDown, ChevronUp, Send, User } from "lucide-react";
 import { HelmetIcon, HeadsetIcon } from "@/svgs";
-import { FormatDateRange } from "@/components/formatters/DateRange";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { BookingToTeacherModal } from "@/components/modals/BookingToTeacherModal";
 import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { WhiteboardClass } from "@/backend/WhiteboardClass";
 import { BookingWithRelations } from "@/backend/types";
 import { getUserWalletName } from "@/getters/user-wallet-getters";
+import { calculateBookingDays } from "@/getters/booking-getters";
+import { formatFriendlyDate } from "@/getters/event-getters";
 import { ENTITY_DATA } from "@/lib/constants";
 import { DropdownExpandableRow } from "./DropdownExpandableRow";
 import { LessonFormatter } from "@/getters/lesson-formatters";
@@ -55,14 +56,23 @@ export function BookingRow({
   // Create WhiteboardClass instance for progress calculations
   const bookingClass = new WhiteboardClass(booking);
 
+  // Calculate booking days
+  const totalDays = calculateBookingDays(booking.date_start, booking.date_end);
+
   return (
     <>
       <tr className="border-b border-border">
         <td className="py-2 px-4 text-left">
-          <FormatDateRange
-            startDate={booking.date_start}
-            endDate={booking.date_end}
-          />
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              {formatFriendlyDate(booking.date_start, false)}
+            </span>
+            {totalDays > 1 && (
+              <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-md text-gray-600">
+                +{totalDays - 1}d
+              </span>
+            )}
+          </div>
         </td>
         <td className="py-2 px-4 text-left">
           <BookingStatusLabel
@@ -71,12 +81,14 @@ export function BookingRow({
           />
         </td>
         <td className="py-2 px-4 text-left">
-          {getUserWalletName(booking.reference)}
-        </td>
-        <td className="py-2 px-4 text-left">
           {booking.students && booking.students.length > 0 ? (
             <span>
-              {booking.students.map((bs: any) => bs.student.name).join(", ")}
+              {booking.students.map((bs: any, index: number) => (
+                <span key={bs.student.id}>
+                  {bs.student.name} {bs.student.last_name || ''}
+                  {index < booking.students.length - 1 && ", "}
+                </span>
+              ))}
             </span>
           ) : (
             <span>No students</span>
@@ -165,8 +177,18 @@ export function BookingRow({
       </tr>
       <DropdownExpandableRow
         isExpanded={isExpanded}
-        colSpan={7}
+        colSpan={6}
         sections={[
+          ...(booking.reference ? [{
+            title: "Reference",
+            icon: User,
+            color: "text-black",
+            children: (
+              <div className="text-sm">
+                <span className="font-medium">{getUserWalletName(booking.reference)}</span>
+              </div>
+            )
+          }] : []),
           ...(booking.package ? [{
             title: "Package Details",
             icon: packageEntity?.icon,
@@ -204,7 +226,7 @@ export function BookingRow({
                       onClick={() => router.push(`/students/${bs.student.id}`)}
                       className="px-2 py-1 text-sm font-medium border border-yellow-500 rounded hover:bg-muted transition-colors"
                     >
-                      {bs.student.name}
+                      {bs.student.name} {bs.student.last_name || ''}
                     </button>
                   ))
                 ) : (
