@@ -2,7 +2,8 @@
 
 import React from "react";
 import { formatHours } from "@/components/formatters/Duration";
-import { BookingIcon, HelmetIcon, BookmarkIcon } from "@/svgs";
+import { BookingIcon, HelmetIcon, BookmarkIcon, HeadsetIcon } from "@/svgs";
+import { ArrowRight, UserCheck } from "lucide-react";
 
 type FormType = "booking" | "student" | "package";
 
@@ -176,16 +177,22 @@ export function BookingFormSummary({
               onClick={() => scrollToSection("dates-section")}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-foreground">Booking Period</h3>
+                <h3 className="font-medium text-foreground flex items-center gap-2">
+                  <BookingIcon className="w-4 h-4 text-blue-500" />
+                  Booking 
+                </h3>
                 <span className="text-xs text-muted-foreground">
                   Click to edit
                 </span>
               </div>
               {dateRange.startDate && dateRange.endDate ? (
                 <div className="space-y-1 text-sm text-muted-foreground">
-                  <p>
-                    <span className="font-medium">Start:</span>{" "}
+                  <p className="flex items-center gap-2">
+                    <span className="font-medium">Start:</span>
                     {new Date(dateRange.startDate).toLocaleDateString()}
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">End:</span>
+                    {new Date(dateRange.endDate).toLocaleDateString()}
                   </p>
                   <p>
                     <span className="font-medium">Duration:</span>{" "}
@@ -206,7 +213,10 @@ export function BookingFormSummary({
               onClick={() => scrollToSection("package-section")}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-foreground">Package</h3>
+                <h3 className="font-medium text-foreground flex items-center gap-2">
+                  <BookmarkIcon className="w-4 h-4 text-orange-500" />
+                  Package
+                </h3>
                 <span className="text-xs text-muted-foreground">
                   Click to edit
                 </span>
@@ -256,7 +266,8 @@ export function BookingFormSummary({
               onClick={() => scrollToSection("students-section")}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-foreground">
+                <h3 className="font-medium text-foreground flex items-center gap-2">
+                  <HelmetIcon className="w-4 h-4 text-yellow-500" />
                   Students{" "}
                   {selectedPackage &&
                     `(${selectedStudents.length}/${selectedPackage.capacity_students})`}
@@ -295,7 +306,10 @@ export function BookingFormSummary({
               onClick={() => scrollToSection("reference-section")}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-foreground">Reference</h3>
+                <h3 className="font-medium text-foreground flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-gray-500" />
+                  Reference
+                </h3>
                 <span className="text-xs text-muted-foreground">
                   Click to edit
                 </span>
@@ -317,7 +331,10 @@ export function BookingFormSummary({
               onClick={() => scrollToSection("lesson-section")}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-foreground">Lesson</h3>
+                <h3 className="font-medium text-foreground flex items-center gap-2">
+                  <HeadsetIcon className="w-4 h-4 text-green-500" />
+                  Lesson
+                </h3>
                 <span className="text-xs text-muted-foreground">
                   Click to edit
                 </span>

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { BookingIcon } from "@/svgs/BookingIcon";
+import { Clock } from "lucide-react";
 
 interface Student {
   id: string;
@@ -9,6 +11,8 @@ interface Student {
   languages: string[];
   desc: string;
   created_at?: string;
+  totalBookings?: number;
+  totalEventHours?: number;
 }
 
 interface StudentBookingTableProps {
@@ -17,6 +21,7 @@ interface StudentBookingTableProps {
   onSelectStudent: (studentId: string) => void;
   packageCapacity: number;
   availableStudents: Set<string>;
+  onClearStudents: () => void;
 }
 
 export function BookingStudentTable({
@@ -25,8 +30,11 @@ export function BookingStudentTable({
   onSelectStudent,
   packageCapacity,
   availableStudents,
+  onClearStudents,
 }: StudentBookingTableProps) {
-  const [filter, setFilter] = useState<'available' | 'all'>('available');
+  const [filter, setFilter] = useState<'available' | 'new' | 'all'>('available');
+
+  const badgeBaseClasses = "inline-flex items-center justify-center min-w-[100px] mx-auto w-full px-3 py-1.5 rounded-full text-xs font-medium";
 
   const sortedStudents = [...students].sort((a, b) => {
     const dateA = new Date(a.created_at || '').getTime();
@@ -34,8 +42,12 @@ export function BookingStudentTable({
     return dateB - dateA;
   });
 
+  const newStudents = sortedStudents.filter(student => !student.totalBookings || student.totalBookings === 0);
+
   const filteredStudents = filter === 'available' 
     ? sortedStudents.filter(student => availableStudents.has(student.id))
+    : filter === 'new'
+    ? newStudents
     : sortedStudents;
   return (
     <div className="space-y-4">
@@ -51,6 +63,16 @@ export function BookingStudentTable({
           Available ({availableStudents.size})
         </button>
         <button
+          onClick={() => setFilter('new')}
+          className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+            filter === 'new'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border'
+          }`}
+        >
+          New ({newStudents.length})
+        </button>
+        <button
           onClick={() => setFilter('all')}
           className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
             filter === 'all'
@@ -60,6 +82,14 @@ export function BookingStudentTable({
         >
           All ({students.length})
         </button>
+        {selectedStudentIds.length > 0 && (
+          <button
+            onClick={onClearStudents}
+            className="ml-auto px-4 py-2.5 rounded-lg font-medium transition-all duration-200 bg-red-500/10 text-red-600 hover:bg-red-500/20 border border-red-500/30"
+          >
+            Clear ({selectedStudentIds.length})
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="min-w-full divide-y divide-border">
@@ -120,13 +150,30 @@ export function BookingStudentTable({
                   {student.desc}
                 </td>
                 <td className="px-6 py-4 text-sm">
-                  <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                    availableStudents.has(student.id) 
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                      : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                  }`}>
-                    {availableStudents.has(student.id) ? 'Available' : 'Unavailable'}
-                  </span>
+                  {!availableStudents.has(student.id) ? (
+                    <span className={`${badgeBaseClasses} bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300`}>
+                      Unavailable
+                    </span>
+                  ) : (!student.totalBookings || student.totalBookings === 0) ? (
+                    <span className={`${badgeBaseClasses} bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300`}>
+                      New
+                    </span>
+                  ) : (
+                    <div className={`${badgeBaseClasses} gap-2 bg-green-100 dark:bg-green-900/30`}>
+                      <BookingIcon className="w-3 h-3 text-green-800 dark:text-green-300" />
+                      <span className="text-xs font-medium text-green-800 dark:text-green-300">
+                        {student.totalBookings}
+                      </span>
+                      {student.totalEventHours && student.totalEventHours > 0 && (
+                        <>
+                          <Clock className="w-3 h-3 text-green-800 dark:text-green-300" />
+                          <span className="text-xs font-medium text-green-800 dark:text-green-300">
+                            {Math.round(student.totalEventHours)}h
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

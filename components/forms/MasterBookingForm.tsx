@@ -170,10 +170,20 @@ const PackageSection = ({
   onToggle: (sectionId: string) => void;
 }) => {
   const config = SECTION_CONFIG["package-section"];
+  const selectedPackage = packages.find((pkg) => pkg.id === selectedPackageId);
+  
+  const title = selectedPackage
+    ? (
+        <>
+          Package: <span className="text-muted-foreground">{selectedPackage.description} ({(selectedPackage.duration / 60) % 1 === 0 ? (selectedPackage.duration / 60) : (selectedPackage.duration / 60).toFixed(1)}h)</span>
+        </>
+      )
+    : config.title;
+
   return (
     <Section
       id="package-section"
-      title={config.title}
+      title={title}
       icon={config.icon}
       iconColor={config.iconColor}
       isExpanded={isExpanded}
@@ -208,14 +218,40 @@ const StudentsSection = ({
   onToggle: (sectionId: string) => void;
 }) => {
   const config = SECTION_CONFIG["students-section"];
-  const title = (
-    <>
-      Select Students{" "}
-      <span className="text-sm font-normal text-muted-foreground">
-        (Max: {selectedPackageCapacity})
-      </span>
-    </>
-  );
+  const selectedStudents = students.filter((s) => selectedStudentIds.includes(s.id));
+  const isCapacityMet = selectedStudents.length === selectedPackageCapacity && selectedPackageCapacity > 0;
+  const isOverbooked = selectedStudents.length > selectedPackageCapacity && selectedPackageCapacity > 0;
+  
+  const handleClearStudents = () => {
+    selectedStudentIds.forEach(id => onStudentChange(id));
+  };
+  
+  let title;
+  if (isOverbooked) {
+    title = (
+      <>
+        Overbooking{" "}
+        <span className="text-sm font-normal text-orange-600">
+          ({selectedStudents.length}/{selectedPackageCapacity})
+        </span>
+      </>
+    );
+  } else if (isCapacityMet) {
+    title = (
+      <>
+        Students: <span className="text-muted-foreground">{selectedStudents.map(s => s.name).join(", ")}</span>
+      </>
+    );
+  } else {
+    title = (
+      <>
+        Select Students{" "}
+        <span className="text-sm font-normal text-muted-foreground">
+          ({selectedStudents.length}/{selectedPackageCapacity})
+        </span>
+      </>
+    );
+  }
 
   return (
     <Section
@@ -232,6 +268,7 @@ const StudentsSection = ({
         onSelectStudent={onStudentChange}
         packageCapacity={selectedPackageCapacity}
         availableStudents={availableStudents}
+        onClearStudents={handleClearStudents}
       />
     </Section>
   );
@@ -251,10 +288,23 @@ const ReferenceSection = ({
   onToggle: (sectionId: string) => void;
 }) => {
   const config = SECTION_CONFIG["reference-section"];
+  const selectedReference = userWallets.find((w) => w.id === selectedReferenceId);
+  const referenceDisplay = selectedReference
+    ? selectedReference.teacher_name || selectedReference.note || "N/A"
+    : null;
+  
+  const title = referenceDisplay 
+    ? (
+        <>
+          Reference: <span className="text-muted-foreground">{referenceDisplay}</span>
+        </>
+      )
+    : config.title;
+
   return (
     <Section
       id="reference-section"
-      title={config.title}
+      title={title}
       icon={config.icon}
       iconColor={config.iconColor}
       isExpanded={isExpanded}
@@ -287,10 +337,26 @@ const LessonSection = ({
   onToggle: (sectionId: string) => void;
 }) => {
   const config = SECTION_CONFIG["lesson-section"];
+  const selectedTeacher = teachers.find((t) => t.id === selectedLessonTeacherId);
+  const selectedCommission = selectedTeacher?.commissions?.find(
+    (c: any) => c.id === selectedLessonCommissionId
+  );
+  
+  const title = selectedTeacher
+    ? (
+        <>
+          Teacher: <span className="text-muted-foreground">{selectedTeacher.name}</span>
+          {selectedCommission && (
+            <span className="text-muted-foreground"> - €{selectedCommission.price_per_hour}/h</span>
+          )}
+        </>
+      )
+    : config.title;
+
   return (
     <Section
       id="lesson-section"
-      title={config.title}
+      title={title}
       icon={config.icon}
       iconColor={config.iconColor}
       isExpanded={isExpanded}
@@ -485,7 +551,19 @@ export default function MasterBookingForm({
 
       if (linkedTeacher) {
         setSelectedLessonTeacherId(linkedTeacher.id);
-        toggleSection("lesson-section");
+        // Don't close the lesson section, ensure it's open
+        setExpandedSections((prev) => {
+          const newSet = new Set(prev);
+          newSet.add("lesson-section");
+          return newSet;
+        });
+        // Scroll to the lesson section
+        setTimeout(() => {
+          const lessonElement = document.getElementById("lesson-section");
+          if (lessonElement) {
+            lessonElement.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
       } else {
         setSelectedLessonTeacherId(null);
         setSelectedLessonCommissionId(null);
@@ -495,7 +573,7 @@ export default function MasterBookingForm({
       setSelectedLessonCommissionId(null);
       closeSection("reference-section");
     }
-  }, [userWallets, teachers, closeSection, toggleSection]);
+  }, [userWallets, teachers, closeSection]);
 
   const handleReset = useCallback(() => {
     setSelectedPackageId("");
