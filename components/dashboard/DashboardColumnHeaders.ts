@@ -1,5 +1,6 @@
 import React from "react";
 import { EventHeading } from "@/getters/event-getters";
+import { Clock } from "lucide-react";
 
 export interface TableHeader {
   title: string | React.ReactElement;
@@ -68,7 +69,11 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
         { title: "Teacher", key: "teacher", sortable: true },
         { title: "Student", key: "students", sortable: false },
         { title: "Location", key: "location", sortable: true },
-        { title: "Duration", key: "duration", sortable: true },
+        { 
+          title: React.createElement(Clock, { className: "w-5 h-5" }), 
+          key: "duration", 
+          sortable: true 
+        },
         { title: "Total", key: "total", sortable: true },
         { title: "Status", key: "status", sortable: true },
         { title: "Actions", key: "actions", sortable: false },
@@ -90,7 +95,6 @@ export function getEntityColumnHeaders(entityName: string): TableHeader[] {
       return [
         { title: "Start Date", key: "date_start", sortable: true },
         { title: "Status", key: "status", sortable: true },
-        { title: "Reference", key: "reference", sortable: true },
         { title: "Students", key: "students", sortable: true },
         { title: "Progress", key: "progress", sortable: true },
         { title: "Lessons", key: "lessons", sortable: false },
