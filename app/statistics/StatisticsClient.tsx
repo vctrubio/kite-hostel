@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { TransactionData } from "../api/statistics/route";
+import { TransactionData } from "@/lib/statistics-service";
 import { StatisticsHeader } from "./StatisticsHeader";
 import { StatisticsTeacherRanking } from "./StatisticsTeacherRanking";
 import { StatisticsStudentRanking } from "./StatisticsStudentRanking";

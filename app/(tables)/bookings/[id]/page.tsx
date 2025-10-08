@@ -14,6 +14,7 @@ import { BookingProgressBar } from "@/components/formatters/BookingProgressBar";
 import { BookingStatusLabel } from "@/components/label/BookingStatusLabel";
 import { LessonStatusLabel } from "@/components/label/LessonStatusLabel";
 import { PackageDetails } from "@/getters/package-details";
+import { calculateBookingDays } from "@/getters/booking-getters";
 import { BookmarkIcon, BookingIcon, HeadsetIcon, HelmetIcon } from "@/svgs";
 import { EditableDatePicker } from "./EditableDatePicker";
 
@@ -485,11 +486,7 @@ export default async function BookingDetailPage({
     ) || [];
 
   // Calculate days between start and end dates
-  const startDate = new Date(booking.date_start);
-  const endDate = new Date(booking.date_end);
-  const daysDifference = Math.ceil(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24),
-  );
+  const daysDifference = calculateBookingDays(booking.date_start, booking.date_end);
 
   // Generate receipt text for export
   const receiptText = `

@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowUp, ArrowDown } from "lucide-react";
-import { TransactionData } from "../api/statistics/route";
+import { TransactionData } from "@/lib/statistics-service";
 
 type SortField = "eventDate" | "teacher" | "students" | "duration" | "revenue";
 type SortOrder = "asc" | "desc";

@@ -49,13 +49,13 @@ export function StatisticsStudentRanking({
   return (
     <Card>
       <CardHeader 
-        className="cursor-pointer hover:bg-gray-50 transition-colors"
+        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-muted/30 transition-colors"
         onClick={onToggle}
       >
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center justify-between flex-1">
             <div className="flex items-center gap-2">
-              <HelmetIcon className="w-5 h-5 text-yellow-500" />
+              <HelmetIcon className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />
               <span>Student Rankings</span>
             </div>
             <span className="text-sm font-normal text-muted-foreground">
@@ -78,15 +78,15 @@ export function StatisticsStudentRanking({
               <div
                 key={booking.bookingId}
                 onClick={() => handleStudentClick(booking)}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                className="flex items-center justify-between p-4 bg-gray-100 dark:bg-muted/20 rounded-lg hover:bg-gray-200 dark:hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className="font-semibold text-gray-500 w-8">
+                  <div className="font-semibold text-gray-500 dark:text-muted-foreground w-8">
                     #{index + 1}
                   </div>
                   <div>
                     <div className="font-medium">{booking.students.join(", ")}</div>
-                    <div className="text-sm text-gray-600 flex items-center gap-3 mt-1">
+                    <div className="text-sm text-gray-600 dark:text-muted-foreground flex items-center gap-3 mt-1">
                       <span className="flex items-center gap-1.5">
                         <KiteIcon className="h-3.5 w-3.5" />
                         <span>{booking.eventCount}</span>

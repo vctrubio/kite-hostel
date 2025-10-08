@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { TransactionData } from "../api/statistics/route";
+import { TransactionData } from "@/lib/statistics-service";
+import { calculateBookingDays } from "@/getters/booking-getters";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowUp, ArrowDown } from "lucide-react";
 
@@ -10,7 +11,8 @@ type SortOrder = "asc" | "desc";
 
 interface BookingData {
   bookingId: string;
-  startDate: string; // First event date = check-in/start date for filtering
+  dateStart: string; // From booking.date_start
+  dateEnd: string; // From booking.date_end
   totalDays: number;
   students: string[];
   pricePerHour: number; // Revenue per hour per student
@@ -33,7 +35,9 @@ export function BookingsTable({
   onSort,
 }: BookingsTableProps) {
   const formatFriendlyDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
     const day = date.getDate();
     const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
                    day === 2 || day === 22 ? 'nd' : 
@@ -55,13 +59,20 @@ export function BookingsTable({
       const bookingId = transaction.bookingId;
       
       if (!bookingMap.has(bookingId)) {
-        // Initialize booking data - startDate is the first event date (check-in)
+        // Initialize booking data - use booking dates directly from schema
         const studentsSet = new Set(transaction.students);
+        
+        // Calculate total days using the same function as booking detail page
+        const totalDays = calculateBookingDays(
+          transaction.bookingDateStart,
+          transaction.bookingDateEnd
+        );
         
         bookingMap.set(bookingId, {
           bookingId,
-          startDate: transaction.eventDate, // This is the check-in/start date
-          totalDays: 1,
+          dateStart: transaction.bookingDateStart,
+          dateEnd: transaction.bookingDateEnd,
+          totalDays,
           students: Array.from(studentsSet),
           pricePerHour: transaction.pricePerStudent, // Store pricePerStudent temporarily
           packageHours: transaction.packageHours,
@@ -71,22 +82,6 @@ export function BookingsTable({
       } else {
         // Update existing booking data
         const booking = bookingMap.get(bookingId)!;
-        const eventDate = new Date(transaction.eventDate);
-        const currentStartDate = new Date(booking.startDate);
-        
-        // Update start date if this event is earlier (this is the actual check-in date)
-        if (eventDate < currentStartDate) {
-          booking.startDate = transaction.eventDate;
-        }
-        
-        // Calculate total days span
-        const latestDate = new Date(booking.startDate);
-        data.filter(t => t.bookingId === bookingId).forEach(t => {
-          const d = new Date(t.eventDate);
-          if (d > latestDate) latestDate.setTime(d.getTime());
-        });
-        const daysDiff = Math.floor((latestDate.getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24));
-        booking.totalDays = daysDiff + 1;
         
         // Add students
         const studentsSet = new Set([...booking.students, ...transaction.students]);
@@ -115,7 +110,7 @@ export function BookingsTable({
 
       switch (sortField) {
         case "startDate":
-          comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+          comparison = new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime();
           break;
         case "students":
           comparison = a.students.length - b.students.length;
@@ -276,13 +271,11 @@ export function BookingsTable({
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
-                        {formatFriendlyDate(booking.startDate)}
+                        {formatFriendlyDate(booking.dateStart)}
                       </span>
-                      {booking.totalDays > 1 && (
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-md text-gray-600">
-                          +{booking.totalDays - 1}d
-                        </span>
-                      )}
+                      <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-md text-gray-600">
+                        +{booking.totalDays}d
+                      </span>
                     </div>
                   </td>
                   <td className="p-4">{booking.students.join(", ")}</td>

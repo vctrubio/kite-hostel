@@ -45,13 +45,13 @@ export function StatisticsTeacherRanking({
   return (
     <Card>
       <CardHeader 
-        className="cursor-pointer hover:bg-gray-50 transition-colors"
+        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-muted/30 transition-colors"
         onClick={onToggle}
       >
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center justify-between flex-1">
             <div className="flex items-center gap-2">
-              <HeadsetIcon className="w-5 h-5 text-green-600" />
+              <HeadsetIcon className="w-5 h-5 text-green-600 dark:text-green-500" />
               <span>Teacher Rankings</span>
             </div>
             <span className="text-sm font-normal text-muted-foreground">
@@ -69,43 +69,43 @@ export function StatisticsTeacherRanking({
       </CardHeader>
       {isOpen && (
         <CardContent>
-                  <div className="space-y-2">
+          <div className="space-y-2">
             {teacherRankings.map((teacher, index) => (
               <div
                 key={teacher.name}
                 onClick={() => handleTeacherClick(teacher)}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                className="flex items-center justify-between p-4 bg-gray-100 dark:bg-muted/20 rounded-lg hover:bg-gray-200 dark:hover:bg-muted/40 transition-colors cursor-pointer"
               >
-              <div className="flex items-center gap-3">
-                <div className="font-semibold text-gray-500 w-8">
-                  #{index + 1}
-                </div>
-                <div>
-                  <div className="font-medium">{teacher.name}</div>
-                  <div className="text-sm text-gray-600 flex items-center gap-3 mt-1">
-                    <span className="flex items-center gap-1.5">
-                      <KiteIcon className="h-3.5 w-3.5" />
-                      <span>{teacher.eventCount}</span>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <ClockIcon className="h-3.5 w-3.5" />
-                      <span>{formatHours(teacher.totalHours)}h</span>
-                    </span>
+                <div className="flex items-center gap-3">
+                  <div className="font-semibold text-gray-500 dark:text-muted-foreground w-8">
+                    #{index + 1}
+                  </div>
+                  <div>
+                    <div className="font-medium">{teacher.name}</div>
+                    <div className="text-sm text-gray-600 dark:text-muted-foreground flex items-center gap-3 mt-1">
+                      <span className="flex items-center gap-1.5">
+                        <KiteIcon className="h-3.5 w-3.5" />
+                        <span>{teacher.eventCount}</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <ClockIcon className="h-3.5 w-3.5" />
+                        <span>{formatHours(teacher.totalHours)}h</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
+                <div className="text-lg font-bold">
+                  €{teacher.totalEarned.toFixed(2)}
+                </div>
               </div>
-              <div className="text-lg font-bold">
-                €{teacher.totalEarned.toFixed(2)}
+            ))}
+            {teacherRankings.length === 0 && (
+              <div className="text-center text-muted-foreground py-8">
+                No teacher data available
               </div>
-            </div>
-          ))}
-          {teacherRankings.length === 0 && (
-            <div className="text-center text-muted-foreground py-8">
-              No teacher data available
-            </div>
-          )}
-        </div>
-      </CardContent>
+            )}
+          </div>
+        </CardContent>
       )}
     </Card>
   );
