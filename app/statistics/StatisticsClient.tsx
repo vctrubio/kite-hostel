@@ -14,6 +14,7 @@ interface StatisticsClientProps {
 }
 
 type SortField = "eventDate" | "teacher" | "students" | "duration" | "revenue";
+type BookingSortField = "startDate" | "students" | "pricePerHour" | "packageHours" | "totalHours" | "revenue";
 type SortOrder = "asc" | "desc";
 
 interface TeacherStats {
@@ -40,6 +41,8 @@ export default function StatisticsClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("eventDate");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [bookingSortField, setBookingSortField] = useState<BookingSortField>("startDate");
+  const [bookingSortOrder, setBookingSortOrder] = useState<SortOrder>("desc");
   const [filterEnabled, setFilterEnabled] = useState(false);
   const [quickFilter, setQuickFilter] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -316,6 +319,15 @@ export default function StatisticsClient({
     }
   };
 
+  const handleBookingSort = (field: BookingSortField) => {
+    if (bookingSortField === field) {
+      setBookingSortOrder(bookingSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setBookingSortField(field);
+      setBookingSortOrder("desc");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with filters */}
@@ -371,9 +383,9 @@ export default function StatisticsClient({
       ) : (
         <BookingsTable
           data={sortedData}
-          sortField={sortField as any}
-          sortOrder={sortOrder}
-          onSort={handleSort as any}
+          sortField={bookingSortField}
+          sortOrder={bookingSortOrder}
+          onSort={handleBookingSort}
         />
       )}
     </div>

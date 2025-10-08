@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { TransactionData } from "@/lib/statistics-service";
-import { calculateBookingDays } from "@/getters/booking-getters";
+import { calculateBookingDays, getAdditionalDays } from "@/getters/booking-getters";
+import { formatFriendlyDate } from "@/getters/event-getters";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowUp, ArrowDown } from "lucide-react";
 
@@ -34,19 +35,6 @@ export function BookingsTable({
   sortOrder,
   onSort,
 }: BookingsTableProps) {
-  const formatFriendlyDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    const day = date.getDate();
-    const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
-                   day === 2 || day === 22 ? 'nd' : 
-                   day === 3 || day === 23 ? 'rd' : 'th';
-    const month = date.toLocaleDateString('en-GB', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day}${suffix} ${month} ${year}`;
-  };
-
   const formatHours = (hours: number) => {
     return hours % 1 === 0 ? hours.toString() : hours.toFixed(1);
   };
@@ -262,31 +250,36 @@ export function BookingsTable({
               </tr>
             </thead>
             <tbody>
-              {sortedBookingData.map((booking) => (
-                <tr
-                  key={booking.bookingId}
-                  className="cursor-pointer hover:bg-gray-50 border-b border-border"
-                  onClick={(e) => handleRowClick(booking.bookingId, e)}
-                >
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {formatFriendlyDate(booking.dateStart)}
-                      </span>
-                      <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-md text-gray-600">
-                        +{booking.totalDays}d
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4">{booking.students.join(", ")}</td>
-                  <td className="p-4">€{booking.pricePerHour.toFixed(2)}</td>
-                  <td className="p-4">{formatHours(booking.packageHours)}h</td>
-                  <td className="p-4">{formatHours(booking.totalHours)}h</td>
-                  <td className="p-4 font-medium">
-                    €{booking.totalRevenue.toFixed(2)}
-                  </td>
-                </tr>
-              ))}
+              {sortedBookingData.map((booking) => {
+                const additionalDays = getAdditionalDays(booking.dateStart, booking.dateEnd);
+                return (
+                  <tr
+                    key={booking.bookingId}
+                    className="cursor-pointer hover:bg-gray-50 border-b border-border"
+                    onClick={(e) => handleRowClick(booking.bookingId, e)}
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {formatFriendlyDate(booking.dateStart, true)}
+                        </span>
+                        {additionalDays > 0 && (
+                          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-md text-gray-600">
+                            +{additionalDays}d
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4">{booking.students.join(", ")}</td>
+                    <td className="p-4">€{booking.pricePerHour.toFixed(2)}</td>
+                    <td className="p-4">{formatHours(booking.packageHours)}h</td>
+                    <td className="p-4">{formatHours(booking.totalHours)}h</td>
+                    <td className="p-4 font-medium">
+                      €{booking.totalRevenue.toFixed(2)}
+                    </td>
+                  </tr>
+                );
+              })}
               {sortedBookingData.length === 0 && (
                 <tr>
                   <td colSpan={6} className="p-6 text-center text-muted-foreground">

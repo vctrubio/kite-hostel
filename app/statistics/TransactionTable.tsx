@@ -3,6 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { TransactionData } from "@/lib/statistics-service";
+import { formatFriendlyDate } from "@/getters/event-getters";
 
 type SortField = "eventDate" | "teacher" | "students" | "duration" | "revenue";
 type SortOrder = "asc" | "desc";
@@ -23,17 +24,6 @@ export function TransactionTable({
   const handleRowClick = (bookingId: string, e: React.MouseEvent) => {
     e.preventDefault();
     window.open(`/bookings/${bookingId}`, '_blank');
-  };
-
-  const formatFriendlyDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
-                   day === 2 || day === 22 ? 'nd' : 
-                   day === 3 || day === 23 ? 'rd' : 'th';
-    const month = date.toLocaleDateString('en-GB', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day}${suffix} ${month} ${year}`;
   };
 
   const formatHours = (hours: number) => {
@@ -154,7 +144,7 @@ export function TransactionTable({
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
-                        {formatFriendlyDate(transaction.eventDate)}
+                        {formatFriendlyDate(transaction.eventDate, true)}
                       </span>
                       <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-md text-gray-600">
                         {transaction.eventStartTime}
