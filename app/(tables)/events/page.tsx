@@ -50,7 +50,6 @@ export default async function EventsPage() {
   return (
     <Dashboard
       entityName="Event"
-      stats={stats}
       rowComponent={EventRow}
       data={events || []}
       isFilterRangeSelected={true}
