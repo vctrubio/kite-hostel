@@ -43,7 +43,7 @@ export function PackageDetails({
           </p>
         </div>
         <div>
-          <span className="text-muted-foreground">Price per Hour:</span>
+          <span className="text-muted-foreground">Price per Hour/Student:</span>
           <p className="font-medium">
             €{packageData.duration
               ? Math.round(
