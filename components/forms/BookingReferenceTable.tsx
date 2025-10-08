@@ -12,7 +12,7 @@ interface UserWallet {
 
 interface ReferenceBookingTableProps {
   userWallets: UserWallet[];
-  onSelectReference: (referenceId: string) => void;
+  onSelectReference: (referenceId: string | null) => void;
   selectedReferenceId: string | null;
 }
 
@@ -22,8 +22,17 @@ export function BookingReferenceTable({
   selectedReferenceId,
 }: ReferenceBookingTableProps) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="min-w-full divide-y divide-border">
+    <div className="space-y-4">
+        <div className="flex justify-end">
+          <button
+            onClick={() => onSelectReference(null)}
+            className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border"
+          >
+            Nobody
+          </button>
+        </div>
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="min-w-full divide-y divide-border">
         <thead className="bg-muted/50">
           <tr>
             <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-foreground uppercase tracking-wide">
@@ -60,6 +69,7 @@ export function BookingReferenceTable({
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

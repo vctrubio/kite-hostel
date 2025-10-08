@@ -1,16 +1,21 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { getUserWalletName } from "@/getters/user-wallet-getters";
 import { DateTime } from "@/components/formatters/DateTime";
-import { Duration } from "@/components/formatters/Duration";
-import { BookmarkIcon } from "@/svgs";
+import { HelmetIcon, BookingIcon } from "@/svgs";
+import { ENTITY_DATA } from "@/lib/constants";
+import { DropdownExpandableRow } from "./DropdownExpandableRow";
+import { PackageDetails } from "@/getters/package-details";
+import { formatFriendlyDate } from "@/getters/event-getters";
 
 interface ReferenceBooking {
   bookingId: string;
   bookingCreatedAt: string | null;
   bookingStartDate: string;
+  bookingEndDate: string;
   packageCapacity: number;
   packagePrice: number;
   packageDuration: number;
@@ -19,6 +24,11 @@ interface ReferenceBooking {
   note: string | null;
   referenceId: string | null;
   role: string;
+  students: Array<{
+    id: string;
+    name: string;
+    last_name: string | null;
+  }>;
 }
 
 interface ReferenceBookingRowProps {
@@ -33,6 +43,7 @@ export function ReferenceBookingRow({
   setExpandedRow
 }: ReferenceBookingRowProps) {
   const isExpanded = expandedRow === booking.bookingId;
+  const router = useRouter();
   
   const toggleExpand = () => {
     if (isExpanded) {
@@ -48,6 +59,13 @@ export function ReferenceBookingRow({
     note: booking.note,
     teacher: booking.teacherName ? { name: booking.teacherName } : null
   };
+
+  const packageEntity = ENTITY_DATA.find(entity => entity.name === "Package");
+  const studentEntity = ENTITY_DATA.find(entity => entity.name === "Student");
+  const bookingEntity = ENTITY_DATA.find(entity => entity.name === "Booking");
+
+  // Calculate total price
+  const totalPrice = booking.packagePrice * booking.students.length;
 
   return (
     <>
@@ -79,34 +97,80 @@ export function ReferenceBookingRow({
           </Button>
         </td>
       </tr>
-      {isExpanded && (
-        <tr>
-          <td colSpan={5} className="py-4 px-4 bg-background/30">
-            <div className="w-full space-y-3">
-              {/* Package Details - Same style as BookingRow */}
-              <div className="flex items-center gap-4 w-full p-3 bg-background/50 rounded-md border-l-4 border-amber-500">
-                <BookmarkIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                <div className="flex items-center gap-4 flex-wrap">
-                  <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded text-sm font-medium">
-                    <Duration minutes={booking.packageDuration || 0} />
-                  </span>
-                  <span className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded text-sm font-medium">
-                    €{booking.packagePrice}/student
-                  </span>
-                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-sm font-medium">
-                    €{booking.packageDuration ? Math.round((booking.packagePrice / (booking.packageDuration / 60)) * 100) / 100 : 0}/h
-                  </span>
-                  <span className="text-sm text-muted-foreground">Students: {booking.packageCapacity}</span>
-                  <span className="text-sm text-muted-foreground">Booking: <DateTime dateString={booking.bookingStartDate} formatType="date" /></span>
-                  {booking.packageDescription && (
-                    <span className="text-sm text-muted-foreground italic">&quot;{booking.packageDescription}&quot;</span>
+      <DropdownExpandableRow
+        isExpanded={isExpanded}
+        colSpan={5}
+        sections={[
+          {
+            title: "Package Details",
+            icon: packageEntity?.icon,
+            color: packageEntity?.color || "text-orange-500",
+            children: (
+              <PackageDetails 
+                packageData={{
+                  description: booking.packageDescription,
+                  price_per_student: booking.packagePrice,
+                  duration: booking.packageDuration,
+                  capacity_students: booking.packageCapacity,
+                }}
+                variant="simple"
+                totalPrice={totalPrice}
+              />
+            )
+          },
+          {
+            title: (
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  {booking.students && booking.students.length > 0 ? (
+                    booking.students.map((_, index) => (
+                      <HelmetIcon key={index} className="w-4 h-4" />
+                    ))
+                  ) : (
+                    <HelmetIcon className="w-4 h-4" />
                   )}
                 </div>
+                <span>Students</span>
               </div>
-            </div>
-          </td>
-        </tr>
-      )}
+            ),
+            color: studentEntity?.color || "text-yellow-500",
+            children: (
+              <div className="flex flex-wrap gap-2">
+                {booking.students && booking.students.length > 0 ? (
+                  booking.students.map((student) => (
+                    <button
+                      key={student.id}
+                      onClick={() => router.push(`/students/${student.id}`)}
+                      className="px-2 py-1 text-sm font-medium border border-yellow-500 rounded hover:bg-muted transition-colors"
+                    >
+                      {student.name} {student.last_name || ''}
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    No students assigned
+                  </span>
+                )}
+              </div>
+            )
+          },
+          {
+            title: "Booking",
+            icon: BookingIcon,
+            color: "text-blue-500",
+            children: (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => router.push(`/bookings/${booking.bookingId}`)}
+                  className="px-3 py-1.5 text-sm font-medium border border-blue-500 rounded hover:bg-blue-50 transition-colors"
+                >
+                  {formatFriendlyDate(booking.bookingStartDate, false)} → {formatFriendlyDate(booking.bookingEndDate, false)}
+                </button>
+              </div>
+            )
+          }
+        ]}
+      />
     </>
   );
 }
