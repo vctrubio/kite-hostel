@@ -754,7 +754,7 @@ export default function MasterBookingForm({
 
       {/* Desktop Layout (unchanged) */}
       <div className="hidden lg:block p-6">
-        <div className="lg:grid lg:grid-cols-5 lg:gap-8 max-w-7xl mx-auto">
+        <div className="lg:grid lg:grid-cols-5 lg:gap-8 mx-auto">
           {/* Summary Sidebar */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <div className="lg:sticky lg:top-4 p-4">
@@ -781,8 +781,8 @@ export default function MasterBookingForm({
           </div>
 
           {/* Form Content */}
-          <div className="lg:col-span-3 order-1 lg:order-2">
-            <div className="bg-card rounded-lg border border-border shadow-lg">
+          <div className="lg:col-span-3 order-1 lg:order-2 border rounded-lg">
+            <div className="bg-card rounded-lg shadow-lg">
               <div className="p-6">
                 {activeForm === "booking" && (
                   <div className="space-y-6">

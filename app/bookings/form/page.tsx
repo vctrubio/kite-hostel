@@ -4,6 +4,9 @@ import { getStudents } from "@/actions/student-actions";
 import { getUserWallets } from "@/actions/user-actions";
 import { getTeachers } from "@/actions/teacher-actions";
 
+/* CHECK IN.
+to be renamed route/page... 
+*/
 export default async function BookingFormPage() {
   const { data: packages, error: packagesError } = await getPackages();
   const { data: students, error: studentsError } = await getStudents();
@@ -27,7 +30,7 @@ export default async function BookingFormPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="max-w-[1869px] mx-auto py-4">
       <MasterBookingForm
         packages={packages}
         students={students}

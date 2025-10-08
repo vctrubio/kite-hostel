@@ -103,7 +103,7 @@ export function BookingFormSummary({
     >
       <div className="px-4 py-3 border-b border-border">
         {/* Navigation Tabs */}
-        <div className="flex space-x-1 bg-muted p-1 rounded-lg mb-3">
+        <div className="flex space-x-1 bg-muted p-1 rounded-lg my-2">
           {(["booking", "student", "package"] as FormType[]).map((form) => {
             const Icon = getFormIcon(form);
             return (
@@ -169,6 +169,7 @@ export function BookingFormSummary({
       <div className="p-4 space-y-4">
         {activeForm === "booking" && (
           <>
+            <h2 className="text-xl font-bold text-foreground mb-4 ml-2">Check In</h2>
             {/* Dates Section - First */}
             <div
               className="cursor-pointer hover:bg-muted rounded-lg p-3 border border-border transition-colors"
