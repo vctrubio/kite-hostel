@@ -172,7 +172,7 @@ function PackageSpecifications({ pkg }: { pkg: any }) {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">
-                Price per Hour/Student:
+                Price/Student/Hour:
               </span>
               <span className="font-medium">
                 €{(pkg.price_per_student / (pkg.duration / 60)).toFixed(2)}
