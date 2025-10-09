@@ -29,9 +29,9 @@ function LessonCard({ lesson }: { lesson: any }) {
   const hasEvents = lesson.events && lesson.events.length > 0;
   const totalHours = hasEvents
     ? (
-      lesson.events.reduce((sum, event) => sum + (event.duration || 0), 0) /
-      60
-    ).toFixed(1)
+        lesson.events.reduce((sum, event) => sum + (event.duration || 0), 0) /
+        60
+      ).toFixed(1)
     : "0.0";
 
   // Calculate total earnings
@@ -47,7 +47,7 @@ function LessonCard({ lesson }: { lesson: any }) {
           <div className="flex items-center gap-2">
             <HeadsetIcon className="w-4 h-4 text-green-600" />
             {lesson.teacher?.id ? (
-              <Link 
+              <Link
                 href={`/teachers/${lesson.teacher.id}`}
                 className="font-medium hover:text-blue-600 transition-colors cursor-pointer"
               >
@@ -486,7 +486,10 @@ export default async function BookingDetailPage({
     ) || [];
 
   // Calculate days between start and end dates
-  const daysDifference = calculateBookingDays(booking.date_start, booking.date_end);
+  const daysDifference = calculateBookingDays(
+    booking.date_start,
+    booking.date_end,
+  );
 
   // Generate receipt text for export
   const receiptText = `
@@ -497,11 +500,11 @@ Total Kited Hours: ${eventHours % 1 === 0 ? Math.floor(eventHours) : eventHours.
 Total Price to Pay: €${priceToPay.toFixed(2)}
 
 *** RECEIPT ***${receiptEvents
-      .map(
-        (event, index) => `
+    .map(
+      (event, index) => `
 ${index + 1}. ${event.teacherName}, ${event.date}, ${event.time}, ${event.duration}, ${event.location}`,
-      )
-      .join("")}`;
+    )
+    .join("")}`;
 
   return (
     <div className="container mx-auto p-4">

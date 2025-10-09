@@ -63,6 +63,10 @@ const calculateBookingDays = (selectedDate: string, bookingEndDate: string) => {
   };
 };
 
+const getFullName = (name: string, lastName?: string | null) => {
+  return lastName ? `${name} ${lastName}` : name;
+};
+
 const StudentsDisplay = ({
   students,
   studentDetails,
@@ -160,7 +164,7 @@ const StudentDropdown = ({
   return (
     <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
       <div className="flex justify-between items-start mb-2">
-        <h4 className="font-medium text-sm">{student.student.name}</h4>
+        <h4 className="font-medium text-sm">{getFullName(student.student.name, student.student.last_name)}</h4>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
           <X className="w-4 h-4" />
         </button>

@@ -17,7 +17,7 @@ import {
   PackageStudent,
   KiteEvent,
 } from "@/drizzle/migrations/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTeacherBalance } from "@/getters/teacher-getters";
@@ -433,8 +433,16 @@ export async function getTeacherPortalById(
       }
     }
 
+    // Sort lessons by booking date_start (newest first)
+    const sortedLessons = teacher.lessons.sort((a, b) => {
+      const dateA = new Date(a.booking.date_start);
+      const dateB = new Date(b.booking.date_start);
+      return dateB.getTime() - dateA.getTime(); // desc order (newest first)
+    });
+
     const teacherPortalData: TeacherPortalData = {
       ...teacher,
+      lessons: sortedLessons,
       user_wallet: userWalletData
         ? {
           ...userWalletData,

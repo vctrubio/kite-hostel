@@ -13,9 +13,10 @@ import { type TeacherPortalData } from "@/actions/teacher-actions";
 import { useTeacherEventListener } from "@/lib/useTeacherEventListener";
 import TeacherEventCard from "@/components/cards/TeacherEventCard";
 import TeacherLessonCard from "@/components/cards/TeacherLessonCard";
+import TeacherPaymentCard from "@/components/cards/TeacherPaymentCard";
 import { SingleDatePicker } from "@/components/pickers/single-date-picker";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, BarChart3, Clock } from "lucide-react";
+import { Calendar, BarChart3, Clock, TrendingUp, TrendingDown, Euro } from "lucide-react";
 import { Duration } from "@/components/formatters/Duration";
 
 interface TeacherPortalProps {
@@ -28,6 +29,8 @@ function TeacherHeader({
   eventsCount,
   totalDuration,
   totalEarnings,
+  totalPayments,
+  balance,
   teacherId,
 }: {
   name: string;
@@ -35,6 +38,8 @@ function TeacherHeader({
   eventsCount: number;
   totalDuration: number;
   totalEarnings: number;
+  totalPayments: number;
+  balance: number;
   teacherId: string;
 }) {
   return (
@@ -60,26 +65,49 @@ function TeacherHeader({
               <SeparatorIcon className="w-5 h-8 text-muted-foreground/30" />
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <FlagIcon className="w-4 h-4 text-blue-500" />
-                <span className="text-sm font-medium">{lessonsCount}</span>
+            <div className="flex flex-col gap-2">
+              {/* First row: Lessons, Events, Duration */}
+              <div className="flex items-center justify-end gap-4">
+                <div className="flex items-center gap-1">
+                  <FlagIcon className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm font-medium">{lessonsCount}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <KiteIcon className="w-4 h-4 text-green-800" />
+                  <span className="text-sm font-medium">{eventsCount}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium">
+                    <Duration minutes={totalDuration} />
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <KiteIcon className="w-4 h-4 text-green-800" />
-                <span className="text-sm font-medium">{eventsCount}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4 text-purple-500" />
-                <span className="text-sm font-medium">
-                  <Duration minutes={totalDuration} />
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <PaymentIcon className="w-4 h-4 text-yellow-600" />
-                <span className="text-sm font-medium">
-                  €{Math.round(totalEarnings)}
-                </span>
+              
+              {/* Second row: Financial stats */}
+              <div className="flex items-center justify-end gap-4">
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium">
+                    €{Math.round(totalEarnings)}
+                  </span>
+                </div>
+                {totalPayments > 0 && (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <TrendingDown className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium">
+                        €{Math.round(totalPayments)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Euro className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-medium">
+                        €{Math.round(balance)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -237,8 +265,40 @@ const StatsView = ({
   );
 };
 
+const PaymentsView = ({
+  teacherPortal,
+}: {
+  teacherPortal: TeacherPortalClass;
+}) => {
+  const teacher = teacherPortal.getTeacher();
+  
+  // Sort payments by most recent first
+  const sortedPayments = [...teacher.payments].sort((a, b) => {
+    const dateA = new Date(a.created_at || "");
+    const dateB = new Date(b.created_at || "");
+    return dateB.getTime() - dateA.getTime();
+  });
+
+  return (
+    <div className="space-y-4">
+      {sortedPayments.length > 0 ? (
+        <div className="space-y-4">
+          {sortedPayments.map((payment) => (
+            <TeacherPaymentCard
+              key={payment.id}
+              payment={payment}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 text-gray-500">No payments found</div>
+      )}
+    </div>
+  );
+};
+
 export default function TeacherPortal({ teacherData }: TeacherPortalProps) {
-  const [activeView, setActiveView] = useState<"daily" | "stats">("daily");
+  const [activeView, setActiveView] = useState<"daily" | "stats" | "payments">("daily");
 
   // Use real-time listener hook
   const { teacherData: realtimeTeacherData, isLoading, error } = useTeacherEventListener({
@@ -252,6 +312,11 @@ export default function TeacherPortal({ teacherData }: TeacherPortalProps) {
   );
   const stats = teacherPortal.getStats();
   const tbcCount = teacherPortal.getTBCEventsCount();
+  
+  // Calculate financial stats
+  const teacher = teacherPortal.getTeacher();
+  const totalPayments = teacher.payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const balance = stats.totalEarnings - totalPayments;
 
   return (
     <div className="space-y-6">
@@ -261,6 +326,8 @@ export default function TeacherPortal({ teacherData }: TeacherPortalProps) {
         eventsCount={stats.eventsCount}
         totalDuration={stats.totalDuration}
         totalEarnings={stats.totalEarnings}
+        totalPayments={totalPayments}
+        balance={balance}
         teacherId={teacherPortal.getTeacher().id}
       />
       
@@ -300,13 +367,26 @@ export default function TeacherPortal({ teacherData }: TeacherPortalProps) {
           <BarChart3 className="w-4 h-4" />
           Stats
         </button>
+
+        <button
+          onClick={() => setActiveView("payments")}
+          className={`flex items-center gap-2 px-4 py-2 font-medium text-sm transition-colors ${activeView === "payments"
+            ? "text-blue-600 border-b-2 border-blue-600"
+            : "text-gray-600 hover:text-gray-800"
+            }`}
+        >
+          <PaymentIcon className="w-4 h-4" />
+          Payments
+        </button>
       </div>
 
       <div className="min-h-96">
         {activeView === "daily" ? (
           <DailyView teacherPortal={teacherPortal} />
-        ) : (
+        ) : activeView === "stats" ? (
           <StatsView teacherPortal={teacherPortal} />
+        ) : (
+          <PaymentsView teacherPortal={teacherPortal} />
         )}
       </div>
     </div>
