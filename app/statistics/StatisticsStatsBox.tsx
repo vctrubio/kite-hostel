@@ -61,7 +61,7 @@ export function StatisticsStatsBox({ statistics }: StatisticsStatsBoxProps) {
             <ClockIcon className="h-4 w-4" />
             <span className="text-sm">Total hours:</span>
             <span className="font-semibold text-foreground">
-              {formatHours(statistics.totalHours)}h
+              {formatHours(statistics.totalHours)}
             </span>
           </div>
         </CardContent>

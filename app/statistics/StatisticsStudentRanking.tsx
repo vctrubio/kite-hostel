@@ -59,7 +59,7 @@ export function StatisticsStudentRanking({
               <span>Student Rankings</span>
             </div>
             <span className="text-sm font-normal text-muted-foreground">
-              Total Revenue: €{totalRevenue.toFixed(2)}
+              Total Revenue: <span className="inline-block bg-yellow-100 text-yellow-800 font-bold px-2 py-1 rounded transform -skew-x-12">€{totalRevenue.toFixed(2)}</span>
             </span>
           </CardTitle>
           <div className="ml-2">
@@ -98,7 +98,7 @@ export function StatisticsStudentRanking({
                     </div>
                   </div>
                 </div>
-                <div className="text-lg font-bold">
+                <div className="inline-block bg-yellow-100 text-yellow-800 font-bold px-3 py-1 rounded transform -skew-x-12 text-lg">
                   €{booking.totalRevenue.toFixed(2)}
                 </div>
               </div>
