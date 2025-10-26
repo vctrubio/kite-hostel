@@ -125,9 +125,7 @@ export default async function WelcomePage() {
   } = await supabase.auth.getUser();
 
   // No authenticated user - show login with docs link
-  if (!user) {
-    return <GuestLogin />;
-  }
+  return <GuestLogin />;
 
   // Get user wallet data
   const { role } = await getCurrentUserWallet();

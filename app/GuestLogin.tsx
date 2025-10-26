@@ -1,6 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Book, TrendingUp, Database, ArrowRight, Calendar } from "lucide-react";
+import {
+  Book,
+  TrendingUp,
+  Database,
+  ArrowRight,
+  Calendar,
+  LayoutGrid,
+  Rocket,
+} from "lucide-react";
 import { EquipmentIcon, FlagIcon, BookingIcon } from "@/svgs";
 import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
 import { DevAboutMeFooter } from "@/components/banners/DevAboutMeFooter";
@@ -11,45 +19,87 @@ import { demo } from "@/lib/demo";
 export function GuestLogin() {
   // Sub-component: Demo Mode Buttons
   const EnterAdministration = () => {
+    const buttons = [
+      {
+        href: "/billboard",
+        icon: LayoutGrid,
+        text: "Enter App",
+        label: "Demo",
+        borderColor:
+          "border-cyan-600 hover:border-cyan-700 dark:border-green-500 dark:hover:border-green-400",
+        textColor:
+          "text-cyan-700 hover:bg-cyan-50 dark:text-green-400 dark:hover:bg-green-500/10",
+        labelBg: "bg-cyan-600 dark:bg-green-500",
+        labelText: "text-white",
+      },
+      {
+        href: "https://adrenalink.tech",
+        icon: Rocket,
+        text: "Go to Beta",
+        label: "Prototype",
+        borderColor:
+          "border-orange-600 hover:border-orange-700 dark:border-orange-500 dark:hover:border-orange-400",
+        textColor:
+          "text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-500/10",
+        labelBg: "bg-orange-600 dark:bg-orange-500",
+        labelText: "text-white",
+      },
+      {
+        href: "https://calendly.com/vctrubio/adrenalink-earlybird",
+        icon: Calendar,
+        text: "Early Bird",
+        label: "Sign Up",
+        borderColor:
+          "border-blue-600 hover:border-blue-700 dark:border-blue-500 dark:hover:border-blue-400",
+        textColor:
+          "text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10",
+        labelBg: "bg-blue-600 dark:bg-blue-500",
+        labelText: "text-white",
+      },
+      {
+        href: "https://donkeydrills.com",
+        icon: "image",
+        imageSrc: "/donkey.png",
+        text: "Visit My Portfolio",
+        label: "donkeydrills",
+        borderColor:
+          "border-black hover:border-black dark:border-white dark:hover:border-white",
+        textColor:
+          "text-black hover:bg-gray-50 dark:text-white dark:hover:bg-white/10",
+        labelBg: "bg-black dark:bg-white",
+        labelText: "text-white dark:text-black",
+      },
+    ];
+
     return (
       <div className="space-y-4">
-        <Link
-          href="/billboard"
-          className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-cyan-600 text-cyan-700 hover:border-cyan-700 hover:bg-cyan-50 shadow-lg hover:shadow-xl hover:scale-105 dark:border-green-500 dark:text-green-400 dark:hover:border-green-400 dark:hover:bg-green-500/10"
-        >
-          <ArrowRight className="h-[42px] w-[42px]" />
-          Enter App
-        </Link>
+        {buttons.map((button, index) => (
+          <Link
+            key={index}
+            href={button.href}
+            className={`relative grid grid-cols-[42px_1fr] items-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 ${button.borderColor} ${button.textColor} shadow-lg hover:shadow-xl hover:scale-105`}
+          >
+            {button.icon === "image" ? (
+              <Image
+                src={button.imageSrc!}
+                alt={button.text}
+                width={42}
+                height={42}
+                className="h-[42px] w-[42px]"
+              />
+            ) : (
+              <button.icon className="h-[42px] w-[42px]" />
+            )}
+            <span className="text-left">{button.text}</span>
 
-        <Link
-          href="https://adrenalink.tech"
-          className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-teal-600 text-teal-700 hover:border-teal-700 hover:bg-teal-50 shadow-lg hover:shadow-xl hover:scale-105 dark:border-emerald-500 dark:text-emerald-400 dark:hover:border-emerald-400 dark:hover:bg-emerald-500/10"
-        >
-          <ArrowRight className="h-[42px] w-[42px]" />
-          Go to Beta
-        </Link>
-
-        <Link
-          href="https://calendly.com/vctrubio/adrenalink-earlybird"
-          className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-blue-600 text-blue-700 hover:border-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl hover:scale-105 dark:border-blue-500 dark:text-blue-400 dark:hover:border-blue-400 dark:hover:bg-blue-500/10"
-        >
-          <Calendar className="h-[42px] w-[42px]" />
-          Early Bird Sign Up
-        </Link>
-
-        <Link
-          href="https://donkeydrills.com"
-          className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-black text-black hover:border-black hover:bg-gray-50 shadow-lg hover:shadow-xl hover:scale-105 dark:border-white dark:text-white dark:hover:border-white dark:hover:bg-white/10"
-        >
-          <Image
-            src="/donkey.png"
-            alt="Donkey Drills"
-            width={42}
-            height={42}
-            className="h-[42px] w-[42px]"
-          />
-          Visit My Portfolio
-        </Link>
+            {/* Label stamp in top right */}
+            <span
+              className={`absolute -top-2 -right-2 px-3 py-1 rounded-xl text-base font-bold ${button.labelBg} ${button.labelText} shadow-md`}
+            >
+              {button.label}
+            </span>
+          </Link>
+        ))}
       </div>
     );
   };
@@ -86,11 +136,15 @@ export function GuestLogin() {
 
     return (
       <div className="text-center space-y-6">
-        <h1 className="text-4xl md:text-5xl font-bold leading-tight drop-shadow-lg text-gray-900 dark:text-gray-100">
-          Welcome to the Kite School{" "}
+        <h1
+          className="text-3xl md:text-4xl font-bold leading-tight drop-shadow-lg text-gray-900 dark:text-gray-100"
+          style={{ fontFamily: "Geist, Geist Fallback, sans-serif" }}
+        >
+          Welcome to the{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-teal-600 drop-shadow-[0_0_30px_rgba(6,182,212,0.3)] dark:from-green-400 dark:to-emerald-500 dark:drop-shadow-[0_0_30px_rgba(34,197,94,0.5)]">
-            Management App
-          </span>
+            Adrenaline
+          </span>{" "}
+          School Management App
         </h1>
 
         {/* Feature List with Depth */}
@@ -140,7 +194,7 @@ export function GuestLogin() {
       <div className="flex-1 flex items-center justify-center p-6 py-12 relative overflow-hidden">
         <BackgroundEffects />
 
-        <div className="w-full max-w-6xl space-y-12 relative z-10">
+        <div className="w-full max-w-7xl space-y-12 relative z-10">
           <HeroHeader />
 
           {/* Role Selection & Login - Unified Card with Blur Effect */}
@@ -165,7 +219,7 @@ export function GuestLogin() {
                     >
                       <Link
                         href="/docs"
-                        className="mb-10 inline-flex items-center gap-2 underline decoration-2 underline-offset-4 transition-all duration-300 decoration-blue-500/50 hover:decoration-blue-500 hover:bg-blue-500/10 hover:px-2 hover:rounded"
+                        className="mb-3 inline-flex items-center gap-2 underline decoration-2 underline-offset-4 transition-all duration-300 decoration-blue-500/50 hover:decoration-blue-500 hover:bg-blue-500/10 hover:px-2 hover:rounded"
                       >
                         <Book className="h-6 w-6" />
                         Read Our Documentation
