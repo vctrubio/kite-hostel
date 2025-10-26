@@ -8,6 +8,7 @@ import { TableRouteButton } from "./TableRouteButton";
 import { LayoutGrid, BarChart3, Menu, Table, Plus } from "lucide-react";
 import { ENTITY_DATA } from "@/lib/constants";
 import { useState, useRef, useEffect } from "react";
+import { demo } from "@/lib/demo";
 
 const ACTIVE_BUTTON_CLASSES = "bg-gray-200 text-gray-800 shadow-sm dark:bg-gray-700 dark:text-gray-200";
 const INACTIVE_BUTTON_CLASSES = "text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800";
@@ -120,7 +121,8 @@ export function AppNavigation() {
   const shouldShowBottomRow = showTables || isOnTableRoute;
 
   // Don't show main navigation if user is not logged in (guest)
-  const isGuest = !user || user.role === 'guest';
+  // In demo mode, always show navigation regardless of auth status
+  const isGuest = !demo && (!user || user.role === 'guest');
 
   return (
     <div className="border-b bg-white dark:bg-gray-900 dark:border-gray-700">
