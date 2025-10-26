@@ -1,12 +1,59 @@
 import Link from "next/link";
-import { Book, TrendingUp, Database } from "lucide-react";
+import Image from "next/image";
+import { Book, TrendingUp, Database, ArrowRight, Calendar } from "lucide-react";
 import { EquipmentIcon, FlagIcon, BookingIcon } from "@/svgs";
 import { GoogleOnlyLoginForm } from "@/components/supabase-init/google-only-login-form";
 import { DevAboutMeFooter } from "@/components/banners/DevAboutMeFooter";
 import { RoleSelectionComponent } from "@/components/banners/RoleSelectionComponent";
 import { NorthAdminDiagram } from "@/components/banners/NorthAdminDiagram";
+import { demo } from "@/lib/demo";
 
 export function GuestLogin() {
+  // Sub-component: Demo Mode Buttons
+  const EnterAdministration = () => {
+    return (
+      <div className="space-y-4">
+        <Link
+          href="/billboard"
+          className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-cyan-600 text-cyan-700 hover:border-cyan-700 hover:bg-cyan-50 shadow-lg hover:shadow-xl hover:scale-105 dark:border-green-500 dark:text-green-400 dark:hover:border-green-400 dark:hover:bg-green-500/10"
+        >
+          <ArrowRight className="h-[42px] w-[42px]" />
+          Enter App
+        </Link>
+
+        <Link
+          href="https://adrenalink.tech"
+          className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-teal-600 text-teal-700 hover:border-teal-700 hover:bg-teal-50 shadow-lg hover:shadow-xl hover:scale-105 dark:border-emerald-500 dark:text-emerald-400 dark:hover:border-emerald-400 dark:hover:bg-emerald-500/10"
+        >
+          <ArrowRight className="h-[42px] w-[42px]" />
+          Go to Beta
+        </Link>
+
+        <Link
+          href="https://calendly.com/vctrubio/adrenalink-earlybird"
+          className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-blue-600 text-blue-700 hover:border-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl hover:scale-105 dark:border-blue-500 dark:text-blue-400 dark:hover:border-blue-400 dark:hover:bg-blue-500/10"
+        >
+          <Calendar className="h-[42px] w-[42px]" />
+          Early Bird Sign Up
+        </Link>
+
+        <Link
+          href="https://donkeydrills.com"
+          className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 border-2 border-black text-black hover:border-black hover:bg-gray-50 shadow-lg hover:shadow-xl hover:scale-105 dark:border-white dark:text-white dark:hover:border-white dark:hover:bg-white/10"
+        >
+          <Image
+            src="/donkey.png"
+            alt="Donkey Drills"
+            width={42}
+            height={42}
+            className="h-[42px] w-[42px]"
+          />
+          Visit My Portfolio
+        </Link>
+      </div>
+    );
+  };
+
   // Sub-component: Hero Header
   const HeroHeader = () => {
     const features = [
@@ -104,7 +151,7 @@ export function GuestLogin() {
                 <RoleSelectionComponent />
               </div>
 
-              {/* Right Side - Login Form */}
+              {/* Right Side - Login Form or Demo Entry */}
               <div className="flex justify-center">
                 <div className="w-full max-w-md mx-auto space-y-6">
                   {/* Documentation Link Title */}
@@ -118,7 +165,7 @@ export function GuestLogin() {
                     >
                       <Link
                         href="/docs"
-                        className="inline-flex items-center gap-2 underline decoration-2 underline-offset-4 transition-all duration-300 decoration-blue-500/50 hover:decoration-blue-500 hover:bg-blue-500/10 hover:px-2 hover:rounded"
+                        className="mb-10 inline-flex items-center gap-2 underline decoration-2 underline-offset-4 transition-all duration-300 decoration-blue-500/50 hover:decoration-blue-500 hover:bg-blue-500/10 hover:px-2 hover:rounded"
                       >
                         <Book className="h-6 w-6" />
                         Read Our Documentation
@@ -126,7 +173,7 @@ export function GuestLogin() {
                     </h2>
                   </div>
 
-                  <GoogleOnlyLoginForm />
+                  {demo ? <EnterAdministration /> : <GoogleOnlyLoginForm />}
                 </div>
               </div>
             </div>

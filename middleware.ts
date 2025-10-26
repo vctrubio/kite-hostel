@@ -1,8 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "@/lib/utils";
+import { demo } from "@/lib/demo";
 
 export async function middleware(request: NextRequest) {
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -38,56 +40,59 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // Skip all auth checks in demo mode
+  if (!demo) {
+    // Do not run code between createServerClient and
+    // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
+    // issues with users being randomly logged out.
 
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+    // IMPORTANT: If you remove getClaims() and you use server-side rendering
+    // with the Supabase client, your users may be randomly logged out.
+    const { data } = await supabase.auth.getClaims();
+    const user = data?.claims;
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/api") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/docs")
-  ) {
-    // no user, redirect to the main page
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
+    if (
+      request.nextUrl.pathname !== "/" &&
+      !user &&
+      !request.nextUrl.pathname.startsWith("/login") &&
+      !request.nextUrl.pathname.startsWith("/api") &&
+      !request.nextUrl.pathname.startsWith("/auth") &&
+      !request.nextUrl.pathname.startsWith("/docs")
+    ) {
+      // no user, redirect to the main page
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
 
-  // Role-based access control for authenticated users
-  if (user) {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    // Role-based access control for authenticated users
+    if (user) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
 
-    if (authUser) {
-      // Get user role from user_wallet table
-      const { data: userWallet } = await supabase
-        .from('user_wallet')
-        .select('role')
-        .eq('sk', authUser.id)
-        .single();
+      if (authUser) {
+        // Get user role from user_wallet table
+        const { data: userWallet } = await supabase
+          .from('user_wallet')
+          .select('role')
+          .eq('sk', authUser.id)
+          .single();
 
-      const userRole = userWallet?.role || 'guest';
-      const currentPath = request.nextUrl.pathname;
+        const userRole = userWallet?.role || 'guest';
+        const currentPath = request.nextUrl.pathname;
 
-      // Define protected routes (everything except /user, /auth, and public routes)
-      const isProtectedRoute =
-        currentPath !== "/" &&
-        currentPath !== "/user" &&
-        !currentPath.startsWith("/auth") &&
-        !currentPath.startsWith("/login");
+        // Define protected routes (everything except /user, /auth, and public routes)
+        const isProtectedRoute =
+          currentPath !== "/" &&
+          currentPath !== "/user" &&
+          !currentPath.startsWith("/auth") &&
+          !currentPath.startsWith("/login");
 
-      // If user is not admin or teacherAdmin and trying to access protected route, redirect to /user
-      if (isProtectedRoute && userRole !== 'admin' && userRole !== 'teacherAdmin') {
-        const url = request.nextUrl.clone();
-        url.pathname = "/user";
-        return NextResponse.redirect(url);
+        // If user is not admin or teacherAdmin and trying to access protected route, redirect to /user
+        if (isProtectedRoute && userRole !== 'admin' && userRole !== 'teacherAdmin') {
+          const url = request.nextUrl.clone();
+          url.pathname = "/user";
+          return NextResponse.redirect(url);
+        }
       }
     }
   }
