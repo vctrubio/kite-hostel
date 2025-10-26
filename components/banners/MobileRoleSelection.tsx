@@ -4,7 +4,7 @@ import { ROLE_ICONS } from "./RoleConfigs";
 export function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconClick }: RoleSelectionProps) {
   return (
     <div className="md:hidden flex flex-col gap-4 mb-8 py-4">
-      {ROLE_ICONS.map(({ Icon, label, color }, index) => (
+      {ROLE_ICONS.map(({ Icon, label, color, href }, index) => (
         <div
           key={label}
           className={`flex items-center gap-4 cursor-pointer p-4 border-4 bg-transparent rounded-xl transition-all duration-300 hover:shadow-lg ${
@@ -13,7 +13,7 @@ export function MobileRoleSelection({ hoveredIcon, setHoveredIcon, handleIconCli
           style={{ borderColor: color }}
           onMouseEnter={() => setHoveredIcon(index)}
           onMouseLeave={() => setHoveredIcon(null)}
-          onClick={handleIconClick}
+          onClick={() => handleIconClick(href)}
         >
           <div className="p-3 rounded-lg">
             <Icon className="h-8 w-8 text-slate-700 dark:text-slate-200" />

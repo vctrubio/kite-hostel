@@ -1,22 +1,24 @@
-import { Shield } from "lucide-react";
-import { HeadsetIcon, HelmetIcon } from "@/svgs";
+import { HeadsetIcon, HelmetIcon, BookingIcon } from "@/svgs";
 
 export const ROLE_CONFIGS = {
   student: {
     Icon: HelmetIcon,
-    label: "Student",
+    label: "Students",
+    href: "/students",
     color: "#eab308", // yellow-500
     tailwindConnection: "text-yellow-500 dark:text-yellow-400",
   },
   teacher: {
     Icon: HeadsetIcon,
-    label: "Teacher",
+    label: "Teachers",
+    href: "/teachers",
     color: "#22c55e", // green-500
     tailwindConnection: "text-green-500 dark:text-green-400",
   },
-  admin: {
-    Icon: Shield,
-    label: "Admin",
+  bookings: {
+    Icon: BookingIcon,
+    label: "Bookings",
+    href: "/bookings",
     color: "#06b6d4", // cyan-500 (North's signature teal)
     tailwindConnection: "text-cyan-500 dark:text-cyan-400",
   },
@@ -25,5 +27,5 @@ export const ROLE_CONFIGS = {
 export const ROLE_ICONS = [
   ROLE_CONFIGS.student,
   ROLE_CONFIGS.teacher,
-  ROLE_CONFIGS.admin,
+  ROLE_CONFIGS.bookings,
 ] as const;
