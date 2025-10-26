@@ -1,8 +1,15 @@
-import { getAvailablePks, getAvailableSk, getUserWallets } from "@/actions/user-actions";
+import { getAvailablePks, getAvailableSk, getUserWallets, getCurrentUserWallet } from "@/actions/user-actions";
 import { getUsers } from "@/actions/auth-actions";
 import ReferenceUserWalletPage from "./ReferenceUserWalletPage";
+import { redirect } from "next/navigation";
 
 export default async function CreateReferencePage() {
+  // Check if user is admin
+  const currentUser = await getCurrentUserWallet();
+
+  if (currentUser.role !== "admin") {
+    redirect("/invitation");
+  }
   // Server-side data fetching
   const [pksResult, sksResult, usersResult, userWalletsResult] = await Promise.all([
     getAvailablePks(),
